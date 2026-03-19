@@ -713,8 +713,22 @@
   </div>
 
   <script>
+    // Gateway认证token
+    const GATEWAY_TOKEN = 'e1647cdb-1b80-4eee-a975-7599160cc89b';
+    
     // 配置
-    const API_BASE = '/novel/api';
+    const API_BASE = '/api/novel';
+    
+    // API请求封装
+    async function api(endpoint, options = {}) {
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${GATEWAY_TOKEN}`,
+        ...(options.headers || {})
+      };
+      const res = await fetch(API_BASE + endpoint, { ...options, headers });
+      return res.json();
+    }
     
     // 经验类型映射
     const expTypeMap = {
@@ -743,8 +757,8 @@
     async function loadData() {
       try {
         const [statsRes, recordsRes] = await Promise.all([
-          fetch(`${API_BASE}/experience/stats`).then(r => r.json()),
-          fetch(`${API_BASE}/experience/records`).then(r => r.json())
+          api('/experience/stats'),
+          api('/experience/records')
         ]);
         
         if (statsRes.success) {
@@ -879,12 +893,10 @@
       };
       
       try {
-        const res = await fetch(`${API_BASE}/experience/records`, {
+        const result = await api('/experience/records', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data)
         });
-        const result = await res.json();
         if (result.success) {
           closeModal();
           await loadData();

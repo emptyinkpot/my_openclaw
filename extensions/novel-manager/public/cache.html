@@ -100,7 +100,21 @@
   </div>
 
   <script>
-    const API_BASE = '/novel/api';
+    // Gateway认证token
+    const GATEWAY_TOKEN = 'e1647cdb-1b80-4eee-a975-7599160cc89b';
+    const API_BASE = '/api/novel';
+    
+    // API请求封装
+    async function api(endpoint, options = {}) {
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${GATEWAY_TOKEN}`,
+        ...(options.headers || {})
+      };
+      const res = await fetch(API_BASE + endpoint, { ...options, headers });
+      return res.json();
+    }
+    
     let currentFile = null;
     let cacheFiles = [];
 
@@ -110,8 +124,7 @@
       listEl.innerHTML = '<div class="empty-state"><div class="empty-icon">📂</div><div>加载中...</div></div>';
       
       try {
-        const res = await fetch(`${API_BASE}/cache/files`);
-        const result = await res.json();
+        const result = await api('/cache/files');
         
         if (result.success) {
           cacheFiles = result.data || [];
@@ -150,8 +163,7 @@
       renderCacheList();
       
       try {
-        const res = await fetch(`${API_BASE}/cache/file?name=${encodeURIComponent(filename)}`);
-        const result = await res.json();
+        const result = await api(`/cache/file?name=${encodeURIComponent(filename)}`);
         
         if (result.success) {
           document.getElementById('cacheEditor').value = result.data.content || '';
@@ -174,12 +186,10 @@
       const content = document.getElementById('cacheEditor').value;
       
       try {
-        const res = await fetch(`${API_BASE}/cache/file?name=${encodeURIComponent(currentFile)}`, {
+        const result = await api(`/cache/file?name=${encodeURIComponent(currentFile)}`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ content })
         });
-        const result = await res.json();
         
         if (result.success) {
           alert('✅ 保存成功');
@@ -224,10 +234,9 @@
       if (!confirm(`确定要删除 ${currentFile} 吗？`)) return;
       
       try {
-        const res = await fetch(`${API_BASE}/cache/file?name=${encodeURIComponent(currentFile)}`, {
+        const result = await api(`/cache/file?name=${encodeURIComponent(currentFile)}`, {
           method: 'DELETE'
         });
-        const result = await res.json();
         
         if (result.success) {
           alert('✅ 删除成功');

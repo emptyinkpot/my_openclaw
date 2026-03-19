@@ -284,6 +284,106 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
       return true;
     }
 
+    // ====== 调度相关API ======
+    if (path === '/api/novel/schedules' && method === 'GET') {
+      // TODO: 从数据库或配置文件读取
+      jsonRes(res, { success: true, data: { schedules: [] } });
+      return true;
+    }
+
+    if (path === '/api/novel/schedules/save' && method === 'POST') {
+      const body = await parseBody(req);
+      // TODO: 保存到数据库或配置文件
+      console.log('[novel-manager] 保存调度配置:', body);
+      jsonRes(res, { success: true });
+      return true;
+    }
+
+    // ====== 飞书相关API ======
+    if (path === '/api/novel/feishu/config' && method === 'GET') {
+      // TODO: 从配置读取
+      jsonRes(res, { success: true, data: { appId: '', appSecret: '', enabled: false } });
+      return true;
+    }
+
+    if (path === '/api/novel/feishu/config/save' && method === 'POST') {
+      const body = await parseBody(req);
+      console.log('[novel-manager] 保存飞书配置:', body);
+      jsonRes(res, { success: true });
+      return true;
+    }
+
+    if (path === '/api/novel/feishu/messages' && method === 'GET') {
+      // TODO: 从数据库读取
+      jsonRes(res, { success: true, data: [] });
+      return true;
+    }
+
+    if (path === '/api/novel/feishu/messages/add' && method === 'POST') {
+      const body = await parseBody(req);
+      console.log('[novel-manager] 添加飞书消息:', body);
+      jsonRes(res, { success: true });
+      return true;
+    }
+
+    if (path === '/api/novel/feishu/messages/clear' && method === 'POST') {
+      console.log('[novel-manager] 清除飞书消息');
+      jsonRes(res, { success: true });
+      return true;
+    }
+
+    // ====== 经验统计API ======
+    if (path === '/api/novel/experience/stats' && method === 'GET') {
+      const records = await getNovelService().getExperienceRecords();
+      const stats = {
+        total: records.length,
+        byType: {} as Record<string, number>,
+        byDifficulty: {} as Record<string, number>
+      };
+      // 统计类型分布
+      records.forEach((r: any) => {
+        if (r.type) stats.byType[r.type] = (stats.byType[r.type] || 0) + 1;
+        if (r.difficulty) stats.byDifficulty[r.difficulty] = (stats.byDifficulty[r.difficulty] || 0) + 1;
+      });
+      jsonRes(res, { success: true, data: stats });
+      return true;
+    }
+
+    // ====== 缓存文件API (单文件) ======
+    if (path === '/api/novel/cache/file' && method === 'GET') {
+      const filename = query.name;
+      if (!filename) {
+        jsonRes(res, { success: false, error: '缺少文件名参数' }, 400);
+        return true;
+      }
+      const content = await getNovelService().getCacheFileContent(filename);
+      jsonRes(res, { success: true, data: content });
+      return true;
+    }
+
+    if (path === '/api/novel/cache/file' && method === 'PUT') {
+      const filename = query.name;
+      const body = await parseBody(req);
+      if (!filename) {
+        jsonRes(res, { success: false, error: '缺少文件名参数' }, 400);
+        return true;
+      }
+      await getNovelService().saveCacheFileContent(filename, body.content);
+      jsonRes(res, { success: true });
+      return true;
+    }
+
+    if (path === '/api/novel/cache/file' && method === 'DELETE') {
+      const filename = query.name;
+      if (!filename) {
+        jsonRes(res, { success: false, error: '缺少文件名参数' }, 400);
+        return true;
+      }
+      // TODO: 实现删除
+      jsonRes(res, { success: true });
+      return true;
+    }
+
     // 404
     jsonRes(res, { success: false, error: 'API路由不存在' }, 404);
     return true;

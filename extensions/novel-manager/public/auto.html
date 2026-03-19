@@ -364,6 +364,20 @@
   </div>
 
   <script>
+    // Gateway认证token
+    const GATEWAY_TOKEN = 'e1647cdb-1b80-4eee-a975-7599160cc89b';
+    
+    // API请求封装
+    async function api(url, options = {}) {
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${GATEWAY_TOKEN}`,
+        ...(options.headers || {})
+      };
+      const res = await fetch(url, { ...options, headers });
+      return res.json();
+    }
+
     // ============================================
     // 通用功能
     // ============================================
@@ -410,8 +424,7 @@
     // ============================================
     async function loadFromFile() {
       try {
-        const res = await fetch('/novel/api/schedules');
-        const data = await res.json();
+        const data = await api('/api/novel/schedules');
         if (data.success) { schedules = data.data.schedules || []; addLog(`加载了 ${schedules.length} 个任务`, 'info'); }
       } catch (err) { addLog('加载失败: ' + err.message, 'error'); }
     }
@@ -421,8 +434,7 @@
       try {
         setSyncStatus('pending');
         const config = { version: '1.0', schedules: schedules };
-        const res = await fetch('/novel/api/schedules/save', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(config) });
-        const data = await res.json();
+        const data = await api('/api/novel/schedules/save', { method: 'POST', body: JSON.stringify(config) });
         if (data.success) {
           unsavedChanges.clear();
           setSyncStatus('synced');
@@ -497,8 +509,7 @@
     async function loadFeishuData() {
       addLog('加载飞书配置...', 'info');
       try {
-        const res = await fetch('/novel/api/feishu/config');
-        const data = await res.json();
+        const data = await api('/api/novel/feishu/config');
         if (data.success) {
           feishuConfig = data.data;
           updateFeishuUI();
@@ -507,8 +518,7 @@
       } catch (err) { addLog('加载配置失败: ' + err.message, 'error'); }
 
       try {
-        const res = await fetch('/novel/api/feishu/messages?limit=100');
-        const data = await res.json();
+        const data = await api('/api/novel/feishu/messages?limit=100');
         if (data.success) {
           feishuMessages = data.data.messages || [];
           renderFeishuMessages();
@@ -626,8 +636,8 @@
       input.value = '';
       
       try {
-        await fetch('/novel/api/feishu/messages/add', {
-          method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(msg)
+        await api('/api/novel/feishu/messages/add', {
+          method: 'POST', body: JSON.stringify(msg)
         });
         addLog('消息已发送: ' + content.substring(0, 30) + '...', 'success');
       } catch (err) { addLog('发送失败: ' + err.message, 'error'); }
@@ -688,7 +698,7 @@
       feishuMessages = [];
       renderFeishuMessages();
       updateFeishuStats();
-      await fetch('/novel/api/feishu/messages/clear', { method: 'POST' });
+      await api('/api/novel/feishu/messages/clear', { method: 'POST' });
       addLog('所有消息已清空', 'info');
     }
 
@@ -705,8 +715,8 @@
       feishuConfig.enabled = document.getElementById('fs-enabled').checked;
       
       try {
-        await fetch('/novel/api/feishu/config/save', {
-          method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(feishuConfig)
+        await api('/api/novel/feishu/config/save', {
+          method: 'POST', body: JSON.stringify(feishuConfig)
         });
         addLog('飞书配置已保存', 'success');
       } catch (err) { addLog('保存失败: ' + err.message, 'error'); }
