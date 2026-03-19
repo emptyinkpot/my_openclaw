@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Version: 2026-03-20-v3 SSE Fixed -->
+  <!-- Version: 2026-03-20-v5 Pipeline UI Fix -->
   <title>📚 小说数据中心 - Novel Data Center</title>
   <style>
     :root {
@@ -1350,11 +1350,21 @@
 
     function selectFanqieWork(workId, title) {
       selectedFanqieWorkId = workId;
+      // 更新所有卡片样式
       document.querySelectorAll('.fanqie-work-card').forEach(card => {
         card.style.borderColor = 'var(--border)';
+        card.classList.remove('selected');
       });
-      event.currentTarget.style.borderColor = 'var(--accent)';
+      // 找到当前点击的卡片（通过 workId）
+      const cards = document.querySelectorAll('.fanqie-work-card');
+      cards.forEach(card => {
+        if (card.getAttribute('onclick')?.includes(`'${workId}'`)) {
+          card.style.borderColor = 'var(--accent)';
+          card.classList.add('selected');
+        }
+      });
       showToast(`📖 已选择: ${title}`, 'info');
+      console.log('[Pipeline] 已选择作品:', workId, title);
     }
 
     async function startPipeline() {
@@ -1418,7 +1428,16 @@
       const sseUrl = '/novel/sse/progress/' + id + '?token=' + encodeURIComponent(GATEWAY_TOKEN);
       console.log('[SSE] 连接:', sseUrl);
       
-      pipelineEventSource = new EventSource(sseUrl);
+      // 更新状态
+      updatePipelineUI({ status: 'running', step: 'init', task: '正在建立SSE连接...', percent: 0, results: [] });
+      
+      try {
+        pipelineEventSource = new EventSource(sseUrl);
+      } catch (e) {
+        console.error('[SSE] 创建连接失败:', e);
+        showToast('❌ SSE连接创建失败', 'error');
+        return;
+      }
       
       pipelineEventSource.onopen = () => {
         console.log('[SSE] 连接已建立');
@@ -1449,7 +1468,7 @@
       };
       
       pipelineEventSource.onerror = (err) => {
-        console.error('[SSE] 连接错误:', err);
+        console.error('[SSE] 连接错误:', err, 'readyState:', pipelineEventSource?.readyState);
         // 不要立即关闭，EventSource 会自动重连
         // 只有在 readyState 为 CLOSED 时才关闭
         if (pipelineEventSource && pipelineEventSource.readyState === EventSource.CLOSED) {
@@ -1476,19 +1495,27 @@
     function updatePipelineUI(event) {
       const { status, step, task, detail, percent, results, elapsed, error } = event;
       
+      console.log('[PipelineUI] 更新进度:', { status, step, task, percent, error });
+      
       // 状态文字
       const statusEl = document.getElementById('pipelineStatus');
       const statusDot = document.getElementById('pipelineStatusDot');
       const statusText = { 'idle': '空闲', 'running': '运行中', 'completed': '已完成', 'error': '错误' };
-      statusEl.textContent = statusText[status] || status;
-      statusDot.className = 'status-dot ' + (status === 'running' ? 'online' : status === 'completed' ? 'online' : status === 'error' ? 'offline' : '');
+      
+      if (statusEl) statusEl.textContent = statusText[status] || status;
+      if (statusDot) statusDot.className = 'status-dot ' + (status === 'running' ? 'online' : status === 'completed' ? 'online' : status === 'error' ? 'offline' : '');
       
       // 进度条
       const barPercent = percent || 0;
-      document.getElementById('pipelineProgressBar').style.width = barPercent + '%';
-      document.getElementById('pipelineProgressBar').style.background = 
-        status === 'completed' ? 'var(--success)' : status === 'error' ? 'var(--danger)' : 'linear-gradient(90deg, var(--accent), var(--purple))';
-      document.getElementById('pipelinePercent').textContent = barPercent + '%';
+      const progressBar = document.getElementById('pipelineProgressBar');
+      const percentEl = document.getElementById('pipelinePercent');
+      
+      if (progressBar) {
+        progressBar.style.width = barPercent + '%';
+        progressBar.style.background = 
+          status === 'completed' ? 'var(--success)' : status === 'error' ? 'var(--danger)' : 'linear-gradient(90deg, var(--accent), var(--purple))';
+      }
+      if (percentEl) percentEl.textContent = barPercent + '%';
       
       // 步骤状态
       const steps = ['init', 'scan', 'audit', 'publish'];
@@ -1510,20 +1537,24 @@
       });
       
       // 任务信息
-      document.getElementById('pipelineTask').textContent = task + (error ? ' - ' + error : '');
+      const taskEl = document.getElementById('pipelineTask');
+      if (taskEl) taskEl.textContent = task + (error ? ' - ' + error : '');
       
       // 时间
-      if (elapsed) {
-        const seconds = Math.floor(elapsed / 1000);
-        const minutes = Math.floor(seconds / 60);
-        document.getElementById('pipelineTime').textContent = (minutes > 0 ? minutes + '分' : '') + (seconds % 60) + '秒';
-      } else if (pipelineStartTime && status === 'running') {
-        const elapsedMs = Date.now() - pipelineStartTime;
-        const seconds = Math.floor(elapsedMs / 1000);
-        const minutes = Math.floor(seconds / 60);
-        document.getElementById('pipelineTime').textContent = (minutes > 0 ? minutes + '分' : '') + (seconds % 60) + '秒';
-      } else {
-        document.getElementById('pipelineTime').textContent = '-';
+      const timeEl = document.getElementById('pipelineTime');
+      if (timeEl) {
+        if (elapsed) {
+          const seconds = Math.floor(elapsed / 1000);
+          const minutes = Math.floor(seconds / 60);
+          timeEl.textContent = (minutes > 0 ? minutes + '分' : '') + (seconds % 60) + '秒';
+        } else if (pipelineStartTime && status === 'running') {
+          const elapsedMs = Date.now() - pipelineStartTime;
+          const seconds = Math.floor(elapsedMs / 1000);
+          const minutes = Math.floor(seconds / 60);
+          timeEl.textContent = (minutes > 0 ? minutes + '分' : '') + (seconds % 60) + '秒';
+        } else {
+          timeEl.textContent = '-';
+        }
       }
       
       // 结果列表
