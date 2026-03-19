@@ -78,6 +78,17 @@ function parseQuery(url: string): Record<string, string> {
 
 // 获取页面HTML
 function getPageHtml(pageName: string): string {
+  // 原生界面使用control-ui目录
+  if (pageName === 'native.html') {
+    const nativePath = '/usr/lib/node_modules/openclaw/dist/control-ui/index.html';
+    try {
+      return fs.readFileSync(nativePath, 'utf-8');
+    } catch (e) {
+      console.error('[novel-manager] 无法读取原生界面:', nativePath);
+      return '<html><body><h1>原生界面加载失败</h1></body></html>';
+    }
+  }
+  
   const htmlPath = path.join(__dirname, 'public', pageName);
   try {
     return fs.readFileSync(htmlPath, 'utf-8');
@@ -94,6 +105,7 @@ async function handleNovelPage(req: IncomingMessage, res: ServerResponse): Promi
 
   // 页面路由映射
   const pageMap: Record<string, string> = {
+    '/': 'native.html',
     '/novel': 'index.html',
     '/novel/': 'index.html',
     '/auto.html': 'auto.html',
@@ -299,6 +311,7 @@ const plugin = {
     
     // 页面路由配置
     const pageRoutes = [
+      { path: '/', match: 'exact' as const },
       { path: '/novel', match: 'exact' as const },
       { path: '/auto.html', match: 'exact' as const },
       { path: '/experience.html', match: 'exact' as const },

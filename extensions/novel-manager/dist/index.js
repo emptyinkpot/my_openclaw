@@ -106,6 +106,17 @@ function parseQuery(url) {
 }
 // 获取页面HTML
 function getPageHtml(pageName) {
+    // 原生界面使用control-ui目录
+    if (pageName === 'native.html') {
+        const nativePath = '/usr/lib/node_modules/openclaw/dist/control-ui/index.html';
+        try {
+            return fs.readFileSync(nativePath, 'utf-8');
+        }
+        catch (e) {
+            console.error('[novel-manager] 无法读取原生界面:', nativePath);
+            return '<html><body><h1>原生界面加载失败</h1></body></html>';
+        }
+    }
     const htmlPath = path.join(__dirname, 'public', pageName);
     try {
         return fs.readFileSync(htmlPath, 'utf-8');
@@ -121,6 +132,7 @@ async function handleNovelPage(req, res) {
     const urlPath = url.split('?')[0];
     // 页面路由映射
     const pageMap = {
+        '/': 'native.html',
         '/novel': 'index.html',
         '/novel/': 'index.html',
         '/auto.html': 'auto.html',
@@ -302,6 +314,7 @@ const plugin = {
         console.log('[novel-manager] Plugin registered, api:', typeof api, Object.keys(api || {}));
         // 页面路由配置
         const pageRoutes = [
+            { path: '/', match: 'exact' },
             { path: '/novel', match: 'exact' },
             { path: '/auto.html', match: 'exact' },
             { path: '/experience.html', match: 'exact' },
