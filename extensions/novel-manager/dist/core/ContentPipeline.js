@@ -75,7 +75,7 @@ class ContentPipeline {
      * 直接发布到番茄（简化流程）
      */
     async publishToFanqie(options) {
-        const { workId, chapterNumber, headless = false, dryRun = false, onProgress } = options;
+        const { workId, chapterNumber, startChapter, endChapter, headless = false, dryRun = false, skipStatusCheck = true, onProgress } = options;
         // 初始化进度
         this.progressCallback = onProgress;
         this.startTime = Date.now();
@@ -93,7 +93,28 @@ class ContentPipeline {
         await (0, helpers_1.delay)(500);
         // 步骤2: 扫描待发布章节
         this.emitProgress('running', 'scan', 0, 0, '扫描待发布章节...');
-        const chapters = await this.fanqiePublisher.getPendingChapters(workId, chapterNumber ? 1 : 100);
+        // 根据是否跳过状态检查，使用不同的查询
+        let chapters;
+        if (skipStatusCheck) {
+            // 跳过状态检查，只获取有内容的章节
+            const repo = (0, ChapterRepository_1.getChapterRepository)();
+            const pendingChapters = await repo.getPendingProcess({
+                workId,
+                chapterRange: startChapter && endChapter ? [startChapter, endChapter] : undefined,
+                limit: 100
+            });
+            chapters = pendingChapters.map(ch => ({
+                workId: ch.workId,
+                workTitle: ch.workTitle,
+                chapterNumber: ch.chapterNumber,
+                chapterTitle: ch.chapterTitle || `第${ch.chapterNumber}章`,
+                content: ch.content || '',
+                wordCount: ch.wordCount || ch.content?.length || 0,
+            }));
+        }
+        else {
+            chapters = await this.fanqiePublisher.getPendingChapters(workId, chapterNumber ? 1 : 100);
+        }
         // 如果指定了章节号，只发布那个章节
         const toPublish = chapterNumber
             ? chapters.filter(c => c.chapterNumber === chapterNumber)
