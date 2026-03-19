@@ -10,7 +10,7 @@
  * 职责说明：
  * - 本模块负责结构化记录问题解决经验
  * - memory-lancedb-pro 负责 AI Agent 的自动学习和记忆
- * - 两者职责分离，互不依赖
+ * - 通过 MemorySync 实现单向联动（experience → memory-lancedb-pro）
  * 
  * @module experience-manager
  * @version 1.0.0
@@ -18,12 +18,14 @@
 
 import { createApp, start } from './app';
 import { ExperienceRepository, experienceRepo } from './core/ExperienceRepository';
+import { memorySync, syncExperienceToMemory, searchRelatedExperiences } from './core/MemorySync';
 
 // 版本信息
 export const version = '1.0.0';
 
 // 导出核心功能
 export { ExperienceRepository, experienceRepo };
+export { memorySync, syncExperienceToMemory, searchRelatedExperiences };
 export type { 
   ExperienceRecord, 
   ExperienceStats, 

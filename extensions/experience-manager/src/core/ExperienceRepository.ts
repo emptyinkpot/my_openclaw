@@ -6,11 +6,12 @@
  * 职责说明：
  * - 本模块负责结构化记录问题解决经验
  * - memory-lancedb-pro 负责 AI Agent 的自动学习和记忆
- * - 两者职责分离，互不依赖
+ * - 通过 MemorySync 实现单向联动（experience → memory-lancedb-pro）
  */
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { syncExperienceToMemory } from './MemorySync';
 
 /**
  * 查找数据文件路径 - 支持多种运行环境
@@ -131,6 +132,12 @@ export class ExperienceRepository {
     };
     this.data.records.unshift(newRecord);
     this.save();
+    
+    // 异步同步到 memory-lancedb-pro（不阻塞主流程）
+    syncExperienceToMemory(newRecord).catch(err => {
+      console.warn('[Experience] 同步到 memory-lancedb-pro 失败:', err.message);
+    });
+    
     return newRecord;
   }
 
