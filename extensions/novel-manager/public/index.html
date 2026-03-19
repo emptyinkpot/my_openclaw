@@ -321,13 +321,23 @@
           <span class="sidebar-title">🍅 番茄扫描中心</span>
         </div>
         <div class="sidebar-scroll" style="padding: 12px;">
-          <!-- 账号选择 -->
+          <!-- 账号选择（多选） -->
           <div class="form-group" style="margin-bottom: 12px;">
-            <label class="form-label">番茄账号</label>
-            <select class="form-input" id="fanqieAccountSelect">
-              <option value="account_1">番茄账号1</option>
-              <option value="account_2">番茄账号2</option>
-            </select>
+            <label class="form-label">番茄账号 <span style="font-weight:normal;color:var(--text-muted);">(可多选)</span></label>
+            <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;padding:8px;">
+              <label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;cursor:pointer;font-size:12px;">
+                <input type="checkbox" class="fanqie-account-check" value="account_1" checked> 
+                <span>📱 番茄账号1</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;">
+                <input type="checkbox" class="fanqie-account-check" value="account_2" checked> 
+                <span>📱 番茄账号2</span>
+              </label>
+            </div>
+            <div style="display:flex;gap:6px;margin-top:6px;">
+              <button class="btn btn-sm" onclick="selectAllAccounts(true)" style="flex:1;">全选</button>
+              <button class="btn btn-sm" onclick="selectAllAccounts(false)" style="flex:1;">清空</button>
+            </div>
           </div>
           
           <!-- 快捷操作 -->
@@ -1243,34 +1253,66 @@
     let pipelineEventSource = null;
     let pipelineStartTime = null;
 
+    // 全选/清空账号
+    function selectAllAccounts(checked) {
+      document.querySelectorAll('.fanqie-account-check').forEach(cb => {
+        cb.checked = checked;
+      });
+    }
+
+    // 获取选中的账号
+    function getSelectedAccounts() {
+      const checks = document.querySelectorAll('.fanqie-account-check:checked');
+      return Array.from(checks).map(cb => cb.value);
+    }
+
     async function scanFanqieWorks() {
-      const accountId = document.getElementById('fanqieAccountSelect').value;
+      const selectedAccounts = getSelectedAccounts();
       const resultEl = document.getElementById('fanqieWorksList');
       const statusEl = document.getElementById('fanqieScanStatus');
       
-      resultEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);grid-column:1/-1;">📡 正在扫描番茄小说作品...</div>';
+      if (selectedAccounts.length === 0) {
+        showToast('⚠️ 请至少选择一个账号', 'warning');
+        return;
+      }
+      
+      resultEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);grid-column:1/-1;">📡 正在扫描番茄小说作品...<br><div style="font-size:11px;margin-top:8px;">已选 ' + selectedAccounts.length + ' 个账号</div></div>';
       statusEl.textContent = '扫描中...';
       
       try {
-        // 先触发扫描
-        const scanResult = await api('/fanqie/scan', { 
-          method: 'POST',
-          body: JSON.stringify({ accountId: accountId || undefined })
-        });
+        let allWorks = [];
         
-        if (!scanResult.success) {
-          throw new Error(scanResult.message || scanResult.error || '扫描失败');
+        // 依次扫描每个账号
+        for (const accountId of selectedAccounts) {
+          statusEl.textContent = `正在扫描 ${accountId}...`;
+          
+          const scanResult = await api('/fanqie/scan', { 
+            method: 'POST',
+            body: JSON.stringify({ accountId })
+          });
+          
+          if (scanResult.success && scanResult.data?.works) {
+            allWorks = allWorks.concat(scanResult.data.works);
+          }
         }
         
-        const works = scanResult.data?.works || [];
-        
-        if (works.length === 0) {
+        if (allWorks.length === 0) {
           resultEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);grid-column:1/-1;"><div style="font-size:32px;margin-bottom:8px;">📭</div>未找到作品<br><div style="font-size:11px;margin-top:8px;">请检查Cookie是否过期</div></div>';
           statusEl.textContent = '无作品';
           return;
         }
         
-        resultEl.innerHTML = works.map(w => `
+        // 去重（按workId）
+        const uniqueWorks = [];
+        const seenIds = new Set();
+        for (const w of allWorks) {
+          if (!seenIds.has(w.workId)) {
+            seenIds.add(w.workId);
+            uniqueWorks.push(w);
+          }
+        }
+        
+        resultEl.innerHTML = uniqueWorks.map(w => `
           <div class="fanqie-work-card ${selectedFanqieWorkId === w.workId ? 'selected' : ''}" 
                onclick="selectFanqieWork('${w.workId}', '${w.title.replace(/'/g, "\\'")}')"
                style="cursor: pointer; border: 2px solid ${selectedFanqieWorkId === w.workId ? 'var(--accent)' : 'var(--border)'}; transition: all 0.2s;">
@@ -1278,6 +1320,7 @@
               <div class="fanqie-work-title">${w.title}</div>
               <span class="fanqie-work-status ${w.status?.includes('签约') ? 'signed' : 'ongoing'}">${w.status || '连载'}</span>
             </div>
+            <div style="font-size:10px;color:var(--text-muted);margin:4px 0;">${w.accountName || w.accountId}</div>
             <div class="fanqie-work-meta">
               <div class="fanqie-meta-item">
                 <div class="fanqie-meta-value">${w.totalChapters || 0}</div>
@@ -1288,15 +1331,15 @@
                 <div class="fanqie-meta-label">字数</div>
               </div>
               <div class="fanqie-meta-item">
-                <div class="fanqie-meta-value" style="font-size:12px;">${w.accountName || '-'}</div>
-                <div class="fanqie-meta-label">账号</div>
+                <div class="fanqie-meta-value" style="font-size:10px;">${w.workId?.slice(-6) || '-'}</div>
+                <div class="fanqie-meta-label">ID</div>
               </div>
             </div>
           </div>
         `).join('');
         
-        statusEl.textContent = `已扫描 ${works.length} 部作品`;
-        showToast(`✅ 扫描完成，找到 ${works.length} 部作品`, 'success');
+        statusEl.textContent = `共 ${uniqueWorks.length} 部作品`;
+        showToast(`✅ 扫描完成，共 ${uniqueWorks.length} 部作品`, 'success');
       } catch (err) {
         resultEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--danger);grid-column:1/-1;"><div style="font-size:32px;margin-bottom:8px;">❌</div>扫描失败: ${err.message}</div>`;
         statusEl.textContent = '扫描失败';
