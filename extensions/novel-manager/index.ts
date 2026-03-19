@@ -103,11 +103,12 @@ async function handleNovelPage(req: IncomingMessage, res: ServerResponse): Promi
   const url = req.url || '';
   const urlPath = url.split('?')[0];
 
-  // 页面路由映射
+  // 页面路由映射 - 小说管理作为默认首页
   const pageMap: Record<string, string> = {
-    '/': 'native.html',
+    '/': 'index.html',           // 默认首页 = 小说管理
     '/novel': 'index.html',
     '/novel/': 'index.html',
+    '/native.html': 'native.html', // 原生界面移到这里
     '/auto.html': 'auto.html',
     '/experience.html': 'experience.html',
     '/cache.html': 'cache.html'

@@ -130,11 +130,12 @@ function getPageHtml(pageName) {
 async function handleNovelPage(req, res) {
     const url = req.url || '';
     const urlPath = url.split('?')[0];
-    // 页面路由映射
+    // 页面路由映射 - 小说管理作为默认首页
     const pageMap = {
-        '/': 'native.html',
+        '/': 'index.html', // 默认首页 = 小说管理
         '/novel': 'index.html',
         '/novel/': 'index.html',
+        '/native.html': 'native.html', // 原生界面移到这里
         '/auto.html': 'auto.html',
         '/experience.html': 'experience.html',
         '/cache.html': 'cache.html'
