@@ -104,17 +104,36 @@ function parseQuery(url) {
     }
     return query;
 }
-// 路由处理器 - 处理 /novel/ 页面（不需要认证）
+// 获取页面HTML
+function getPageHtml(pageName) {
+    const htmlPath = path.join(__dirname, 'public', pageName);
+    try {
+        return fs.readFileSync(htmlPath, 'utf-8');
+    }
+    catch (e) {
+        console.error('[novel-manager] 无法读取HTML文件:', htmlPath);
+        return '<html><body><h1>页面加载失败</h1></body></html>';
+    }
+}
+// 路由处理器 - 处理页面请求（不需要认证）
 async function handleNovelPage(req, res) {
     const url = req.url || '';
-    const path = url.split('?')[0];
-    // 处理 /novel/ 页面请求
-    if (path === '/novel' || path === '/novel/') {
+    const urlPath = url.split('?')[0];
+    // 页面路由映射
+    const pageMap = {
+        '/novel': 'index.html',
+        '/novel/': 'index.html',
+        '/auto.html': 'auto.html',
+        '/experience.html': 'experience.html',
+        '/cache.html': 'cache.html'
+    };
+    const pageFile = pageMap[urlPath];
+    if (pageFile) {
         res.writeHead(200, {
             'Content-Type': 'text/html; charset=utf-8',
             'Cache-Control': 'no-cache'
         });
-        res.end(getNovelHtml());
+        res.end(getPageHtml(pageFile));
         return true;
     }
     return false;
@@ -281,14 +300,23 @@ const plugin = {
     },
     register(api) {
         console.log('[novel-manager] Plugin registered, api:', typeof api, Object.keys(api || {}));
+        // 页面路由配置
+        const pageRoutes = [
+            { path: '/novel', match: 'exact' },
+            { path: '/auto.html', match: 'exact' },
+            { path: '/experience.html', match: 'exact' },
+            { path: '/cache.html', match: 'exact' }
+        ];
         // 注册页面路由 - 不需要认证
         if (api?.registerHttpRoute) {
             console.log('[novel-manager] 使用 api.registerHttpRoute');
-            api.registerHttpRoute({
-                path: '/novel',
-                match: 'exact',
-                handler: handleNovelPage,
-                auth: 'plugin' // plugin auth means we handle auth ourselves (none for page)
+            pageRoutes.forEach(route => {
+                api.registerHttpRoute({
+                    path: route.path,
+                    match: route.match,
+                    handler: handleNovelPage,
+                    auth: 'plugin'
+                });
             });
             // 注册API路由 - 需要认证
             api.registerHttpRoute({
@@ -301,12 +329,14 @@ const plugin = {
         // 尝试直接使用 registerPluginHttpRoute
         else if (registerPluginHttpRoute) {
             console.log('[novel-manager] 使用 registerPluginHttpRoute');
-            registerPluginHttpRoute({
-                path: '/novel',
-                match: 'exact',
-                handler: handleNovelPage,
-                auth: 'plugin',
-                pluginId: 'novel-manager'
+            pageRoutes.forEach(route => {
+                registerPluginHttpRoute({
+                    path: route.path,
+                    match: route.match,
+                    handler: handleNovelPage,
+                    auth: 'plugin',
+                    pluginId: 'novel-manager'
+                });
             });
             registerPluginHttpRoute({
                 path: '/api/novel',
@@ -321,12 +351,14 @@ const plugin = {
             console.log('[novel-manager] 使用全局注册');
             // @ts-ignore
             if (globalThis.__openclawHttpRoutes) {
-                // @ts-ignore
-                globalThis.__openclawHttpRoutes.push({
-                    path: '/novel',
-                    match: 'exact',
-                    handler: handleNovelPage,
-                    auth: 'plugin'
+                pageRoutes.forEach(route => {
+                    // @ts-ignore
+                    globalThis.__openclawHttpRoutes.push({
+                        path: route.path,
+                        match: route.match,
+                        handler: handleNovelPage,
+                        auth: 'plugin'
+                    });
                 });
                 // @ts-ignore
                 globalThis.__openclawHttpRoutes.push({

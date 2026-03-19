@@ -33,11 +33,19 @@
       overflow: hidden;
     }
     
+    /* 导航栏 */
+    .nav-bar{position:fixed;top:0;left:0;right:0;height:40px;background:#24292f;display:flex;align-items:center;padding:0 16px;gap:4px;z-index:9999}
+    .nav-bar span{color:#fff;font-weight:600;font-size:14px;margin-right:16px}
+    .nav-bar a{color:#8b949e;font-size:13px;padding:6px 14px;border-radius:4px;text-decoration:none}
+    .nav-bar a:hover{background:rgba(255,255,255,0.1);color:#fff}
+    .nav-bar a.on{background:#0969da;color:#fff}
+    
     /* 头部 */
     .header {
       height: 56px;
       background: linear-gradient(135deg, #8250df 0%, #bf3989 100%);
       color: white;
+      margin-top: 40px;
       display: flex;
       align-items: center;
       padding: 0 20px;
@@ -540,6 +548,7 @@
   </style>
 </head>
 <body>
+<div class="nav-bar"><span>🦞 OpenClaw</span><a href="/novel/">📚 小说管理</a><a href="/auto.html">⚙️ 自动化</a><a href="/experience.html" class="on">🧠 经验</a><a href="/cache.html">💾 缓存</a><a href="/">🎯 原生界面</a></div>
   <!-- 头部 -->
   <div class="header">
     <div class="header-title">

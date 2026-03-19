@@ -16,7 +16,14 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); font-size: 12px; height: 100vh; overflow: hidden; }
     
-    .main { display: flex; height: 100vh; }
+    /* 导航栏 */
+    .nav-bar{position:fixed;top:0;left:0;right:0;height:40px;background:#24292f;display:flex;align-items:center;padding:0 16px;gap:4px;z-index:9999}
+    .nav-bar span{color:#fff;font-weight:600;font-size:14px;margin-right:16px}
+    .nav-bar a{color:#8b949e;font-size:13px;padding:6px 14px;border-radius:4px;text-decoration:none}
+    .nav-bar a:hover{background:rgba(255,255,255,0.1);color:#fff}
+    .nav-bar a.on{background:#0969da;color:#fff}
+    
+    .main { display: flex; height: calc(100vh - 40px); margin-top: 40px; }
     .sidebar { width: 280px; background: var(--bg-secondary); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
     .sidebar-header { padding: 12px 16px; background: var(--bg-tertiary); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
     .sidebar-title { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
@@ -52,6 +59,7 @@
   </style>
 </head>
 <body>
+<div class="nav-bar"><span>🦞 OpenClaw</span><a href="/novel/">📚 小说管理</a><a href="/auto.html">⚙️ 自动化</a><a href="/experience.html">🧠 经验</a><a href="/cache.html" class="on">💾 缓存</a><a href="/">🎯 原生界面</a></div>
   <div class="main">
     <!-- 左侧文件列表 -->
     <div class="sidebar">
