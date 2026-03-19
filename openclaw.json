@@ -292,7 +292,11 @@
       "enabled": true,
       "root": "/usr/lib/node_modules/openclaw/dist/control-ui",
       "allowedOrigins": [
-        "https://dev.coze.site"
+        "http://172.30.24.228:5000",
+        "http://localhost:5000",
+        "*.dev.coze.site",
+        "https://dev.coze.site",
+        "http://380cdf5c-c0a6-420a-acbf-3b2e64d0d9cf.dev.coze.site"
       ],
       "dangerouslyDisableDeviceAuth": true
     },
