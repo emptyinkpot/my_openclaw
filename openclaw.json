@@ -287,7 +287,7 @@
   "gateway": {
     "port": 5000,
     "mode": "local",
-    "bind": "loopback",
+    "bind": "lan",
     "controlUi": {
       "enabled": true,
       "root": "/usr/lib/node_modules/openclaw/dist/control-ui",
