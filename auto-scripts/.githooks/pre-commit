@@ -1,0 +1,198 @@
+#!/bin/bash
+# Git pre-commit 钩子
+# 强制执行：代码修改后必须同步更新文档
+# 
+# 安装方法: git config core.hooksPath .githooks
+# 或执行: bash scripts/enforce.sh install
+
+set -e
+
+PROJECT_DIR="/workspace/projects/workspace/projects/novel-sync"
+SYNC_LOG="$PROJECT_DIR/.sync-check.log"
+
+# 颜色定义
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+echo ""
+echo -e "${CYAN}╔══════════════════════════════════════════════════════════╗${NC}"
+echo -e "${CYAN}║          Git Pre-Commit 强制检查                           ║${NC}"
+echo -e "${CYAN}╚══════════════════════════════════════════════════════════╝${NC}"
+echo ""
+
+cd "$PROJECT_DIR"
+
+# ===== 1. 检查修改的文件 =====
+echo -e "${YELLOW}[Step 1/5] 检查修改的文件...${NC}"
+
+# 获取修改的文件列表
+STAGED_JS=$(git diff --cached --name-only --diff-filter=ACM -- '*.js' 2>/dev/null || echo "")
+STAGED_DOCS=$(git diff --cached --name-only --diff-filter=ACM -- 'docs/*.md' '*.md' 2>/dev/null || echo "")
+
+JS_COUNT=$(echo "$STAGED_JS" | grep -c . 2>/dev/null || echo "0")
+DOC_COUNT=$(echo "$STAGED_DOCS" | grep -c . 2>/dev/null || echo "0")
+
+echo "  JavaScript 文件: $JS_COUNT 个"
+echo "  文档文件: $DOC_COUNT 个"
+
+if [ -z "$STAGED_JS" ] && [ -z "$STAGED_DOCS" ]; then
+    echo -e "${GREEN}✓ 无代码和文档修改，跳过检查${NC}"
+    exit 0
+fi
+
+if [ -n "$STAGED_JS" ]; then
+    echo ""
+    echo "修改的 JS 文件:"
+    echo "$STAGED_JS" | while read file; do
+        echo "  - $file"
+    done
+fi
+
+if [ -n "$STAGED_DOCS" ]; then
+    echo ""
+    echo "修改的文档:"
+    echo "$STAGED_DOCS" | while read file; do
+        echo "  - $file"
+    done
+fi
+
+# ===== 2. 强制检查：代码修改后文档是否更新 =====
+echo ""
+echo -e "${YELLOW}[Step 2/5] 检查文档同步...${NC}"
+
+if [ -n "$STAGED_JS" ]; then
+    # 定义需要同步检查的规则
+    NEED_UPDATE=false
+    UPDATE_LIST=""
+
+    # 检查每个 JS 文件是否需要更新文档
+    for file in $STAGED_JS; do
+        # 检查是否是白梦模块
+        if [[ "$file" == *"baimeng"* ]]; then
+            UPDATE_LIST="$UPDATE_LIST\n  - $file → docs/已验证代码库.md"
+            NEED_UPDATE=true
+        fi
+        # 检查是否是工具模块
+        if [[ "$file" == *"utils"* ]]; then
+            UPDATE_LIST="$UPDATE_LIST\n  - $file → docs/已验证代码库.md"
+            NEED_UPDATE=true
+        fi
+    done
+
+    if [ "$NEED_UPDATE" = true ]; then
+        echo -e "${YELLOW}以下代码修改需要同步更新文档:${NC}"
+        echo -e "$UPDATE_LIST"
+        
+        # 检查文档是否也修改了
+        if [ -z "$STAGED_DOCS" ]; then
+            echo ""
+            echo -e "${RED}╔══════════════════════════════════════════════════════════╗${NC}"
+            echo -e "${RED}║  ✗ 错误: 代码修改后必须同步更新文档！                       ║${NC}"
+            echo -e "${RED}╚══════════════════════════════════════════════════════════╝${NC}"
+            echo ""
+            echo -e "${YELLOW}请执行以下操作之一:${NC}"
+            echo ""
+            echo "  1. 更新对应文档后重新提交:"
+            echo "     vim docs/已验证代码库.md"
+            echo "     git add docs/已验证代码库.md"
+            echo ""
+            echo "  2. 或者使用同步检查工具:"
+            echo "     bash scripts/sync-check.sh --fix"
+            echo ""
+            echo "  3. 如果确认不需要更新文档，添加 --no-verify 跳过检查:"
+            echo "     git commit --no-verify"
+            echo ""
+            exit 1
+        fi
+    fi
+fi
+
+echo -e "${GREEN}✓ 文档同步检查通过${NC}"
+
+# ===== 3. 检查文档完整性 =====
+echo ""
+echo -e "${YELLOW}[Step 3/5] 检查文档完整性...${NC}"
+
+# 定义必须存在的核心文档
+CORE_DOCS=(
+    "FRAMEWORK.md"
+    "docs/已验证代码库.md"
+    "docs/用户教导记录.md"
+    "docs/代码优化框架.md"
+    "DEBUG_LOG.md"
+    "PROJECT_STANDARDS.md"
+    "CODING_STANDARDS.md"
+)
+
+DOC_MISSING=false
+MISSING_LIST=""
+
+for doc in "${CORE_DOCS[@]}"; do
+    if [ ! -f "$PROJECT_DIR/$doc" ]; then
+        DOC_MISSING=true
+        MISSING_LIST="$MISSING_LIST\n  - $doc"
+    fi
+done
+
+if [ "$DOC_MISSING" = true ]; then
+    echo -e "${RED}✗ 存在缺失的核心文档:${NC}"
+    echo -e "$MISSING_LIST"
+    echo ""
+    echo "请先创建这些文档后再提交"
+    exit 1
+fi
+
+echo "  核心文档检查:"
+for doc in "${CORE_DOCS[@]}"; do
+    echo -e "  ${GREEN}✓${NC} $doc"
+done
+
+# ===== 4. 检查文档元数据 =====
+echo ""
+echo -e "${YELLOW}[Step 4/5] 检查文档元数据...${NC}"
+
+# 检查已验证代码库的元数据
+VERIFIED_CODE="$PROJECT_DIR/docs/已验证代码库.md"
+
+if [ -f "$VERIFIED_CODE" ]; then
+    # 检查是否包含必要的章节
+    REQUIRED_SECTIONS=("登录恢复" "作品列表获取" "侧边栏操作" "内容获取" "复制操作")
+    
+    for section in "${REQUIRED_SECTIONS[@]}"; do
+        if grep -q "$section" "$VERIFIED_CODE" 2>/dev/null; then
+            echo -e "  ${GREEN}✓${NC} 已记录: $section"
+        else
+            echo -e "  ${YELLOW}⚠${NC} 缺少章节: $section"
+        fi
+    done
+fi
+
+# ===== 5. 最终确认 =====
+echo ""
+echo -e "${YELLOW}[Step 5/5] 最终确认...${NC}"
+
+echo ""
+echo "请确认以下事项:"
+echo ""
+echo "  □ 已从 docs/已验证代码库.md 复制代码（不重写）"
+echo "  □ 已更新 DEBUG_LOG.md（如有问题）"
+echo "  □ 已更新 docs/用户教导记录.md（如有用户教导）"
+echo "  □ 已测试通过"
+echo "  □ 文档已同步更新"
+echo "  □ 文档元数据已填写（最后更新时间等）"
+echo ""
+
+# 记录检查结果
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] pre-commit 检查通过" >> "$SYNC_LOG"
+
+echo -e "${GREEN}╔══════════════════════════════════════════════════════════╗${NC}"
+echo -e "${GREEN}║  ✓ Pre-commit 检查通过                                    ║${NC}"
+echo -e "${GREEN}╚══════════════════════════════════════════════════════════╝${NC}"
+echo ""
+echo -e "${CYAN}提示: 如果检查过于严格，可使用 git commit --no-verify 跳过${NC}"
+echo ""
+
+exit 0

@@ -1,0 +1,9 @@
+{
+  "name": "self-heal",
+  "version": "1.0.0",
+  "description": "OpenClaw Hook: self-heal",
+  "main": "index.js",
+  "openclaw": {
+    "hooks": ["self-heal"]
+  }
+}

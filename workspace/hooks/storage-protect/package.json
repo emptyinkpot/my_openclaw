@@ -1,0 +1,9 @@
+{
+  "name": "storage-protect",
+  "version": "1.0.0",
+  "description": "OpenClaw Hook: storage-protect",
+  "main": "index.js",
+  "openclaw": {
+    "hooks": ["storage-protect"]
+  }
+}

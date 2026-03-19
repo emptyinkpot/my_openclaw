@@ -1,0 +1,22 @@
+{
+  "id": "423b21ad-f299-4653-9547-b4d799dcd2a5",
+  "enqueuedAt": 1773288095019,
+  "channel": "feishu",
+  "to": "heartbeat",
+  "payloads": [
+    {
+      "text": "## 📍 上海今日天气 (2026年3月12日)\n\n### 🌡️ 温度\n- **当前温度：** 13°C\n- **体感温度：** 12°C\n- **最高/最低：** 13°C / 6°C\n\n### ☀️ 天气状况\n- **晴** (Sunny)\n- **湿度：** 47%\n- **风速：** 13 km/h (北偏东北风)\n- **气压：** 1029 hPa\n- **能见度：** 10 km\n- **紫外线指数：** 5\n\n### 🌅 日出日落\n- 日出：06:08\n- 日落：18:00\n\n---\n\n天气总体良好，适合外出 ☀️",
+      "mediaUrls": []
+    },
+    {
+      "text": "⚠️ ✉️ Message failed",
+      "mediaUrls": []
+    }
+  ],
+  "threadId": null,
+  "replyToId": null,
+  "bestEffort": false,
+  "retryCount": 5,
+  "lastAttemptAt": 1773291925652,
+  "lastError": "Request failed with status code 400"
+}

@@ -1,0 +1,26 @@
+{
+  "name": "bilibili-monitor",
+  "description": "B站视频舆情监控系统 - 支持UP主监控、视频分析、评论舆情",
+  "version": "1.0.0",
+  "author": "OpenClaw",
+  "main": "index.ts",
+  "scripts": {
+    "setup": "pip install bilibili-api-python",
+    "monitor": "python scripts/monitor_daemon.py",
+    "analyze": "python scripts/analyze_video.py"
+  },
+  "dependencies": {
+    "python": ["bilibili-api-python", "aiohttp", "aiosqlite"],
+    "node": []
+  },
+  "config": {
+    "database": "data/monitor.db",
+    "check_interval": 300,
+    "max_comments_per_video": 100,
+    "sentiment_threshold": -0.5
+  },
+  "permissions": [
+    "network",
+    "filesystem"
+  ]
+}

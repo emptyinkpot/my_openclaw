@@ -1,0 +1,9 @@
+{
+  "name": "message-received-check-state",
+  "version": "1.0.0",
+  "description": "OpenClaw Hook: message-received-check-state",
+  "main": "index.js",
+  "openclaw": {
+    "hooks": ["message-received-check-state"]
+  }
+}

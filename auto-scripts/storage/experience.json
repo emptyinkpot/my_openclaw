@@ -1,0 +1,275 @@
+{
+  "records": [
+    {
+      "type": "problem_solving",
+      "title": "test: 验证Git hook更新原生UI数据",
+      "description": "Git自动记录的提交。提交者: coze_user, 文件变更: 1个",
+      "userQuery": "Git自动积累",
+      "solution": "test: 验证Git hook更新原生UI数据",
+      "experienceApplied": [
+        "Git工作流程",
+        "代码提交"
+      ],
+      "experienceGained": [
+        "版本控制",
+        "自动化记录",
+        "maintenance"
+      ],
+      "tags": [
+        "git",
+        "auto",
+        "maintenance"
+      ],
+      "difficulty": 3,
+      "xpGained": 80,
+      "id": "exp_1773896000000_8187860",
+      "timestamp": 1773896000000
+    },
+    {
+      "type": "problem_solving",
+      "title": "test: 验证Git自动积累经验完整流程",
+      "description": "Git自动记录的提交。提交者: coze_user, 文件变更: 5个",
+      "userQuery": "Git自动积累",
+      "solution": "test: 验证Git自动积累经验完整流程",
+      "experienceApplied": [
+        "Git工作流程",
+        "代码提交"
+      ],
+      "experienceGained": [
+        "版本控制",
+        "自动化记录",
+        "maintenance"
+      ],
+      "tags": [
+        "git",
+        "auto",
+        "maintenance"
+      ],
+      "difficulty": 3,
+      "xpGained": 80,
+      "id": "exp_1773895430000_dd60330",
+      "timestamp": 1773895430000
+    },
+    {
+      "type": "problem_solving",
+      "title": "test: 验证Git自动积累经验hook",
+      "description": "Git自动记录的提交。提交者: coze_user, 文件变更: 1个",
+      "userQuery": "Git自动积累",
+      "solution": "test: 验证Git自动积累经验hook",
+      "experienceApplied": [
+        "Git工作流程",
+        "代码提交"
+      ],
+      "experienceGained": [
+        "版本控制",
+        "自动化记录",
+        "maintenance"
+      ],
+      "tags": [
+        "git",
+        "auto",
+        "maintenance"
+      ],
+      "difficulty": 3,
+      "xpGained": 80,
+      "id": "exp_1773895296000_952f550",
+      "timestamp": 1773895296000
+    },
+    {
+      "type": "learning",
+      "title": "Git结算时自动积累经验的工作流程",
+      "description": "用户指出应该在git结算(commit)时自动将经验记录到经验积累模块，而不是手动记录。这是一个工作流程优化点：每次代码提交时，应该同步更新经验数据，确保经验积累与代码变更同步。",
+      "userQuery": "你踏马不会自动积累啊git结算的时候你就积累",
+      "solution": "建立规范：1) 每次git commit前，将本次解决问题的经验记录到apps/experience-manager/data/experiences.json；2) 经验记录应包含问题描述、解决方案、获得的经验点；3) commit消息中可简要提及经验积累内容；4) 使用done工具提交时，自动触发经验积累更新；5) 定期 review 经验数据，确保有价值的问题都被记录",
+      "experienceApplied": [
+        "工作流程优化",
+        "Git提交规范",
+        "经验积累自动化"
+      ],
+      "experienceGained": [
+        "Git hooks使用",
+        "自动化经验积累流程",
+        "开发习惯养成",
+        "经验数据管理"
+      ],
+      "tags": [
+        "git",
+        "workflow",
+        "automation",
+        "experience",
+        "best-practice"
+      ],
+      "difficulty": 3,
+      "xpGained": 100,
+      "id": "exp_1773894700000_git_auto_experience",
+      "timestamp": 1773894700000
+    },
+    {
+      "type": "problem_solving",
+      "title": "Git 索引与多模块架构问题排查",
+      "description": "在重构经验积累模块过程中，遇到了多个架构和配置问题：1) .gitignore 白名单模式导致新文件未被 Git 跟踪；2) OpenClaw 插件 API 路径与独立服务路径混淆；3) 数据库配置不一致导致连接失败；4) TypeScript 源码修改后未重新编译导致运行时错误。",
+      "userQuery": "你怎么又没索引上git，前端被你搞坏了",
+      "solution": "1. 将 .gitignore 从白名单模式改为黑名单模式，追踪所有文件只忽略特定目录；2. 明确区分 extensions/novel-manager(插件，路径/novel/api/) 和 apps/novel-manager(独立服务，路径/api/novel/)；3. 统一数据库配置，修正密码为 Lgp15237257500；4. 修改 TypeScript 后必须执行 pnpm build 重新编译；5. 使用 grep_file 快速定位代码位置，使用 exec_shell 验证服务状态",
+      "experienceApplied": [
+        "Git 配置管理",
+        "OpenClaw 插件架构",
+        "Node.js 服务调试",
+        "数据库连接配置"
+      ],
+      "experienceGained": [
+        ".gitignore 白名单vs黑名单模式",
+        "OpenClaw 插件路由机制(/novel/api/)",
+        "TypeScript 编译同步",
+        "多模块项目架构管理(apps vs extensions)",
+        "MySQL 连接配置",
+        "服务重启最佳实践"
+      ],
+      "tags": [
+        "git",
+        "openclaw",
+        "typescript",
+        "architecture",
+        "debugging",
+        "mysql",
+        "module"
+      ],
+      "difficulty": 5,
+      "xpGained": 250,
+      "id": "exp_1773894600000_git_architecture",
+      "timestamp": 1773894600000
+    },
+    {
+      "type": "problem_solving",
+      "title": "Node.js 服务端口被占用问题排查",
+      "description": "novel-manager 服务重启时经常出现端口被占用错误。根本原因是旧进程没有完全退出，导致新进程无法绑定端口。重复犯这个错误是因为每次都用 pkill 但没检查是否真的杀死，而且没意识到旧进程还在监听端口。",
+      "userQuery": "为什么总会出现这样的错误，还有之前的错误",
+      "solution": "1. 使用 lsof -i :3001 查找占用进程 PID\n2. 使用 kill -9 <PID> 强制杀死进程\n3. 确认端口释放后再启动服务\n4. 更好的方案是使用 pm2 或 systemctl 管理进程，避免手动启停",
+      "experienceApplied": [
+        "进程管理",
+        "端口排查",
+        "服务管理"
+      ],
+      "experienceGained": [
+        "lsof 命令使用",
+        "kill 信号处理",
+        "Node.js 进程生命周期",
+        "系统性排查方法"
+      ],
+      "tags": [
+        "nodejs",
+        "port",
+        "process",
+        "troubleshooting",
+        "eaddrinuse"
+      ],
+      "difficulty": 3,
+      "xpGained": 150,
+      "id": "exp_1773891300000_port_occupied",
+      "timestamp": 1773891300000
+    },
+    {
+      "type": "problem_solving",
+      "title": "OpenClaw 插件架构理解错误",
+      "description": "反复把功能加到 wrong 位置。小说管理模块在 apps/novel-manager 和 extensions/novel-manager 各有一份，但 OpenClaw 实际加载的是 extensions/novel-manager 插件版本。UI 上经验积累是一级模块，但后端 API 却在 novel-manager 插件里实现，导致混淆。",
+      "userQuery": "你怎么又加到小说管理模块里了",
+      "solution": "1. 查看 openclaw.json 确认插件加载路径\n2. 理解 OpenClaw 插件架构：插件注册在 extensions/，但由网关统一路由\n3. 确认经验积累 API 实际在 novel-manager 插件 index.ts 中实现\n4. 区分独立服务和插件的不同部署方式",
+      "experienceApplied": [
+        "架构分析",
+        "配置文件阅读"
+      ],
+      "experienceGained": [
+        "OpenClaw 插件系统",
+        "微前端架构",
+        "网关路由机制"
+      ],
+      "tags": [
+        "openclaw",
+        "plugin",
+        "architecture",
+        "micro-frontend"
+      ],
+      "difficulty": 4,
+      "xpGained": 200,
+      "id": "exp_1773891400000_plugin_arch",
+      "timestamp": 1773891400000
+    },
+    {
+      "type": "problem_solving",
+      "title": "在OpenClaw原生界面添加经验积累入口",
+      "description": "用户要求将经验积累入口放在OpenClaw原生界面的自动化模组旁边。通过修改/usr/lib/node_modules/openclaw/dist/control-ui/index.html，在导航栏添加了经验积累按钮，并创建了独立的experience.html页面。",
+      "userQuery": "你不是有自我学习和经验积累模块...你开一个ui入口在自动化模组旁边",
+      "solution": "1. 找到OpenClaw原生界面文件：/usr/lib/node_modules/openclaw/dist/control-ui/index.html\n2. 在导航栏添加经验积累按钮，位于自动化模组和原生界面之间\n3. 创建experience.html独立页面，包含等级系统、经验列表、添加功能\n4. 更新路由指向新的页面",
+      "experienceApplied": [
+        "文件定位",
+        "HTML/CSS布局",
+        "iframe嵌入"
+      ],
+      "experienceGained": [
+        "OpenClaw界面定制",
+        "多页面应用结构",
+        "独立功能模块设计"
+      ],
+      "tags": [
+        "openclaw",
+        "ui",
+        "dashboard"
+      ],
+      "difficulty": 3,
+      "xpGained": 150,
+      "id": "exp_1773842557215_qjhwxnzo7",
+      "timestamp": 1773842557215
+    },
+    {
+      "type": "feature_dev",
+      "title": "开发经验积累与学习系统",
+      "description": "用户要求创建自我学习和经验积累模块，记录每次回答如何运用经验以及如何积累经验。系统包括经验类型、难度等级、解决方案等维度。",
+      "userQuery": "你不是有自我学习和经验积累模块吗，开一个ui入口显示积累了多少经验",
+      "solution": "1. 设计经验积累数据模型\n2. 创建ExperienceRepository类使用JSON存储\n3. 添加API路由\n4. 在UI顶部导航添加入口\n5. 创建经验面板页面\n6. 添加详情和添加记录的模态框",
+      "experienceApplied": [
+        "模块化设计",
+        "前后端分离",
+        "JSON存储"
+      ],
+      "experienceGained": [
+        "经验系统设计",
+        "数据可视化",
+        "等级进度计算"
+      ],
+      "tags": [
+        "typescript",
+        "ui",
+        "feature"
+      ],
+      "difficulty": 4,
+      "xpGained": 200,
+      "id": "exp_1773841595829_j24ef6vlx",
+      "timestamp": 1773841595829
+    },
+    {
+      "type": "bug_fix",
+      "title": "修复小说管理UI语法错误导致页面卡住",
+      "description": "用户反馈UI卡住且作品列表不显示，经过检查发现是HTML文件中JavaScript存在多处语法错误，包括孤立的catch块、重复嵌套的else if代码块、以及散落在函数外的模板字符串。",
+      "userQuery": "ui卡住了也没作品",
+      "solution": "1. 使用node --check检测语法错误定位问题行\n2. 移除renderWorksList中孤立的catch块\n3. 清理renderTabData中重复嵌套的else if代码\n4. 删除renderChapters外散落的模板字符串代码",
+      "experienceApplied": [
+        "JS语法检查",
+        "错误定位技巧",
+        "curl调试"
+      ],
+      "experienceGained": [
+        "HTML文件结构审查",
+        "代码清理最佳实践"
+      ],
+      "tags": [
+        "javascript",
+        "debug",
+        "ui"
+      ],
+      "difficulty": 3,
+      "xpGained": 150,
+      "id": "exp_1773841580349_wo395dz7n",
+      "timestamp": 1773841580349
+    }
+  ],
+  "version": "1.0"
+}

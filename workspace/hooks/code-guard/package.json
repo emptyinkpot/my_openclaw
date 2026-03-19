@@ -1,0 +1,9 @@
+{
+  "name": "code-guard",
+  "version": "1.0.0",
+  "description": "OpenClaw Hook: code-guard",
+  "main": "index.js",
+  "openclaw": {
+    "hooks": ["code-guard"]
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "name": "@openclaw/root",
+  "version": "2.0.0",
+  "private": true,
+  "description": "OpenClaw - 个人AI助手系统",
+  "packageManager": "pnpm@8.15.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "extensions/*",
+    "scripts"
+  ],
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev": "pnpm --filter @openclaw/novel-manager dev",
+    "test": "pnpm -r test",
+    "clean": "pnpm -r clean"
+  },
+  "dependencies": {
+    "@langchain/core": "^1.1.32",
+    "@langchain/langgraph": "^1.2.2",
+    "better-sqlite3": "^12.8.0",
+    "express": "^5.2.1",
+    "fs-extra": "^11.3.4",
+    "js-yaml": "^4.1.1",
+    "mammoth": "^1.12.0",
+    "mysql2": "^3.20.0",
+    "playwright": "^1.58.2",
+    "sql.js": "^1.14.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

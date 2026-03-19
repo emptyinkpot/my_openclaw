@@ -1,0 +1,33 @@
+{
+  "version": "1.0",
+  "schedules": [
+    {
+      "id": "s1",
+      "name": "番茄小说发布",
+      "active": true,
+      "cron": "0 9,21 * * *",
+      "script": "publish/fanqie.js"
+    },
+    {
+      "id": "s2",
+      "name": "白日梦同步",
+      "active": true,
+      "cron": "0 */6 * * *",
+      "script": "publish/baimeng.js"
+    },
+    {
+      "id": "s3",
+      "name": "AI内容生成",
+      "active": false,
+      "cron": "0 2 * * *",
+      "script": "ai/generate.js"
+    },
+    {
+      "id": "s4",
+      "name": "番茄数据扫描",
+      "active": true,
+      "cron": "*/30 * * * *",
+      "script": "scan/fanqie.js"
+    }
+  ]
+}

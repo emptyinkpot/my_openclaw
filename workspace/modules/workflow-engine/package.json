@@ -1,0 +1,17 @@
+{
+  "name": "@openclaw-modules/workflow-engine",
+  "version": "1.0.0",
+  "description": "复杂自动化流程编排引擎 - 支持串行/并行/条件/循环/重试",
+  "main": "src/index.js",
+  "keywords": [
+    "workflow",
+    "automation",
+    "orchestration",
+    "pipeline"
+  ],
+  "author": "OpenClaw",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

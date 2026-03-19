@@ -1,0 +1,167 @@
+{
+  "platform": "baimeng",
+  "savedAt": "2026-03-17T12:29:59.799Z",
+  "cookies": [
+    {
+      "name": "_ga",
+      "value": "GA1.1.510485998.1773311417",
+      "domain": ".baimengxiezuo.com",
+      "path": "/",
+      "expires": 1808310596.020763,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "HMACCOUNT_BFESS",
+      "value": "7BAEA529EA251519",
+      "domain": ".hm.baidu.com",
+      "path": "/",
+      "expires": 1808303599.94887,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "x-web-secsdk-uid",
+      "value": "7d339db9-acae-4031-8eb3-b44ef2be7882",
+      "domain": "fanqienovel.com",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "Hm_lvt_2667d29c8e792e6fa9182c20a3013175",
+      "value": "1773743600",
+      "domain": ".fanqienovel.com",
+      "path": "/",
+      "expires": 1805279600,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "Hm_lpvt_2667d29c8e792e6fa9182c20a3013175",
+      "value": "1773743600",
+      "domain": ".fanqienovel.com",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "HMACCOUNT",
+      "value": "7BAEA529EA251519",
+      "domain": ".fanqienovel.com",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "csrf_session_id",
+      "value": "3f78d41a18d96f12e5df8cb5596fe819",
+      "domain": "fanqienovel.com",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "s_v_web_id",
+      "value": "verify_mmuh56hp_bnKOso0Z_7ikE_4eUs_9ye2_a9Le4rlMA6LJ",
+      "domain": "fanqienovel.com",
+      "path": "/",
+      "expires": 1778927601,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "ttwid",
+      "value": "1%7CIul66PA5HzKhbmgo5W_FbM6pTj8YtQeN585s85fb9gM%7C1773743601%7Ced3fc1d41c9963c38ea1d53aad67a7f6e5834232cedab2712a08d798384ca3cb",
+      "domain": ".bytedance.com",
+      "path": "/",
+      "expires": 1805279602.064853,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "novel_web_id",
+      "value": "7618170724742710824",
+      "domain": "fanqienovel.com",
+      "path": "/",
+      "expires": 1781519603,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "gfkadpd",
+      "value": "2503,36144",
+      "domain": "fanqienovel.com",
+      "path": "/",
+      "expires": 1774002804,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "serial_uuid",
+      "value": "7618170724742710824",
+      "domain": ".fanqienovel.com",
+      "path": "/",
+      "expires": 1781519606,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "serial_webid",
+      "value": "7618170724742710824",
+      "domain": ".fanqienovel.com",
+      "path": "/",
+      "expires": 1781519606,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "ttwid",
+      "value": "1%7CIul66PA5HzKhbmgo5W_FbM6pTj8YtQeN585s85fb9gM%7C1773743606%7Ca7384ee8469fd02665644a186db1d0498d31500fee1b0c57a137939eb93cb763",
+      "domain": ".fanqienovel.com",
+      "path": "/",
+      "expires": 1805279606.616856,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "None"
+    },
+    {
+      "name": "_ga_9SMVMRQ4E5",
+      "value": "GS2.1.s1773745017$o3$g1$t1773750596$j60$l0$h0",
+      "domain": ".baimengxiezuo.com",
+      "path": "/",
+      "expires": 1808310596.060205,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ],
+  "localStorage": {
+    "i18nextLng": "zh-Hans",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Im9qQU81N1pwLXU3Um9tc0w3UU5BYUVVRC10NTAiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJ3ZWNoYXQiLCJwcm92aWRlcnMiOlsid2VjaGF0Il19LCJ1c2VyX21ldGFkYXRhIjp7Im5hbWUiOiLlgbfmkbjpm7bmlLvlh7siLCJpbnZpdGVyQ29kZSI6IkVCRU5JRyIsInN1YiI6Im9qQU81N1pwLXU3Um9tc0w3UU5BYUVVRC10NTAiLCJwcmVmZXJyZWRMYW5ndWFnZSI6InpoLUhhbnMifSwiaWF0IjoxNzczMzE1MTc0fQ.Uc2PpIGqwA8eu7fJcm9LzAWsVoOQEyU8bnV2bCSGQHY",
+    "agent-mode-storage": "{\"state\":{\"autoMode\":true,\"promptTemplate\":null},\"version\":1}",
+    "review-mode-storage": "{\"state\":{\"originalContent\":null,\"reviewedContent\":null},\"version\":0}",
+    "ui-settings": "{\"state\":{\"uiSettings\":{\"fontFamily\":\"\\\"STKaiti\\\", \\\"KaiTi\\\", serif\",\"fontSize\":21,\"lineHeight\":1.4,\"fontWeight\":\"normal\",\"autoIndent\":true,\"showDirectory\":true,\"showChatPanel\":true,\"wordWrapColumn\":80,\"activeTab\":\"chat\",\"currentPrompt\":null,\"optionContentLength\":100,\"optionCount\":3,\"explorerWidth\":15,\"middlePanelWidth\":55,\"chatPanelWidth\":30,\"editorMargin\":20,\"polishFormalityLevel\":\"neutral\",\"polishTonePreservation\":true,\"polishGrammarCorrection\":true,\"activeContentIds\":{\"0e2c282b-8eab-42f0-9007-2ea0d3a52162\":\"255dd2bc\",\"c4cea052-67e8-447c-8e29-8c0c93c3cbec\":\"11500114\",\"490d896c-1802-4099-8bb9-3be0ab99641e\":\"669a8805\",\"6134760b-a089-4e33-a1ed-a2464e1f15c1\":\"8a6831c7\"},\"isOutlineExpanded\":false,\"temperature\":1,\"bookExplorerSortDescending\":true,\"showInspiration\":false,\"editorDarkMode\":false,\"showTitleBar\":false,\"alwaysShowWordCount\":false,\"swapEnterShiftEnter\":false,\"themeColor\":\"blue\",\"backgroundStyle\":\"default\"}},\"version\":20}",
+    "humanize-mode-storage": "{\"state\":{\"promptTemplate\":null},\"version\":0}",
+    "notification-storage": "{\"state\":{\"displayRecord\":{\"lastShownTime\":1773315356429,\"dismissedNotificationIds\":[]}},\"version\":1}",
+    "work-store": "{\"state\":{\"workSnippets\":{\"0e2c282b-8eab-42f0-9007-2ea0d3a52162\":[{\"id\":\"3ea9e7ad\",\"title\":\"第六十三章\",\"onlyOutline\":false},{\"id\":\"48e0afb1\",\"title\":\"第六十四章\",\"onlyOutline\":false},{\"id\":\"0c7d1c38\",\"title\":\"第六十五章\",\"onlyOutline\":false},{\"id\":\"1cb9245c\",\"title\":\"故事脉络\",\"onlyOutline\":false},{\"id\":\"e8194981\",\"title\":\"世界观及人设\",\"onlyOutline\":false},{\"id\":\"f34f1758\",\"title\":\"核心风格\",\"onlyOutline\":false},{\"id\":\"9c94238b\",\"title\":\"200章细纲\",\"onlyOutline\":false},{\"id\":\"27fabcbb\",\"title\":\"固定要求\",\"onlyOutline\":false},{\"id\":\"e6c10159\",\"title\":\"清水文\",\"onlyOutline\":false}],\"caf1eedf-b14a-461b-a8c4-c0336204e92f\":[{\"id\":\"62074fc1\",\"title\":\"第三十八章\",\"onlyOutline\":false},{\"id\":\"a552c38c\",\"title\":\"第三十九章闯深宫\",\"onlyOutline\":false},{\"id\":\"eac49cfc\",\"title\":\"第四十章\",\"onlyOutline\":false},{\"id\":\"5af6491b\",\"title\":\"清水文\",\"onlyOutline\":false},{\"id\":\"e5e80ce3\",\"title\":\"人物设定\",\"onlyOutline\":false},{\"id\":\"65cb2cc0\",\"title\":\"大纲\",\"onlyOutline\":false},{\"id\":\"fb61e6d3\",\"title\":\"第一卷\",\"onlyOutline\":false},{\"id\":\"7b710d3c\",\"title\":\"第二卷\",\"onlyOutline\":false},{\"id\":\"de557b47\",\"title\":\"第三卷\",\"onlyOutline\":false},{\"id\":\"4cf1cd2d\",\"title\":\"第四卷\",\"onlyOutline\":false},{\"id\":\"296b3f03\",\"title\":\"第五卷\",\"onlyOutline\":false}],\"c4cea052-67e8-447c-8e29-8c0c93c3cbec\":[{\"id\":\"71b287e7\",\"title\":\"第七十八章\",\"onlyOutline\":false},{\"id\":\"f4327a88\",\"title\":\"第七十九章\",\"onlyOutline\":false},{\"id\":\"e37d625b\",\"title\":\"第八十章\",\"onlyOutline\":false},{\"id\":\"f09a17c8\",\"title\":\"设定风格\",\"onlyOutline\":false},{\"id\":\"220d4906\",\"title\":\"固定要求\",\"onlyOutline\":false},{\"id\":\"eb1312f3\",\"title\":\"角色设定集\",\"onlyOutline\":false},{\"id\":\"e0b23b20\",\"title\":\"章节生成指令\",\"onlyOutline\":false},{\"id\":\"6e841ae0\",\"title\":\"设定集\",\"onlyOutline\":false},{\"id\":\"315c1caa\",\"title\":\"章节\",\"onlyOutline\":false}],\"490d896c-1802-4099-8bb9-3be0ab99641e\":[{\"id\":\"afca6cc0\",\"title\":\"第九十八章\",\"onlyOutline\":false},{\"id\":\"a0b1e07f\",\"title\":\"第九十九章\",\"onlyOutline\":false}],\"6134760b-a089-4e33-a1ed-a2464e1f15c1\":[{\"id\":\"55267df9\",\"title\":\"第十二章\",\"onlyOutline\":false},{\"id\":\"879f8e63\",\"title\":\"第十三章\",\"onlyOutline\":false},{\"id\":\"89ec3b72\",\"title\":\"第十四章\",\"onlyOutline\":false},{\"id\":\"b616695e\",\"title\":\"第一卷\",\"onlyOutline\":false},{\"id\":\"b81cbf6e\",\"title\":\"第二卷\",\"onlyOutline\":false},{\"id\":\"f7b52e59\",\"title\":\"第三卷\",\"onlyOutline\":false},{\"id\":\"447b6a16\",\"title\":\"第四卷\",\"onlyOutline\":false}]}},\"version\":0}",
+    "summarize-outline-mode-storage": "{\"state\":{},\"version\":0}"
+  }
+}

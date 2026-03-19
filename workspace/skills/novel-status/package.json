@@ -1,0 +1,9 @@
+{
+  "name": "novel-status",
+  "version": "1.0.0",
+  "description": "查询小说更新发布状态",
+  "main": "index.js",
+  "claw": {
+    "type": "skill"
+  }
+}

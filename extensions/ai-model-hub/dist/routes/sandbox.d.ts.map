@@ -1,0 +1,1 @@
+{"version":3,"file":"sandbox.d.ts","sourceRoot":"","sources":["../../src/routes/sandbox.ts"],"names":[],"mappings":"AAAA;;GAEG;AAEH,OAAO,EAAE,MAAM,EAAE,MAAM,SAAS,CAAC;AACjC,OAAO,EAAE,cAAc,EAAE,MAAM,4BAA4B,CAAC;AAE5D,qBAAa,aAAa;IACxB,OAAO,CAAC,MAAM,CAAS;IACvB,OAAO,CAAC,OAAO,CAAiB;gBAEpB,OAAO,EAAE,cAAc;IAMnC,OAAO,CAAC,WAAW;IA0CZ,SAAS,IAAI,MAAM;CAG3B"}
