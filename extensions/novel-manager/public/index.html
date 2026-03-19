@@ -964,6 +964,25 @@
     let parsedChapters = [];
     let parsedCharacters = [];
     let parsedVolumes = [];
+    
+    // ====== 数据缓存系统 ======
+    const dataCache = {
+      works: null,
+      workDetails: new Map(), // workId -> { data, timestamp }
+      stats: null,
+      cacheDuration: 60000, // 1分钟缓存
+      
+      getWorkDetail(workId) {
+        const cached = this.workDetails.get(workId);
+        if (cached && Date.now() - cached.timestamp < this.cacheDuration) {
+          return cached.data;
+        }
+        return null;
+      },
+      
+      setWorkDetail(workId, data) {
+        this.workDetails.set(workId, { data, timestamp: Date.now() });
+      },
       
       clear() {
         this.works = null;
@@ -1247,65 +1266,6 @@
       return Array.from(checks).map(cb => cb.value);
     }
 
-    // 加载缓存的番茄作品
-    function loadCachedFanqieWorks() {
-      const cached = getCache('fanqieWorks');
-      if (cached && cached.length > 0) {
-        return cached;
-      }
-      return null;
-    }
-
-    // 显示番茄作品列表
-    function displayFanqieWorks(works) {
-      const resultEl = document.getElementById('fanqieWorksList');
-      const statusEl = document.getElementById('fanqieScanStatus');
-      
-      if (!works || works.length === 0) {
-        resultEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);grid-column:1/-1;"><div style="font-size:32px;margin-bottom:8px;">📭</div>暂无数据<br><div style="font-size:11px;margin-top:8px;">点击扫描获取最新作品</div></div>';
-        statusEl.textContent = '无缓存';
-        return;
-      }
-      
-      // 去重
-      const uniqueWorks = [];
-      const seenIds = new Set();
-      for (const w of works) {
-        if (!seenIds.has(w.workId)) {
-          seenIds.add(w.workId);
-          uniqueWorks.push(w);
-        }
-      }
-      
-      resultEl.innerHTML = uniqueWorks.map(w => `
-        <div class="fanqie-work-card ${selectedFanqieWorkId === w.workId ? 'selected' : ''}" 
-             onclick="selectFanqieWork('${w.workId}', '${w.title.replace(/'/g, "\\'")}')"
-             style="cursor: pointer; border: 2px solid ${selectedFanqieWorkId === w.workId ? 'var(--accent)' : 'var(--border)'}; transition: all 0.2s;">
-          <div class="fanqie-work-header">
-            <div class="fanqie-work-title">${w.title}</div>
-            <span class="fanqie-work-status ${w.status?.includes('签约') ? 'signed' : 'ongoing'}">${w.status || '连载'}</span>
-          </div>
-          <div style="font-size:10px;color:var(--text-muted);margin:4px 0;">${w.accountName || w.accountId}</div>
-          <div class="fanqie-work-meta">
-            <div class="fanqie-meta-item">
-              <div class="fanqie-meta-value">${w.totalChapters || 0}</div>
-              <div class="fanqie-meta-label">章节</div>
-            </div>
-            <div class="fanqie-meta-item">
-              <div class="fanqie-meta-value">${w.wordCount || '-'}</div>
-              <div class="fanqie-meta-label">字数</div>
-            </div>
-            <div class="fanqie-meta-item">
-              <div class="fanqie-meta-value" style="font-size:10px;">${w.workId?.slice(-6) || '-'}</div>
-              <div class="fanqie-meta-label">ID</div>
-            </div>
-          </div>
-        </div>
-      `).join('');
-      
-      statusEl.textContent = `共 ${uniqueWorks.length} 部作品 (缓存)`;
-    }
-
     async function scanFanqieWorks() {
       const selectedAccounts = getSelectedAccounts();
       const resultEl = document.getElementById('fanqieWorksList');
@@ -1316,23 +1276,15 @@
         return;
       }
       
-      // 先显示缓存数据（快速响应）
-      const cachedWorks = loadCachedFanqieWorks();
-      if (cachedWorks) {
-        displayFanqieWorks(cachedWorks);
-        showToast('📡 后台扫描中，当前显示缓存数据...', 'info');
-      } else {
-        resultEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);grid-column:1/-1;">📡 正在扫描番茄小说作品...<br><div style="font-size:11px;margin-top:8px;">已选 ' + selectedAccounts.length + ' 个账号（约需20秒）</div></div>';
-      }
-      
+      resultEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);grid-column:1/-1;">📡 正在扫描番茄小说作品...<br><div style="font-size:11px;margin-top:8px;">已选 ' + selectedAccounts.length + ' 个账号</div></div>';
       statusEl.textContent = '扫描中...';
       
       try {
-        let allWorks = cachedWorks || [];
+        let allWorks = [];
         
         // 依次扫描每个账号
         for (const accountId of selectedAccounts) {
-          statusEl.textContent = `扫描 ${accountId}...`;
+          statusEl.textContent = `正在扫描 ${accountId}...`;
           
           const scanResult = await api('/fanqie/scan', { 
             method: 'POST',
@@ -1345,23 +1297,52 @@
         }
         
         if (allWorks.length === 0) {
-          if (!cachedWorks) {
-            resultEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);grid-column:1/-1;"><div style="font-size:32px;margin-bottom:8px;">📭</div>未找到作品<br><div style="font-size:11px;margin-top:8px;">请检查Cookie是否过期</div></div>';
-            statusEl.textContent = '无作品';
-          }
+          resultEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);grid-column:1/-1;"><div style="font-size:32px;margin-bottom:8px;">📭</div>未找到作品<br><div style="font-size:11px;margin-top:8px;">请检查Cookie是否过期</div></div>';
+          statusEl.textContent = '无作品';
           return;
         }
         
-        // 缓存结果
-        setCache('fanqieWorks', allWorks);
-        displayFanqieWorks(allWorks);
-        showToast(`✅ 扫描完成，共 ${allWorks.length} 部作品`, 'success');
-        
-      } catch (err) {
-        if (!cachedWorks) {
-          resultEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--danger);grid-column:1/-1;"><div style="font-size:32px;margin-bottom:8px;">❌</div>扫描失败: ${err.message}</div>`;
-          statusEl.textContent = '扫描失败';
+        // 去重（按workId）
+        const uniqueWorks = [];
+        const seenIds = new Set();
+        for (const w of allWorks) {
+          if (!seenIds.has(w.workId)) {
+            seenIds.add(w.workId);
+            uniqueWorks.push(w);
+          }
         }
+        
+        resultEl.innerHTML = uniqueWorks.map(w => `
+          <div class="fanqie-work-card ${selectedFanqieWorkId === w.workId ? 'selected' : ''}" 
+               onclick="selectFanqieWork('${w.workId}', '${w.title.replace(/'/g, "\\'")}')"
+               style="cursor: pointer; border: 2px solid ${selectedFanqieWorkId === w.workId ? 'var(--accent)' : 'var(--border)'}; transition: all 0.2s;">
+            <div class="fanqie-work-header">
+              <div class="fanqie-work-title">${w.title}</div>
+              <span class="fanqie-work-status ${w.status?.includes('签约') ? 'signed' : 'ongoing'}">${w.status || '连载'}</span>
+            </div>
+            <div style="font-size:10px;color:var(--text-muted);margin:4px 0;">${w.accountName || w.accountId}</div>
+            <div class="fanqie-work-meta">
+              <div class="fanqie-meta-item">
+                <div class="fanqie-meta-value">${w.totalChapters || 0}</div>
+                <div class="fanqie-meta-label">章节</div>
+              </div>
+              <div class="fanqie-meta-item">
+                <div class="fanqie-meta-value">${w.wordCount || '-'}</div>
+                <div class="fanqie-meta-label">字数</div>
+              </div>
+              <div class="fanqie-meta-item">
+                <div class="fanqie-meta-value" style="font-size:10px;">${w.workId?.slice(-6) || '-'}</div>
+                <div class="fanqie-meta-label">ID</div>
+              </div>
+            </div>
+          </div>
+        `).join('');
+        
+        statusEl.textContent = `共 ${uniqueWorks.length} 部作品`;
+        showToast(`✅ 扫描完成，共 ${uniqueWorks.length} 部作品`, 'success');
+      } catch (err) {
+        resultEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--danger);grid-column:1/-1;"><div style="font-size:32px;margin-bottom:8px;">❌</div>扫描失败: ${err.message}</div>`;
+        statusEl.textContent = '扫描失败';
         showToast('❌ 扫描失败: ' + err.message, 'error');
       }
     }
@@ -1540,104 +1521,23 @@
     }
 
     // 初始化
-    // ====== 缓存管理 ======
-    const CACHE_PREFIX = 'novel_cache_';
-    const CACHE_TTL = {
-      stats: 5 * 60 * 1000,      // 统计缓存 5分钟
-      works: 5 * 60 * 1000,      // 作品列表 5分钟
-      fanqieWorks: 30 * 60 * 1000, // 番茄作品 30分钟
-      chapters: 10 * 60 * 1000   // 章节内容 10分钟
-    };
-    
-    // 获取缓存
-    function getCache(key) {
-      try {
-        const cached = localStorage.getItem(CACHE_PREFIX + key);
-        if (!cached) return null;
-        const { data, timestamp } = JSON.parse(cached);
-        const ttl = CACHE_TTL[key.split('_')[0]] || 60000;
-        if (Date.now() - timestamp > ttl) {
-          localStorage.removeItem(CACHE_PREFIX + key);
-          return null;
-        }
-        return data;
-      } catch { return null; }
-    }
-    
-    // 设置缓存
-    function setCache(key, data) {
-      try {
-        localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({
-          data,
-          timestamp: Date.now()
-        }));
-      } catch (e) {
-        // localStorage 满，清理旧缓存
-        clearOldCache();
-      }
-    }
-    
-    // 清理过期缓存
-    function clearOldCache() {
-      const keys = Object.keys(localStorage);
-      keys.filter(k => k.startsWith(CACHE_PREFIX)).forEach(k => {
-        try {
-          const { timestamp } = JSON.parse(localStorage.getItem(k));
-          if (Date.now() - timestamp > 24 * 60 * 60 * 1000) {
-            localStorage.removeItem(k);
-          }
-        } catch { localStorage.removeItem(k); }
-      });
-    }
-
     async function init() {
-      // 处理URL参数
+      // 处理URL参数，自动跳转到对应子页面
       const urlParams = new URLSearchParams(window.location.search);
       const page = urlParams.get('page');
       if (page) {
+        // 延迟执行，确保DOM加载完成
         setTimeout(() => showSubPage(page), 100);
       }
       
       try {
-        // 先尝试显示缓存数据（快速响应）
-        const cachedStats = getCache('stats');
-        const cachedWorks = getCache('works');
-        
-        if (cachedStats) {
-          updateStatsUI(cachedStats);
-        }
-        if (cachedWorks) {
-          renderWorksList(cachedWorks);
-        }
-        
-        // 后台刷新数据
-        const showLoading = !cachedStats && !cachedWorks;
-        if (showLoading) {
-          showToast('🚀 正在加载数据...', 'info');
-        }
-        
-        const [statsResult, worksResult] = await Promise.all([
-          api('/stats'),
-          api('/works')
-        ]);
-        
-        if (statsResult.success) {
-          setCache('stats', statsResult.data);
-          updateStatsUI(statsResult.data);
-        }
-        if (worksResult.success) {
-          setCache('works', worksResult.data);
-          renderWorksList(worksResult.data);
-        }
-        
-        if (showLoading) {
-          showToast('✅ 数据加载完成', 'success');
-        }
+        showToast('🚀 正在加载数据...', 'info');
+        await Promise.all([loadStats(), loadWorks()]);
+        showToast('✅ 数据加载完成', 'success');
       } catch (err) {
         console.error('初始化失败:', err);
-        if (!getCache('stats') && !getCache('works')) {
-          showToast('❌ 数据加载失败: ' + (err.message || '网络错误'), 'error');
-        }
+        showToast('❌ 数据加载失败: ' + (err.message || '网络错误'), 'error');
+        document.getElementById('worksList').innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-muted);">加载失败，请检查网络连接</div>';
       }
     }
 
@@ -1651,6 +1551,24 @@
       return res.json();
     }
 
+    // 加载统计（带缓存）
+    async function loadStats(forceRefresh = false) {
+      try {
+        // 使用缓存
+        if (!forceRefresh && dataCache.stats) {
+          updateStatsUI(dataCache.stats);
+          return;
+        }
+        
+        const result = await api('/stats');
+        const data = result.data || {};
+        dataCache.stats = data;
+        updateStatsUI(data);
+      } catch (err) { 
+        console.error('Stats error:', err); 
+      }
+    }
+    
     function updateStatsUI(data) {
       document.getElementById('statWorks').textContent = data.works || 0;
       document.getElementById('statChapters').textContent = data.chapters || 0;
@@ -1664,41 +1582,21 @@
     // 加载作品列表（带缓存）
     async function loadWorks(forceRefresh = false) {
       try {
-        // 先显示缓存
-        const cached = getCache('works');
-        if (!forceRefresh && cached) {
-          worksData = cached;
-          renderWorksList(cached);
+        // 使用缓存
+        if (!forceRefresh && dataCache.works) {
+          worksData = dataCache.works;
+          renderWorksList(worksData);
           return;
         }
         
         const result = await api('/works');
         const data = result.data || [];
         worksData = data;
-        setCache('works', data);
+        dataCache.works = data;
         renderWorksList(data);
       } catch (err) { 
         console.error('Works error:', err);
         document.getElementById('worksList').innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-muted);">加载失败</div>';
-      }
-    }
-    
-    // 加载统计（带缓存）
-    async function loadStats(forceRefresh = false) {
-      try {
-        // 先显示缓存
-        const cached = getCache('stats');
-        if (!forceRefresh && cached) {
-          updateStatsUI(cached);
-          return;
-        }
-        
-        const result = await api('/stats');
-        const data = result.data || {};
-        setCache('stats', data);
-        updateStatsUI(data);
-      } catch (err) { 
-        console.error('Stats error:', err); 
       }
     }
     
