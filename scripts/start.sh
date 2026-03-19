@@ -18,14 +18,12 @@ supervisorctl -s unix:///tmp/supervisor.sock start openclaw-gateway 2>/dev/null
 # 等待Gateway启动
 sleep 3
 
-# 启动小说数据管理 Web UI
-echo "Starting Novel Manager on port 3001..."
-cd /workspace/projects/apps/novel-manager
-nohup pnpm start > /tmp/novel-manager.log 2>&1 &
+# 小说管理已集成到 OpenClaw 插件
+# 访问地址: http://localhost:5000/novel/
 
 echo ""
 echo "Services started:"
 echo "- OpenClaw Gateway: http://localhost:5000 (managed by supervisor)"
-echo "- Novel Manager: http://localhost:3001"
+echo "- Novel Manager: http://localhost:5000/novel/ (integrated plugin)"
 echo ""
 echo "To check status: supervisorctl -s unix:///tmp/supervisor.sock status"
