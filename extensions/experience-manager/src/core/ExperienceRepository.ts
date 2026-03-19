@@ -3,12 +3,14 @@
  * 高内聚：所有经验相关功能集中于此
  * 自包含：独立数据存储，无外部依赖
  * 
- * 集成 memory-lancedb-pro 支持语义检索
+ * 职责说明：
+ * - 本模块负责结构化记录问题解决经验
+ * - memory-lancedb-pro 负责 AI Agent 的自动学习和记忆
+ * - 两者职责分离，互不依赖
  */
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { MemoryService, memoryService } from './MemoryService';
 
 /**
  * 查找数据文件路径 - 支持多种运行环境
@@ -129,12 +131,6 @@ export class ExperienceRepository {
     };
     this.data.records.unshift(newRecord);
     this.save();
-    
-    // 异步同步到 memory-lancedb-pro
-    memoryService.storeExperience(newRecord).catch(e => {
-      console.error('[Experience] 同步到 Memory 失败:', e);
-    });
-    
     return newRecord;
   }
 
@@ -171,43 +167,6 @@ export class ExperienceRepository {
       r.userQuery.toLowerCase().includes(lower) ||
       r.tags.some(t => t.toLowerCase().includes(lower))
     );
-  }
-
-  /**
-   * 语义搜索（通过 memory-lancedb-pro）
-   * 使用向量相似度检索相关经验
-   */
-  async semanticSearch(keyword: string, limit: number = 10): Promise<Array<ExperienceRecord & { score?: number }>> {
-    try {
-      const results = await memoryService.searchExperiences(keyword, limit);
-      
-      // 将检索结果映射回经验记录
-      const records: Array<ExperienceRecord & { score?: number }> = [];
-      
-      for (const result of results) {
-        if (result.metadata?.experienceId) {
-          const record = this.getById(result.metadata.experienceId);
-          if (record) {
-            records.push({ ...record, score: result.score });
-          }
-        }
-      }
-      
-      // 如果语义检索结果不足，补充关键词匹配结果
-      if (records.length < limit) {
-        const keywordResults = this.search(keyword);
-        for (const record of keywordResults) {
-          if (!records.find(r => r.id === record.id)) {
-            records.push(record);
-          }
-        }
-      }
-      
-      return records.slice(0, limit);
-    } catch (e) {
-      console.error('[Experience] 语义搜索失败，回退到关键词搜索:', e);
-      return this.search(keyword).slice(0, limit);
-    }
   }
 
   /**

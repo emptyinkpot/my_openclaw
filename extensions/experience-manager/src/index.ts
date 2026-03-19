@@ -7,21 +7,23 @@
  * - 自包含：独立的依赖、配置、数据存储
  * - 模块化：可独立运行、独立部署
  * 
- * 集成 memory-lancedb-pro 支持语义检索
+ * 职责说明：
+ * - 本模块负责结构化记录问题解决经验
+ * - memory-lancedb-pro 负责 AI Agent 的自动学习和记忆
+ * - 两者职责分离，互不依赖
  * 
  * @module experience-manager
- * @version 1.1.0
+ * @version 1.0.0
  */
 
 import { createApp, start } from './app';
 import { ExperienceRepository, experienceRepo } from './core/ExperienceRepository';
-import { MemoryService, memoryService } from './core/MemoryService';
 
 // 版本信息
-export const version = '1.1.0';
+export const version = '1.0.0';
 
 // 导出核心功能
-export { ExperienceRepository, experienceRepo, MemoryService, memoryService };
+export { ExperienceRepository, experienceRepo };
 export type { 
   ExperienceRecord, 
   ExperienceStats, 

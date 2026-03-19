@@ -456,23 +456,49 @@
             "model": "text-embedding-3-small",
             "baseURL": "${COZE_INTEGRATION_MODEL_BASE_URL}"
           },
+          "llm": {
+            "apiKey": "${COZE_WORKLOAD_IDENTITY_API_KEY}",
+            "model": "auto",
+            "baseURL": "${COZE_INTEGRATION_MODEL_BASE_URL}"
+          },
           "autoCapture": true,
           "autoRecall": true,
-          "smartExtraction": false,
+          "smartExtraction": true,
+          "extractMinMessages": 2,
+          "extractMaxChars": 8000,
+          "captureAssistant": false,
           "dbPath": "/workspace/projects/data/memory-lancedb",
           "retrieval": {
             "mode": "hybrid",
             "vectorWeight": 0.7,
             "bm25Weight": 0.3,
-            "minScore": 0.3
+            "minScore": 0.3,
+            "rerank": "cross-encoder",
+            "rerankApiKey": "${COZE_WORKLOAD_IDENTITY_API_KEY}",
+            "rerankModel": "jina-reranker-v2-base-multilingual",
+            "rerankEndpoint": "https://api.jina.ai/v1/rerank",
+            "rerankProvider": "jina",
+            "candidatePoolSize": 12,
+            "recencyHalfLifeDays": 14,
+            "recencyWeight": 0.1,
+            "hardMinScore": 0.35,
+            "timeDecayHalfLifeDays": 60,
+            "reinforcementFactor": 0.5
           },
           "enableManagementTools": true,
           "scopes": {
             "default": "global",
             "definitions": {
-              "global": { "description": "共享知识" },
-              "experience": { "description": "经验积累专用" }
+              "global": { "description": "共享知识库 - 所有 Agent 可见" },
+              "experience": { "description": "经验积累 - 问题解决方案" },
+              "project:novel": { "description": "小说项目专用记忆" }
+            },
+            "agentAccess": {
+              "default": ["global", "experience"]
             }
+          },
+          "sessionMemory": {
+            "enabled": false
           }
         }
       }
