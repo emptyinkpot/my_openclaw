@@ -418,16 +418,21 @@
     }
   },
   "plugins": {
+    "slots": {
+      "memory": "memory-lancedb-pro"
+    },
     "load": {
       "paths": [
         "/workspace/projects/extensions/novel-manager",
-        "/workspace/projects/extensions/experience-manager"
+        "/workspace/projects/extensions/experience-manager",
+        "/workspace/projects/extensions/memory-lancedb-pro"
       ]
     },
     "allow": [
       "feishu-openclaw-plugin",
       "novel-manager",
-      "experience-manager"
+      "experience-manager",
+      "memory-lancedb-pro"
     ],
     "entries": {
       "feishu": {
@@ -441,6 +446,35 @@
       },
       "experience-manager": {
         "enabled": true
+      },
+      "memory-lancedb-pro": {
+        "enabled": true,
+        "config": {
+          "embedding": {
+            "provider": "openai-compatible",
+            "apiKey": "${COZE_WORKLOAD_IDENTITY_API_KEY}",
+            "model": "text-embedding-3-small",
+            "baseURL": "${COZE_INTEGRATION_MODEL_BASE_URL}"
+          },
+          "autoCapture": true,
+          "autoRecall": true,
+          "smartExtraction": false,
+          "dbPath": "/workspace/projects/data/memory-lancedb",
+          "retrieval": {
+            "mode": "hybrid",
+            "vectorWeight": 0.7,
+            "bm25Weight": 0.3,
+            "minScore": 0.3
+          },
+          "enableManagementTools": true,
+          "scopes": {
+            "default": "global",
+            "definitions": {
+              "global": { "description": "共享知识" },
+              "experience": { "description": "经验积累专用" }
+            }
+          }
+        }
       }
     },
     "installs": {

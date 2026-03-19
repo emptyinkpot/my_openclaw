@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Version: 2026-03-20-v3 SSE Fixed -->
   <title>📚 小说数据中心 - Novel Data Center</title>
   <style>
     :root {
@@ -1413,29 +1414,50 @@
         pipelineEventSource.close();
       }
       
-      pipelineEventSource = new EventSource(API_BASE + '/fanqie/publish/progress/' + id);
+      // SSE 使用单独的端点，URL 参数传递 token
+      const sseUrl = '/novel/sse/progress/' + id + '?token=' + encodeURIComponent(GATEWAY_TOKEN);
+      console.log('[SSE] 连接:', sseUrl);
+      
+      pipelineEventSource = new EventSource(sseUrl);
+      
+      pipelineEventSource.onopen = () => {
+        console.log('[SSE] 连接已建立');
+        showToast('📡 已连接到流水线', 'info');
+      };
       
       pipelineEventSource.onmessage = (event) => {
-        const progress = JSON.parse(event.data);
-        updatePipelineUI(progress);
-        
-        if (progress.status === 'completed' || progress.status === 'error') {
-          pipelineEventSource.close();
-          pipelineEventSource = null;
-          document.getElementById('pipelineBtn').disabled = false;
-          document.getElementById('stopBtn').disabled = true;
+        console.log('[SSE] 收到消息:', event.data);
+        try {
+          const progress = JSON.parse(event.data);
+          updatePipelineUI(progress);
           
-          if (progress.status === 'completed') {
-            showToast('✅ 流水线执行完成', 'success');
-          } else {
-            showToast('❌ 流水线执行失败', 'error');
+          if (progress.status === 'completed' || progress.status === 'error') {
+            pipelineEventSource.close();
+            pipelineEventSource = null;
+            document.getElementById('pipelineBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            
+            if (progress.status === 'completed') {
+              showToast('✅ 流水线执行完成', 'success');
+            } else {
+              showToast('❌ 流水线执行失败: ' + (progress.error || progress.task), 'error');
+            }
           }
+        } catch (e) {
+          console.error('[SSE] 解析错误:', e);
         }
       };
       
-      pipelineEventSource.onerror = () => {
-        pipelineEventSource.close();
-        pipelineEventSource = null;
+      pipelineEventSource.onerror = (err) => {
+        console.error('[SSE] 连接错误:', err);
+        // 不要立即关闭，EventSource 会自动重连
+        // 只有在 readyState 为 CLOSED 时才关闭
+        if (pipelineEventSource && pipelineEventSource.readyState === EventSource.CLOSED) {
+          showToast('❌ SSE 连接已断开', 'error');
+          pipelineEventSource = null;
+          document.getElementById('pipelineBtn').disabled = false;
+          document.getElementById('stopBtn').disabled = true;
+        }
       };
     }
 

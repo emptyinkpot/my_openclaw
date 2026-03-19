@@ -7,18 +7,21 @@
  * - 自包含：独立的依赖、配置、数据存储
  * - 模块化：可独立运行、独立部署
  * 
+ * 集成 memory-lancedb-pro 支持语义检索
+ * 
  * @module experience-manager
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 import { createApp, start } from './app';
 import { ExperienceRepository, experienceRepo } from './core/ExperienceRepository';
+import { MemoryService, memoryService } from './core/MemoryService';
 
 // 版本信息
-export const version = '1.0.0';
+export const version = '1.1.0';
 
 // 导出核心功能
-export { ExperienceRepository, experienceRepo };
+export { ExperienceRepository, experienceRepo, MemoryService, memoryService };
 export type { 
   ExperienceRecord, 
   ExperienceStats, 

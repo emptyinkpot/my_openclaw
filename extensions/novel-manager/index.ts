@@ -127,6 +127,72 @@ async function handleNovelPage(req: IncomingMessage, res: ServerResponse): Promi
   return false;
 }
 
+// SSE 处理器 - 处理进度推送（使用 URL 参数认证）
+async function handleSse(req: IncomingMessage, res: ServerResponse): Promise<boolean | void> {
+  const url = req.url || '';
+  const method = req.method || 'GET';
+  const path = url.split('?')[0];
+  const query = parseQuery(url);
+  
+  // SSE 端点: /novel/sse/progress/:progressId
+  const progressMatch = path.match(/^\/novel\/sse\/progress\/([^/]+)$/);
+  if (progressMatch && method === 'GET') {
+    const progressId = progressMatch[1];
+    const token = query.token;
+    
+    // 验证 token（从 URL 参数）
+    const validToken = 'e1647cdb-1b80-4eee-a975-7599160cc89b';
+    if (token !== validToken) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: false, error: 'Unauthorized' }));
+      return true;
+    }
+    
+    console.log('[SSE] 客户端连接:', progressId);
+    
+    // 设置 SSE 响应头
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*',
+    });
+    
+    // 导入进度管理器
+    const { registerClient } = require('./core/pipeline/ProgressManager');
+    
+    // 注册客户端
+    const unregister = registerClient(progressId, (data: string) => {
+      try {
+        res.write(data);
+      } catch (e) {
+        console.error('[SSE] 写入失败:', e);
+      }
+    });
+    
+    // 心跳保活
+    const heartbeat = setInterval(() => {
+      try {
+        res.write(': heartbeat\n\n');
+      } catch (e) {
+        clearInterval(heartbeat);
+        unregister();
+      }
+    }, 15000);
+    
+    // 连接关闭时清理
+    req.on('close', () => {
+      console.log('[SSE] 客户端断开:', progressId);
+      clearInterval(heartbeat);
+      unregister();
+    });
+    
+    return true;
+  }
+  
+  return false;
+}
+
 // 路由处理器 - 处理 /api/novel/ API（需要认证）
 async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promise<boolean | void> {
   const url = req.url || '';
@@ -414,46 +480,11 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
     }
 
     // ====== 流水线进度 SSE ======
+    // SSE 路由已单独注册，这里不再处理
     const progressMatch = path.match(/^\/api\/novel\/fanqie\/publish\/progress\/([^/]+)$/);
     if (progressMatch && method === 'GET') {
-      const progressId = progressMatch[1];
-      
-      // 设置 SSE 响应头
-      res.writeHead(200, {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-        'Access-Control-Allow-Origin': '*',
-      });
-      
-      // 导入进度管理器
-      const { registerClient } = require('./core/pipeline/ProgressManager');
-      
-      // 注册客户端
-      const unregister = registerClient(progressId, (data: string) => {
-        try {
-          res.write(data);
-        } catch (e) {
-          console.error('[SSE] 写入失败:', e);
-        }
-      });
-      
-      // 心跳保活
-      const heartbeat = setInterval(() => {
-        try {
-          res.write(': heartbeat\n\n');
-        } catch (e) {
-          clearInterval(heartbeat);
-          unregister();
-        }
-      }, 15000);
-      
-      // 连接关闭时清理
-      req.on('close', () => {
-        clearInterval(heartbeat);
-        unregister();
-      });
-      
+      // 返回 404，让单独的 SSE 路由处理
+      jsonRes(res, { success: false, error: '请使用 /api/novel/sse/progress/ 端点' }, 404);
       return true;
     }
 
@@ -509,6 +540,13 @@ const plugin = {
         handler: handleNovelApi,
         auth: 'gateway'
       });
+      // 注册 SSE 路由 - 不需要认证（使用 URL 参数认证）
+      api.registerHttpRoute({
+        path: '/novel/sse',
+        match: 'prefix',
+        handler: handleSse,
+        auth: 'plugin'
+      });
     }
     // 尝试直接使用 registerPluginHttpRoute
     else if (registerPluginHttpRoute) {
@@ -527,6 +565,14 @@ const plugin = {
         match: 'prefix',
         handler: handleNovelApi,
         auth: 'gateway',
+        pluginId: 'novel-manager'
+      });
+      // 注册 SSE 路由
+      registerPluginHttpRoute({
+        path: '/novel/sse',
+        match: 'prefix',
+        handler: handleSse,
+        auth: 'plugin',
         pluginId: 'novel-manager'
       });
     }
@@ -550,6 +596,14 @@ const plugin = {
           match: 'prefix',
           handler: handleNovelApi,
           auth: 'gateway'
+        });
+        // SSE 路由
+        // @ts-ignore
+        globalThis.__openclawHttpRoutes.push({
+          path: '/novel/sse',
+          match: 'prefix',
+          handler: handleSse,
+          auth: 'plugin'
         });
       }
     }

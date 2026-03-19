@@ -457,7 +457,7 @@ export class NovelService {
    * 启动番茄发布
    */
   async startFanqiePublish(options: {
-    workId: number;
+    workId: number | string;
     startChapter?: number;
     endChapter?: number;
     headless?: boolean;
@@ -466,6 +466,52 @@ export class NovelService {
     progressId?: string;
   }) {
     const { workId, startChapter, endChapter, headless = true, dryRun = false, skipAudit = true, progressId } = options;
+    
+    // 查找本地作品ID（workId 可能是番茄的字符串ID，需要转换为本地ID）
+    let localWorkId: number = typeof workId === 'number' ? workId : parseInt(workId as string, 10);
+    
+    // 如果 workId 是字符串（番茄ID），通过标题匹配本地作品
+    if (typeof workId === 'string' && workId.length > 10) {
+      // 从 fanqie_works 表查找作品标题
+      const fanqieWorks = await this.db.query(`
+        SELECT title FROM fanqie_works WHERE work_id = ? LIMIT 1
+      `, [workId]);
+      
+      if (fanqieWorks && fanqieWorks.length > 0) {
+        const fanqieTitle = fanqieWorks[0].title;
+        console.log('[Pipeline] 番茄作品:', fanqieTitle);
+        
+        // 通过标题匹配本地作品
+        const localWorks = await this.db.query(`
+          SELECT id, title FROM works WHERE title = ? OR title LIKE ? LIMIT 1
+        `, [fanqieTitle, `%${fanqieTitle}%`]);
+        
+        if (localWorks && localWorks.length > 0) {
+          localWorkId = localWorks[0].id;
+          console.log('[Pipeline] 匹配到本地作品:', localWorks[0].title, 'ID:', localWorkId);
+        } else {
+          // 没有匹配的本地作品
+          if (progressId) {
+            broadcastProgress(progressId, {
+              status: 'error',
+              step: 'init',
+              stepLabel: '初始化',
+              current: 0,
+              total: 0,
+              task: '未找到匹配的本地作品',
+              error: `番茄作品 "${fanqieTitle}" 没有对应的本地作品数据`,
+              percent: 0,
+              results: [],
+            });
+          }
+          return { 
+            success: false, 
+            message: '未找到匹配的本地作品', 
+            note: `番茄作品 "${fanqieTitle}" 需要先在本地创建对应的作品` 
+          };
+        }
+      }
+    }
     
     // 创建流水线实例
     const pipeline = new ContentPipeline();
@@ -480,10 +526,12 @@ export class NovelService {
     
     // 异步执行发布流程
     pipeline.publishToFanqie({
-      workId,
-      chapterNumber: startChapter,
+      workId: localWorkId,
+      startChapter,
+      endChapter,
       headless,
       dryRun,
+      skipStatusCheck: skipAudit,
       onProgress,
     }).then(results => {
       const successCount = results.filter(r => r.success).length;
