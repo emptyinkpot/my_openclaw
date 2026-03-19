@@ -13,7 +13,7 @@ const plugin = {
     additionalProperties: false,
     properties: {}
   },
-  register(api) {
+  register(api: any) {
     console.log('[novel-manager] Plugin registered');
   },
   activate() {

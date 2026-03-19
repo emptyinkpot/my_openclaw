@@ -10,8 +10,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "declaration": true,
-    "declarationMap": true,
+    "declaration": false,
     "sourceMap": true,
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
@@ -22,7 +21,8 @@
     "core/**/*.ts",
     "services/**/*.ts",
     "utils/**/*.ts",
-    "index.ts"
+    "index.ts",
+    "server.ts"
   ],
   "exclude": [
     "node_modules",

@@ -1,2 +1,3 @@
-2026/03/19-23:01:10.184 a445 Creating DB /workspace/projects/browser/fanqie-account-2/Default/Session Storage since it was missing.
-2026/03/19-23:01:10.205 a445 Reusing MANIFEST /workspace/projects/browser/fanqie-account-2/Default/Session Storage/MANIFEST-000001
+2026/03/19-23:31:13.366 c4cf Reusing MANIFEST /workspace/projects/browser/fanqie-account-2/Default/Session Storage/MANIFEST-000001
+2026/03/19-23:31:13.367 c4cf Recovering log #3
+2026/03/19-23:31:13.371 c4cf Reusing old log /workspace/projects/browser/fanqie-account-2/Default/Session Storage/000003.log 

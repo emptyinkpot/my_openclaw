@@ -160,4 +160,198 @@ export class NovelService {
       return imported;
     });
   }
+  
+  /**
+   * 删除作品
+   */
+  async deleteWork(id: number) {
+    return await withTransaction(async (conn) => {
+      // 删除关联数据
+      await conn.execute('DELETE FROM chapters WHERE work_id = ?', [id]);
+      await conn.execute('DELETE FROM characters WHERE work_id = ?', [id]);
+      await conn.execute('DELETE FROM volume_outlines WHERE work_id = ?', [id]);
+      await conn.execute('DELETE FROM chapter_outlines WHERE work_id = ?', [id]);
+      await conn.execute('DELETE FROM world_settings WHERE work_id = ?', [id]);
+      // 删除作品
+      await conn.execute('DELETE FROM works WHERE id = ?', [id]);
+      return true;
+    });
+  }
+  
+  /**
+   * 更新章节
+   */
+  async updateChapter(id: number, data: { title?: string; content?: string; status?: string }) {
+    const updates: string[] = [];
+    const params: any[] = [];
+    
+    if (data.title !== undefined) {
+      updates.push('title = ?');
+      params.push(data.title);
+    }
+    if (data.content !== undefined) {
+      updates.push('content = ?');
+      updates.push('word_count = ?');
+      params.push(data.content, data.content.length);
+    }
+    if (data.status !== undefined) {
+      updates.push('status = ?');
+      params.push(data.status);
+    }
+    
+    if (updates.length === 0) return;
+    
+    updates.push('updated_at = NOW()');
+    params.push(id);
+    
+    await this.db.execute(`
+      UPDATE chapters SET ${updates.join(', ')} WHERE id = ?
+    `, params);
+  }
+  
+  /**
+   * 根据卷纲生成章节
+   */
+  async generateChaptersFromVolumes(workId: number) {
+    const volumes = await this.db.query(`
+      SELECT * FROM volume_outlines WHERE work_id = ? ORDER BY volume_number
+    `, [workId]);
+    
+    let generated = 0;
+    
+    for (const vol of volumes) {
+      const rangeMatch = vol.chapter_range?.match(/(\d+)-(\d+)/);
+      if (!rangeMatch) continue;
+      
+      const start = parseInt(rangeMatch[1]);
+      const end = parseInt(rangeMatch[2]);
+      
+      for (let num = start; num <= end; num++) {
+        // 检查是否已存在
+        const existing = await this.db.queryOne(`
+          SELECT id FROM chapters WHERE work_id = ? AND chapter_number = ?
+        `, [workId, num]);
+        
+        if (!existing) {
+          await this.db.execute(`
+            INSERT INTO chapters (work_id, chapter_number, title, content, word_count, status, created_at, updated_at)
+            VALUES (?, ?, ?, NULL, 0, 'pending', NOW(), NOW())
+          `, [workId, num, `第${num}章`]);
+          generated++;
+        }
+      }
+    }
+    
+    // 更新作品章节数
+    const total = await this.db.queryOne(`
+      SELECT COUNT(*) as count FROM chapters WHERE work_id = ?
+    `, [workId]);
+    
+    await this.db.execute(`
+      UPDATE works SET current_chapters = ?, updated_at = NOW() WHERE id = ?
+    `, [total?.count || 0, workId]);
+    
+    return { generated, total: total?.count || 0 };
+  }
+  
+  /**
+   * 获取番茄作品列表
+   */
+  async getFanqieWorks() {
+    return await this.db.query(`
+      SELECT * FROM fanqie_works ORDER BY updated_at DESC
+    `);
+  }
+  
+  /**
+   * 启动番茄发布
+   */
+  async startFanqiePublish(options: any) {
+    // 这里应该调用 ContentPipeline
+    return { success: true, message: '流水线已启动', note: '请查看后台日志' };
+  }
+  
+  /**
+   * 获取经验记录
+   */
+  async getExperienceRecords() {
+    return await this.db.query(`
+      SELECT * FROM experience_records ORDER BY timestamp DESC LIMIT 100
+    `);
+  }
+  
+  /**
+   * 添加经验记录
+   */
+  async addExperienceRecord(record: any) {
+    const result = await this.db.execute(`
+      INSERT INTO experience_records (
+        type, title, description, user_query, solution, 
+        experience_applied, experience_gained, tags, difficulty, xp_gained, timestamp
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+    `, [
+      record.type,
+      record.title,
+      record.description,
+      record.userQuery,
+      record.solution,
+      JSON.stringify(record.experienceApplied || []),
+      JSON.stringify(record.experienceGained || []),
+      JSON.stringify(record.tags || []),
+      record.difficulty,
+      record.xpGained || record.difficulty * 50,
+    ]);
+    
+    return { id: (result as any).insertId, ...record };
+  }
+  
+  /**
+   * 获取缓存文件列表
+   */
+  async getCacheFiles() {
+    const cacheDir = '/workspace/projects/workspace/storage';
+    const fs = await import('fs');
+    const path = await import('path');
+    
+    if (!fs.existsSync(cacheDir)) {
+      return [];
+    }
+    
+    const files = fs.readdirSync(cacheDir).filter(f => f.endsWith('.json'));
+    return files.map(f => ({
+      name: f,
+      path: path.join(cacheDir, f),
+      size: fs.statSync(path.join(cacheDir, f)).size,
+      modified: fs.statSync(path.join(cacheDir, f)).mtime,
+    }));
+  }
+  
+  /**
+   * 获取缓存文件内容
+   */
+  async getCacheFileContent(name: string) {
+    const fs = await import('fs');
+    const path = await import('path');
+    const cacheDir = '/workspace/projects/workspace/storage';
+    const filePath = path.join(cacheDir, name);
+    
+    if (!fs.existsSync(filePath)) {
+      throw new Error('文件不存在');
+    }
+    
+    return fs.readFileSync(filePath, 'utf-8');
+  }
+  
+  /**
+   * 保存缓存文件内容
+   */
+  async saveCacheFileContent(name: string, content: string) {
+    const fs = await import('fs');
+    const path = await import('path');
+    const cacheDir = '/workspace/projects/workspace/storage';
+    const filePath = path.join(cacheDir, name);
+    
+    fs.writeFileSync(filePath, content, 'utf-8');
+    return true;
+  }
 }

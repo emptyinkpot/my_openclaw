@@ -78,7 +78,7 @@ const defaultConfig: ModuleConfig = {
   
   database: {
     type: (process.env.DB_TYPE as 'mysql' | 'sqlite') || 'mysql',
-    host: process.env.DB_HOST || '124.220.245.121',
+    host: process.env.DB_HOST || 'sh-cynosdbmysql-grp-1kbg1xh0.sql.tencentcdb.com',
     port: parseInt(process.env.DB_PORT || '22295'),
     user: process.env.DB_USER || 'openclaw',
     password: process.env.DB_PASSWORD || 'Lgp15237257500',
