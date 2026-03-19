@@ -99,6 +99,34 @@ export class NovelService {
   }
   
   /**
+   * 获取章节详情
+   */
+  async getChapterById(id: number) {
+    return await this.db.queryOne(`
+      SELECT * FROM chapters WHERE id = ?
+    `, [id]);
+  }
+  
+  /**
+   * 获取作品的所有章节
+   */
+  async getChaptersByWorkId(workId: number) {
+    return await this.db.query(`
+      SELECT id, chapter_number, title, word_count, status, created_at, updated_at
+      FROM chapters WHERE work_id = ? ORDER BY chapter_number
+    `, [workId]);
+  }
+  
+  /**
+   * 获取作品的所有角色
+   */
+  async getCharactersByWorkId(workId: number) {
+    return await this.db.query(`
+      SELECT * FROM characters WHERE work_id = ? ORDER BY id
+    `, [workId]);
+  }
+  
+  /**
    * 获取统计信息
    */
   async getStats(): Promise<NovelStats> {
