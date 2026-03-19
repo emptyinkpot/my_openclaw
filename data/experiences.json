@@ -1,0 +1,28 @@
+{
+  "records": [
+    {
+      "id": "exp_test_1773963860770",
+      "timestamp": 1773963860770,
+      "type": "bug_fix",
+      "title": "MySQL 连接超时问题解决",
+      "description": "MySQL 连接在长时间空闲后出现超时错误",
+      "userQuery": "数据库连接超时怎么办？",
+      "solution": "增加 wait_timeout 参数，配置连接池保活",
+      "experienceApplied": [
+        "数据库配置"
+      ],
+      "experienceGained": [
+        "MySQL调优",
+        "连接池管理"
+      ],
+      "tags": [
+        "mysql",
+        "timeout",
+        "connection"
+      ],
+      "difficulty": 3,
+      "xpGained": 100
+    }
+  ],
+  "version": "1.0"
+}

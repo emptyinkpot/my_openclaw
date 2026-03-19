@@ -556,7 +556,8 @@ export class NovelService {
     return { 
       success: true, 
       message: '流水线已启动', 
-      note: '请通过 SSE 订阅进度更新: /api/novel/fanqie/publish/progress/' + progressId 
+      note: '请通过 SSE 订阅进度更新: /novel/sse/progress/' + progressId + '?token=YOUR_TOKEN',
+      progressId 
     };
   }
   
