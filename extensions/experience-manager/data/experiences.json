@@ -1,6 +1,147 @@
 {
   "records": [
     {
+      "type": "bug_fix",
+      "title": "MySQL 字符集不兼容导致数据插入失败",
+      "description": "番茄扫描结果保存到数据库时报错：`Conversion from collation utf8mb4_unicode_ci into latin1_swedish_ci impossible`。原因是表创建时未显式指定字符集，导致使用默认的 latin1 字符集，无法存储中文。",
+      "userQuery": "扫描到作品但列表为空",
+      "solution": "1. 删除旧表：DROP TABLE IF EXISTS fanqie_works\n2. 创建新表时显式指定字符集：DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci\n3. 每个文本字段也要指定字符集：VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci",
+      "experienceApplied": [
+        "数据库字符集配置",
+        "MySQL 表创建规范"
+      ],
+      "experienceGained": [
+        "MySQL 默认字符集是 latin1，无法存储中文",
+        "创建表时必须显式指定 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+        "字符串字段也需单独指定字符集，避免继承表级默认值",
+        "错误信息 'Conversion from collation' 表示字符集不兼容"
+      ],
+      "tags": [
+        "mysql",
+        "charset",
+        "utf8mb4",
+        "bug",
+        "database"
+      ],
+      "difficulty": 3,
+      "xpGained": 150,
+      "id": "exp_1774000001_charset_fix",
+      "timestamp": 1774000000001
+    },
+    {
+      "type": "feature_dev",
+      "title": "统一导航栏架构：插件化页面路由",
+      "description": "所有页面（原生界面、小说管理、自动化、经验、缓存）通过插件注册路由，统一导航栏样式和跳转逻辑。导航栏使用固定定位，当前页面高亮显示。",
+      "userQuery": "导航栏入口不统一，无法互相跳转",
+      "solution": "1. 在插件入口 index.ts 注册所有页面路由：/、/novel/、/auto.html、/experience.html、/cache.html\n2. 所有路由使用 auth: 'plugin' 模式（无需登录）\n3. 每个页面 HTML 添加统一导航栏：<div class=\"nav-bar\">...\n4. 当前页面链接添加 class=\"on\" 实现高亮\n5. 导航项使用 href 跳转，不使用 JavaScript",
+      "experienceApplied": [
+        "OpenClaw 插件架构",
+        "前端组件化",
+        "路由统一管理"
+      ],
+      "experienceGained": [
+        "OpenClaw 页面路由通过插件注册，不是静态文件服务",
+        "auth: 'plugin' 表示无需认证，auth: 'token' 需要 Bearer Token",
+        "导航栏固定定位：position:fixed; top:0; z-index:9999",
+        "页面内容需要 margin-top:40px 避开导航栏",
+        "当前页面高亮使用特定 class（如 .on），CSS 定义样式"
+      ],
+      "tags": [
+        "openclaw",
+        "plugin",
+        "navigation",
+        "ui",
+        "architecture"
+      ],
+      "difficulty": 4,
+      "xpGained": 200,
+      "id": "exp_1774000002_navbar_unify",
+      "timestamp": 1774000000002
+    },
+    {
+      "type": "feature_dev",
+      "title": "API 认证统一：Bearer Token 封装",
+      "description": "所有 API 请求使用统一的认证方式：Authorization: Bearer <token>。前端封装 api() 函数自动携带 token，避免每次请求重复写 header。",
+      "userQuery": "API返回401 Unauthorized",
+      "solution": "1. 前端定义 GATEWAY_TOKEN 常量\n2. 封装 api(endpoint, options) 函数，自动添加 Authorization header\n3. 所有 API 调用使用 api() 函数，不直接用 fetch",
+      "experienceApplied": [
+        "API 封装",
+        "认证机制"
+      ],
+      "experienceGained": [
+        "OpenClaw Gateway 使用 Token 认证模式",
+        "Token 在 openclaw.json 的 gateway.auth.token 配置",
+        "前端请求必须携带 Authorization: Bearer <token>",
+        "封装 api() 函数可以统一处理认证、错误、超时等逻辑"
+      ],
+      "tags": [
+        "api",
+        "authentication",
+        "token",
+        "frontend"
+      ],
+      "difficulty": 2,
+      "xpGained": 100,
+      "id": "exp_1774000003_api_auth",
+      "timestamp": 1774000000003
+    },
+    {
+      "type": "feature_dev",
+      "title": "经验数据源迁移：从数据库到 JSON 文件",
+      "description": "经验记录原本存储在 MySQL 数据库，现在迁移到 experience-manager 插件的 JSON 文件。NovelService.getExperienceRecords() 先尝试读数据库，失败后读取 JSON 文件。",
+      "userQuery": "经验模块未调用 experience-manager 数据",
+      "solution": "1. 经验数据存储在 extensions/experience-manager/data/experiences.json\n2. NovelService.getExperienceRecords() 先尝试从数据库读取\n3. 数据库无数据或出错时，读取 JSON 文件\n4. 使用 fs.existsSync() 检查文件是否存在",
+      "experienceApplied": [
+        "数据源切换",
+        "JSON 文件存储",
+        "降级策略"
+      ],
+      "experienceGained": [
+        "JSON 文件适合小规模数据存储，无需数据库连接",
+        "降级策略：先尝试主数据源，失败后使用备用数据源",
+        "文件路径使用绝对路径避免相对路径问题",
+        "JSON.parse() 后直接访问 .records 字段"
+      ],
+      "tags": [
+        "data-migration",
+        "json",
+        "experience",
+        "fallback"
+      ],
+      "difficulty": 3,
+      "xpGained": 150,
+      "id": "exp_1774000004_exp_datasource",
+      "timestamp": 1774000000004
+    },
+    {
+      "type": "bug_fix",
+      "title": "番茄扫描功能集成：调用正确的扫描器",
+      "description": "NovelService.scanFanqieWorks() 原本返回模拟数据，未调用真实的 FanqieScanner。需要动态导入 FanqieScanner 并调用 scan() 方法。",
+      "userQuery": "扫描不到作品，脚本是能用的",
+      "solution": "1. 动态导入 FanqieScanner：const { getFanqieScanner } = require('../core/pipeline/FanqieScanner')\n2. 调用 scanner.scan({ accountId, headed: false })\n3. 扫描结果保存到数据库时，将 account_1 转换为数字 1\n4. 扫描失败时尝试读取缓存文件",
+      "experienceApplied": [
+        "动态导入",
+        "Playwright 扫描",
+        "缓存机制"
+      ],
+      "experienceGained": [
+        "FanqieScanner 使用 Playwright 扫描番茄作者后台",
+        "扫描结果自动缓存到 cache/fanqie-{accountId}-works.json",
+        "数据库 account_id 是 INT 类型，需要将 account_1 转换为 1",
+        "动态导入 require() 比 import 更灵活，避免编译时依赖"
+      ],
+      "tags": [
+        "fanqie",
+        "scanner",
+        "playwright",
+        "integration"
+      ],
+      "difficulty": 4,
+      "xpGained": 200,
+      "id": "exp_1774000005_scanner_integration",
+      "timestamp": 1774000000005
+    },
+    {
       "type": "refactoring",
       "title": "合并 knowledge 到 experience-manager",
       "description": "将根目录的 knowledge/ 静态知识库合并到 extensions/experience-manager/knowledge/，统一管理知识与经验。",

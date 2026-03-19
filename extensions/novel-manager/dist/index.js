@@ -156,6 +156,9 @@ async function handleNovelApi(req, res) {
     const method = req.method || 'GET';
     const path = url.split('?')[0];
     const query = parseQuery(url);
+    // 初始化数据库表
+    const service = getNovelService();
+    await service.initTables().catch(() => { });
     try {
         // CORS预检
         if (method === 'OPTIONS') {
@@ -249,6 +252,21 @@ async function handleNovelApi(req, res) {
             jsonRes(res, { success: true, data: works });
             return true;
         }
+        // 番茄作品列表（按账号）
+        const fanqieWorksByAccountMatch = path.match(/^\/api\/novel\/fanqie\/works\/([^/]+)$/);
+        if (fanqieWorksByAccountMatch && method === 'GET') {
+            const accountId = parseInt(fanqieWorksByAccountMatch[1], 10) || 0;
+            const works = await getNovelService().getFanqieWorksByAccount(accountId);
+            jsonRes(res, { success: true, data: works });
+            return true;
+        }
+        // 番茄扫描
+        if (path === '/api/novel/fanqie/scan' && method === 'POST') {
+            const body = await parseBody(req);
+            const result = await getNovelService().scanFanqieWorks(body.accountId);
+            jsonRes(res, { success: true, data: result });
+            return true;
+        }
         // 番茄发布
         if (path === '/api/novel/fanqie/publish' && method === 'POST') {
             const body = await parseBody(req);
@@ -333,18 +351,21 @@ async function handleNovelApi(req, res) {
         // ====== 经验统计API ======
         if (path === '/api/novel/experience/stats' && method === 'GET') {
             const records = await getNovelService().getExperienceRecords();
-            const stats = {
-                total: records.length,
-                byType: {},
-                byDifficulty: {}
-            };
+            // 计算总XP
+            const totalXP = records.reduce((sum, r) => sum + (r.xpGained || r.difficulty * 50 || 0), 0);
+            const level = Math.floor(totalXP / 1000) + 1;
             // 统计类型分布
+            const typeDistribution = {};
             records.forEach((r) => {
                 if (r.type)
-                    stats.byType[r.type] = (stats.byType[r.type] || 0) + 1;
-                if (r.difficulty)
-                    stats.byDifficulty[r.difficulty] = (stats.byDifficulty[r.difficulty] || 0) + 1;
+                    typeDistribution[r.type] = (typeDistribution[r.type] || 0) + 1;
             });
+            const stats = {
+                totalRecords: records.length,
+                totalXP,
+                level,
+                typeDistribution
+            };
             jsonRes(res, { success: true, data: stats });
             return true;
         }

@@ -1246,48 +1246,61 @@
     async function scanFanqieWorks() {
       const accountId = document.getElementById('fanqieAccountSelect').value;
       const resultEl = document.getElementById('fanqieWorksList');
+      const statusEl = document.getElementById('fanqieScanStatus');
       
       resultEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);grid-column:1/-1;">📡 正在扫描番茄小说作品...</div>';
+      statusEl.textContent = '扫描中...';
       
       try {
-        const result = await api('/fanqie/works/' + accountId);
-        const data = result.data || [];
+        // 先触发扫描
+        const scanResult = await api('/fanqie/scan', { 
+          method: 'POST',
+          body: JSON.stringify({ accountId: accountId || undefined })
+        });
         
-        if (data.length === 0) {
-          resultEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);grid-column:1/-1;"><div style="font-size:32px;margin-bottom:8px;">📭</div>未找到作品</div>';
+        if (!scanResult.success) {
+          throw new Error(scanResult.message || scanResult.error || '扫描失败');
+        }
+        
+        const works = scanResult.data?.works || [];
+        
+        if (works.length === 0) {
+          resultEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);grid-column:1/-1;"><div style="font-size:32px;margin-bottom:8px;">📭</div>未找到作品<br><div style="font-size:11px;margin-top:8px;">请检查Cookie是否过期</div></div>';
+          statusEl.textContent = '无作品';
           return;
         }
         
-        resultEl.innerHTML = data.map(w => `
+        resultEl.innerHTML = works.map(w => `
           <div class="fanqie-work-card ${selectedFanqieWorkId === w.workId ? 'selected' : ''}" 
                onclick="selectFanqieWork('${w.workId}', '${w.title.replace(/'/g, "\\'")}')"
                style="cursor: pointer; border: 2px solid ${selectedFanqieWorkId === w.workId ? 'var(--accent)' : 'var(--border)'}; transition: all 0.2s;">
             <div class="fanqie-work-header">
               <div class="fanqie-work-title">${w.title}</div>
-              <span class="fanqie-work-status ${w.status === 'signed' ? 'signed' : 'ongoing'}">${w.status || '连载'}</span>
+              <span class="fanqie-work-status ${w.status?.includes('签约') ? 'signed' : 'ongoing'}">${w.status || '连载'}</span>
             </div>
             <div class="fanqie-work-meta">
               <div class="fanqie-meta-item">
-                <div class="fanqie-meta-value">${w.chapterCount || 0}</div>
+                <div class="fanqie-meta-value">${w.totalChapters || 0}</div>
                 <div class="fanqie-meta-label">章节</div>
               </div>
               <div class="fanqie-meta-item">
-                <div class="fanqie-meta-value">${w.wordCount || 0}</div>
+                <div class="fanqie-meta-value">${w.wordCount || '-'}</div>
                 <div class="fanqie-meta-label">字数</div>
               </div>
               <div class="fanqie-meta-item">
-                <div class="fanqie-meta-value" style="font-size:12px;">${w.account || '-'}</div>
+                <div class="fanqie-meta-value" style="font-size:12px;">${w.accountName || '-'}</div>
                 <div class="fanqie-meta-label">账号</div>
               </div>
             </div>
           </div>
         `).join('');
         
-        document.getElementById('fanqieScanStatus').textContent = `已加载 ${data.length} 部作品`;
-        showToast(`✅ 扫描完成，找到 ${data.length} 部作品`, 'success');
+        statusEl.textContent = `已扫描 ${works.length} 部作品`;
+        showToast(`✅ 扫描完成，找到 ${works.length} 部作品`, 'success');
       } catch (err) {
-        resultEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--danger);grid-column:1/-1;">❌ 扫描失败: ${err.message}</div>`;
-        showToast('❌ 扫描失败', 'error');
+        resultEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--danger);grid-column:1/-1;"><div style="font-size:32px;margin-bottom:8px;">❌</div>扫描失败: ${err.message}</div>`;
+        statusEl.textContent = '扫描失败';
+        showToast('❌ 扫描失败: ' + err.message, 'error');
       }
     }
 

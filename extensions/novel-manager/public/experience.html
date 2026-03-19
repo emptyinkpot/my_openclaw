@@ -828,19 +828,20 @@
       }
       
       list.innerHTML = filtered.map(exp => {
-        const typeInfo = expTypeMap[exp.type];
-        const stars = '⭐'.repeat(exp.difficulty);
-        const date = new Date(exp.timestamp).toLocaleDateString();
+        const typeInfo = expTypeMap[exp.type] || { label: exp.type || '未知', icon: '📌', color: '#666', bg: '#f0f0f0' };
+        const stars = '⭐'.repeat(exp.difficulty || 1);
+        const date = exp.timestamp ? new Date(exp.timestamp).toLocaleDateString() : '未知日期';
+        const tags = exp.tags || [];
         return `
           <div class="exp-card" onclick="showDetail('${exp.id}')">
             <div class="exp-header">
               <div class="exp-icon" style="background: ${typeInfo.bg}; color: ${typeInfo.color}">${typeInfo.icon}</div>
               <div class="exp-meta">
-                <div class="exp-title">${exp.title}</div>
+                <div class="exp-title">${exp.title || '无标题'}</div>
                 <div class="exp-tags">
                   <span class="exp-type-tag" style="background: ${typeInfo.bg}; color: ${typeInfo.color}">${typeInfo.label}</span>
                   <span class="exp-tag">${stars}</span>
-                  ${exp.tags.slice(0, 3).map(t => `<span class="exp-tag">${t}</span>`).join('')}
+                  ${tags.slice(0, 3).map(t => `<span class="exp-tag">${t}</span>`).join('')}
                 </div>
               </div>
             </div>
@@ -848,7 +849,7 @@
             <div class="exp-footer">
               <span>📅 ${date}</span>
               ${exp.experienceGained?.length ? `<span>💡 ${exp.experienceGained.length}项新经验</span>` : ''}
-              <span class="exp-xp">+${exp.xpGained || (exp.difficulty * 50)} XP</span>
+              <span class="exp-xp">+${exp.xpGained || (exp.difficulty * 50) || 50} XP</span>
             </div>
           </div>
         `;

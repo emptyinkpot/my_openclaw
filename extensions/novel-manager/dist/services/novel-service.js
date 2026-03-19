@@ -41,6 +41,60 @@ const database_1 = require("../core/database");
 class NovelService {
     constructor() {
         this.db = (0, database_1.getDatabaseManager)();
+        this.initialized = false;
+    }
+    /**
+     * 初始化数据库表
+     */
+    async initTables() {
+        if (this.initialized)
+            return;
+        try {
+            // 先删除旧表（字符集可能不兼容）
+            await this.db.execute(`DROP TABLE IF EXISTS fanqie_works`).catch(() => { });
+            // 创建fanqie_works表 - 使用utf8mb4字符集
+            await this.db.execute(`
+        CREATE TABLE fanqie_works (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          account_id INT NOT NULL DEFAULT 1,
+          work_id VARCHAR(100) NOT NULL,
+          title VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+          author VARCHAR(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+          cover_url TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+          chapter_count INT DEFAULT 0,
+          word_count VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+          status VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'ongoing',
+          last_synced_at DATETIME,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          UNIQUE KEY uk_account_work (account_id, work_id),
+          INDEX idx_account (account_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `).catch(() => { });
+            // 创建experience_records表
+            await this.db.execute(`
+        CREATE TABLE IF NOT EXISTS experience_records (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          type VARCHAR(50) NOT NULL,
+          title VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+          description TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+          user_query TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+          solution TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+          experience_applied JSON,
+          experience_gained JSON,
+          tags JSON,
+          difficulty INT DEFAULT 1,
+          xp_gained INT DEFAULT 50,
+          timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_type (type),
+          INDEX idx_timestamp (timestamp)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `).catch(() => { });
+            this.initialized = true;
+        }
+        catch (e) {
+            console.error('[NovelService] 初始化表失败:', e);
+        }
     }
     /**
      * 获取所有作品
@@ -265,9 +319,107 @@ class NovelService {
      * 获取番茄作品列表
      */
     async getFanqieWorks() {
-        return await this.db.query(`
-      SELECT * FROM fanqie_works ORDER BY updated_at DESC
-    `);
+        try {
+            return await this.db.query(`
+        SELECT * FROM fanqie_works ORDER BY updated_at DESC
+      `);
+        }
+        catch (e) {
+            // 表不存在时返回空数组
+            if (e.message?.includes("doesn't exist")) {
+                return [];
+            }
+            throw e;
+        }
+    }
+    /**
+     * 获取番茄作品列表（按账号）
+     */
+    async getFanqieWorksByAccount(accountId) {
+        try {
+            return await this.db.query(`
+        SELECT * FROM fanqie_works WHERE account_id = ? ORDER BY updated_at DESC
+      `, [accountId]);
+        }
+        catch (e) {
+            // 表不存在时返回空数组
+            if (e.message?.includes("doesn't exist")) {
+                return [];
+            }
+            throw e;
+        }
+    }
+    /**
+     * 扫描番茄作品 - 调用 FanqieScanner
+     */
+    async scanFanqieWorks(accountId) {
+        console.log('[NovelService] 扫描番茄作品, accountId:', accountId);
+        try {
+            // 动态导入 FanqieScanner
+            const { getFanqieScanner } = require('../core/pipeline/FanqieScanner');
+            const scanner = getFanqieScanner();
+            // 调用真实扫描
+            const result = await scanner.scan({
+                accountId,
+                headed: false
+            });
+            // 保存到数据库
+            if (result.success && result.works && result.works.length > 0) {
+                for (const work of result.works) {
+                    try {
+                        // 将账号ID转换为数字 (account_1 -> 1, account_2 -> 2)
+                        const accountNum = parseInt((work.accountId || 'account_1').replace('account_', ''), 10) || 1;
+                        await this.db.execute(`
+              INSERT INTO fanqie_works (account_id, work_id, title, chapter_count, word_count, status, last_synced_at)
+              VALUES (?, ?, ?, ?, ?, ?, NOW())
+              ON DUPLICATE KEY UPDATE 
+                title = VALUES(title),
+                chapter_count = VALUES(chapter_count),
+                word_count = VALUES(word_count),
+                status = VALUES(status),
+                last_synced_at = NOW()
+            `, [
+                            accountNum,
+                            work.workId || work.title,
+                            work.title,
+                            work.totalChapters || 0,
+                            work.wordCount || '',
+                            work.status || 'ongoing'
+                        ]);
+                    }
+                    catch (e) {
+                        console.error('[NovelService] 保存番茄作品失败:', e);
+                    }
+                }
+            }
+            return {
+                success: result.success,
+                message: result.error || `扫描完成，找到 ${result.works?.length || 0} 个作品`,
+                works: result.works || []
+            };
+        }
+        catch (e) {
+            console.error('[NovelService] 扫描失败:', e);
+            // 尝试读取缓存
+            try {
+                const { getFanqieScanner } = require('../core/pipeline/FanqieScanner');
+                const scanner = getFanqieScanner();
+                const cachedWorks = scanner.readCache(accountId);
+                if (cachedWorks && cachedWorks.length > 0) {
+                    return {
+                        success: true,
+                        message: `从缓存读取到 ${cachedWorks.length} 个作品`,
+                        works: cachedWorks
+                    };
+                }
+            }
+            catch { }
+            return {
+                success: false,
+                message: `扫描失败: ${e.message}`,
+                works: []
+            };
+        }
     }
     /**
      * 启动番茄发布
@@ -280,9 +432,33 @@ class NovelService {
      * 获取经验记录
      */
     async getExperienceRecords() {
-        return await this.db.query(`
-      SELECT * FROM experience_records ORDER BY timestamp DESC LIMIT 100
-    `);
+        // 先尝试从数据库读取
+        try {
+            const records = await this.db.query(`
+        SELECT * FROM experience_records ORDER BY timestamp DESC LIMIT 100
+      `);
+            if (records && records.length > 0) {
+                return records;
+            }
+        }
+        catch (e) {
+            console.log('[NovelService] 数据库无经验记录，尝试读取文件');
+        }
+        // 从experience-manager读取JSON文件
+        const fs = require('fs');
+        const path = require('path');
+        const expPath = '/workspace/projects/extensions/experience-manager/data/experiences.json';
+        try {
+            if (fs.existsSync(expPath)) {
+                const content = fs.readFileSync(expPath, 'utf-8');
+                const data = JSON.parse(content);
+                return data.records || [];
+            }
+        }
+        catch (e) {
+            console.error('[NovelService] 读取经验文件失败:', e);
+        }
+        return [];
     }
     /**
      * 添加经验记录
