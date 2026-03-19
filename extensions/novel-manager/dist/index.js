@@ -402,6 +402,45 @@ async function handleNovelApi(req, res) {
             jsonRes(res, { success: true });
             return true;
         }
+        // ====== 流水线进度 SSE ======
+        const progressMatch = path.match(/^\/api\/novel\/fanqie\/publish\/progress\/([^/]+)$/);
+        if (progressMatch && method === 'GET') {
+            const progressId = progressMatch[1];
+            // 设置 SSE 响应头
+            res.writeHead(200, {
+                'Content-Type': 'text/event-stream',
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive',
+                'Access-Control-Allow-Origin': '*',
+            });
+            // 导入进度管理器
+            const { registerClient } = require('./core/pipeline/ProgressManager');
+            // 注册客户端
+            const unregister = registerClient(progressId, (data) => {
+                try {
+                    res.write(data);
+                }
+                catch (e) {
+                    console.error('[SSE] 写入失败:', e);
+                }
+            });
+            // 心跳保活
+            const heartbeat = setInterval(() => {
+                try {
+                    res.write(': heartbeat\n\n');
+                }
+                catch (e) {
+                    clearInterval(heartbeat);
+                    unregister();
+                }
+            }, 15000);
+            // 连接关闭时清理
+            req.on('close', () => {
+                clearInterval(heartbeat);
+                unregister();
+            });
+            return true;
+        }
         // 404
         jsonRes(res, { success: false, error: 'API路由不存在' }, 404);
         return true;

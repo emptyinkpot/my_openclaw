@@ -38,6 +38,8 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NovelService = void 0;
 const database_1 = require("../core/database");
+const ContentPipeline_1 = require("../core/ContentPipeline");
+const ProgressManager_1 = require("../core/pipeline/ProgressManager");
 class NovelService {
     constructor() {
         this.db = (0, database_1.getDatabaseManager)();
@@ -425,8 +427,47 @@ class NovelService {
      * 启动番茄发布
      */
     async startFanqiePublish(options) {
-        // 这里应该调用 ContentPipeline
-        return { success: true, message: '流水线已启动', note: '请查看后台日志' };
+        const { workId, startChapter, endChapter, headless = true, dryRun = false, skipAudit = true, progressId } = options;
+        // 创建流水线实例
+        const pipeline = new ContentPipeline_1.ContentPipeline();
+        // 进度回调
+        const onProgress = (event) => {
+            console.log('[Pipeline] 进度:', event.step, event.task, event.percent + '%');
+            if (progressId) {
+                (0, ProgressManager_1.broadcastProgress)(progressId, event);
+            }
+        };
+        // 异步执行发布流程
+        pipeline.publishToFanqie({
+            workId,
+            chapterNumber: startChapter,
+            headless,
+            dryRun,
+            onProgress,
+        }).then(results => {
+            const successCount = results.filter(r => r.success).length;
+            console.log(`[Pipeline] 发布完成: 成功 ${successCount}/${results.length}`);
+        }).catch(error => {
+            console.error('[Pipeline] 发布失败:', error);
+            if (progressId) {
+                (0, ProgressManager_1.broadcastProgress)(progressId, {
+                    status: 'error',
+                    step: 'done',
+                    stepLabel: '完成',
+                    current: 0,
+                    total: 0,
+                    task: '发布失败',
+                    error: error.message,
+                    percent: 0,
+                    results: [],
+                });
+            }
+        });
+        return {
+            success: true,
+            message: '流水线已启动',
+            note: '请通过 SSE 订阅进度更新: /api/novel/fanqie/publish/progress/' + progressId
+        };
     }
     /**
      * 获取经验记录

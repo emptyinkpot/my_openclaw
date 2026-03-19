@@ -47,8 +47,9 @@ class ChapterRepository {
             sql += ' AND c.chapter_number = ?';
             params.push(chapterNumber);
         }
-        sql += ` ORDER BY c.work_id, c.chapter_number LIMIT ?`;
-        params.push(limit);
+        // 直接拼接 LIMIT，避免 MySQL prepared statement 问题
+        const safeLimit = Math.min(Math.max(1, limit), 1000);
+        sql += ` ORDER BY c.work_id, c.chapter_number LIMIT ${safeLimit}`;
         return await this.db.query(sql, params);
     }
     /**
@@ -83,8 +84,9 @@ class ChapterRepository {
             params.push(chapterRange[0], chapterRange[1]);
         }
         sql += " AND (c.publish_status IS NULL OR c.publish_status != 'published')";
-        sql += ` ORDER BY c.work_id, c.chapter_number LIMIT ?`;
-        params.push(limit);
+        // 直接拼接 LIMIT，避免 MySQL prepared statement 问题
+        const safeLimit = Math.min(Math.max(1, limit), 1000);
+        sql += ` ORDER BY c.work_id, c.chapter_number LIMIT ${safeLimit}`;
         return await this.db.query(sql, params);
     }
     /**
