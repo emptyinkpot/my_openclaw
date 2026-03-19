@@ -16,8 +16,16 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); font-size: 12px; height: 100vh; overflow: hidden; }
     
+    /* 导航栏 */
+    .nav-bar { position: fixed; top: 0; left: 0; right: 0; height: 40px; background: #24292f; display: flex; align-items: center; padding: 0 16px; gap: 4px; z-index: 9999; }
+    .nav-bar span { color: #fff; font-weight: 600; font-size: 14px; margin-right: 16px; }
+    .nav-bar a { color: #8b949e; font-size: 13px; padding: 6px 14px; border-radius: 4px; text-decoration: none; }
+    .nav-bar a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+    .nav-bar a.on { background: #0969da; color: #fff; }
+    .main,.sub-page{height:calc(100vh - 76px)!important}
+    
     /* 顶部工具栏 */
-    .top-bar { height: 36px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 12px; gap: 8px; }
+    .top-bar { height: 36px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 12px; gap: 8px; margin-top: 40px; }
     .logo { font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 6px; }
     .divider { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
     .btn { padding: 4px 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); border-radius: 4px; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.15s; }
@@ -211,6 +219,7 @@
   </style>
 </head>
 <body>
+<div class="nav-bar"><span>🦞 OpenClaw</span><a href="/novel/" class="on">📚 小说管理</a><a href="/">🎯 原生界面</a></div>
   <!-- 顶部工具栏 -->
   <div class="top-bar">
     <div class="logo">📚 小说管理</div>
@@ -936,7 +945,9 @@
 
 
   <script>
-    const API_BASE = '/novel/api';
+    // Gateway认证token
+    const GATEWAY_TOKEN = 'e1647cdb-1b80-4eee-a975-7599160cc89b';
+    const API_BASE = '/api/novel';
     let currentWork = null, currentTab = 'chapters', viewMode = 'grid', currentFilter = 'all';
     let worksData = [], chaptersData = [], charactersData = [];
     let currentEditingChapter = null;
@@ -1467,7 +1478,12 @@
     }
 
     async function api(endpoint, options = {}) {
-      const res = await fetch(API_BASE + endpoint, options);
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${GATEWAY_TOKEN}`,
+        ...(options.headers || {})
+      };
+      const res = await fetch(API_BASE + endpoint, { ...options, headers });
       return res.json();
     }
 

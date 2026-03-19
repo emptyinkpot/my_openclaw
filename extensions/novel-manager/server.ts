@@ -8,7 +8,7 @@ import { getDatabaseManager } from './core/database';
 import * as path from 'path';
 
 const app = express();
-const PORT = process.env.NOVEL_API_PORT || 3001;
+const PORT = parseInt(process.env.NOVEL_API_PORT || '3001', 10);
 const API_PREFIX = '/novel/api';
 
 // 中间件

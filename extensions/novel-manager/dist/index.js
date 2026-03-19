@@ -1,6 +1,41 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.activate = exports.register = void 0;
+const fs = __importStar(require("fs"));
+const path = __importStar(require("path"));
 const novel_service_1 = require("./services/novel-service");
 // 尝试导入 registerPluginHttpRoute
 let registerPluginHttpRoute;
@@ -13,11 +48,26 @@ catch (e) {
 }
 // 服务实例
 let novelService = null;
+let htmlCache = null;
 function getNovelService() {
     if (!novelService) {
         novelService = new novel_service_1.NovelService();
     }
     return novelService;
+}
+// 获取小说管理界面HTML
+function getNovelHtml() {
+    if (htmlCache)
+        return htmlCache;
+    const htmlPath = path.join(__dirname, 'public', 'index.html');
+    try {
+        htmlCache = fs.readFileSync(htmlPath, 'utf-8');
+        return htmlCache;
+    }
+    catch (e) {
+        console.error('[novel-manager] 无法读取HTML文件:', htmlPath);
+        return '<html><body><h1>小说管理界面加载失败</h1></body></html>';
+    }
 }
 // JSON响应辅助函数
 function jsonRes(res, data, status = 200) {
@@ -54,14 +104,25 @@ function parseQuery(url) {
     }
     return query;
 }
-// 路由处理器
+// 路由处理器 - 处理 /novel/ 页面（不需要认证）
+async function handleNovelPage(req, res) {
+    const url = req.url || '';
+    const path = url.split('?')[0];
+    // 处理 /novel/ 页面请求
+    if (path === '/novel' || path === '/novel/') {
+        res.writeHead(200, {
+            'Content-Type': 'text/html; charset=utf-8',
+            'Cache-Control': 'no-cache'
+        });
+        res.end(getNovelHtml());
+        return true;
+    }
+    return false;
+}
+// 路由处理器 - 处理 /api/novel/ API（需要认证）
 async function handleNovelApi(req, res) {
     const url = req.url || '';
     const method = req.method || 'GET';
-    // 只处理 /api/novel 路由
-    if (!url.startsWith('/api/novel')) {
-        return false;
-    }
     const path = url.split('?')[0];
     const query = parseQuery(url);
     try {
@@ -220,24 +281,38 @@ const plugin = {
     },
     register(api) {
         console.log('[novel-manager] Plugin registered, api:', typeof api, Object.keys(api || {}));
-        // 尝试通过api注册
+        // 注册页面路由 - 不需要认证
         if (api?.registerHttpRoute) {
             console.log('[novel-manager] 使用 api.registerHttpRoute');
+            api.registerHttpRoute({
+                path: '/novel',
+                match: 'exact',
+                handler: handleNovelPage,
+                auth: 'plugin' // plugin auth means we handle auth ourselves (none for page)
+            });
+            // 注册API路由 - 需要认证
             api.registerHttpRoute({
                 path: '/api/novel',
                 match: 'prefix',
                 handler: handleNovelApi,
-                auth: 'none'
+                auth: 'gateway'
             });
         }
         // 尝试直接使用 registerPluginHttpRoute
         else if (registerPluginHttpRoute) {
             console.log('[novel-manager] 使用 registerPluginHttpRoute');
             registerPluginHttpRoute({
+                path: '/novel',
+                match: 'exact',
+                handler: handleNovelPage,
+                auth: 'plugin',
+                pluginId: 'novel-manager'
+            });
+            registerPluginHttpRoute({
                 path: '/api/novel',
                 match: 'prefix',
                 handler: handleNovelApi,
-                auth: 'none',
+                auth: 'gateway',
                 pluginId: 'novel-manager'
             });
         }
@@ -248,10 +323,17 @@ const plugin = {
             if (globalThis.__openclawHttpRoutes) {
                 // @ts-ignore
                 globalThis.__openclawHttpRoutes.push({
+                    path: '/novel',
+                    match: 'exact',
+                    handler: handleNovelPage,
+                    auth: 'plugin'
+                });
+                // @ts-ignore
+                globalThis.__openclawHttpRoutes.push({
                     path: '/api/novel',
                     match: 'prefix',
                     handler: handleNovelApi,
-                    auth: 'none'
+                    auth: 'gateway'
                 });
             }
         }

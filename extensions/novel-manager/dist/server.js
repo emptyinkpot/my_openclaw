@@ -44,7 +44,7 @@ const cors_1 = __importDefault(require("cors"));
 const novel_service_1 = require("./services/novel-service");
 const path = __importStar(require("path"));
 const app = (0, express_1.default)();
-const PORT = process.env.NOVEL_API_PORT || 3001;
+const PORT = parseInt(process.env.NOVEL_API_PORT || '3001', 10);
 const API_PREFIX = '/novel/api';
 // 中间件
 app.use((0, cors_1.default)());

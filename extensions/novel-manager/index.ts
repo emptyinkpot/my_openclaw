@@ -2,6 +2,8 @@
  * 小说管理模块 - OpenClaw 插件
  */
 import { IncomingMessage, ServerResponse } from 'http';
+import * as fs from 'fs';
+import * as path from 'path';
 import { NovelService } from './services/novel-service';
 
 // 尝试导入 registerPluginHttpRoute
@@ -15,12 +17,27 @@ try {
 
 // 服务实例
 let novelService: NovelService | null = null;
+let htmlCache: string | null = null;
 
 function getNovelService(): NovelService {
   if (!novelService) {
     novelService = new NovelService();
   }
   return novelService;
+}
+
+// 获取小说管理界面HTML
+function getNovelHtml(): string {
+  if (htmlCache) return htmlCache;
+  
+  const htmlPath = path.join(__dirname, 'public', 'index.html');
+  try {
+    htmlCache = fs.readFileSync(htmlPath, 'utf-8');
+    return htmlCache;
+  } catch (e) {
+    console.error('[novel-manager] 无法读取HTML文件:', htmlPath);
+    return '<html><body><h1>小说管理界面加载失败</h1></body></html>';
+  }
 }
 
 // JSON响应辅助函数
@@ -59,16 +76,29 @@ function parseQuery(url: string): Record<string, string> {
   return query;
 }
 
-// 路由处理器
+// 路由处理器 - 处理 /novel/ 页面（不需要认证）
+async function handleNovelPage(req: IncomingMessage, res: ServerResponse): Promise<boolean | void> {
+  const url = req.url || '';
+  const path = url.split('?')[0];
+
+  // 处理 /novel/ 页面请求
+  if (path === '/novel' || path === '/novel/') {
+    res.writeHead(200, {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-cache'
+    });
+    res.end(getNovelHtml());
+    return true;
+  }
+  
+  return false;
+}
+
+// 路由处理器 - 处理 /api/novel/ API（需要认证）
 async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promise<boolean | void> {
   const url = req.url || '';
   const method = req.method || 'GET';
   
-  // 只处理 /api/novel 路由
-  if (!url.startsWith('/api/novel')) {
-    return false;
-  }
-
   const path = url.split('?')[0];
   const query = parseQuery(url);
 
@@ -247,9 +277,16 @@ const plugin = {
   register(api: any) {
     console.log('[novel-manager] Plugin registered, api:', typeof api, Object.keys(api || {}));
     
-    // 尝试通过api注册
+    // 注册页面路由 - 不需要认证
     if (api?.registerHttpRoute) {
       console.log('[novel-manager] 使用 api.registerHttpRoute');
+      api.registerHttpRoute({
+        path: '/novel',
+        match: 'exact',
+        handler: handleNovelPage,
+        auth: 'plugin'  // plugin auth means we handle auth ourselves (none for page)
+      });
+      // 注册API路由 - 需要认证
       api.registerHttpRoute({
         path: '/api/novel',
         match: 'prefix',
@@ -260,6 +297,13 @@ const plugin = {
     // 尝试直接使用 registerPluginHttpRoute
     else if (registerPluginHttpRoute) {
       console.log('[novel-manager] 使用 registerPluginHttpRoute');
+      registerPluginHttpRoute({
+        path: '/novel',
+        match: 'exact',
+        handler: handleNovelPage,
+        auth: 'plugin',
+        pluginId: 'novel-manager'
+      });
       registerPluginHttpRoute({
         path: '/api/novel',
         match: 'prefix',
@@ -273,6 +317,13 @@ const plugin = {
       console.log('[novel-manager] 使用全局注册');
       // @ts-ignore
       if (globalThis.__openclawHttpRoutes) {
+        // @ts-ignore
+        globalThis.__openclawHttpRoutes.push({
+          path: '/novel',
+          match: 'exact',
+          handler: handleNovelPage,
+          auth: 'plugin'
+        });
         // @ts-ignore
         globalThis.__openclawHttpRoutes.push({
           path: '/api/novel',
