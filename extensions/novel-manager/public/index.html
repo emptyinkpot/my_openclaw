@@ -219,7 +219,7 @@
   </style>
 </head>
 <body>
-<div class="nav-bar"><span>🦞 OpenClaw</span><a href="/novel/" class="on">📚 小说管理</a><a href="/">🎯 原生界面</a></div>
+<div class="nav-bar"><span>🦞 OpenClaw</span><a href="/novel/" class="on" onclick="showSubPage('novel-data');return false;">📚 小说管理</a><a href="/novel/" onclick="showSubPage('fanqie-scan');return false;">⚙️ 自动化</a><a href="/novel/" onclick="showSubPage('experience');return false;">🧠 经验</a><a href="/novel/" onclick="showSubPage('cache-manage');return false;">💾 缓存</a><a href="/">🎯 原生界面</a></div>
   <!-- 顶部工具栏 -->
   <div class="top-bar">
     <div class="logo">📚 小说管理</div>
@@ -1466,6 +1466,14 @@
 
     // 初始化
     async function init() {
+      // 处理URL参数，自动跳转到对应子页面
+      const urlParams = new URLSearchParams(window.location.search);
+      const page = urlParams.get('page');
+      if (page) {
+        // 延迟执行，确保DOM加载完成
+        setTimeout(() => showSubPage(page), 100);
+      }
+      
       try {
         showToast('🚀 正在加载数据...', 'info');
         await Promise.all([loadStats(), loadWorks()]);
@@ -3125,6 +3133,21 @@
         const isSubPageBtn = ['novel-data', 'fanqie-scan', 'cache-manage', 'experience'].some(sp => btnText.includes(btnTextMap[sp]));
         if (isSubPageBtn) {
           btn.classList.toggle('primary', btnText.includes(btnTextMap[pageName]));
+        }
+      });
+      
+      // 更新导航栏高亮
+      const navPageMap = {
+        'novel-data': '小说管理',
+        'fanqie-scan': '自动化',
+        'cache-manage': '缓存',
+        'experience': '经验'
+      };
+      document.querySelectorAll('.nav-bar a').forEach(a => {
+        a.classList.remove('on');
+        const text = a.textContent.trim();
+        if (text.includes(navPageMap[pageName] || '')) {
+          a.classList.add('on');
         }
       });
     };
