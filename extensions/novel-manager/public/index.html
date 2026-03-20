@@ -29,7 +29,7 @@
     .top-bar { height: 36px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 12px; gap: 8px; margin-top: 40px; }
     .logo { font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 6px; }
     .divider { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
-    .btn { padding: 4px 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); border-radius: 4px; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.15s; }
+    .btn { padding: 4px 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); border-radius: 4px; font-size: 11px; cursor: default; display: flex; align-items: center; gap: 4px; transition: all 0.15s; }
     .btn:hover { border-color: var(--accent); background: var(--bg-tertiary); }
     .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
     .btn.primary:hover { background: var(--accent-hover); }
@@ -47,7 +47,7 @@
     .sidebar-header { padding: 8px 10px; background: var(--bg-tertiary); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
     .sidebar-title { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
     .sidebar-scroll { flex: 1; overflow-y: auto; }
-    .work-item { padding: 8px 10px; cursor: pointer; border-left: 2px solid transparent; display: flex; flex-direction: column; gap: 2px; }
+    .work-item { padding: 8px 10px; cursor: default; border-left: 2px solid transparent; display: flex; flex-direction: column; gap: 2px; }
     .work-item:hover { background: var(--bg-tertiary); }
     .work-item.active { background: #ddf4ff; border-left-color: var(--accent); }
     .work-title { font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -68,12 +68,12 @@
     .toolbar { padding: 8px 12px; background: var(--bg); border-bottom: 1px solid var(--border); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     .toolbar-group { display: flex; gap: 4px; padding-right: 8px; border-right: 1px solid var(--border); }
     .toolbar-group:last-child { border-right: none; }
-    .filter-btn { padding: 3px 8px; border: 1px solid var(--border); background: var(--bg-secondary); border-radius: 12px; font-size: 10px; cursor: pointer; }
+    .filter-btn { padding: 3px 8px; border: 1px solid var(--border); background: var(--bg-secondary); border-radius: 12px; font-size: 10px; cursor: default; }
     .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
     
     /* 标签页 */
     .tabs { display: flex; background: var(--bg); border-bottom: 1px solid var(--border); padding: 0 12px; }
-    .tab { padding: 8px 14px; font-size: 11px; color: var(--text-secondary); cursor: pointer; border-bottom: 2px solid transparent; position: relative; }
+    .tab { padding: 8px 14px; font-size: 11px; color: var(--text-secondary); cursor: default; border-bottom: 2px solid transparent; position: relative; }
     .tab:hover { color: var(--text); }
     .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
     .tab-badge { position: absolute; top: 4px; right: 2px; padding: 1px 4px; background: var(--danger); color: #fff; border-radius: 8px; font-size: 9px; }
@@ -83,7 +83,7 @@
     
     /* 章节视图 */
     .data-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
-    .data-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; padding: 10px; cursor: pointer; transition: all 0.15s; position: relative; }
+    .data-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; padding: 10px; cursor: default; transition: all 0.15s; position: relative; }
     .data-card:hover { border-color: var(--accent); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
     .data-card.has-content { border-left: 3px solid var(--success); }
     .data-card.no-content { border-left: 3px solid var(--text-muted); }
@@ -100,7 +100,7 @@
     
     /* 列表视图 */
     .data-list { display: flex; flex-direction: column; gap: 4px; }
-    .list-item { display: grid; grid-template-columns: 50px 1fr 100px 80px 100px 60px; gap: 12px; padding: 8px 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 4px; align-items: center; cursor: pointer; }
+    .list-item { display: grid; grid-template-columns: 50px 1fr 100px 80px 100px 60px; gap: 12px; padding: 8px 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 4px; align-items: center; cursor: default; }
     .list-item:hover { background: var(--bg-tertiary); border-color: var(--accent); }
     .list-col { font-size: 11px; }
     .list-col.num { color: var(--accent); font-weight: 600; }
@@ -125,7 +125,7 @@
     .volume-chapters { padding: 12px 16px; border-top: 1px solid var(--border-light); }
     .volume-chapters-title { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; font-weight: 500; }
     .volume-chapters-list { display: flex; flex-direction: column; gap: 6px; }
-    .volume-chapter-item { padding: 8px 10px; background: var(--bg); border-radius: 6px; cursor: pointer; transition: all 0.15s; }
+    .volume-chapter-item { padding: 8px 10px; background: var(--bg); border-radius: 6px; cursor: default; transition: all 0.15s; }
     .volume-chapter-item:hover { background: var(--bg-tertiary); border-left: 2px solid var(--accent); padding-left: 8px; }
     .chapter-item-header { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; }
     .chapter-item-num { font-size: 10px; color: var(--accent); font-weight: 600; }
@@ -599,10 +599,10 @@
           </div>
           <input type="text" class="form-input" id="detectedWorkName" placeholder="AI将自动识别作品名...">
           <div style="display: flex; gap: 8px; margin-top: 8px;">
-            <label style="display: flex; align-items: center; gap: 4px; font-size: 12px; cursor: pointer;">
+            <label style="display: flex; align-items: center; gap: 4px; font-size: 12px; cursor: default;">
               <input type="radio" name="importMode" value="new" checked onchange="toggleImportMode()"> 创建新作品
             </label>
-            <label style="display: flex; align-items: center; gap: 4px; font-size: 12px; cursor: pointer;">
+            <label style="display: flex; align-items: center; gap: 4px; font-size: 12px; cursor: default;">
               <input type="radio" name="importMode" value="append" onchange="toggleImportMode()"> 追加到现有作品
             </label>
           </div>
@@ -1111,7 +1111,7 @@
             ${data.map(w => `
               <div class="fanqie-work-card"
                    onclick="selectFanqieWork('${w.work_id}', '${w.title.replace(/'/g, "\\'")}')"
-                   style="cursor: pointer; border: 2px solid ${selectedFanqieWorkId === w.work_id ? 'var(--accent)' : 'var(--border)'}; transition: all 0.2s;">
+                   style="cursor: default; border: 2px solid ${selectedFanqieWorkId === w.work_id ? 'var(--accent)' : 'var(--border)'}; transition: all 0.2s;">
                 <div class="fanqie-work-header">
                   <div class="fanqie-work-title">${w.title}</div>
                   <span class="fanqie-work-status ${w.status?.includes('签约') ? 'signed' : 'ongoing'}">${w.status || '连载'}</span>
@@ -1288,13 +1288,22 @@
       showToast('✅ 已全部标记完成', 'success');
     }
     
-    // 切换章节完成状态
-    function toggleChapterComplete(workId, chapterNumber) {
-      if (!completedChapters[workId]) {
-        completedChapters[workId] = {};
-      }
-      completedChapters[workId][chapterNumber] = !completedChapters[workId][chapterNumber];
-      saveDailySettings();
+    // 本地章节数据缓存
+    let localWorksCache = {};
+    
+    // 获取本地作品的章节数据
+    async function loadLocalWorkChapters(workId) {
+      try {
+        if (localWorksCache[workId]) {
+          return localWorksCache[workId];
+        }
+        const result = await api(`/works/${workId}`);
+        const chapters = result.data?.chapters || [];
+        localWorksCache[workId] = chapters;
+        return chapters;
+      } catch (e) {
+          return [];
+        }
     }
 
     // 启动自动轮询
@@ -1437,13 +1446,50 @@
         // 如果没有章节号，先用一个模拟的来演示
         const demoChapter = safeLatestChapter > 0 ? safeLatestChapter : 100;
         
+        // 获取今日日期
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        // 查找对应的本地作品
+        const localWork = localWorks.find(lw => 
+          lw.title === w.title || (w.work_id && lw.id === parseInt(w.work_id)));
+        
+        // 获取本地章节
+        let localChapters = [];
+        if (localWork?.id) {
+          try {
+            const result = await api(`/works/${localWork.id}`);
+            localChapters = result.data?.chapters || [];
+          } catch (e) {}
+        }
+        
         const planChapters = [];
+        let completedCount = 0;
+        
         for (let i = 1; i <= dailyChaptersPerWork; i++) {
-          const chapterNum = demoChapter + i;
-          const isCompleted = !!(completedChapters[workId]?.[chapterNum]);
+          const chapterNum = safeLatestChapter + i;
+          
+          // 检查本地是否有这一章，并且发布日期是今天
+          const localChapter = localChapters.find(c => c.chapter_number === chapterNum);
+          let isCompleted = false;
+          
+          if (localChapter) {
+            const chapterDate = new Date(localChapter.updated_at || localChapter.created_at);
+            if (chapterDate && !isNaN(chapterDate.getTime())) {
+              const chapterDateOnly = new Date(chapterDate);
+              chapterDateOnly.setHours(0, 0, 0, 0);
+              isCompleted = chapterDateOnly.getTime() === today.getTime();
+            }
+          }
+          
+          if (isCompleted) {
+            completedCount++;
+          }
+          
           planChapters.push({
             number: chapterNum,
-            completed: isCompleted
+            completed: isCompleted,
+            chapterDate: localChapter?.updated_at || localChapter?.created_at
           });
         }
         // 从小到大的顺序（63, 64, 65...）
@@ -1459,11 +1505,16 @@
             </div>
             <div style="display: flex; flex-direction: column; gap: 6px;">
               ${planChapters.map(ch => `
-                <div style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: ${ch.completed ? 'rgba(74, 222, 128, 0.15)' : 'var(--bg-tertiary)'}; border: 1px solid ${ch.completed ? 'rgba(74, 222, 128, 0.3)' : 'var(--border)'}; border-radius: 6px; cursor: pointer; transition: all 0.2s;"
-                     onclick="toggleChapterComplete('${workId}', ${ch.number})">
+                <div style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: ${ch.completed ? 'rgba(74, 222, 128, 0.15)' : 'var(--bg-tertiary)'}; border: 1px solid ${ch.completed ? 'rgba(74, 222, 128, 0.3)' : 'var(--border)'}; border-radius: 6px; cursor: default; transition: all 0.2s;"
+
                   <span style="font-size: 18px; ${ch.completed ? 'color: #22c55e;' : 'color: #9ca3af;'}">${ch.completed ? '☑' : '☐'}</span>
                   <span style="font-size: 12px; ${ch.completed ? 'text-decoration: line-through; color: #9ca3af;' : 'color: var(--text); font-weight: 500;'}">
                     第${ch.number}章
+                    ${ch.chapterDate ? `
+                    <span style="color: var(--text-muted); font-size: 9px; margin-left: 6px;">
+                      (${new Date(ch.chapterDate).toLocaleDateString()})
+                    </span>
+                    ` : ''}
                   </span>
                 </div>
               `).join('')}
@@ -1924,7 +1975,7 @@
           </thead>
           <tbody>
             ${data.map((char, idx) => `
-              <tr onclick="showCharacterDetail(${char.id})" style="cursor: pointer;">
+              <tr onclick="showCharacterDetail(${char.id})" style="cursor: default;">
                 <td style="padding: 6px 0; color: var(--text-muted); font-size: 12px;">${idx + 1}</td>
                 <td style="text-align: center; padding: 4px 0;">
                   <span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: ${getRoleColor(char.role_type)}; color: #fff; font-size: 11px;">${getAvatarText(char.name)}</span>
@@ -2023,7 +2074,7 @@
           <h3 style="margin-bottom: 16px;">🌍 世界观设定 (${data.length}项)</h3>
           <div class="data-grid">
             ${data.map(item => `
-              <div class="data-card" style="cursor: pointer;" onclick="showWorldDetail(${item.id})">
+              <div class="data-card" style="cursor: default;" onclick="showWorldDetail(${item.id})">
                 <div class="card-header">
                   <span class="card-num">${item.setting_type || '设定'}</span>
                 </div>
@@ -2977,7 +3028,7 @@
                 border: 1px solid var(--border); 
                 border-radius: 8px; 
                 padding: 12px 16px;
-                cursor: pointer;
+                cursor: default;
                 transition: all 0.15s;
               " onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
                 <div style="display: flex; align-items: flex-start; gap: 12px;">
