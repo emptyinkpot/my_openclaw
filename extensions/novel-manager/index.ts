@@ -78,17 +78,7 @@ function parseQuery(url: string): Record<string, string> {
 
 // 获取页面HTML
 function getPageHtml(pageName: string): string {
-  // 对于 settings.html，优先从插件自己的 public 目录读取
-  if (pageName === 'settings.html') {
-    const htmlPath = path.join(__dirname, 'public', pageName);
-    try {
-      return fs.readFileSync(htmlPath, 'utf-8');
-    } catch (e) {
-      console.error('[novel-manager] 无法读取插件settings页面:', htmlPath);
-    }
-  }
-  
-  // 其他页面使用control-ui目录
+  // 所有页面都使用control-ui目录
   const controlUiPath = '/usr/lib/node_modules/openclaw/dist/control-ui';
   let targetFile = pageName;
   
@@ -98,8 +88,7 @@ function getPageHtml(pageName: string): string {
     'index.html': 'novel-home.html',
     'auto.html': 'auto.html',
     'experience.html': 'experience.html',
-    'cache.html': 'cache.html',
-    'settings.html': 'settings.html'
+    'cache.html': 'cache.html'
   };
   
   targetFile = pageMap[pageName] || pageName;
@@ -132,10 +121,7 @@ async function handleNovelPage(req: IncomingMessage, res: ServerResponse): Promi
     '/novel/': 'index.html',
     '/auto.html': 'auto.html',
     '/experience.html': 'experience.html',
-    '/cache.html': 'cache.html',
-    '/settings': 'settings.html',
-    '/settings/': 'settings.html',
-    '/novel-settings.html': 'settings.html'
+    '/cache.html': 'cache.html'
   };
 
   const pageFile = pageMap[urlPath];
@@ -580,9 +566,7 @@ const plugin = {
       { path: '/novel', match: 'exact' as const },
       { path: '/auto.html', match: 'exact' as const },
       { path: '/experience.html', match: 'exact' as const },
-      { path: '/cache.html', match: 'exact' as const },
-      { path: '/settings', match: 'exact' as const },
-      { path: '/settings/', match: 'exact' as const }
+      { path: '/cache.html', match: 'exact' as const }
     ];
     
     // 注册页面路由 - 不需要认证

@@ -106,44 +106,24 @@ function parseQuery(url) {
 }
 // 获取页面HTML
 function getPageHtml(pageName) {
-    // 对于 settings.html，优先从插件自己的 public 目录读取
-    if (pageName === 'settings.html') {
-        const htmlPath = path.join(__dirname, 'public', pageName);
+    // 原生界面使用control-ui目录
+    if (pageName === 'native.html') {
+        const nativePath = '/usr/lib/node_modules/openclaw/dist/control-ui/index.html';
         try {
-            return fs.readFileSync(htmlPath, 'utf-8');
+            return fs.readFileSync(nativePath, 'utf-8');
         }
         catch (e) {
-            console.error('[novel-manager] 无法读取插件settings页面:', htmlPath);
+            console.error('[novel-manager] 无法读取原生界面:', nativePath);
+            return '<html><body><h1>原生界面加载失败</h1></body></html>';
         }
     }
-    // 其他页面使用control-ui目录
-    const controlUiPath = '/usr/lib/node_modules/openclaw/dist/control-ui';
-    let targetFile = pageName;
-    // 映射页面名称到control-ui的文件名
-    const pageMap = {
-        'native.html': 'index.html',
-        'index.html': 'novel-home.html',
-        'auto.html': 'auto.html',
-        'experience.html': 'experience.html',
-        'cache.html': 'cache.html',
-        'settings.html': 'settings.html'
-    };
-    targetFile = pageMap[pageName] || pageName;
-    const fullPath = path.join(controlUiPath, targetFile);
+    const htmlPath = path.join(__dirname, 'public', pageName);
     try {
-        return fs.readFileSync(fullPath, 'utf-8');
+        return fs.readFileSync(htmlPath, 'utf-8');
     }
     catch (e) {
-        console.error('[novel-manager] 无法读取control-ui页面:', fullPath);
-        // 降级到插件自己的页面
-        const htmlPath = path.join(__dirname, 'public', pageName);
-        try {
-            return fs.readFileSync(htmlPath, 'utf-8');
-        }
-        catch (e2) {
-            console.error('[novel-manager] 无法读取HTML文件:', htmlPath);
-            return '<html><body><h1>页面加载失败</h1></body></html>';
-        }
+        console.error('[novel-manager] 无法读取HTML文件:', htmlPath);
+        return '<html><body><h1>页面加载失败</h1></body></html>';
     }
 }
 // 路由处理器 - 处理页面请求（不需要认证）
@@ -157,10 +137,7 @@ async function handleNovelPage(req, res) {
         '/novel/': 'index.html',
         '/auto.html': 'auto.html',
         '/experience.html': 'experience.html',
-        '/cache.html': 'cache.html',
-        '/settings': 'settings.html',
-        '/settings/': 'settings.html',
-        '/novel-settings.html': 'settings.html'
+        '/cache.html': 'cache.html'
     };
     const pageFile = pageMap[urlPath];
     if (pageFile) {
@@ -550,9 +527,7 @@ const plugin = {
             { path: '/novel', match: 'exact' },
             { path: '/auto.html', match: 'exact' },
             { path: '/experience.html', match: 'exact' },
-            { path: '/cache.html', match: 'exact' },
-            { path: '/settings', match: 'exact' },
-            { path: '/settings/', match: 'exact' }
+            { path: '/cache.html', match: 'exact' }
         ];
         // 注册页面路由 - 不需要认证
         if (api?.registerHttpRoute) {
