@@ -254,6 +254,30 @@ class NovelService {
         });
     }
     /**
+     * 更新作品信息
+     */
+    async updateWork(id, data) {
+        const updates = [];
+        const params = [];
+        if (data.title !== undefined) {
+            updates.push('title = ?');
+            params.push(data.title);
+        }
+        if (data.author !== undefined) {
+            updates.push('author = ?');
+            params.push(data.author);
+        }
+        if (data.status !== undefined) {
+            updates.push('status = ?');
+            params.push(data.status);
+        }
+        if (updates.length === 0)
+            return;
+        updates.push('updated_at = NOW()');
+        params.push(id);
+        await this.db.execute(`UPDATE works SET ${updates.join(', ')} WHERE id = ?`, params);
+    }
+    /**
      * 更新章节
      */
     async updateChapter(id, data) {

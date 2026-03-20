@@ -76,6 +76,18 @@ app.delete(`${API_PREFIX}/works/:id`, async (req: Request, res: Response) => {
   }
 });
 
+// 更新作品
+app.put(`${API_PREFIX}/works/:id`, async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { title, author, status } = req.body;
+    await getNovelService().updateWork(id, { title, author, status });
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // 更新章节
 app.put(`${API_PREFIX}/chapters/:id`, async (req: Request, res: Response) => {
   try {

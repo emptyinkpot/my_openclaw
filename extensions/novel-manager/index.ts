@@ -264,6 +264,15 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
       return true;
     }
 
+    // 更新作品
+    if (workDetailMatch && method === 'PUT') {
+      const id = parseInt(workDetailMatch[1]);
+      const body = await parseBody(req);
+      await getNovelService().updateWork(id, body);
+      jsonRes(res, { success: true });
+      return true;
+    }
+
     // 章节详情
     const chapterMatch = path.match(/^\/api\/novel\/chapters\/(\d+)$/);
     if (chapterMatch && method === 'GET') {

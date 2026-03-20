@@ -1856,12 +1856,13 @@
         list.innerHTML = data.map(work => `
           <div class="work-item ${currentWork === work.id ? 'active' : ''}" data-work-id="${work.id}" style="flex-direction: row; align-items: center; gap: 8px;">
             <div onclick="selectWork(${work.id})" style="flex: 1; min-width: 0;">
-              <div class="work-title">${work.title}</div>
+              <div class="work-title" id="work-title-${work.id}">${work.title}</div>
               <div class="work-meta">
                 <span>${work.author || '未知作者'}</span>
                 <span class="work-badge">${work.has_content_count || 0}/${work.chapter_count || 0}章</span>
               </div>
             </div>
+            <button class="btn btn-sm" style="padding: 2px; font-size: 11px; opacity: 0.4; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 3px;" onclick="event.stopPropagation(); editWorkTitle(${work.id}, '${work.title.replace(/'/g, "\\'")}')" title="编辑作品">✏️</button>
             <button class="btn btn-sm" style="padding: 2px; font-size: 11px; opacity: 0.4; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 3px;" onclick="event.stopPropagation(); confirmDeleteWork(${work.id}, '${work.title.replace(/'/g, "\\'")}')" title="删除作品">×</button>
           </div>
         `).join('');
@@ -1870,6 +1871,39 @@
         const select = document.getElementById('targetWork');
         if (select) select.innerHTML = '<option value="">== 选择作品 ==</option>' + 
           data.map(w => `<option value="${w.id}">${w.title}</option>`).join('');
+    }
+    
+    // 编辑作品名称
+    function editWorkTitle(workId, currentTitle) {
+      const newTitle = prompt('修改作品名称：', currentTitle);
+      if (newTitle && newTitle !== currentTitle) {
+        updateWorkTitle(workId, newTitle);
+      }
+    }
+    
+    // 更新作品名称到数据库
+    async function updateWorkTitle(workId, newTitle) {
+      try {
+        const response = await api(`/works/${workId}`, {
+          method: 'PUT',
+          body: JSON.stringify({ title: newTitle })
+        });
+        if (response.success) {
+          showToast(`✅ 作品名称已更新`, 'success');
+          // 更新本地数据
+          const work = worksData.find(w => w.id === workId);
+          if (work) work.title = newTitle;
+          // 更新UI
+          const titleEl = document.getElementById(`work-title-${workId}`);
+          if (titleEl) titleEl.textContent = newTitle;
+          // 刷新列表
+          loadWorks(true);
+        } else {
+          showToast(`❌ 更新失败: ${response.error}`, 'error');
+        }
+      } catch (err) {
+        showToast(`❌ 更新失败: ${err.message}`, 'error');
+      }
     }
 
     // 选择作品
