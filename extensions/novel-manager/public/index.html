@@ -219,7 +219,7 @@
     ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
   </style>
 </head>
-<body><!-- VERSION: 20260320-v9 -->
+<body><!-- VERSION: 20260320-v10 -->
 <div class="nav-bar"><span>🦞 OpenClaw</span><a href="/" class="on">📚 小说管理</a><a href="/auto.html">⚙️ 自动化</a><a href="/experience.html">🧠 经验</a><a href="/cache.html">💾 缓存</a><a href="/native.html">🎯 原生界面</a></div>
   <!-- 顶部工具栏 -->
   <div class="top-bar">
@@ -1602,7 +1602,7 @@
       }
       
       try {
-        showToast('🚀 正在加载数据... (v9)', 'info');
+        showToast('🚀 正在加载数据... (v10)', 'info');
         await Promise.all([loadStats(), loadWorks()]);
         showToast('✅ 数据加载完成', 'success');
       } catch (err) {
@@ -3270,7 +3270,7 @@
       // 更新导航栏高亮
       const navPageMap = {
         'novel-data': '小说管理',
-        'fanqie-scan': '自动化',
+        'fanqie-scan': '小说管理',
         'cache-manage': '缓存',
         'experience': '经验'
       };

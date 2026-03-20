@@ -1,13 +1,3 @@
-2026/03/20-08:58:39.213 25742 Reusing MANIFEST /workspace/projects/browser/fanqie-account-1/Default/Local Storage/leveldb/MANIFEST-000001
-2026/03/20-08:58:39.236 25742 Recovering log #10
-2026/03/20-08:58:39.237 25742 Level-0 table #12: started
-2026/03/20-08:58:39.244 25742 Level-0 table #12: 17270 bytes OK
-2026/03/20-08:58:39.247 25742 Delete type=0 #10
-2026/03/20-08:58:39.248 25746 Compacting 4@0 + 0@1 files
-2026/03/20-08:58:39.265 25746 Generated table #14@0: 29 keys, 36674 bytes
-2026/03/20-08:58:39.265 25746 Compacted 4@0 + 0@1 files => 36674 bytes
-2026/03/20-08:58:39.266 25746 compacted to: files[ 0 1 0 0 0 0 0 ]
-2026/03/20-08:58:39.267 25746 Delete type=2 #12
-2026/03/20-08:58:39.267 25746 Delete type=2 #9
-2026/03/20-08:58:39.267 25746 Delete type=2 #3
-2026/03/20-08:58:39.267 25746 Delete type=2 #6
+2026/03/20-09:06:29.560 2686c Reusing MANIFEST /workspace/projects/browser/fanqie-account-1/Default/Local Storage/leveldb/MANIFEST-000001
+2026/03/20-09:06:29.581 2686c Recovering log #4
+2026/03/20-09:06:29.581 2686c Reusing old log /workspace/projects/browser/fanqie-account-1/Default/Local Storage/leveldb/000004.log 
