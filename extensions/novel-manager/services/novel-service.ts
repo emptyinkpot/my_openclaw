@@ -764,14 +764,18 @@ export class NovelService {
   async startPipeline() {
     const pipeline = this.getPipeline();
     
-    // 示例：调用 publishToFanqie，设置有头模式
     try {
-      // 这里可以根据实际需求调用具体的流水线方法
-      // 例如：await pipeline.publishToFanqie({ workId: 7, headless: false });
+      // 真正调用 publishToFanqie，设置有头模式
+      // 先用 dryRun 模式测试，不会真的发布
+      await pipeline.publishToFanqie({ 
+        workId: 7, 
+        headless: false,  // 有头模式
+        dryRun: true     // 先测试，不真发布
+      });
       
-      await pipeline.start();
       return { success: true, message: '流水线已启动（有头模式）' };
     } catch (err) {
+      console.error('[NovelService] 启动流水线失败:', err);
       return { success: false, message: '启动失败', error: String(err) };
     }
   }
