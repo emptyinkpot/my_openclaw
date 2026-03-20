@@ -236,18 +236,6 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
       return true;
     }
 
-    // 获取数据库表结构
-    if (path === '/api/novel/schema/tables' && method === 'GET') {
-      try {
-        const result = await getNovelService().getTableSchema();
-        jsonRes(res, result);
-      } catch (error) {
-        console.error('[NovelManager] 获取表结构失败:', error);
-        jsonRes(res, { success: false, message: error.message });
-      }
-      return true;
-    }
-
     // 提供截图文件
     const screenshotMatch = path.match(/^\/api\/novel\/screenshot\/(.+)$/);
     if (screenshotMatch && method === 'GET') {

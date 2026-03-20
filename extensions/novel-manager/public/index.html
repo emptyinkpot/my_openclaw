@@ -266,12 +266,12 @@
     <div class="divider"></div>
     <button class="btn primary" onclick="showSubPage('novel-data')">📖 MySQL数据</button>
     <button class="btn" onclick="showSubPage('control-panel')">⚙️ 控制面板</button>
-    <button class="btn" onclick="showSubPage('table-schema')">📊 表结构</button>
     <div class="divider"></div>
     <button class="btn" onclick="showSubPage('fanqie-scan')">🍅 番茄扫描</button>
     <button class="btn" onclick="toggleAiPanel()" style="background: linear-gradient(135deg, #8250df, #0969da); border-color: transparent; color: #fff;">✨ AI工具</button>
     <div class="divider"></div>
     <button class="btn" onclick="showView('import')">📥 AI导入</button>
+    <button class="btn" onclick="showDbSchema()">🗄️ 表结构</button>
     <div class="spacer"></div>
     <div class="search-box"><input type="text" id="globalSearch" placeholder="全局搜索..." onkeyup="globalSearch()"></div>
     <button class="btn" onclick="refreshAll()">🔄 刷新</button>
@@ -423,54 +423,6 @@
     </div>
   </div>
   <!-- /控制面板页面 -->
-
-  <!-- 表结构页面 - 仿照控制面板写的 -->
-  <div id="tableSchemaPage" class="sub-page">
-    <div class="main" style="height: calc(100vh - 36px);">
-      <div class="sidebar" style="width: 260px;">
-        <div class="sidebar-header">
-          <span class="sidebar-title">📊 表结构</span>
-        </div>
-        <div class="sidebar-scroll" style="padding: 12px;">
-          <!-- 表列表 -->
-          <div id="tableList" style="margin-bottom: 16px;">
-            <div style="font-size: 11px; font-weight: 600; margin-bottom: 8px;">📋 数据表</div>
-            <div id="tableListContainer" style="display: flex; flex-direction: column; gap: 4px;">
-              <!-- 表列表会在这里动态生成 -->
-            </div>
-          </div>
-          
-          <!-- 数据库信息 -->
-          <div style="margin-bottom: 12px; padding: 12px; background: var(--bg-tertiary); border-radius: 6px;">
-            <div style="font-size: 11px; font-weight: 600; margin-bottom: 8px;">🗄️ 数据库信息</div>
-            <div id="dbInfo" style="font-size: 11px; color: var(--text-muted);">
-              <div>加载中...</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="content">
-        <!-- 工具栏 -->
-        <div class="toolbar">
-          <div class="toolbar-group">
-            <span style="font-size: 11px; color: var(--text-muted);">表结构</span>
-          </div>
-          <div class="spacer"></div>
-          <button class="btn btn-sm" onclick="refreshTableSchema()">🔄 刷新</button>
-        </div>
-        
-        <!-- 内容区 -->
-        <div class="content-area" id="tableSchemaContent">
-          <div style="text-align: center; padding: 60px; color: var(--text-muted);">
-            <div style="font-size: 48px; margin-bottom: 16px;">📊</div>
-            <div style="font-size: 16px;">请从左侧选择一个数据表</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <!-- /表结构页面 -->
 
   <!-- 番茄扫描页面 -->
   <div id="fanqieScanPage" class="sub-page">
@@ -1034,135 +986,6 @@
     const GATEWAY_TOKEN = 'e1647cdb-1b80-4eee-a975-7599160cc89b';
     const API_BASE = '/api/novel';
 
-    // ========== 表结构相关函数 ==========
-    let currentSchemaData: any = null;
-    let selectedTableName: string | null = null;
-
-    async function refreshTableSchema() {
-      console.log('[TableSchema] 刷新表结构...');
-      try {
-        const response = await fetch(`${API_BASE}/schema/tables`);
-        const result = await response.json();
-        
-        if (result.success) {
-          currentSchemaData = result.data;
-          renderTableList();
-          renderDatabaseInfo();
-        } else {
-          alert('获取表结构失败: ' + result.message);
-        }
-      } catch (error) {
-        console.error('[TableSchema] 错误:', error);
-        alert('错误: ' + error.message);
-      }
-    }
-
-    function renderTableList() {
-      const container = document.getElementById('tableListContainer');
-      if (!container || !currentSchemaData) return;
-      
-      container.innerHTML = currentSchemaData.tables.map((table: any) => `
-        <button 
-          class="btn btn-sm" 
-          style="text-align: left; justify-content: flex-start;"
-          onclick="selectTable('${table.name}')"
-          id="table-btn-${table.name}"
-        >
-          📄 ${table.name}
-        </button>
-      `).join('');
-    }
-
-    function renderDatabaseInfo() {
-      const infoEl = document.getElementById('dbInfo');
-      if (!infoEl || !currentSchemaData) return;
-      
-      infoEl.innerHTML = `
-        <div style="margin-bottom: 4px;">类型: MySQL</div>
-        <div style="margin-bottom: 4px;">表数: ${currentSchemaData.tables.length}</div>
-        <div>刷新时间: ${new Date().toLocaleTimeString()}</div>
-      `;
-    }
-
-    function selectTable(tableName: string) {
-      selectedTableName = tableName;
-      console.log('[TableSchema] 选择表:', tableName);
-      
-      // 更新按钮样式
-      document.querySelectorAll('[id^="table-btn-"]').forEach(btn => {
-        btn.classList.remove('primary');
-      });
-      const selectedBtn = document.getElementById(`table-btn-${tableName}`);
-      if (selectedBtn) selectedBtn.classList.add('primary');
-      
-      // 渲染表结构
-      renderTableDetail(tableName);
-    }
-
-    function renderTableDetail(tableName: string) {
-      const contentEl = document.getElementById('tableSchemaContent');
-      if (!contentEl || !currentSchemaData) return;
-      
-      const table = currentSchemaData.tables.find((t: any) => t.name === tableName);
-      if (!table) return;
-      
-      contentEl.innerHTML = `
-        <div style="padding: 20px;">
-          <div style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border);">
-            <div style="font-size: 20px; font-weight: 600; margin-bottom: 4px;">📄 ${table.name}</div>
-            <div style="font-size: 12px; color: var(--text-muted);">${table.columns.length} 个字段</div>
-          </div>
-          
-          <!-- 字段列表 -->
-          <div style="margin-bottom: 24px;">
-            <div style="font-size: 12px; font-weight: 600; margin-bottom: 12px; color: var(--text-muted);">字段列表</div>
-            <div style="background: var(--bg-tertiary); border-radius: 8px; overflow: hidden;">
-              <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
-                <thead>
-                  <tr style="background: var(--bg-secondary);">
-                    <th style="padding: 10px 12px; text-align: left; font-weight: 600;">字段名</th>
-                    <th style="padding: 10px 12px; text-align: left; font-weight: 600;">类型</th>
-                    <th style="padding: 10px 12px; text-align: left; font-weight: 600;">NULL</th>
-                    <th style="padding: 10px 12px; text-align: left; font-weight: 600;">键</th>
-                    <th style="padding: 10px 12px; text-align: left; font-weight: 600;">默认值</th>
-                    <th style="padding: 10px 12px; text-align: left; font-weight: 600;">额外</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${table.columns.map((col: any) => `
-                    <tr style="border-top: 1px solid var(--border);">
-                      <td style="padding: 10px 12px; font-family: monospace;">${col.name}</td>
-                      <td style="padding: 10px 12px; font-family: monospace;">${col.type}</td>
-                      <td style="padding: 10px 12px;">
-                        <span style="padding: 2px 8px; border-radius: 10px; font-size: 10px; background: ${col.nullable ? '#dafbe1' : '#ffebe9'}; color: ${col.nullable ? 'var(--success)' : 'var(--danger)'};">
-                          ${col.nullable ? 'YES' : 'NO'}
-                        </span>
-                      </td>
-                      <td style="padding: 10px 12px;">${col.key || '-'}</td>
-                      <td style="padding: 10px 12px; font-family: monospace;">${col.default !== null ? col.default : '-'}</td>
-                      <td style="padding: 10px 12px;">${col.extra || '-'}</td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            </div>
-          </div>
-          
-          <!-- 示例数据 -->
-          ${table.sampleData && table.sampleData.length > 0 ? `
-            <div>
-              <div style="font-size: 12px; font-weight: 600; margin-bottom: 12px; color: var(--text-muted);">示例数据 (前${table.sampleData.length}条)</div>
-              <div style="background: var(--bg-tertiary); border-radius: 8px; overflow: hidden; overflow-x: auto;">
-                <pre style="padding: 16px; margin: 0; font-size: 11px; font-family: monospace; white-space: pre-wrap; word-break: break-all;">${JSON.stringify(table.sampleData, null, 2)}</pre>
-              </div>
-            </div>
-          ` : ''}
-        </div>
-      `;
-    }
-
-    // ========== 表结构相关函数结束 ==========
-
     async function testBrowser() {
       console.log('[testBrowser] 点击了测试浏览器');
       const resultEl = document.getElementById('screenshotResult');
@@ -1334,18 +1157,12 @@
       } else if (pageName === 'cache-manage') {
         document.getElementById('cacheManagePage').classList.add('active');
         refreshCacheList();
-      } else if (pageName === 'table-schema') {
-        document.getElementById('tableSchemaPage').classList.add('active');
-        if (!currentSchemaData) {
-          refreshTableSchema();
-        }
       }
       
       // 更新子页面按钮状态
       const subPageBtns = [
         { name: 'novel-data', text: 'MySQL数据' },
         { name: 'control-panel', text: '控制面板' },
-        { name: 'table-schema', text: '表结构' },
         { name: 'fanqie-scan', text: '番茄扫描' },
         { name: 'cache-manage', text: '缓存管理' }
       ];
@@ -1358,8 +1175,6 @@
           const pageMap = { 
             'novel-data': 'MySQL数据', 
             'control-panel': '控制面板',
-        'table-schema': '表结构',
-            'table-schema': '表结构',
             'fanqie-scan': '番茄扫描', 
             'cache-manage': '缓存管理' 
           };
@@ -2597,7 +2412,9 @@
       else if (view === 'settings') document.getElementById('settingsModal').classList.add('show');
     }
     
-
+    function showDbSchema() {
+      window.open('schema.html', '_blank');
+    }
 
     function quickAdd() { showToast('+ 快速添加章节', 'info'); }
     function aiGenerate() { showToast('🤖 AI生成章节', 'info'); }
@@ -3561,7 +3378,6 @@
       const btnTextMap = { 
         'novel-data': 'MySQL数据', 
         'control-panel': '控制面板',
-        'table-schema': '表结构',
         'fanqie-scan': '番茄扫描', 
         'cache-manage': '缓存管理',
         'experience': '经验积累'
