@@ -144,7 +144,9 @@ async function handleNovelPage(req, res) {
     if (pageFile) {
         res.writeHead(200, {
             'Content-Type': 'text/html; charset=utf-8',
-            'Cache-Control': 'no-cache'
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+            'Pragma': 'no-cache',
+            'Expires': '0'
         });
         res.end(getPageHtml(pageFile));
         return true;
@@ -157,6 +159,7 @@ async function handleSse(req, res) {
     const method = req.method || 'GET';
     const path = url.split('?')[0];
     const query = parseQuery(url);
+    console.log('[SSE] 收到请求:', method, path);
     // SSE 端点: /novel/sse/progress/:progressId
     const progressMatch = path.match(/^\/novel\/sse\/progress\/([^/]+)$/);
     if (progressMatch && method === 'GET') {
@@ -177,6 +180,8 @@ async function handleSse(req, res) {
             'Connection': 'keep-alive',
             'Access-Control-Allow-Origin': '*',
         });
+        // 立即发送连接确认消息
+        res.write(`data: ${JSON.stringify({ status: 'connected', message: 'SSE连接已建立', progressId })}\n\n`);
         // 导入进度管理器
         const { registerClient } = require('./core/pipeline/ProgressManager');
         // 注册客户端
