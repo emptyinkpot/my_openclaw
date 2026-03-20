@@ -265,6 +265,7 @@
     <div class="logo">📚 小说管理</div>
     <div class="divider"></div>
     <button class="btn primary" onclick="showSubPage('novel-data')">📖 小说数据</button>
+    <button class="btn" onclick="showSubPage('test-page')">🧪 测试页面</button>
     <div class="divider"></div>
     <button class="btn" onclick="showSubPage('fanqie-scan')">🍅 番茄扫描</button>
     <button class="btn" onclick="toggleAiPanel()" style="background: linear-gradient(135deg, #8250df, #0969da); border-color: transparent; color: #fff;">✨ AI工具</button>
@@ -352,6 +353,18 @@
       </div>
     </div>
     <!-- /小说数据页面 -->
+
+  <!-- 测试页面 -->
+  <div id="testPage" class="sub-page">
+    <div class="main" style="height: calc(100vh - 36px);">
+      <div class="content" style="padding: 40px;">
+        <h2>🧪 测试页面</h2>
+        <p style="margin: 20px 0;">这是一个最简单的测试页面！</p>
+        <button class="btn primary" onclick="showSubPage('novel-data')">📖 返回小说数据</button>
+      </div>
+    </div>
+  </div>
+  <!-- /测试页面 -->
 
   <!-- 番茄扫描页面 -->
   <div id="fanqieScanPage" class="sub-page">
@@ -1047,6 +1060,8 @@
       // 显示目标页面
       if (pageName === 'novel-data') {
         document.getElementById('novelDataPage').classList.add('active');
+      } else if (pageName === 'test-page') {
+        document.getElementById('testPage').classList.add('active');
       } else if (pageName === 'fanqie-scan') {
         document.getElementById('fanqieScanPage').classList.add('active');
         loadFanqieWorks();
@@ -1058,6 +1073,7 @@
       // 更新子页面按钮状态
       const subPageBtns = [
         { name: 'novel-data', text: '小说数据' },
+        { name: 'test-page', text: '测试页面' },
         { name: 'fanqie-scan', text: '番茄扫描' },
         { name: 'cache-manage', text: '缓存管理' }
       ];
@@ -1067,7 +1083,12 @@
         const isSubPageBtn = subPageBtns.some(sp => btnText.includes(sp.text));
         if (isSubPageBtn) {
           btn.classList.remove('primary');
-          const pageMap = { 'novel-data': '小说数据', 'fanqie-scan': '番茄扫描', 'cache-manage': '缓存管理' };
+          const pageMap = { 
+            'novel-data': '小说数据', 
+            'test-page': '测试页面',
+            'fanqie-scan': '番茄扫描', 
+            'cache-manage': '缓存管理' 
+          };
           if (btnText.includes(pageMap[pageName])) {
             btn.classList.add('primary');
           }
