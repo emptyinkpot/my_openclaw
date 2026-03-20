@@ -370,7 +370,14 @@
               <span id="pipelineStatus" style="padding: 2px 8px; border-radius: 10px; font-size: 10px; background: #ffebe9; color: var(--danger);">已停止</span>
             </div>
             <button id="pipelineToggleBtn" class="btn primary" style="width: 100%; margin-bottom: 8px;" onclick="togglePipeline()">▶️ 启动流水线</button>
-            <button class="btn" style="width: 100%;" onclick="testOpenBrowser()">🌐 测试打开浏览器</button>
+            <button class="btn" style="width: 100%; margin-bottom: 8px;" onclick="testBrowser()">📸 测试浏览器（截图）</button>
+          </div>
+          
+          <!-- 测试截图显示 -->
+          <div id="screenshotSection" style="margin-bottom: 16px; padding: 12px; background: var(--bg-tertiary); border-radius: 6px; display: none;">
+            <div style="font-size: 11px; font-weight: 600; margin-bottom: 8px;">📷 测试截图</div>
+            <div id="screenshotResult" style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;"></div>
+            <img id="testScreenshot" style="width: 100%; border-radius: 6px; display: none;" />
           </div>
           
           <!-- 快捷操作 -->
@@ -978,6 +985,37 @@
     // Gateway认证token
     const GATEWAY_TOKEN = 'e1647cdb-1b80-4eee-a975-7599160cc89b';
     const API_BASE = '/api/novel';
+
+    async function testBrowser() {
+      console.log('[testBrowser] 点击了测试浏览器');
+      const resultEl = document.getElementById('screenshotResult');
+      const screenshotSection = document.getElementById('screenshotSection');
+      const screenshotImg = document.getElementById('testScreenshot');
+      
+      if (screenshotSection) screenshotSection.style.display = 'block';
+      if (resultEl) resultEl.textContent = '⏳ 正在测试...';
+      if (screenshotImg) screenshotImg.style.display = 'none';
+      
+      try {
+        const response = await fetch(`${API_BASE}/test-browser`, { method: 'POST' });
+        const result = await response.json();
+        console.log('[testBrowser] 响应:', result);
+        
+        if (result.success) {
+          if (resultEl) resultEl.innerHTML = '✅ ' + result.message;
+          // 显示截图（注意：需要后端提供静态文件服务
+          if (screenshotImg) {
+            screenshotImg.src = '/api/novel/screenshot/test-baidu.png?t=' + Date.now();
+            screenshotImg.style.display = 'block';
+          }
+        } else {
+          if (resultEl) resultEl.innerHTML = '❌ 失败: ' + (result.message || result.error);
+        }
+      } catch (error) {
+        console.error('[testBrowser] 错误:', error);
+        if (resultEl) resultEl.innerHTML = '❌ 错误: ' + error.message;
+      }
+    }
     let currentWork = null, currentTab = 'chapters', viewMode = 'grid', currentFilter = 'all';
     let worksData = [], chaptersData = [], charactersData = [];
     let currentEditingChapter = null;

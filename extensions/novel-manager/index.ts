@@ -223,26 +223,37 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
       return true;
     }
 
-    // 测试打开浏览器
-    if (path === '/api/novel/test-open-browser' && method === 'POST') {
+    // 测试浏览器（截图版本）
+    if (path === '/api/novel/test-browser' && method === 'POST') {
       try {
-        console.log('[NovelManager] 测试打开浏览器...');
-        const { chromium } = require('playwright');
-        const browser = await chromium.launch({ headless: false });
-        const page = await browser.newPage();
-        await page.goto('https://www.baidu.com');
-        jsonRes(res, { success: true, message: '浏览器已打开' });
-        
-        // 30秒后自动关闭
-        setTimeout(async () => {
-          try {
-            await browser.close();
-            console.log('[NovelManager] 测试浏览器已关闭');
-          } catch {}
-        }, 30000);
+        console.log('[NovelManager] 测试浏览器（截图版本）...');
+        const result = await getNovelService().testBrowser();
+        jsonRes(res, result);
       } catch (error) {
-        console.error('[NovelManager] 测试打开浏览器错误:', error);
+        console.error('[NovelManager] 测试浏览器错误:', error);
         jsonRes(res, { success: false, message: error.message });
+      }
+      return true;
+    }
+
+    // 提供截图文件
+    const screenshotMatch = path.match(/^\/api\/novel\/screenshot\/(.+)$/);
+    if (screenshotMatch && method === 'GET') {
+      const filename = screenshotMatch[1];
+      const fs = require('fs');
+      const path = require('path');
+      const screenshotPath = path.join('/workspace/projects/workspace/screenshots', filename);
+      
+      if (fs.existsSync(screenshotPath)) {
+        const content = fs.readFileSync(screenshotPath);
+        res.writeHead(200, {
+          'Content-Type': 'image/png',
+          'Content-Length': content.length
+        });
+        res.end(content);
+      } else {
+        res.writeHead(404);
+        res.end();
       }
       return true;
     }
