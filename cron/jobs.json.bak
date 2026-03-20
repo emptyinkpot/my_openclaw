@@ -7,7 +7,7 @@
       "description": "每日自动维护任务日志系统",
       "enabled": true,
       "createdAtMs": 1773627549638,
-      "updatedAtMs": 1773860423011,
+      "updatedAtMs": 1773946824026,
       "schedule": {
         "kind": "cron",
         "expr": "0 3 * * *",
@@ -24,14 +24,14 @@
         "channel": "last"
       },
       "state": {
-        "nextRunAtMs": 1773946800000,
-        "lastRunAtMs": 1773860400006,
+        "nextRunAtMs": 1774033200000,
+        "lastRunAtMs": 1773946800003,
         "lastRunStatus": "error",
         "lastStatus": "error",
-        "lastDurationMs": 23005,
+        "lastDurationMs": 24023,
         "lastDeliveryStatus": "unknown",
-        "consecutiveErrors": 1,
-        "runningAtMs": 1773946800001
+        "consecutiveErrors": 2,
+        "lastError": "Channel is required (no configured channels detected). Set delivery.channel explicitly or use a main session with a previous channel."
       }
     },
     {
@@ -63,8 +63,7 @@
         "lastStatus": "error",
         "lastDurationMs": 345094,
         "lastDeliveryStatus": "unknown",
-        "consecutiveErrors": 1,
-        "lastError": "Channel is required (no configured channels detected). Set delivery.channel explicitly or use a main session with a previous channel."
+        "consecutiveErrors": 1
       }
     },
     {
