@@ -1273,7 +1273,7 @@
         lastScanData = enrichedWorks;
         
         // 渲染作品列表
-        renderWorksList(enrichedWorks, localWorks);
+        renderFanqieWorksList(enrichedWorks, localWorks);
         
         // 更新时间
         const now = new Date();
@@ -1291,8 +1291,8 @@
       }
     }
 
-    // 渲染作品列表（显示详细章节信息）
-    async function renderWorksList(fanqieWorks, localWorks) {
+    // 渲染番茄作品列表（显示详细章节信息）
+    async function renderFanqieWorksList(fanqieWorks, localWorks) {
       const resultEl = document.getElementById('fanqieWorksList');
       
       if (fanqieWorks.length === 0) {
