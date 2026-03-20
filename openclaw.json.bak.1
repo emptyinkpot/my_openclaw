@@ -1,7 +1,7 @@
 {
   "meta": {
-    "lastTouchedVersion": "2026.3.7",
-    "lastTouchedAt": "2026-03-16T06:30:11.503Z"
+    "lastTouchedVersion": "2026.3.13",
+    "lastTouchedAt": "2026-03-19T13:21:18.968Z"
   },
   "wizard": {
     "lastRunAt": "2026-03-16T00:33:13.601Z",
@@ -292,10 +292,7 @@
       "enabled": true,
       "root": "/usr/lib/node_modules/openclaw/dist/control-ui",
       "allowedOrigins": [
-        "http://172.30.24.228:5000",
-        "http://localhost:5000",
-        "https://dev.coze.site",
-        "https://380cdf5c-c0a6-420a-acbf-3b2e64d0d9cf.dev.coze.site"
+        "http://172.30.24.228:5000"
       ],
       "dangerouslyDisableDeviceAuth": true
     },
@@ -418,22 +415,11 @@
     }
   },
   "plugins": {
-    "slots": {
-      "memory": "memory-lancedb-pro"
-    },
-    "load": {
-      "paths": [
-        "/workspace/projects/extensions/novel-manager",
-        "/workspace/projects/extensions/experience-manager",
-        "/workspace/projects/extensions/memory-lancedb-pro"
-      ]
-    },
     "allow": [
       "feishu-openclaw-plugin",
-      "novel-manager",
-      "experience-manager",
-      "memory-lancedb-pro"
+      "novel-manager"
     ],
+    "load": {},
     "entries": {
       "feishu": {
         "enabled": false
@@ -443,64 +429,6 @@
       },
       "novel-manager": {
         "enabled": true
-      },
-      "experience-manager": {
-        "enabled": true
-      },
-      "memory-lancedb-pro": {
-        "enabled": true,
-        "config": {
-          "embedding": {
-            "provider": "openai-compatible",
-            "apiKey": "${COZE_WORKLOAD_IDENTITY_API_KEY}",
-            "model": "text-embedding-3-small",
-            "baseURL": "${COZE_INTEGRATION_MODEL_BASE_URL}"
-          },
-          "llm": {
-            "apiKey": "${COZE_WORKLOAD_IDENTITY_API_KEY}",
-            "model": "auto",
-            "baseURL": "${COZE_INTEGRATION_MODEL_BASE_URL}"
-          },
-          "autoCapture": true,
-          "autoRecall": true,
-          "smartExtraction": true,
-          "extractMinMessages": 2,
-          "extractMaxChars": 8000,
-          "captureAssistant": false,
-          "dbPath": "/workspace/projects/data/memory-lancedb",
-          "retrieval": {
-            "mode": "hybrid",
-            "vectorWeight": 0.7,
-            "bm25Weight": 0.3,
-            "minScore": 0.3,
-            "rerank": "cross-encoder",
-            "rerankApiKey": "${COZE_WORKLOAD_IDENTITY_API_KEY}",
-            "rerankModel": "jina-reranker-v2-base-multilingual",
-            "rerankEndpoint": "https://api.jina.ai/v1/rerank",
-            "rerankProvider": "jina",
-            "candidatePoolSize": 12,
-            "recencyHalfLifeDays": 14,
-            "recencyWeight": 0.1,
-            "hardMinScore": 0.35,
-            "timeDecayHalfLifeDays": 60,
-            "reinforcementFactor": 0.5
-          },
-          "enableManagementTools": true,
-          "scopes": {
-            "default": "global",
-            "definitions": {
-              "global": { "description": "共享知识库 - 所有 Agent 可见" },
-              "experience": { "description": "经验积累 - 问题解决方案" },
-              "project:novel": { "description": "小说项目专用记忆" }
-            },
-            "agentAccess": {
-              "default": ["global", "experience"]
-            }
-          },
-          "sessionMemory": {
-            "enabled": false
-          }
-        }
       }
     },
     "installs": {
@@ -516,6 +444,13 @@
         "shasum": "1373c900ec62ceb6e082430aee462db926b68f7c",
         "resolvedAt": "2026-03-06T11:48:07.767Z",
         "installedAt": "2026-03-06T11:48:19.178Z"
+      },
+      "novel-manager": {
+        "source": "path",
+        "sourcePath": "/workspace/projects/extensions/novel-manager",
+        "installPath": "/workspace/projects/extensions/novel-manager",
+        "version": "1.0.0",
+        "installedAt": "2026-03-19T12:00:00.000Z"
       }
     }
   }

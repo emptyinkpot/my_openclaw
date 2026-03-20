@@ -1,7 +1,7 @@
 {
   "meta": {
-    "lastTouchedVersion": "2026.3.7",
-    "lastTouchedAt": "2026-03-16T06:30:11.503Z"
+    "lastTouchedVersion": "2026.3.13",
+    "lastTouchedAt": "2026-03-20T03:41:10.077Z"
   },
   "wizard": {
     "lastRunAt": "2026-03-16T00:33:13.601Z",
@@ -287,7 +287,7 @@
   "gateway": {
     "port": 5000,
     "mode": "local",
-    "bind": "lan",
+    "bind": "loopback",
     "controlUi": {
       "enabled": true,
       "root": "/usr/lib/node_modules/openclaw/dist/control-ui",
@@ -418,9 +418,12 @@
     }
   },
   "plugins": {
-    "slots": {
-      "memory": "memory-lancedb-pro"
-    },
+    "allow": [
+      "feishu-openclaw-plugin",
+      "novel-manager",
+      "experience-manager",
+      "memory-lancedb-pro"
+    ],
     "load": {
       "paths": [
         "/workspace/projects/extensions/novel-manager",
@@ -428,12 +431,9 @@
         "/workspace/projects/extensions/memory-lancedb-pro"
       ]
     },
-    "allow": [
-      "feishu-openclaw-plugin",
-      "novel-manager",
-      "experience-manager",
-      "memory-lancedb-pro"
-    ],
+    "slots": {
+      "memory": "memory-lancedb-pro"
+    },
     "entries": {
       "feishu": {
         "enabled": false
@@ -489,12 +489,21 @@
           "scopes": {
             "default": "global",
             "definitions": {
-              "global": { "description": "共享知识库 - 所有 Agent 可见" },
-              "experience": { "description": "经验积累 - 问题解决方案" },
-              "project:novel": { "description": "小说项目专用记忆" }
+              "global": {
+                "description": "共享知识库 - 所有 Agent 可见"
+              },
+              "experience": {
+                "description": "经验积累 - 问题解决方案"
+              },
+              "project:novel": {
+                "description": "小说项目专用记忆"
+              }
             },
             "agentAccess": {
-              "default": ["global", "experience"]
+              "default": [
+                "global",
+                "experience"
+              ]
             }
           },
           "sessionMemory": {

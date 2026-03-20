@@ -106,17 +106,6 @@ function parseQuery(url) {
 }
 // 获取页面HTML
 function getPageHtml(pageName) {
-    // 原生界面使用control-ui目录
-    if (pageName === 'native.html') {
-        const nativePath = '/usr/lib/node_modules/openclaw/dist/control-ui/index.html';
-        try {
-            return fs.readFileSync(nativePath, 'utf-8');
-        }
-        catch (e) {
-            console.error('[novel-manager] 无法读取原生界面:', nativePath);
-            return '<html><body><h1>原生界面加载失败</h1></body></html>';
-        }
-    }
     const htmlPath = path.join(__dirname, 'public', pageName);
     try {
         return fs.readFileSync(htmlPath, 'utf-8');
@@ -135,7 +124,6 @@ async function handleNovelPage(req, res) {
         '/': 'index.html', // 默认首页 = 小说管理
         '/novel': 'index.html',
         '/novel/': 'index.html',
-        '/native.html': 'native.html', // 原生界面移到这里
         '/auto.html': 'auto.html',
         '/experience.html': 'experience.html',
         '/cache.html': 'cache.html'
