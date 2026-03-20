@@ -1,42 +1,46 @@
-"use strict";
 /**
  * 通用工具函数
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.delay = delay;
-exports.retry = retry;
-exports.formatDate = formatDate;
-exports.safeJsonParse = safeJsonParse;
-exports.createId = createId;
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 /**
  * 延迟执行
  */
-function delay(ms) {
+export function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 /**
  * 重试函数
  */
-async function retry(fn, options = {}) {
-    const { attempts = 3, delay: delayMs = 1000 } = options;
-    let lastError = null;
-    for (let i = 0; i < attempts; i++) {
-        try {
-            return await fn();
-        }
-        catch (e) {
-            lastError = e;
-            if (i < attempts - 1) {
-                await delay(delayMs);
+export function retry(fn_1) {
+    return __awaiter(this, arguments, void 0, function* (fn, options = {}) {
+        const { attempts = 3, delay: delayMs = 1000 } = options;
+        let lastError = null;
+        for (let i = 0; i < attempts; i++) {
+            try {
+                return yield fn();
+            }
+            catch (e) {
+                lastError = e;
+                if (i < attempts - 1) {
+                    yield delay(delayMs);
+                }
             }
         }
-    }
-    throw lastError;
+        throw lastError;
+    });
 }
 /**
  * 格式化日期
  */
-function formatDate(date, format = 'YYYY-MM-DD HH:mm:ss') {
+export function formatDate(date, format = 'YYYY-MM-DD HH:mm:ss') {
     const d = new Date(date);
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -55,18 +59,17 @@ function formatDate(date, format = 'YYYY-MM-DD HH:mm:ss') {
 /**
  * 安全解析 JSON
  */
-function safeJsonParse(str, fallback) {
+export function safeJsonParse(str, fallback) {
     try {
         return JSON.parse(str);
     }
-    catch {
+    catch (_a) {
         return fallback;
     }
 }
 /**
  * 生成唯一 ID
  */
-function createId() {
+export function createId() {
     return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
 }
-//# sourceMappingURL=helpers.js.map

@@ -1,49 +1,9 @@
-"use strict";
 /**
  * 模块配置管理
  * 自包含配置系统，支持环境变量覆盖
  */
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.config = void 0;
-exports.loadConfig = loadConfig;
-exports.reloadConfig = reloadConfig;
-exports.saveConfig = saveConfig;
-exports.getConfig = getConfig;
-const path = __importStar(require("path"));
-const fs = __importStar(require("fs"));
+import * as path from 'path';
+import * as fs from 'fs';
 // 默认配置
 const defaultConfig = {
     port: parseInt(process.env.NOVEL_MANAGER_PORT || '3001'),
@@ -115,7 +75,7 @@ let cachedConfig = null;
  * 加载配置
  * 优先顺序：环境变量 > 配置文件 > 默认值
  */
-function loadConfig() {
+export function loadConfig() {
     if (cachedConfig) {
         return cachedConfig;
     }
@@ -140,14 +100,14 @@ function loadConfig() {
 /**
  * 重新加载配置
  */
-function reloadConfig() {
+export function reloadConfig() {
     cachedConfig = null;
     return loadConfig();
 }
 /**
  * 保存配置到文件
  */
-function saveConfig(config) {
+export function saveConfig(config) {
     const configPath = process.env.NOVEL_MANAGER_CONFIG ||
         path.join(config.paths.root, 'config', 'module.json');
     fs.mkdirSync(path.dirname(configPath), { recursive: true });
@@ -157,16 +117,16 @@ function saveConfig(config) {
 /**
  * 获取当前配置（快捷方式）
  */
-function getConfig() {
+export function getConfig() {
     return loadConfig();
 }
 // 导出配置对象（向后兼容）
-exports.config = loadConfig();
+export const config = loadConfig();
 /**
  * 深度合并对象
  */
 function deepMerge(target, source) {
-    const result = { ...target };
+    const result = Object.assign({}, target);
     for (const key in source) {
         if (source[key] !== undefined) {
             if (isObject(result[key]) && isObject(source[key])) {
@@ -192,4 +152,3 @@ function ensureDirectories(paths) {
         }
     });
 }
-//# sourceMappingURL=config.js.map

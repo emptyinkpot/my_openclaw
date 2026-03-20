@@ -1,12 +1,7 @@
-"use strict";
 /**
  * 流水线进度管理器
  * 管理 SSE 进度订阅和广播
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.registerClient = registerClient;
-exports.broadcastProgress = broadcastProgress;
-exports.cleanupExpiredProgress = cleanupExpiredProgress;
 // 活跃的 SSE 客户端
 const clients = new Map();
 // 进度缓存（用于新客户端连接时获取最新状态）
@@ -14,7 +9,7 @@ const progressCache = new Map();
 /**
  * 注册 SSE 客户端
  */
-function registerClient(progressId, write) {
+export function registerClient(progressId, write) {
     if (!clients.has(progressId)) {
         clients.set(progressId, new Set());
     }
@@ -43,7 +38,7 @@ function registerClient(progressId, write) {
 /**
  * 广播进度事件
  */
-function broadcastProgress(progressId, event) {
+export function broadcastProgress(progressId, event) {
     // 缓存最新进度
     progressCache.set(progressId, event);
     // 广播给所有客户端
@@ -69,7 +64,7 @@ function broadcastProgress(progressId, event) {
 /**
  * 清理过期的进度缓存
  */
-function cleanupExpiredProgress() {
+export function cleanupExpiredProgress() {
     // 目前简化处理，后续可以添加过期时间检查
     if (progressCache.size > 100) {
         // 保留最近50个
@@ -79,4 +74,3 @@ function cleanupExpiredProgress() {
         }
     }
 }
-//# sourceMappingURL=ProgressManager.js.map

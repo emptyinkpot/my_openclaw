@@ -219,7 +219,7 @@
     ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
   </style>
 </head>
-<body><!-- VERSION: 20260320-v12 -->
+<body><!-- VERSION: 20260320-v13 -->
 <div class="nav-bar"><span>🦞 OpenClaw</span><a href="/" class="on">📚 小说管理</a><a href="/auto.html">⚙️ 自动化</a><a href="/experience.html">🧠 经验</a><a href="/cache.html">💾 缓存</a><a href="/native.html">🎯 原生界面</a></div>
   <!-- 顶部工具栏 -->
   <div class="top-bar">
@@ -1362,63 +1362,34 @@
     }
 
     async function startPipeline() {
-      console.log('[Pipeline] startPipeline called, selectedFanqieWorkId:', selectedFanqieWorkId);
-      
-      // 如果没有选择作品，自动扫描并选择第一个
-      if (!selectedFanqieWorkId) {
-        showToast('📡 正在扫描作品...', 'info');
-        try {
-          const scanResult = await api('/fanqie/scan', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ accountId: 'account_1' })
-          });
-          
-          if (scanResult.success && scanResult.data?.works?.length > 0) {
-            const firstWork = scanResult.data.works[0];
-            selectedFanqieWorkId = firstWork.workId;
-            console.log('[Pipeline] 自动选择作品:', firstWork.title, firstWork.workId);
-            showToast(`✅ 自动选择: ${firstWork.title}`, 'success');
-          } else {
-            showToast('❌ 未找到可发布的作品', 'error');
-            return;
-          }
-        } catch (err) {
-          showToast('❌ 扫描失败: ' + err.message, 'error');
-          return;
-        }
-      }
+      console.log('[Pipeline] startPipeline called');
       
       // 立即显示启动提示
       showToast('🚀 正在启动流水线...', 'info');
+      updatePipelineUI({ status: 'running', step: 'init', task: '正在扫描作品...', percent: 0, results: [] });
       
-      const dryRun = document.getElementById('dryRunCheck').checked;
-      const headless = document.getElementById('headlessCheck').checked;
-      const skipAudit = document.getElementById('skipAuditCheck').checked;
-      const startChapter = document.getElementById('startChapter').value;
-      const endChapter = document.getElementById('endChapter').value;
+      const dryRun = document.getElementById('dryRunCheck')?.checked ?? true;
+      const headless = document.getElementById('headlessCheck')?.checked ?? true;
       
       pipelineProgressId = 'pipeline_' + Date.now();
       pipelineStartTime = Date.now();
       
-      // 更新UI
       document.getElementById('pipelineBtn').disabled = true;
       document.getElementById('stopBtn').disabled = false;
-      updatePipelineUI({ status: 'running', step: 'init', task: '正在启动流水线...', percent: 0, results: [] });
       
       // 订阅进度
       subscribePipelineProgress(pipelineProgressId);
       
       try {
+        // 直接调用发布API，后端会自动扫描并发布下一章
         const body = {
-          workId: selectedFanqieWorkId,
+          workId: selectedFanqieWorkId || 'auto',
           headless,
           dryRun,
-          skipAudit,
+          skipAudit: true,
           progressId: pipelineProgressId,
+          autoNext: true,  // 自动获取最新章节并发布下一章
         };
-        if (startChapter) body.startChapter = parseInt(startChapter);
-        if (endChapter) body.endChapter = parseInt(endChapter);
         
         const result = await api('/fanqie/publish', {
           method: 'POST',
@@ -1426,12 +1397,17 @@
           body: JSON.stringify(body)
         });
         
+        console.log('[Pipeline] 启动结果:', result);
+        
         if (!result.success) {
-          updatePipelineUI({ status: 'error', task: '启动失败: ' + result.error, percent: 0 });
+          updatePipelineUI({ status: 'error', task: '启动失败: ' + (result.message || result.error), percent: 0 });
           document.getElementById('pipelineBtn').disabled = false;
           document.getElementById('stopBtn').disabled = true;
+        } else {
+          showToast('✅ ' + result.message, 'success');
         }
       } catch (err) {
+        console.error('[Pipeline] 启动失败:', err);
         updatePipelineUI({ status: 'error', task: '启动失败: ' + err.message, percent: 0 });
         document.getElementById('pipelineBtn').disabled = false;
         document.getElementById('stopBtn').disabled = true;

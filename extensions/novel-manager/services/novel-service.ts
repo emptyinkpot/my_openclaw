@@ -464,8 +464,46 @@ export class NovelService {
     dryRun?: boolean;
     skipAudit?: boolean;
     progressId?: string;
+    autoNext?: boolean;  // 自动获取最新章节并发布下一章
   }) {
-    const { workId, startChapter, endChapter, headless = true, dryRun = false, skipAudit = true, progressId } = options;
+    let { workId, startChapter, endChapter, headless = true, dryRun = false, skipAudit = true, progressId, autoNext } = options;
+    
+    // 自动模式：扫描第一个作品，获取番茄最新章节，发布下一章
+    if (autoNext || workId === 'auto') {
+      console.log('[Pipeline] 自动模式：扫描作品...');
+      
+      if (progressId) {
+        broadcastProgress(progressId, {
+          status: 'running', step: 'scan', stepLabel: '扫描',
+          current: 0, total: 0, task: '正在扫描番茄作品...', percent: 0, results: []
+        });
+      }
+      
+      // 扫描作品
+      const scanResult = await this.scanFanqieWorks('account_1');
+      
+      if (!scanResult.success || !scanResult.works?.length) {
+        const errorMsg = '未找到番茄作品';
+        if (progressId) {
+          broadcastProgress(progressId, {
+            status: 'error', step: 'scan', stepLabel: '扫描',
+            current: 0, total: 0, task: errorMsg, error: errorMsg, percent: 0, results: []
+          });
+        }
+        return { success: false, message: errorMsg };
+      }
+      
+      const firstWork = scanResult.works[0];
+      workId = firstWork.workId;
+      console.log('[Pipeline] 自动选择作品:', firstWork.title, 'workId:', workId);
+      
+      if (progressId) {
+        broadcastProgress(progressId, {
+          status: 'running', step: 'scan', stepLabel: '扫描',
+          current: 1, total: 1, task: `已选择: ${firstWork.title}`, percent: 10, results: []
+        });
+      }
+    }
     
     // 查找本地作品ID（workId 可能是番茄的字符串ID，需要转换为本地ID）
     let localWorkId: number = typeof workId === 'number' ? workId : parseInt(workId as string, 10);

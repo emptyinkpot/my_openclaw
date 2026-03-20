@@ -1,59 +1,28 @@
-"use strict";
 /**
  * 数据库管理器 - 完全自包含版本
  * 支持 MySQL 和 SQLite，无需外部依赖
  */
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.DatabaseManager = exports.SqliteManager = void 0;
-exports.getPool = getPool;
-exports.getConnection = getConnection;
-exports.withTransaction = withTransaction;
-exports.getDatabaseManager = getDatabaseManager;
-const mysql = __importStar(require("mysql2/promise"));
-const path = __importStar(require("path"));
-const fs = __importStar(require("fs"));
-const config_1 = require("./config");
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+import * as mysql from 'mysql2/promise';
+import * as path from 'path';
+import * as fs from 'fs';
+import { getConfig } from './config';
 // 连接池实例
 let pool = null;
 /**
  * 获取 MySQL 连接池
  */
-function getPool() {
+export function getPool() {
     if (!pool) {
-        const config = (0, config_1.getConfig)();
+        const config = getConfig();
         if (config.database.type === 'sqlite') {
             throw new Error('SQLite 不支持连接池，请使用 getSqliteConnection()');
         }
@@ -74,35 +43,39 @@ function getPool() {
 /**
  * 获取数据库连接（事务用）
  */
-async function getConnection() {
-    return await getPool().getConnection();
+export function getConnection() {
+    return __awaiter(this, void 0, void 0, function* () {
+        return yield getPool().getConnection();
+    });
 }
 /**
  * 事务包装器
  */
-async function withTransaction(callback) {
-    const conn = await getConnection();
-    try {
-        await conn.beginTransaction();
-        const result = await callback(conn);
-        await conn.commit();
-        return result;
-    }
-    catch (error) {
-        await conn.rollback();
-        throw error;
-    }
-    finally {
-        conn.release();
-    }
+export function withTransaction(callback) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const conn = yield getConnection();
+        try {
+            yield conn.beginTransaction();
+            const result = yield callback(conn);
+            yield conn.commit();
+            return result;
+        }
+        catch (error) {
+            yield conn.rollback();
+            throw error;
+        }
+        finally {
+            conn.release();
+        }
+    });
 }
 /**
  * SQLite 简单封装（用于轻量级部署）
  */
-class SqliteManager {
+export class SqliteManager {
     constructor(dbPath) {
         this.busyTimeout = 5000;
-        const config = (0, config_1.getConfig)();
+        const config = getConfig();
         this.dbPath = dbPath || config.database.sqlitePath;
         this.init();
     }
@@ -149,7 +122,7 @@ class SqliteManager {
                 }
             }
         }
-        throw new Error(`数据库操作失败: ${lastError?.message}`);
+        throw new Error(`数据库操作失败: ${lastError === null || lastError === void 0 ? void 0 : lastError.message}`);
     }
     /**
      * 查询单行
@@ -192,15 +165,14 @@ class SqliteManager {
         return rows;
     }
 }
-exports.SqliteManager = SqliteManager;
 /**
  * 统一数据库管理器
  * 根据配置自动选择 MySQL 或 SQLite
  */
-class DatabaseManager {
+export class DatabaseManager {
     constructor() {
         this.sqlite = null;
-        const config = (0, config_1.getConfig)();
+        const config = getConfig();
         if (config.database.type === 'sqlite') {
             this.sqlite = new SqliteManager();
         }
@@ -208,56 +180,65 @@ class DatabaseManager {
     /**
      * 执行查询
      */
-    async query(sql, params = []) {
-        const config = (0, config_1.getConfig)();
-        if (config.database.type === 'sqlite' && this.sqlite) {
-            return this.sqlite.query(sql, params);
-        }
-        const [rows] = await getPool().execute(sql, params);
-        return rows;
+    query(sql_1) {
+        return __awaiter(this, arguments, void 0, function* (sql, params = []) {
+            const config = getConfig();
+            if (config.database.type === 'sqlite' && this.sqlite) {
+                return this.sqlite.query(sql, params);
+            }
+            const [rows] = yield getPool().execute(sql, params);
+            return rows;
+        });
     }
     /**
      * 查询单行
      */
-    async queryOne(sql, params = []) {
-        const results = await this.query(sql, params);
-        return results[0] || null;
+    queryOne(sql_1) {
+        return __awaiter(this, arguments, void 0, function* (sql, params = []) {
+            const results = yield this.query(sql, params);
+            return results[0] || null;
+        });
     }
     /**
      * 执行更新/插入
      */
-    async execute(sql, params = []) {
-        const config = (0, config_1.getConfig)();
-        if (config.database.type === 'sqlite' && this.sqlite) {
-            return this.sqlite.execute(sql, params);
-        }
-        const [result] = await getPool().execute(sql, params);
-        return result;
+    execute(sql_1) {
+        return __awaiter(this, arguments, void 0, function* (sql, params = []) {
+            const config = getConfig();
+            if (config.database.type === 'sqlite' && this.sqlite) {
+                return this.sqlite.execute(sql, params);
+            }
+            const [result] = yield getPool().execute(sql, params);
+            return result;
+        });
     }
     /**
      * 事务执行
      */
-    async transaction(callback) {
-        return withTransaction(callback);
+    transaction(callback) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return withTransaction(callback);
+        });
     }
     /**
      * 健康检查
      */
-    async healthCheck() {
-        const start = Date.now();
-        try {
-            await this.queryOne('SELECT 1 as ping');
-            return { ok: true, latency: Date.now() - start };
-        }
-        catch (e) {
-            return { ok: false, latency: Date.now() - start, error: e.message };
-        }
+    healthCheck() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const start = Date.now();
+            try {
+                yield this.queryOne('SELECT 1 as ping');
+                return { ok: true, latency: Date.now() - start };
+            }
+            catch (e) {
+                return { ok: false, latency: Date.now() - start, error: e.message };
+            }
+        });
     }
 }
-exports.DatabaseManager = DatabaseManager;
 // 单例导出
 let dbManagerInstance = null;
-function getDatabaseManager() {
+export function getDatabaseManager() {
     if (!dbManagerInstance) {
         dbManagerInstance = new DatabaseManager();
     }
@@ -267,4 +248,3 @@ function getDatabaseManager() {
 // 重新导出兼容函数 - 已在前方定义
 export { getPool, getConnection, withTransaction };
 */
-//# sourceMappingURL=database.js.map
