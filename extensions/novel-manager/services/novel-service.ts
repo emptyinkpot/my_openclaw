@@ -870,4 +870,46 @@ export class NovelService {
   async getPipelineStatus() {
     return { running: false, status: 'idle' };
   }
+
+  /**
+   * 获取数据库表结构
+   */
+  async getTableSchema() {
+    try {
+      // 获取所有表
+      const tables = await this.db.query('SHOW TABLES');
+      const tableNames = tables.map((t: any) => Object.values(t)[0]);
+      
+      const tableSchemas: any[] = [];
+      
+      for (const tableName of tableNames) {
+        // 获取表结构
+        const columns = await this.db.query(`DESCRIBE ${tableName}`);
+        
+        // 获取前3条示例数据
+        let sampleData: any[] = [];
+        try {
+          sampleData = await this.db.query(`SELECT * FROM ${tableName} LIMIT 3`);
+        } catch {}
+        
+        tableSchemas.push({
+          name: tableName,
+          columns: columns.map((col: any) => ({
+            name: col.Field,
+            type: col.Type,
+            nullable: col.Null === 'YES',
+            key: col.Key,
+            default: col.Default,
+            extra: col.Extra
+          })),
+          sampleData: sampleData
+        });
+      }
+      
+      return { success: true, data: { tables: tableSchemas } };
+    } catch (error: any) {
+      console.error('[NovelService] 获取表结构失败:', error);
+      return { success: false, message: error.message };
+    }
+  }
 }
