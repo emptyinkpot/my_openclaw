@@ -219,7 +219,7 @@
     ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
   </style>
 </head>
-<body><!-- VERSION: 20260320-v7 -->
+<body><!-- VERSION: 20260320-v8 -->
 <div class="nav-bar"><span>🦞 OpenClaw</span><a href="/" class="on">📚 小说管理</a><a href="/auto.html">⚙️ 自动化</a><a href="/experience.html">🧠 经验</a><a href="/cache.html">💾 缓存</a><a href="/native.html">🎯 原生界面</a></div>
   <!-- 顶部工具栏 -->
   <div class="top-bar">
@@ -1371,6 +1371,9 @@
         console.error('[Pipeline] 没有选择作品 - selectedFanqieWorkId is null');
         return;
       }
+      
+      // 立即显示启动提示
+      showToast('🚀 正在启动流水线...', 'info');
       
       const dryRun = document.getElementById('dryRunCheck').checked;
       const headless = document.getElementById('headlessCheck').checked;
