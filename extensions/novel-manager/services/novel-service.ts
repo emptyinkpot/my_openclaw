@@ -575,6 +575,7 @@ export class NovelService {
       headless,
       dryRun,
       skipStatusCheck: skipAudit,
+      autoNext,
       onProgress,
     }).then(results => {
       const successCount = results.filter(r => r.success).length;
