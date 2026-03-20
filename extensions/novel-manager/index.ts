@@ -223,6 +223,30 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
       return true;
     }
 
+    // 测试打开浏览器
+    if (path === '/api/novel/test-open-browser' && method === 'POST') {
+      try {
+        console.log('[NovelManager] 测试打开浏览器...');
+        const { chromium } = require('playwright');
+        const browser = await chromium.launch({ headless: false });
+        const page = await browser.newPage();
+        await page.goto('https://www.baidu.com');
+        jsonRes(res, { success: true, message: '浏览器已打开' });
+        
+        // 30秒后自动关闭
+        setTimeout(async () => {
+          try {
+            await browser.close();
+            console.log('[NovelManager] 测试浏览器已关闭');
+          } catch {}
+        }, 30000);
+      } catch (error) {
+        console.error('[NovelManager] 测试打开浏览器错误:', error);
+        jsonRes(res, { success: false, message: error.message });
+      }
+      return true;
+    }
+
     // 统计数据
     if (path === '/api/novel/stats' && method === 'GET') {
       const stats = await getNovelService().getStats();
