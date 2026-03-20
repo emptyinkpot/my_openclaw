@@ -1,6 +1,32 @@
 {
   "records": [
     {
+      "id": "exp_showSubPage_1742474000000",
+      "timestamp": 1742474000000,
+      "type": "bug_fix",
+      "title": "页面切换函数被重写问题",
+      "description": "添加控制面板页面时，只修改了原始 showSubPage 函数，但代码库中有另一个地方重写了该函数，导致修改无效",
+      "userQuery": "点击控制面板按钮后页面不跳转，按钮状态也不对",
+      "solution": "1. 用 grep 搜索整个代码库，发现有两个 showSubPage 函数；2. 在两个函数里都添加了 control-panel 的配置；3. 确保 pageIdMap、btnTextMap、isSubPageBtn、navPageMap 都更新了",
+      "experienceApplied": [
+        "代码搜索技巧",
+        "多位置修改检查"
+      ],
+      "experienceGained": [
+        "添加功能前先搜索代码库",
+        "检查函数是否被重写",
+        "完全照着现有功能抄"
+      ],
+      "tags": [
+        "javascript",
+        "function-override",
+        "debug",
+        "showSubPage"
+      ],
+      "difficulty": 2,
+      "xpGained": 150
+    },
+    {
       "id": "exp_test_1773963860770",
       "timestamp": 1773963860770,
       "type": "bug_fix",
