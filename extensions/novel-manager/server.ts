@@ -5,6 +5,7 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { NovelService, NovelStats } from './services/novel-service';
 import { getDatabaseManager } from './core/database';
+import { registerClient } from './core/pipeline/ProgressManager';
 import * as path from 'path';
 
 const app = express();
@@ -180,6 +181,57 @@ app.get(`${API_PREFIX}/cache/files`, async (req: Request, res: Response) => {
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }
+});
+
+// SSE 端点 - 进度推送
+app.get('/novel/sse/progress/:progressId', async (req: Request, res: Response) => {
+  const { progressId } = req.params;
+  const token = req.query.token as string;
+  
+  // 验证 token
+  const validToken = 'e1647cdb-1b80-4eee-a975-7599160cc89b';
+  if (token !== validToken) {
+    return res.status(401).json({ success: false, error: 'Unauthorized' });
+  }
+  
+  console.log('[SSE] 客户端连接:', progressId);
+  
+  // 设置 SSE 响应头
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'Access-Control-Allow-Origin': '*',
+  });
+  
+  // 立即发送连接确认消息
+  res.write(`data: ${JSON.stringify({ status: 'connected', message: 'SSE连接已建立', progressId })}\n\n`);
+  
+  // 注册客户端
+  const unregister = registerClient(progressId, (data: string) => {
+    try {
+      res.write(data);
+    } catch (e) {
+      console.error('[SSE] 写入失败:', e);
+    }
+  });
+  
+  // 心跳保活
+  const heartbeat = setInterval(() => {
+    try {
+      res.write(': heartbeat\n\n');
+    } catch (e) {
+      clearInterval(heartbeat);
+      unregister();
+    }
+  }, 15000);
+  
+  // 连接关闭时清理
+  req.on('close', () => {
+    console.log('[SSE] 客户端断开:', progressId);
+    clearInterval(heartbeat);
+    unregister();
+  });
 });
 
 // 获取缓存文件内容

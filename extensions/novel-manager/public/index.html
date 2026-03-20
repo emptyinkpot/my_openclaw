@@ -421,6 +421,15 @@
             </div>
           </div>
           
+          <!-- 控制台日志输出 -->
+          <div style="margin-top: 12px;">
+            <div style="font-size: 11px; font-weight: 600; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+              <span>📜 执行日志</span>
+              <button class="btn-sm" style="padding: 2px 6px; font-size: 10px;" onclick="clearPipelineLog()">清空</button>
+            </div>
+            <div id="pipelineLog" style="background: #1e1e1e; color: #d4d4d4; font-family: 'Consolas', 'Monaco', monospace; font-size: 11px; padding: 10px; border-radius: 6px; max-height: 250px; overflow-y: auto; white-space: pre-wrap; word-break: break-all;">等待启动...</div>
+          </div>
+          
           <!-- 结果列表 -->
           <div id="pipelineResults" style="margin-top: 12px; display: none;">
             <div style="font-size: 11px; font-weight: 600; margin-bottom: 8px;">📋 发布结果</div>
@@ -958,7 +967,7 @@
   <script>
     // Gateway认证token
     const GATEWAY_TOKEN = 'e1647cdb-1b80-4eee-a975-7599160cc89b';
-    const API_BASE = 'http://localhost:3001/novel/api';
+    const API_BASE = '/api/novel';
     let currentWork = null, currentTab = 'chapters', viewMode = 'grid', currentFilter = 'all';
     let worksData = [], chaptersData = [], charactersData = [];
     let currentEditingChapter = null;
@@ -1442,6 +1451,15 @@
       
       pipelineEventSource.onmessage = (event) => {
         console.log('[SSE] 收到消息:', event.data);
+        
+        // 直接写入日志
+        const logEl = document.getElementById('pipelineLog');
+        if (logEl) {
+          const timestamp = new Date().toLocaleTimeString();
+          logEl.textContent += `[${timestamp}] 收到: ${event.data}\n`;
+          logEl.scrollTop = logEl.scrollHeight;
+        }
+        
         try {
           const progress = JSON.parse(event.data);
           
@@ -1507,10 +1525,34 @@
       showToast('⏹ 流水线已停止', 'info');
     }
 
+    function clearPipelineLog() {
+      const logEl = document.getElementById('pipelineLog');
+      if (logEl) {
+        logEl.textContent = '日志已清空，等待启动...\n';
+      }
+    }
+
     function updatePipelineUI(event) {
       const { status, step, task, detail, percent, results, elapsed, error } = event;
       
       console.log('[PipelineUI] 更新进度:', { status, step, task, percent, error });
+      
+      // 写入日志区域
+      const logEl = document.getElementById('pipelineLog');
+      if (logEl && task) {
+        const timestamp = new Date().toLocaleTimeString();
+        const statusIcon = status === 'completed' ? '✅' : status === 'error' ? '❌' : status === 'running' ? '🔄' : '⏸️';
+        const stepLabel = event.stepLabel || step || '';
+        const logLine = `[${timestamp}] ${statusIcon} [${stepLabel}] ${task}${error ? ' - ' + error : ''}${detail ? ' (' + detail + ')' : ''}\n`;
+        
+        if (logEl.textContent === '等待启动...') {
+          logEl.textContent = logLine;
+        } else {
+          logEl.textContent += logLine;
+        }
+        // 自动滚动到底部
+        logEl.scrollTop = logEl.scrollHeight;
+      }
       
       // 状态文字
       const statusEl = document.getElementById('pipelineStatus');
