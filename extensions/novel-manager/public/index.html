@@ -317,34 +317,14 @@
   <!-- 番茄扫描页面 -->
   <div id="fanqieScanPage" class="sub-page">
     <div class="main" style="height: calc(100vh - 36px);">
-      <div class="sidebar" style="width: 280px;">
+      <div class="sidebar" style="width: 260px;">
         <div class="sidebar-header">
           <span class="sidebar-title">🍅 番茄扫描中心</span>
         </div>
         <div class="sidebar-scroll" style="padding: 12px;">
-          <!-- 账号选择（多选） -->
-          <div class="form-group" style="margin-bottom: 12px;">
-            <label class="form-label">番茄账号 <span style="font-weight:normal;color:var(--text-muted);">(可多选)</span></label>
-            <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;padding:8px;">
-              <label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;cursor:pointer;font-size:12px;">
-                <input type="checkbox" class="fanqie-account-check" value="account_1" checked> 
-                <span>📱 番茄账号1</span>
-              </label>
-              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;">
-                <input type="checkbox" class="fanqie-account-check" value="account_2" checked> 
-                <span>📱 番茄账号2</span>
-              </label>
-            </div>
-            <div style="display:flex;gap:6px;margin-top:6px;">
-              <button class="btn btn-sm" onclick="selectAllAccounts(true)" style="flex:1;">全选</button>
-              <button class="btn btn-sm" onclick="selectAllAccounts(false)" style="flex:1;">清空</button>
-            </div>
-          </div>
-          
           <!-- 快捷操作 -->
-          <div style="margin-bottom: 16px;">
-            <button class="btn primary" style="width: 100%; margin-bottom: 6px;" onclick="scanFanqieWorks()">📡 扫描作品</button>
-            <button class="btn success" style="width: 100%; margin-bottom: 6px;" onclick="startPipeline()" id="pipelineBtn">▶ 启动流水线</button>
+          <div style="margin-bottom: 12px;">
+            <button class="btn primary" style="width: 100%; margin-bottom: 6px;" onclick="startPipeline()" id="pipelineBtn">▶ 发布下一章</button>
             <button class="btn danger" style="width: 100%;" onclick="stopPipeline()" id="stopBtn" disabled>⏹ 停止</button>
           </div>
           
@@ -354,24 +334,20 @@
             <label style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px; cursor: pointer; font-size: 11px;">
               <input type="checkbox" id="dryRunCheck"> 试运行模式
             </label>
-            <label style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px; cursor: pointer; font-size: 11px;">
-              <input type="checkbox" id="headlessCheck"> 后台运行
-            </label>
             <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 11px;">
-              <input type="checkbox" id="skipAuditCheck" checked> 跳过审核
+              <input type="checkbox" id="headlessCheck" checked> 后台运行
             </label>
-          </div>
-          
-          <!-- 章节范围 -->
-          <div style="padding: 10px; background: var(--bg-tertiary); border-radius: 6px; margin-bottom: 12px;">
-            <div style="font-size: 11px; font-weight: 600; margin-bottom: 8px;">章节范围</div>
-            <input type="number" class="form-input" id="startChapter" placeholder="起始章节" style="margin-bottom: 6px;">
-            <input type="number" class="form-input" id="endChapter" placeholder="结束章节">
           </div>
           
           <!-- 状态 -->
           <div style="padding-top: 12px; border-top: 1px solid var(--border);">
-            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">流水线状态</div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">自动扫描</div>
+            <div id="autoScanStatus" style="font-size: 12px; color: var(--success);">✓ 每30秒自动刷新</div>
+          </div>
+          
+          <!-- 扫描状态 -->
+          <div style="padding-top: 12px; border-top: 1px solid var(--border); margin-top: 12px;">
+            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">流水线状态</div>
             <div id="fanqieScanStatus" style="font-size: 12px;">就绪</div>
           </div>
         </div>
@@ -389,24 +365,8 @@
           </div>
           
           <!-- 进度条 -->
-          <div style="height: 10px; background: var(--bg-tertiary); border-radius: 5px; overflow: hidden; margin-bottom: 16px;">
-            <div id="pipelineProgressBar" style="height: 100%; background: linear-gradient(90deg, var(--accent), var(--purple)); border-radius: 5px; transition: width 0.3s; width: 0%;"></div>
-          </div>
-          
-          <!-- 步骤指示器 -->
-          <div style="display: flex; gap: 8px; margin-bottom: 16px;">
-            <div id="step1" style="flex: 1; text-align: center; padding: 10px 8px; background: var(--bg-tertiary); border-radius: 6px; font-size: 11px; transition: all 0.3s;">
-              <div style="font-size: 16px; margin-bottom: 4px;">⚙️</div>初始化
-            </div>
-            <div id="step2" style="flex: 1; text-align: center; padding: 10px 8px; background: var(--bg-tertiary); border-radius: 6px; font-size: 11px; transition: all 0.3s;">
-              <div style="font-size: 16px; margin-bottom: 4px;">📡</div>扫描
-            </div>
-            <div id="step3" style="flex: 1; text-align: center; padding: 10px 8px; background: var(--bg-tertiary); border-radius: 6px; font-size: 11px; transition: all 0.3s;">
-              <div style="font-size: 16px; margin-bottom: 4px;">🔍</div>审核
-            </div>
-            <div id="step4" style="flex: 1; text-align: center; padding: 10px 8px; background: var(--bg-tertiary); border-radius: 6px; font-size: 11px; transition: all 0.3s;">
-              <div style="font-size: 16px; margin-bottom: 4px;">🚀</div>发布
-            </div>
+          <div style="height: 8px; background: var(--bg-tertiary); border-radius: 4px; overflow: hidden; margin-bottom: 12px;">
+            <div id="pipelineProgressBar" style="height: 100%; background: linear-gradient(90deg, var(--accent), var(--purple)); border-radius: 4px; transition: width 0.3s; width: 0%;"></div>
           </div>
           
           <!-- 任务详情 -->
@@ -427,32 +387,25 @@
               <span>📜 执行日志</span>
               <button class="btn-sm" style="padding: 2px 6px; font-size: 10px;" onclick="clearPipelineLog()">清空</button>
             </div>
-            <div id="pipelineLog" style="background: #1e1e1e; color: #d4d4d4; font-family: 'Consolas', 'Monaco', monospace; font-size: 11px; padding: 10px; border-radius: 6px; max-height: 250px; overflow-y: auto; white-space: pre-wrap; word-break: break-all;">等待启动...</div>
-          </div>
-          
-          <!-- 结果列表 -->
-          <div id="pipelineResults" style="margin-top: 12px; display: none;">
-            <div style="font-size: 11px; font-weight: 600; margin-bottom: 8px;">📋 发布结果</div>
-            <div id="pipelineResultsList" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border-light); border-radius: 6px;"></div>
+            <div id="pipelineLog" style="background: #1e1e1e; color: #d4d4d4; font-family: 'Consolas', 'Monaco', monospace; font-size: 11px; padding: 10px; border-radius: 6px; max-height: 180px; overflow-y: auto; white-space: pre-wrap; word-break: break-all;">等待启动...</div>
           </div>
         </div>
         
         <!-- 工具栏 -->
         <div class="toolbar">
           <div class="toolbar-group">
-            <button class="btn btn-sm" onclick="exportFanqieData()">📤 导出数据</button>
-            <button class="btn btn-sm" onclick="syncToLocal()">🔄 同步到本地</button>
+            <span id="lastScanTime" style="font-size: 11px; color: var(--text-muted);">-</span>
           </div>
           <div class="spacer"></div>
-          <button class="btn btn-sm" onclick="refreshFanqieData()">🔄 刷新</button>
+          <button class="btn btn-sm" onclick="refreshFanqieData()">🔄 立即刷新</button>
         </div>
         
         <!-- 作品列表 -->
         <div class="content-area" id="fanqieScanResult">
-          <div id="fanqieWorksList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px;">
-            <div style="text-align: center; padding: 60px; color: var(--text-muted); grid-column: 1/-1;">
-              <div style="font-size: 48px; margin-bottom: 16px;">🍅</div>
-              <div style="font-size: 14px;">点击「扫描作品」获取番茄小说数据</div>
+          <div id="fanqieWorksList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px;">
+            <div style="text-align: center; padding: 40px; color: var(--text-muted); grid-column: 1/-1;">
+              <div style="font-size: 32px; margin-bottom: 12px;">📡</div>
+              <div style="font-size: 14px;">正在扫描番茄小说作品...</div>
             </div>
           </div>
         </div>
@@ -1270,6 +1223,171 @@
       return Array.from(checks).map(cb => cb.value);
     }
 
+    // ====== 自动轮询扫描 ======
+    let autoScanTimer = null;
+    let lastScanData = null;
+    const AUTO_SCAN_INTERVAL = 30000; // 30秒
+
+    // 启动自动轮询
+    function startAutoScan() {
+      if (autoScanTimer) clearInterval(autoScanTimer);
+      
+      // 立即执行一次
+      autoScanFanqieWorks();
+      
+      // 设置定时轮询
+      autoScanTimer = setInterval(autoScanFanqieWorks, AUTO_SCAN_INTERVAL);
+      console.log('[AutoScan] 已启动自动轮询，间隔', AUTO_SCAN_INTERVAL / 1000, '秒');
+    }
+
+    // 自动扫描（静默模式）
+    async function autoScanFanqieWorks() {
+      const resultEl = document.getElementById('fanqieWorksList');
+      const statusEl = document.getElementById('fanqieScanStatus');
+      const lastTimeEl = document.getElementById('lastScanTime');
+      
+      try {
+        // 先从数据库获取已扫描的作品
+        const worksResult = await api('/fanqie/works');
+        let works = worksResult.data || [];
+        
+        // 获取本地作品数据用于对比
+        const localResult = await api('/works');
+        const localWorks = localResult.data || [];
+        
+        // 合并数据，标记更新
+        const enrichedWorks = works.map(fw => {
+          const local = localWorks.find(lw => 
+            lw.title === fw.title || 
+            (fw.work_id && lw.id === parseInt(fw.work_id))
+          );
+          
+          return {
+            ...fw,
+            localId: local?.id,
+            localChapterCount: local?.chapter_count || 0,
+            lastLocalUpdate: local?.updated_at
+          };
+        });
+        
+        lastScanData = enrichedWorks;
+        
+        // 渲染作品列表
+        renderWorksList(enrichedWorks, localWorks);
+        
+        // 更新时间
+        const now = new Date();
+        lastTimeEl.textContent = '上次扫描: ' + now.toLocaleTimeString();
+        statusEl.textContent = `共 ${works.length} 部作品`;
+        
+      } catch (err) {
+        console.error('[AutoScan] 扫描失败:', err);
+        if (!lastScanData) {
+          resultEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted);grid-column:1/-1;">
+            <div style="font-size:32px;margin-bottom:12px;">📡</div>
+            <div>正在连接番茄小说...</div>
+          </div>`;
+        }
+      }
+    }
+
+    // 渲染作品列表（显示详细章节信息）
+    async function renderWorksList(fanqieWorks, localWorks) {
+      const resultEl = document.getElementById('fanqieWorksList');
+      
+      if (fanqieWorks.length === 0) {
+        resultEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted);grid-column:1/-1;">
+          <div style="font-size:32px;margin-bottom:12px;">📭</div>
+          <div>暂无作品数据</div>
+        </div>`;
+        return;
+      }
+      
+      // 为每部作品获取最新章节信息
+      const workDetails = await Promise.all(fanqieWorks.map(async (fw) => {
+        let latestChapter = null;
+        let newChapters = [];
+        
+        if (fw.localId) {
+          try {
+            const detailResult = await api(`/works/${fw.localId}`);
+            const chapters = detailResult.data?.chapters || [];
+            
+            // 获取最新的3章
+            const sortedChapters = chapters.sort((a, b) => b.chapter_number - a.chapter_number);
+            latestChapter = sortedChapters[0];
+            
+            // 标记最近24小时内更新的章节
+            const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+            newChapters = sortedChapters.filter(ch => 
+              new Date(ch.updated_at).getTime() > oneDayAgo
+            ).slice(0, 3);
+          } catch (e) {
+            console.error('[WorksList] 获取章节失败:', e);
+          }
+        }
+        
+        return { ...fw, latestChapter, newChapters };
+      }));
+      
+      resultEl.innerHTML = workDetails.map(w => `
+        <div class="fanqie-work-card" style="padding: 16px;">
+          <div class="fanqie-work-header" style="margin-bottom: 12px;">
+            <div>
+              <div class="fanqie-work-title" style="font-size: 14px; font-weight: 600;">${w.title}</div>
+              <div style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">
+                ID: ${w.work_id?.slice(-8) || '-'} · ${w.status || '连载中'}
+              </div>
+            </div>
+            <span class="fanqie-work-status ${w.status?.includes('签约') ? 'signed' : 'ongoing'}">${w.status?.includes('签约') ? '已签约' : '连载'}</span>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; text-align: center;">
+            <div style="padding: 8px; background: var(--bg-tertiary); border-radius: 6px;">
+              <div style="font-size: 16px; font-weight: 600; color: var(--accent);">${w.chapter_count || 0}</div>
+              <div style="font-size: 10px; color: var(--text-muted);">番茄章节</div>
+            </div>
+            <div style="padding: 8px; background: var(--bg-tertiary); border-radius: 6px;">
+              <div style="font-size: 16px; font-weight: 600; color: var(--success);">${w.localChapterCount || 0}</div>
+              <div style="font-size: 10px; color: var(--text-muted);">本地章节</div>
+            </div>
+            <div style="padding: 8px; background: var(--bg-tertiary); border-radius: 6px;">
+              <div style="font-size: 14px; font-weight: 500;">${w.word_count || '-'}</div>
+              <div style="font-size: 10px; color: var(--text-muted);">字数</div>
+            </div>
+          </div>
+          
+          ${w.newChapters && w.newChapters.length > 0 ? `
+            <div style="border-top: 1px solid var(--border); padding-top: 10px; margin-top: 8px;">
+              <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 6px;">🆕 最近更新</div>
+              ${w.newChapters.map(ch => `
+                <div style="font-size: 11px; padding: 4px 0; color: #4ade80;">
+                  第${ch.chapter_number}章: ${ch.title}
+                  <span style="color: var(--text-muted); font-size: 9px; margin-left: 4px;">
+                    ${new Date(ch.updated_at).toLocaleDateString()}
+                  </span>
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
+          
+          ${w.latestChapter ? `
+            <div style="border-top: 1px solid var(--border); padding-top: 8px; margin-top: 8px;">
+              <div style="font-size: 10px; color: var(--text-muted);">
+                最新: 第${w.latestChapter.chapter_number}章 ${w.latestChapter.title}
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      `).join('');
+    }
+
+    // 手动刷新
+    function refreshFanqieData() {
+      showToast('🔄 正在刷新...', 'info');
+      autoScanFanqieWorks();
+    }
+
     async function scanFanqieWorks() {
       const selectedAccounts = getSelectedAccounts();
       const resultEl = document.getElementById('fanqieWorksList');
@@ -1478,6 +1596,12 @@
             document.getElementById('pipelineBtn').disabled = false;
             document.getElementById('stopBtn').disabled = true;
             
+            // 流水线结束后刷新扫描
+            setTimeout(() => {
+              console.log('[Pipeline] 流水线结束，刷新扫描数据...');
+              autoScanFanqieWorks();
+            }, 2000);
+            
             // 检查是否有实际发布内容
             if (progress.task && progress.task.includes('没有待发布章节')) {
               showToast('⚠️ 没有待发布章节：可能该章节已发布或不存在', 'warning');
@@ -1633,7 +1757,7 @@
     // 初始化
     async function init() {
       // 显示版本号确认
-      console.log('=== 小说管理 v20260320-v8 已加载 ===');
+      console.log('=== 小说管理 v20260320-v9 已加载 ===');
       
       // 处理URL参数，自动跳转到对应子页面
       const urlParams = new URLSearchParams(window.location.search);
@@ -1644,8 +1768,12 @@
       }
       
       try {
-        showToast('🚀 正在加载数据... (v10)', 'info');
+        showToast('🚀 正在加载数据...', 'info');
         await Promise.all([loadStats(), loadWorks()]);
+        
+        // 启动自动扫描番茄作品
+        startAutoScan();
+        
         showToast('✅ 数据加载完成', 'success');
       } catch (err) {
         console.error('初始化失败:', err);

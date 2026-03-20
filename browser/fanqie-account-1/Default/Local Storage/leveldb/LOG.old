@@ -1,5 +1,3 @@
-2026/03/20-10:38:09.285 2d7d5 Reusing MANIFEST /workspace/projects/browser/fanqie-account-1/Default/Local Storage/leveldb/MANIFEST-000001
-2026/03/20-10:38:09.316 2d7d5 Recovering log #4
-2026/03/20-10:38:09.317 2d7d5 Level-0 table #6: started
-2026/03/20-10:38:09.329 2d7d5 Level-0 table #6: 30489 bytes OK
-2026/03/20-10:38:09.334 2d7d5 Delete type=0 #4
+2026/03/20-10:44:26.882 2dba5 Reusing MANIFEST /workspace/projects/browser/fanqie-account-1/Default/Local Storage/leveldb/MANIFEST-000001
+2026/03/20-10:44:26.901 2dba5 Recovering log #7
+2026/03/20-10:44:26.902 2dba5 Reusing old log /workspace/projects/browser/fanqie-account-1/Default/Local Storage/leveldb/000007.log 

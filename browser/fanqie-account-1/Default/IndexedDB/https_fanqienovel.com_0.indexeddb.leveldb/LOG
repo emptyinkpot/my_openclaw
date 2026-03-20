@@ -1,6 +1,3 @@
-2026/03/20-10:38:16.378 2d82f Reusing MANIFEST /workspace/projects/browser/fanqie-account-1/Default/IndexedDB/https_fanqienovel.com_0.indexeddb.leveldb/MANIFEST-000001
-2026/03/20-10:38:16.378 2d82f Recovering log #4
-2026/03/20-10:38:16.625 2d82f Reusing old log /workspace/projects/browser/fanqie-account-1/Default/IndexedDB/https_fanqienovel.com_0.indexeddb.leveldb/000004.log 
-2026/03/20-10:38:33.381 2d839 Level-0 table #8: started
-2026/03/20-10:38:33.393 2d839 Level-0 table #8: 686863 bytes OK
-2026/03/20-10:38:33.395 2d839 Delete type=0 #4
+2026/03/20-10:44:34.478 2dc02 Reusing MANIFEST /workspace/projects/browser/fanqie-account-1/Default/IndexedDB/https_fanqienovel.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/03/20-10:44:34.478 2dc02 Recovering log #7
+2026/03/20-10:44:34.478 2dc02 Reusing old log /workspace/projects/browser/fanqie-account-1/Default/IndexedDB/https_fanqienovel.com_0.indexeddb.leveldb/000007.log 
