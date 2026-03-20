@@ -1203,6 +1203,9 @@
         const worksResult = await api('/fanqie/works');
         let works = worksResult.data || [];
         
+        // 调试输出：看看实际的数据结构
+        console.log('[AutoScan] 番茄作品数据:', works);
+        
         // 获取本地作品数据用于对比
         const localResult = await api('/works');
         const localWorks = localResult.data || [];
@@ -1256,23 +1259,38 @@
         return;
       }
       
+      // 调试输出第一个作品的所有字段
+      if (fanqieWorks.length > 0) {
+        console.log('[Render] 第一个作品的字段:', Object.keys(fanqieWorks[0]));
+        console.log('[Render] 第一个作品完整数据:', fanqieWorks[0]);
+      }
+      
       // 获取今日日期（用于判断是否当日更新）
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
       resultEl.innerHTML = fanqieWorks.map(w => {
+        // 尝试多种可能的字段名
+        const latestChapterTitle = w.latest_chapter_title || w.latestChapterTitle || w.last_chapter_title || '';
+        const latestChapterNumber = w.latest_chapter_number || w.latestChapterNumber || w.last_chapter_number || '';
+        const lastUpdateTime = w.last_update_time || w.lastUpdateTime || w.updated_at || '';
+        
         // 检查是否有番茄的最新章节信息
-        const hasFanqieLatest = w.latest_chapter_title && w.latest_chapter_number;
+        const hasFanqieLatest = latestChapterTitle && latestChapterNumber;
         
         // 判断是否当日更新
         let isTodayUpdate = false;
         let updateDate = null;
         
-        if (w.last_update_time) {
-          updateDate = new Date(w.last_update_time);
-          const updateDateOnly = new Date(updateDate);
-          updateDateOnly.setHours(0, 0, 0, 0);
-          isTodayUpdate = updateDateOnly.getTime() === today.getTime();
+        if (lastUpdateTime) {
+          updateDate = new Date(lastUpdateTime);
+          if (!isNaN(updateDate.getTime())) {
+            const updateDateOnly = new Date(updateDate);
+            updateDateOnly.setHours(0, 0, 0, 0);
+            isTodayUpdate = updateDateOnly.getTime() === today.getTime();
+          } else {
+            updateDate = null;
+          }
         }
         
         return `
@@ -1281,7 +1299,7 @@
             <div>
               <div class="fanqie-work-title" style="font-size: 14px; font-weight: 600;">${w.title}</div>
               <div style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">
-                ID: ${w.work_id?.slice(-8) || '-'} · ${w.status || '连载中'}
+                ID: ${w.work_id?.slice(-8) || w.workId?.slice(-8) || '-'} · ${w.status || '连载中'}
               </div>
             </div>
             <span class="fanqie-work-status ${w.status?.includes('签约') ? 'signed' : 'ongoing'}">${w.status?.includes('签约') ? '已签约' : '连载'}</span>
@@ -1289,7 +1307,7 @@
           
           <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; text-align: center;">
             <div style="padding: 8px; background: var(--bg-tertiary); border-radius: 6px;">
-              <div style="font-size: 16px; font-weight: 600; color: var(--accent);">${w.chapter_count || 0}</div>
+              <div style="font-size: 16px; font-weight: 600; color: var(--accent);">${w.chapter_count || w.chapterCount || 0}</div>
               <div style="font-size: 10px; color: var(--text-muted);">番茄章节</div>
             </div>
             <div style="padding: 8px; background: var(--bg-tertiary); border-radius: 6px;">
@@ -1297,7 +1315,7 @@
               <div style="font-size: 10px; color: var(--text-muted);">本地章节</div>
             </div>
             <div style="padding: 8px; background: var(--bg-tertiary); border-radius: 6px;">
-              <div style="font-size: 14px; font-weight: 500;">${w.word_count || '-'}</div>
+              <div style="font-size: 14px; font-weight: 500;">${w.word_count || w.wordCount || '-'}</div>
               <div style="font-size: 10px; color: var(--text-muted);">字数</div>
             </div>
           </div>
@@ -1306,7 +1324,7 @@
             <div style="border-top: 1px solid var(--border); padding-top: 10px; margin-top: 8px;">
               <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 6px;">🆕 番茄最新更新</div>
               <div style="font-size: 11px; padding: 4px 0; ${isTodayUpdate ? 'color: #4ade80; font-weight: 500;' : 'color: var(--text);'}">
-                第${w.latest_chapter_number}章: ${w.latest_chapter_title}
+                第${latestChapterNumber}章: ${latestChapterTitle}
                 ${updateDate ? `
                 <span style="color: var(--text-muted); font-size: 9px; margin-left: 4px;">
                   ${isTodayUpdate ? '今天 ' + updateDate.toLocaleTimeString() : updateDate.toLocaleDateString()}
@@ -1314,7 +1332,14 @@
                 ` : ''}
               </div>
             </div>
-          ` : ''}
+          ` : `
+            <div style="border-top: 1px solid var(--border); padding-top: 10px; margin-top: 8px;">
+              <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 6px;">📋 作品信息</div>
+              <div style="font-size: 11px; padding: 4px 0; color: var(--text-muted);">
+                共 ${w.chapter_count || w.chapterCount || 0} 章 · ${w.word_count || w.wordCount || '-'} 字
+              </div>
+            </div>
+          `}
         </div>
       `}).join('');
     }
