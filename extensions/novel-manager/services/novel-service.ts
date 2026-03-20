@@ -817,28 +817,42 @@ export class NovelService {
   }
   
   /**
-   * 启动内容流水线（有头模式
+   * 启动内容流水线（发布某个作品的最新章节）
    */
   async startPipeline() {
     console.log('[NovelService] ====== 启动流水线 ======');
     const pipeline = this.getPipeline();
     
     try {
-      console.log('[NovelService] 调用 publishToFanqie...');
+      console.log('[NovelService] 调用 publishToFanqie, workId: 7');
       
-      // 真正调用 publishToFanqie，设置有头模式
-      // 先用 dryRun 模式测试，不会真的发布
-      await pipeline.publishToFanqie({ 
+      // 真正调用 publishToFanqie
+      const results = await pipeline.publishToFanqie({ 
         workId: 7, 
-        headless: true,   // 无头模式，但会截图
-        dryRun: true     // 先测试，不真发布
+        headless: true,
+        dryRun: true,
+        onProgress: (event) => {
+          console.log(`[NovelService] [进度] ${event.stepLabel}: ${event.task} (${event.percent}%)`);
+        }
       });
       
-      console.log('[NovelService] ====== 流水线已启动 ======');
-      return { success: true, message: '流水线已启动（无头模式，会自动截图）' };
+      console.log('[NovelService] publishToFanqie 结果:', results);
+      console.log('[NovelService] ====== 流水线已完成 ======');
+      
+      return { 
+        success: true, 
+        message: `流水线已完成，处理了 ${results.length} 个章节`,
+        results: results
+      };
     } catch (err) {
       console.error('[NovelService] 启动流水线失败:', err);
-      return { success: false, message: '启动失败', error: String(err) };
+      console.error('[NovelService] 错误堆栈:', err.stack);
+      return { 
+        success: false, 
+        message: '启动失败', 
+        error: String(err),
+        stack: err.stack
+      };
     }
   }
   
