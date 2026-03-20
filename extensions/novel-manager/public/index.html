@@ -219,7 +219,7 @@
     ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
   </style>
 </head>
-<body><!-- VERSION: 20260320-v4 -->
+<body><!-- VERSION: 20260320-v6 -->
 <div class="nav-bar"><span>🦞 OpenClaw</span><a href="/" class="on">📚 小说管理</a><a href="/auto.html">⚙️ 自动化</a><a href="/experience.html">🧠 经验</a><a href="/cache.html">💾 缓存</a><a href="/native.html">🎯 原生界面</a></div>
   <!-- 顶部工具栏 -->
   <div class="top-bar">
@@ -1368,7 +1368,7 @@
       
       if (!selectedFanqieWorkId) {
         showToast('⚠️ 请先选择一个作品（点击作品卡片）', 'warning');
-        console.error('[Pipeline] 没有选择作品'; alert('请先点击作品卡片选择一个作品！'); console.error('[Pipeline] 没有选择作品 - selectedFanqieWorkId is null');
+        console.error('[Pipeline] 没有选择作品 - selectedFanqieWorkId is null');
         return;
       }
       
@@ -1440,7 +1440,7 @@
       
       pipelineEventSource.onopen = () => {
         console.log('[SSE] 连接已建立');
-        showToast('📡 已连接到流水线', 'info');
+        // 不弹窗，避免干扰
       };
       
       pipelineEventSource.onmessage = (event) => {
