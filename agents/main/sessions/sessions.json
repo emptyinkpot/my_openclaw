@@ -1,7 +1,7 @@
 {
   "agent:main:main": {
     "sessionId": "32ae6d00-2ade-42d1-ac70-cf8d8327aeb3",
-    "updatedAt": 1773958602391,
+    "updatedAt": 1773995165906,
     "systemSent": true,
     "abortedLastRun": false,
     "chatType": "direct",
@@ -449,7 +449,7 @@
     "model": "auto",
     "systemPromptReport": {
       "source": "run",
-      "generatedAt": 1773958598635,
+      "generatedAt": 1773995152474,
       "sessionId": "32ae6d00-2ade-42d1-ac70-cf8d8327aeb3",
       "sessionKey": "agent:main:main",
       "provider": "coze",
@@ -469,9 +469,9 @@
         "sandboxed": false
       },
       "systemPrompt": {
-        "chars": 46163,
+        "chars": 46095,
         "projectContextChars": 22043,
-        "nonProjectContextChars": 24120
+        "nonProjectContextChars": 24052
       },
       "injectedWorkspaceFiles": [
         {
@@ -693,8 +693,8 @@
         ]
       },
       "tools": {
-        "listChars": 2234,
-        "schemaChars": 15105,
+        "listChars": 2508,
+        "schemaChars": 16812,
         "entries": [
           {
             "name": "read",
@@ -811,28 +811,52 @@
             "propertiesCount": 6
           },
           {
-            "name": "memory_search",
-            "summaryChars": 334,
-            "schemaChars": 139,
+            "name": "memory_recall",
+            "summaryChars": 181,
+            "schemaChars": 411,
+            "propertiesCount": 4
+          },
+          {
+            "name": "memory_store",
+            "summaryChars": 117,
+            "schemaChars": 390,
+            "propertiesCount": 4
+          },
+          {
+            "name": "memory_forget",
+            "summaryChars": 82,
+            "schemaChars": 267,
             "propertiesCount": 3
           },
           {
-            "name": "memory_get",
-            "summaryChars": 151,
-            "schemaChars": 128,
-            "propertiesCount": 3
+            "name": "memory_update",
+            "summaryChars": 183,
+            "schemaChars": 411,
+            "propertiesCount": 4
+          },
+          {
+            "name": "memory_stats",
+            "summaryChars": 58,
+            "schemaChars": 117,
+            "propertiesCount": 1
+          },
+          {
+            "name": "memory_list",
+            "summaryChars": 67,
+            "schemaChars": 378,
+            "propertiesCount": 4
           }
         ]
       }
     },
-    "cacheRead": 20160,
+    "cacheRead": 20562,
     "cacheWrite": 0,
     "totalTokensFresh": true,
     "lastTo": "ou_93bd3674e058889b165af2f967e545b3",
     "contextTokens": 204800,
-    "inputTokens": 26,
-    "outputTokens": 244,
-    "totalTokens": 20186
+    "inputTokens": 2838,
+    "outputTokens": 281,
+    "totalTokens": 23400
   },
   "agent:main:cron:6782e7b2-978f-47bc-b76d-462f7001d863": {
     "sessionId": "579ef1fd-46ae-4955-8042-4d47ba37f730",

@@ -362,6 +362,16 @@
           <span class="sidebar-title">⚙️ 控制面板</span>
         </div>
         <div class="sidebar-scroll" style="padding: 12px;">
+          <!-- 流水线开关 -->
+          <div style="margin-bottom: 16px; padding: 12px; background: var(--bg-tertiary); border-radius: 6px;">
+            <div style="font-size: 11px; font-weight: 600; margin-bottom: 8px;">🔄 内容流水线</div>
+            <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 12px;">流水线状态</span>
+              <span id="pipelineStatus" style="padding: 2px 8px; border-radius: 10px; font-size: 10px; background: #ffebe9; color: var(--danger);">已停止</span>
+            </div>
+            <button id="pipelineToggleBtn" class="btn primary" style="width: 100%;" onclick="togglePipeline()">▶️ 启动流水线</button>
+          </div>
+          
           <!-- 快捷操作 -->
           <div style="margin-bottom: 16px; padding: 12px; background: var(--bg-tertiary); border-radius: 6px;">
             <div style="font-size: 11px; font-weight: 600; margin-bottom: 8px;">⚡ 快捷操作</div>
@@ -398,7 +408,7 @@
           <div style="text-align: center; padding: 60px; color: var(--text-muted);">
             <div style="font-size: 48px; margin-bottom: 16px;">⚙️</div>
             <div style="font-size: 16px;">控制面板</div>
-            <div style="font-size: 12px; margin-top: 8px;">功能开发中...</div>
+            <div style="font-size: 12px; margin-top: 8px;">流水线开关已添加到左侧边栏</div>
           </div>
         </div>
       </div>
@@ -1134,6 +1144,38 @@
           }
         }
       });
+    }
+
+    // ====== 流水线开关功能 ======
+    let pipelineRunning = false;
+
+    async function togglePipeline() {
+      const statusEl = document.getElementById('pipelineStatus');
+      const btnEl = document.getElementById('pipelineToggleBtn');
+      
+      if (!statusEl || !btnEl) return;
+      
+      if (pipelineRunning) {
+        // 停止流水线
+        pipelineRunning = false;
+        statusEl.textContent = '已停止';
+        statusEl.style.background = '#ffebe9';
+        statusEl.style.color = 'var(--danger)';
+        btnEl.textContent = '▶️ 启动流水线';
+        btnEl.classList.remove('danger');
+        btnEl.classList.add('primary');
+        showToast('⏹️ 流水线已停止', 'info');
+      } else {
+        // 启动流水线
+        pipelineRunning = true;
+        statusEl.textContent = '运行中';
+        statusEl.style.background = '#dafbe1';
+        statusEl.style.color = 'var(--success)';
+        btnEl.textContent = '⏹️ 停止流水线';
+        btnEl.classList.remove('primary');
+        btnEl.classList.add('danger');
+        showToast('▶️ 流水线已启动', 'success');
+      }
     }
 
     // ====== 番茄扫描功能 ======
