@@ -84,6 +84,21 @@ export class NovelService {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `).catch(() => {});
       
+      // 创建notes表
+      await this.db.execute(`
+        CREATE TABLE IF NOT EXISTS notes (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          title VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+          content TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+          category VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'general',
+          tags JSON,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          INDEX idx_category (category),
+          INDEX idx_created_at (created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `).catch(() => {});
+      
       this.initialized = true;
     } catch (e) {
       console.error('[NovelService] 初始化表失败:', e);
@@ -869,5 +884,96 @@ export class NovelService {
    */
   async getPipelineStatus() {
     return { running: false, status: 'idle' };
+  }
+  
+  // ====== 笔记相关方法 ======
+  
+  /**
+   * 获取所有笔记
+   */
+  async getNotes(category?: string) {
+    let sql = 'SELECT * FROM notes';
+    const params: any[] = [];
+    
+    if (category) {
+      sql += ' WHERE category = ?';
+      params.push(category);
+    }
+    
+    sql += ' ORDER BY updated_at DESC';
+    
+    return await this.db.query(sql, params);
+  }
+  
+  /**
+   * 获取笔记详情
+   */
+  async getNoteById(id: number) {
+    return await this.db.queryOne('SELECT * FROM notes WHERE id = ?', [id]);
+  }
+  
+  /**
+   * 添加笔记
+   */
+  async addNote(note: { title: string; content?: string; category?: string; tags?: string[] }) {
+    const result = await this.db.execute(`
+      INSERT INTO notes (title, content, category, tags, created_at, updated_at)
+      VALUES (?, ?, ?, ?, NOW(), NOW())
+    `, [
+      note.title,
+      note.content || '',
+      note.category || 'general',
+      JSON.stringify(note.tags || [])
+    ]);
+    
+    return { id: (result as any).insertId, ...note };
+  }
+  
+  /**
+   * 更新笔记
+   */
+  async updateNote(id: number, note: { title?: string; content?: string; category?: string; tags?: string[] }) {
+    const updates: string[] = [];
+    const params: any[] = [];
+    
+    if (note.title !== undefined) {
+      updates.push('title = ?');
+      params.push(note.title);
+    }
+    if (note.content !== undefined) {
+      updates.push('content = ?');
+      params.push(note.content);
+    }
+    if (note.category !== undefined) {
+      updates.push('category = ?');
+      params.push(note.category);
+    }
+    if (note.tags !== undefined) {
+      updates.push('tags = ?');
+      params.push(JSON.stringify(note.tags));
+    }
+    
+    if (updates.length === 0) return;
+    
+    updates.push('updated_at = NOW()');
+    params.push(id);
+    
+    await this.db.execute(`UPDATE notes SET ${updates.join(', ')} WHERE id = ?`, params);
+  }
+  
+  /**
+   * 删除笔记
+   */
+  async deleteNote(id: number) {
+    await this.db.execute('DELETE FROM notes WHERE id = ?', [id]);
+    return true;
+  }
+  
+  /**
+   * 获取笔记分类列表
+   */
+  async getNoteCategories() {
+    const rows = await this.db.query('SELECT DISTINCT category FROM notes ORDER BY category');
+    return rows.map((r: any) => r.category);
   }
 }

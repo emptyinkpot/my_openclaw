@@ -533,6 +533,54 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
       jsonRes(res, { success: true, data: stats });
       return true;
     }
+    
+    // ====== 笔记API ======
+    if (path === '/api/novel/notes' && method === 'GET') {
+      const category = query.category;
+      const notes = await getNovelService().getNotes(category);
+      jsonRes(res, { success: true, data: notes });
+      return true;
+    }
+    
+    if (path === '/api/novel/notes/categories' && method === 'GET') {
+      const categories = await getNovelService().getNoteCategories();
+      jsonRes(res, { success: true, data: categories });
+      return true;
+    }
+    
+    const noteDetailMatch = path.match(/^\/api\/novel\/notes\/(\d+)$/);
+    if (noteDetailMatch && method === 'GET') {
+      const id = parseInt(noteDetailMatch[1]);
+      const note = await getNovelService().getNoteById(id);
+      if (!note) {
+        jsonRes(res, { success: false, error: '笔记不存在' }, 404);
+        return true;
+      }
+      jsonRes(res, { success: true, data: note });
+      return true;
+    }
+    
+    if (path === '/api/novel/notes' && method === 'POST') {
+      const body = await parseBody(req);
+      const note = await getNovelService().addNote(body);
+      jsonRes(res, { success: true, data: note });
+      return true;
+    }
+    
+    if (noteDetailMatch && method === 'PUT') {
+      const id = parseInt(noteDetailMatch[1]);
+      const body = await parseBody(req);
+      await getNovelService().updateNote(id, body);
+      jsonRes(res, { success: true });
+      return true;
+    }
+    
+    if (noteDetailMatch && method === 'DELETE') {
+      const id = parseInt(noteDetailMatch[1]);
+      await getNovelService().deleteNote(id);
+      jsonRes(res, { success: true });
+      return true;
+    }
 
     // ====== 缓存文件API (单文件) ======
     if (path === '/api/novel/cache/file' && method === 'GET') {
