@@ -271,7 +271,7 @@
     <button class="btn" onclick="toggleAiPanel()" style="background: linear-gradient(135deg, #8250df, #0969da); border-color: transparent; color: #fff;">✨ AI工具</button>
     <div class="divider"></div>
     <button class="btn" onclick="showView('import')">📥 AI导入</button>
-    <button class="btn" onclick="showDbSchema()">🗄️ 表结构</button>
+
     <div class="spacer"></div>
     <div class="search-box"><input type="text" id="globalSearch" placeholder="全局搜索..." onkeyup="globalSearch()"></div>
     <button class="btn" onclick="refreshAll()">🔄 刷新</button>
@@ -2412,9 +2412,7 @@
       else if (view === 'settings') document.getElementById('settingsModal').classList.add('show');
     }
     
-    function showDbSchema() {
-      window.open('schema.html', '_blank');
-    }
+
 
     function quickAdd() { showToast('+ 快速添加章节', 'info'); }
     function aiGenerate() { showToast('🤖 AI生成章节', 'info'); }
