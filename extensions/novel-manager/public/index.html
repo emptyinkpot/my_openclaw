@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Version: 2026-03-20-v5 Pipeline UI Fix -->
+  <!-- Version: 2026-03-20-v6 Debug More Pipeline UI Fix -->
   <title>📚 小说数据中心 - Novel Data Center</title>
   <style>
     :root {
@@ -1122,20 +1122,15 @@
 
     // ====== 番茄扫描功能 ======
     async function loadFanqieWorks() {
-      try {
-        const result = await api('/fanqie/works');
-        const data = result.data || [];
-        const select = document.getElementById('fanqieWorkSelect');
-        select.innerHTML = '<option value="">全部作品</option>' +
-          data.map(w => `<option value="${w.id}">${w.title} (${w.account})</option>`).join('');
-      } catch (err) {
-        console.error('加载番茄作品失败', err);
-      }
+      // fanqieWorkSelect 元素已移除，此函数保留以避免调用报错
+      // 作品列表通过 scanFanqieWorks() 的卡片形式展示
+      return;
     }
 
     async function startFanqieScan() {
       const mode = document.getElementById('fanqieScanMode').value;
-      const workId = document.getElementById('fanqieWorkSelect').value;
+      const workIdEl = document.getElementById('fanqieWorkSelect');
+      const workId = workIdEl ? workIdEl.value : '';
       const statusEl = document.getElementById('fanqieScanStatus');
       const resultEl = document.getElementById('fanqieScanResult');
       
@@ -1368,8 +1363,13 @@
     }
 
     async function startPipeline() {
+      console.log('[Pipeline] startPipeline called, selectedFanqieWorkId:', selectedFanqieWorkId);
+      console.log('[Pipeline] dryRun:', document.getElementById('dryRunCheck')?.checked);
+      console.log('[Pipeline] headless:', document.getElementById('headlessCheck')?.checked);
+      
       if (!selectedFanqieWorkId) {
-        showToast('⚠️ 请先选择一个作品', 'warning');
+        showToast('⚠️ 请先选择一个作品（点击作品卡片）', 'warning');
+        console.error('[Pipeline] 没有选择作品 - selectedFanqieWorkId is null');
         return;
       }
       
