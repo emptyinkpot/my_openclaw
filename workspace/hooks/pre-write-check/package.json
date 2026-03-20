@@ -1,9 +1,0 @@
-{
-  "name": "pre-write-check",
-  "version": "1.0.0",
-  "description": "OpenClaw Hook: pre-write-check",
-  "main": "index.js",
-  "openclaw": {
-    "hooks": ["pre-write-check"]
-  }
-}

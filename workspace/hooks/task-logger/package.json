@@ -1,9 +1,0 @@
-{
-  "name": "task-logger",
-  "version": "1.0.0",
-  "description": "OpenClaw Hook: task-logger",
-  "main": "index.js",
-  "openclaw": {
-    "hooks": ["task-logger"]
-  }
-}

@@ -1,9 +1,0 @@
-{
-  "name": "knowledge-check",
-  "version": "1.0.0",
-  "description": "OpenClaw Hook: knowledge-check",
-  "main": "index.js",
-  "openclaw": {
-    "hooks": ["knowledge-check"]
-  }
-}

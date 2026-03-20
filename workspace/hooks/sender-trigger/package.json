@@ -1,9 +1,0 @@
-{
-  "name": "sender-trigger",
-  "version": "1.0.0",
-  "description": "OpenClaw Hook: sender-trigger",
-  "main": "index.js",
-  "openclaw": {
-    "hooks": ["sender-trigger"]
-  }
-}
