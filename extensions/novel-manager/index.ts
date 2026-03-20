@@ -78,23 +78,34 @@ function parseQuery(url: string): Record<string, string> {
 
 // 获取页面HTML
 function getPageHtml(pageName: string): string {
-  // 原生界面使用control-ui目录
-  if (pageName === 'native.html') {
-    const nativePath = '/usr/lib/node_modules/openclaw/dist/control-ui/index.html';
-    try {
-      return fs.readFileSync(nativePath, 'utf-8');
-    } catch (e) {
-      console.error('[novel-manager] 无法读取原生界面:', nativePath);
-      return '<html><body><h1>原生界面加载失败</h1></body></html>';
-    }
-  }
+  // 所有页面都使用control-ui目录
+  const controlUiPath = '/usr/lib/node_modules/openclaw/dist/control-ui';
+  let targetFile = pageName;
   
-  const htmlPath = path.join(__dirname, 'public', pageName);
+  // 映射页面名称到control-ui的文件名
+  const pageMap: Record<string, string> = {
+    'native.html': 'index.html',
+    'index.html': 'novel-home.html',
+    'auto.html': 'auto.html',
+    'experience.html': 'experience.html',
+    'cache.html': 'cache.html'
+  };
+  
+  targetFile = pageMap[pageName] || pageName;
+  const fullPath = path.join(controlUiPath, targetFile);
+  
   try {
-    return fs.readFileSync(htmlPath, 'utf-8');
+    return fs.readFileSync(fullPath, 'utf-8');
   } catch (e) {
-    console.error('[novel-manager] 无法读取HTML文件:', htmlPath);
-    return '<html><body><h1>页面加载失败</h1></body></html>';
+    console.error('[novel-manager] 无法读取control-ui页面:', fullPath);
+    // 降级到插件自己的页面
+    const htmlPath = path.join(__dirname, 'public', pageName);
+    try {
+      return fs.readFileSync(htmlPath, 'utf-8');
+    } catch (e2) {
+      console.error('[novel-manager] 无法读取HTML文件:', htmlPath);
+      return '<html><body><h1>页面加载失败</h1></body></html>';
+    }
   }
 }
 
