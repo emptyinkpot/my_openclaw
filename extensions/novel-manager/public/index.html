@@ -3250,6 +3250,7 @@
       // 显示目标子页面 - 处理不同的ID格式
       const pageIdMap = {
         'novel-data': 'novelDataPage',
+        'control-panel': 'controlPanelPage',
         'fanqie-scan': 'fanqieScanPage',
         'cache-manage': 'cacheManagePage',
         'experience': 'subPage-experience'
@@ -3273,13 +3274,14 @@
       // 更新按钮状态
       const btnTextMap = { 
         'novel-data': '小说数据', 
+        'control-panel': '控制面板',
         'fanqie-scan': '番茄扫描', 
         'cache-manage': '缓存管理',
         'experience': '经验积累'
       };
       document.querySelectorAll('.top-bar .btn').forEach(btn => {
         const btnText = btn.textContent;
-        const isSubPageBtn = ['novel-data', 'fanqie-scan', 'cache-manage', 'experience'].some(sp => btnText.includes(btnTextMap[sp]));
+        const isSubPageBtn = ['novel-data', 'control-panel', 'fanqie-scan', 'cache-manage', 'experience'].some(sp => btnText.includes(btnTextMap[sp]));
         if (isSubPageBtn) {
           btn.classList.toggle('primary', btnText.includes(btnTextMap[pageName]));
         }
@@ -3288,6 +3290,7 @@
       // 更新导航栏高亮
       const navPageMap = {
         'novel-data': '小说管理',
+        'control-panel': '小说管理',
         'fanqie-scan': '小说管理',
         'cache-manage': '缓存',
         'experience': '经验'
