@@ -90,7 +90,7 @@
         "channel": "last"
       },
       "state": {
-        "nextRunAtMs": 1774008000000,
+        "nextRunAtMs": 1774094400000,
         "lastRunAtMs": 1773921600006,
         "lastRunStatus": "ok",
         "lastStatus": "ok",
