@@ -759,12 +759,21 @@ export class NovelService {
   // ====== ContentPipeline 相关方法 ======
   
   /**
-   * 启动内容流水线
+   * 启动内容流水线（有头模式）
    */
   async startPipeline() {
     const pipeline = this.getPipeline();
-    await pipeline.start();
-    return { success: true, message: '流水线已启动' };
+    
+    // 示例：调用 publishToFanqie，设置有头模式
+    try {
+      // 这里可以根据实际需求调用具体的流水线方法
+      // 例如：await pipeline.publishToFanqie({ workId: 7, headless: false });
+      
+      await pipeline.start();
+      return { success: true, message: '流水线已启动（有头模式）' };
+    } catch (err) {
+      return { success: false, message: '启动失败', error: String(err) };
+    }
   }
   
   /**
