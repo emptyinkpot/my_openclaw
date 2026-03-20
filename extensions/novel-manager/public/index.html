@@ -1158,7 +1158,7 @@
       try {
         if (pipelineRunning) {
           // 停止流水线
-          const response = await api('/novel/api/pipeline/stop', { method: 'POST' });
+          const response = await api('/pipeline/stop', { method: 'POST' });
           if (response.success) {
             pipelineRunning = false;
             statusEl.textContent = '已停止';
@@ -1171,7 +1171,7 @@
           }
         } else {
           // 启动流水线
-          const response = await api('/novel/api/pipeline/start', { method: 'POST' });
+          const response = await api('/pipeline/start', { method: 'POST' });
           if (response.success) {
             pipelineRunning = true;
             statusEl.textContent = '运行中';

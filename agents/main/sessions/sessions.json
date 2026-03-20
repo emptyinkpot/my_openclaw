@@ -1,7 +1,7 @@
 {
   "agent:main:main": {
     "sessionId": "32ae6d00-2ade-42d1-ac70-cf8d8327aeb3",
-    "updatedAt": 1773995165906,
+    "updatedAt": 1773999049634,
     "systemSent": true,
     "abortedLastRun": false,
     "chatType": "direct",
@@ -449,7 +449,7 @@
     "model": "auto",
     "systemPromptReport": {
       "source": "run",
-      "generatedAt": 1773995152474,
+      "generatedAt": 1773999026914,
       "sessionId": "32ae6d00-2ade-42d1-ac70-cf8d8327aeb3",
       "sessionKey": "agent:main:main",
       "provider": "coze",
@@ -849,14 +849,14 @@
         ]
       }
     },
-    "cacheRead": 20562,
+    "cacheRead": 24074,
     "cacheWrite": 0,
     "totalTokensFresh": true,
     "lastTo": "ou_93bd3674e058889b165af2f967e545b3",
     "contextTokens": 204800,
-    "inputTokens": 2838,
-    "outputTokens": 281,
-    "totalTokens": 23400
+    "inputTokens": 17950,
+    "outputTokens": 500,
+    "totalTokens": 24095
   },
   "agent:main:cron:6782e7b2-978f-47bc-b76d-462f7001d863": {
     "sessionId": "579ef1fd-46ae-4955-8042-4d47ba37f730",
