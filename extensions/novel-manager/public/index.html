@@ -2208,6 +2208,10 @@
       if (view === 'import') document.getElementById('importModal').classList.add('show');
       else if (view === 'settings') document.getElementById('settingsModal').classList.add('show');
     }
+    
+    function showDbSchema() {
+      window.open('schema.html', '_blank');
+    }
 
     function quickAdd() { showToast('+ 快速添加章节', 'info'); }
     function aiGenerate() { showToast('🤖 AI生成章节', 'info'); }
