@@ -1256,34 +1256,26 @@
         return;
       }
       
-      // 为每部作品获取最新章节信息
-      const workDetails = await Promise.all(fanqieWorks.map(async (fw) => {
-        let latestChapter = null;
-        let newChapters = [];
+      // 获取今日日期（用于判断是否当日更新）
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      resultEl.innerHTML = fanqieWorks.map(w => {
+        // 检查是否有番茄的最新章节信息
+        const hasFanqieLatest = w.latest_chapter_title && w.latest_chapter_number;
         
-        if (fw.localId) {
-          try {
-            const detailResult = await api(`/works/${fw.localId}`);
-            const chapters = detailResult.data?.chapters || [];
-            
-            // 获取最新的3章
-            const sortedChapters = chapters.sort((a, b) => b.chapter_number - a.chapter_number);
-            latestChapter = sortedChapters[0];
-            
-            // 标记最近24小时内更新的章节
-            const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
-            newChapters = sortedChapters.filter(ch => 
-              new Date(ch.updated_at).getTime() > oneDayAgo
-            ).slice(0, 3);
-          } catch (e) {
-            console.error('[WorksList] 获取章节失败:', e);
-          }
+        // 判断是否当日更新
+        let isTodayUpdate = false;
+        let updateDate = null;
+        
+        if (w.last_update_time) {
+          updateDate = new Date(w.last_update_time);
+          const updateDateOnly = new Date(updateDate);
+          updateDateOnly.setHours(0, 0, 0, 0);
+          isTodayUpdate = updateDateOnly.getTime() === today.getTime();
         }
         
-        return { ...fw, latestChapter, newChapters };
-      }));
-      
-      resultEl.innerHTML = workDetails.map(w => `
+        return `
         <div class="fanqie-work-card" style="padding: 16px;">
           <div class="fanqie-work-header" style="margin-bottom: 12px;">
             <div>
@@ -1310,29 +1302,21 @@
             </div>
           </div>
           
-          ${w.newChapters && w.newChapters.length > 0 ? `
+          ${hasFanqieLatest ? `
             <div style="border-top: 1px solid var(--border); padding-top: 10px; margin-top: 8px;">
-              <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 6px;">🆕 最近更新</div>
-              ${w.newChapters.map(ch => `
-                <div style="font-size: 11px; padding: 4px 0; color: #4ade80;">
-                  第${ch.chapter_number}章: ${ch.title}
-                  <span style="color: var(--text-muted); font-size: 9px; margin-left: 4px;">
-                    ${new Date(ch.updated_at).toLocaleDateString()}
-                  </span>
-                </div>
-              `).join('')}
-            </div>
-          ` : ''}
-          
-          ${w.latestChapter ? `
-            <div style="border-top: 1px solid var(--border); padding-top: 8px; margin-top: 8px;">
-              <div style="font-size: 10px; color: var(--text-muted);">
-                最新: 第${w.latestChapter.chapter_number}章 ${w.latestChapter.title}
+              <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 6px;">🆕 番茄最新更新</div>
+              <div style="font-size: 11px; padding: 4px 0; ${isTodayUpdate ? 'color: #4ade80; font-weight: 500;' : 'color: var(--text);'}">
+                第${w.latest_chapter_number}章: ${w.latest_chapter_title}
+                ${updateDate ? `
+                <span style="color: var(--text-muted); font-size: 9px; margin-left: 4px;">
+                  ${isTodayUpdate ? '今天 ' + updateDate.toLocaleTimeString() : updateDate.toLocaleDateString()}
+                </span>
+                ` : ''}
               </div>
             </div>
           ` : ''}
         </div>
-      `).join('');
+      `}).join('');
     }
 
     // 手动刷新
