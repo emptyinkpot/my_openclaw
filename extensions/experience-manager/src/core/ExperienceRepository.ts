@@ -181,36 +181,42 @@ export class ExperienceRepository {
    */
   getStats(): ExperienceStats {
     this.load(); // 每次都重新加载，确保数据最新
-    const records = this.data.records;
-    const totalXP = records.reduce((sum, r) => sum + r.xpGained, 0);
+    const records = this.data.records || [];
+    const totalXP = records.reduce((sum, r) => sum + (r.xpGained || 0), 0);
     
     // 类型分布
     const typeDistribution: Record<string, number> = {};
     records.forEach(r => {
-      typeDistribution[r.type] = (typeDistribution[r.type] || 0) + 1;
+      if (r.type) typeDistribution[r.type] = (typeDistribution[r.type] || 0) + 1;
     });
 
     // 标签分布
     const tagDistribution: Record<string, number> = {};
     records.forEach(r => {
-      r.tags.forEach(tag => {
-        tagDistribution[tag] = (tagDistribution[tag] || 0) + 1;
-      });
+      if (r.tags && Array.isArray(r.tags)) {
+        r.tags.forEach(tag => {
+          tagDistribution[tag] = (tagDistribution[tag] || 0) + 1;
+        });
+      }
     });
 
     // 难度分布
     const difficultyDistribution: Record<string, number> = {};
     records.forEach(r => {
-      difficultyDistribution[r.difficulty] = (difficultyDistribution[r.difficulty] || 0) + 1;
+      if (r.difficulty) {
+        difficultyDistribution[String(r.difficulty)] = (difficultyDistribution[String(r.difficulty)] || 0) + 1;
+      }
     });
 
     // 月度增长
     const monthlyMap = new Map<string, { xp: number; count: number }>();
     records.forEach(r => {
-      const date = new Date(r.timestamp);
-      const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      const current = monthlyMap.get(month) || { xp: 0, count: 0 };
-      monthlyMap.set(month, { xp: current.xp + r.xpGained, count: current.count + 1 });
+      if (r.timestamp) {
+        const date = new Date(r.timestamp);
+        const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        const current = monthlyMap.get(month) || { xp: 0, count: 0 };
+        monthlyMap.set(month, { xp: current.xp + (r.xpGained || 0), count: current.count + 1 });
+      }
     });
     const monthlyGrowth = Array.from(monthlyMap.entries())
       .map(([month, data]) => ({ month, ...data }))

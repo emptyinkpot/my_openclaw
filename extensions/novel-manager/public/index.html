@@ -1448,6 +1448,15 @@
         console.log('[SSE] 收到消息:', event.data);
         try {
           const progress = JSON.parse(event.data);
+          
+          // 处理连接确认消息
+          if (progress.status === 'connected') {
+            console.log('[SSE] 连接确认:', progress.message);
+            updatePipelineUI({ status: 'running', step: 'init', task: '已连接，等待流水线启动...', percent: 0, results: [] });
+            showToast('📡 ' + progress.message, 'info');
+            return;
+          }
+          
           updatePipelineUI(progress);
           
           if (progress.status === 'completed' || progress.status === 'error') {

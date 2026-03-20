@@ -8,21 +8,15 @@
  * - 单向同步：experience-manager → memory-lancedb-pro
  * - 失败不阻塞：同步失败不影响经验记录的主流程
  * - 可配置：可通过环境变量关闭同步
+ * 
+ * 当前实现：由于 memory-lancedb-pro 的工具 API 不直接暴露给 HTTP，
+ * 使用文件系统作为中间存储，等待后续集成语义搜索能力。
  */
 
 import type { ExperienceRecord } from './ExperienceRepository';
 
 // 配置
 const MEMORY_SYNC_ENABLED = process.env.EXPERIENCE_MEMORY_SYNC !== 'false';
-const GATEWAY_URL = process.env.OPENCLAW_GATEWAY_URL || 'http://localhost:5000';
-const GATEWAY_TOKEN = process.env.OPENCLAW_GATEWAY_TOKEN || 'e1647cdb-1b80-4eee-a975-7599160cc89b';
-
-// 类型定义
-interface ToolExecuteResult {
-  success: boolean;
-  error?: string;
-  results?: Array<{ text: string; score: number; metadata?: any }>;
-}
 
 /**
  * 将经验记录转换为记忆文本
@@ -55,6 +49,9 @@ function experienceToMemoryText(record: ExperienceRecord): string {
 
 /**
  * 将经验同步到 memory-lancedb-pro
+ * 
+ * 当前实现：由于 memory-lancedb-pro 的工具 API 不直接暴露给 HTTP，
+ * 我们使用文件系统作为中间存储，后续可以通过 Agent 会话调用 memory 工具
  */
 export async function syncExperienceToMemory(record: ExperienceRecord): Promise<boolean> {
   if (!MEMORY_SYNC_ENABLED) {
@@ -62,61 +59,11 @@ export async function syncExperienceToMemory(record: ExperienceRecord): Promise<
   }
 
   try {
-    const memoryText = experienceToMemoryText(record);
-    
-    // 调用 OpenClaw Gateway 的工具执行接口
-    const response = await fetch(`${GATEWAY_URL}/api/tools/execute`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${GATEWAY_TOKEN}`,
-      },
-      body: JSON.stringify({
-        tool: 'memory_store',
-        parameters: {
-          text: memoryText,
-          importance: Math.min(0.5 + (record.difficulty * 0.1), 1), // 难度越高，重要性越高
-          category: 'fact', // 经验作为事实存储
-          scope: 'experience', // 使用 experience scope
-        },
-        metadata: {
-          source: 'experience-manager',
-          experienceId: record.id,
-          type: record.type,
-          tags: record.tags,
-        },
-      }),
-    });
-
-    if (!response.ok) {
-      // 如果工具执行接口不存在，尝试直接调用 memory-lancedb-pro 的内部接口
-      return await syncViaPluginAPI(record, memoryText);
-    }
-
-    const result = (await response.json()) as ToolExecuteResult;
-    
-    if (result.success) {
-      console.log(`[MemorySync] ✅ 同步经验到 memory-lancedb-pro: ${record.title}`);
-      return true;
-    } else {
-      console.warn(`[MemorySync] ⚠️ 同步失败:`, result.error);
-      return false;
-    }
-  } catch (error) {
-    console.error(`[MemorySync] ❌ 同步异常:`, error);
-    return false;
-  }
-}
-
-/**
- * 通过插件 API 直接同步（备用方案）
- */
-async function syncViaPluginAPI(record: ExperienceRecord, memoryText: string): Promise<boolean> {
-  try {
-    // 直接写入 memory-lancedb-pro 的数据目录
+    // 写入同步队列文件，等待后续批量导入到 memory-lancedb-pro
     const fs = await import('fs/promises');
     const path = await import('path');
     
+    const memoryText = experienceToMemoryText(record);
     const memoryDir = process.env.MEMORY_LANCEDB_PATH || '/workspace/projects/data/memory-lancedb';
     const syncFile = path.join(memoryDir, 'experience-sync.jsonl');
     
@@ -142,7 +89,7 @@ async function syncViaPluginAPI(record: ExperienceRecord, memoryText: string): P
     console.log(`[MemorySync] ✅ 写入同步队列: ${record.title}`);
     return true;
   } catch (error) {
-    console.error(`[MemorySync] ❌ 备用同步失败:`, error);
+    console.error(`[MemorySync] ❌ 同步异常:`, error);
     return false;
   }
 }
@@ -167,7 +114,8 @@ export async function syncAllExperiences(records: ExperienceRecord[]): Promise<n
 
 /**
  * 检索相关经验
- * 通过 memory-lancedb-pro 的语义搜索能力
+ * 当前实现：从同步队列文件中进行简单文本匹配
+ * TODO: 集成 memory-lancedb-pro 的语义搜索能力
  */
 export async function searchRelatedExperiences(query: string, limit: number = 5): Promise<Array<{ text: string; score: number; metadata?: any }>> {
   if (!MEMORY_SYNC_ENABLED) {
@@ -175,38 +123,57 @@ export async function searchRelatedExperiences(query: string, limit: number = 5)
   }
 
   try {
-    const response = await fetch(`${GATEWAY_URL}/api/tools/execute`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${GATEWAY_TOKEN}`,
-      },
-      body: JSON.stringify({
-        tool: 'memory_recall',
-        parameters: {
-          query,
-          limit,
-          scope: 'experience', // 只搜索 experience scope
-        },
-      }),
-    });
-
-    if (!response.ok) {
-      console.warn(`[MemorySync] 搜索失败: ${response.status}`);
+    const fs = await import('fs/promises');
+    const path = await import('path');
+    
+    const memoryDir = process.env.MEMORY_LANCEDB_PATH || '/workspace/projects/data/memory-lancedb';
+    const syncFile = path.join(memoryDir, 'experience-sync.jsonl');
+    
+    // 读取同步队列文件
+    const content = await fs.readFile(syncFile, 'utf-8').catch(() => '');
+    if (!content.trim()) {
       return [];
     }
-
-    const result = (await response.json()) as ToolExecuteResult;
     
-    if (result.success && result.results) {
-      return result.results.map((r) => ({
-        text: r.text,
-        score: r.score,
-        metadata: r.metadata,
-      }));
+    // 简单文本匹配
+    const queryLower = query.toLowerCase();
+    const results: Array<{ text: string; score: number; metadata?: any }> = [];
+    
+    for (const line of content.trim().split('\n')) {
+      if (!line.trim()) continue;
+      try {
+        const entry = JSON.parse(line);
+        const textLower = entry.text.toLowerCase();
+        
+        // 计算简单的匹配分数
+        let score = 0;
+        if (textLower.includes(queryLower)) {
+          score = 0.8;
+        } else {
+          // 检查关键词匹配
+          const keywords = queryLower.split(/\s+/).filter(k => k.length > 2);
+          const matchedKeywords = keywords.filter(k => textLower.includes(k));
+          if (matchedKeywords.length > 0) {
+            score = 0.5 * (matchedKeywords.length / keywords.length);
+          }
+        }
+        
+        if (score > 0) {
+          results.push({
+            text: entry.text,
+            score,
+            metadata: entry.metadata,
+          });
+        }
+      } catch {
+        // 忽略解析错误
+      }
     }
     
-    return [];
+    // 按分数排序并返回前 limit 条
+    return results
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit);
   } catch (error) {
     console.error(`[MemorySync] 搜索异常:`, error);
     return [];
