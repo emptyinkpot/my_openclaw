@@ -829,7 +829,7 @@ export class NovelService {
       // 真正调用 publishToFanqie
       const results = await pipeline.publishToFanqie({ 
         workId: 7, 
-        headless: true,
+        headless: false, // 有头模式
         dryRun: true,
         onProgress: (event) => {
           console.log(`[NovelService] [进度] ${event.stepLabel}: ${event.task} (${event.percent}%)`);
