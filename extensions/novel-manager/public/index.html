@@ -1438,16 +1438,16 @@
         const demoChapter = safeLatestChapter > 0 ? safeLatestChapter : 100;
         
         const planChapters = [];
-        for (let i = 0; i < dailyChaptersPerWork; i++) {
-          const chapterNum = demoChapter - i;
-          if (chapterNum > 0) {
-            const isCompleted = !!(completedChapters[workId]?.[chapterNum]);
-            planChapters.push({
-              number: chapterNum,
-              completed: isCompleted
-            });
-          }
+        for (let i = 1; i <= dailyChaptersPerWork; i++) {
+          const chapterNum = demoChapter + i;
+          const isCompleted = !!(completedChapters[workId]?.[chapterNum]);
+          planChapters.push({
+            number: chapterNum,
+            completed: isCompleted
+          });
         }
+        // 从小到大的顺序（63, 64, 65...）
+        planChapters.sort((a, b) => a.number - b.number);
         
         chapterPlanHtml = `
           <div style="border-top: 2px solid var(--accent); padding-top: 12px; margin-top: 10px;">
