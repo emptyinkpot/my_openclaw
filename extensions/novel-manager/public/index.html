@@ -322,10 +322,22 @@
           <span class="sidebar-title">🍅 番茄扫描中心</span>
         </div>
         <div class="sidebar-scroll" style="padding: 12px;">
+          <!-- 每日更新设置 -->
+          <div style="margin-bottom: 16px; padding: 12px; background: var(--bg-tertiary); border-radius: 6px;">
+            <div style="font-size: 11px; font-weight: 600; margin-bottom: 8px;">📋 每日更新计划</div>
+            <div class="form-group">
+              <label class="form-label">每作品每日更新章节数</label>
+              <input type="number" class="form-input" id="dailyChaptersPerWork" value="1" min="1" max="10" onchange="saveDailySettings()">
+            </div>
+            <div style="font-size: 10px; color: var(--text-muted); margin-top: 6px;">
+              💡 从番茄最新章节往后数，标记今日需要更新的章节
+            </div>
+          </div>
+          
           <!-- 快捷操作 -->
           <div style="margin-bottom: 12px;">
-            <button class="btn primary" style="width: 100%; margin-bottom: 6px;" onclick="startPipeline()" id="pipelineBtn">▶ 发布下一章</button>
-            <button class="btn danger" style="width: 100%;" onclick="stopPipeline()" id="stopBtn" disabled>⏹ 停止</button>
+            <button class="btn primary" style="width: 100%; margin-bottom: 6px;" onclick="resetDailyPlan()">🔄 重置今日计划</button>
+            <button class="btn" style="width: 100%;" onclick="markAllComplete()">✅ 全部标记完成</button>
           </div>
 
         </div>
@@ -1163,6 +1175,16 @@
       
       try {
         showToast('🚀 正在加载数据...', 'info');
+        
+        // 加载每日设置
+        loadDailySettings();
+        
+        // 设置输入框的值
+        const dailyInput = document.getElementById('dailyChaptersPerWork');
+        if (dailyInput) {
+          dailyInput.value = dailyChaptersPerWork;
+        }
+        
         await Promise.all([loadStats(), loadWorks()]);
         
         // 启动自动扫描番茄作品
@@ -1180,6 +1202,100 @@
     let autoScanTimer = null;
     let lastScanData = null;
     const AUTO_SCAN_INTERVAL = 30000; // 30秒
+    
+    // ====== 每日更新计划 ======
+    let dailyChaptersPerWork = 1;
+    let completedChapters = {}; // { workId: { chapterNumber: true } }
+    let lastPlanDate = null;
+    
+    // 加载每日设置
+    function loadDailySettings() {
+      try {
+        const saved = localStorage.getItem('fanqieDailySettings');
+        if (saved) {
+          const data = JSON.parse(saved);
+          dailyChaptersPerWork = data.dailyChaptersPerWork || 1;
+          completedChapters = data.completedChapters || {};
+          lastPlanDate = data.lastPlanDate;
+          
+          // 检查是否是新的一天
+          const today = new Date().toDateString();
+          if (lastPlanDate !== today) {
+            // 新的一天，重置完成状态
+            completedChapters = {};
+            lastPlanDate = today;
+            saveDailySettings();
+          }
+        }
+      } catch (e) {
+        console.error('[DailyPlan] 加载设置失败:', e);
+      }
+    }
+    
+    // 保存每日设置
+    function saveDailySettings() {
+      try {
+        const input = document.getElementById('dailyChaptersPerWork');
+        if (input) {
+          dailyChaptersPerWork = parseInt(input.value) || 1;
+        }
+        
+        const data = {
+          dailyChaptersPerWork,
+          completedChapters,
+          lastPlanDate: lastPlanDate || new Date().toDateString()
+        };
+        localStorage.setItem('fanqieDailySettings', JSON.stringify(data));
+        
+        // 重新渲染
+        if (lastScanData) {
+          renderFanqieWorksList(lastScanData, []);
+        }
+      } catch (e) {
+        console.error('[DailyPlan] 保存设置失败:', e);
+      }
+    }
+    
+    // 重置今日计划
+    function resetDailyPlan() {
+      completedChapters = {};
+      lastPlanDate = new Date().toDateString();
+      saveDailySettings();
+      showToast('🔄 今日计划已重置', 'success');
+    }
+    
+    // 全部标记完成
+    function markAllComplete() {
+      if (!lastScanData) return;
+      
+      lastScanData.forEach(work => {
+        const workId = work.work_id || work.workId;
+        if (workId) {
+          const latestChapter = work.latest_chapter_number || work.latestChapterNumber || 0;
+          if (!completedChapters[workId]) {
+            completedChapters[workId] = {};
+          }
+          for (let i = 0; i < dailyChaptersPerWork; i++) {
+            const chapterNum = latestChapter - i;
+            if (chapterNum > 0) {
+              completedChapters[workId][chapterNum] = true;
+            }
+          }
+        }
+      });
+      
+      saveDailySettings();
+      showToast('✅ 已全部标记完成', 'success');
+    }
+    
+    // 切换章节完成状态
+    function toggleChapterComplete(workId, chapterNumber) {
+      if (!completedChapters[workId]) {
+        completedChapters[workId] = {};
+      }
+      completedChapters[workId][chapterNumber] = !completedChapters[workId][chapterNumber];
+      saveDailySettings();
+    }
 
     // 启动自动轮询
     function startAutoScan() {
@@ -1270,9 +1386,11 @@
       today.setHours(0, 0, 0, 0);
       
       resultEl.innerHTML = fanqieWorks.map(w => {
+        const workId = w.work_id || w.workId;
+        
         // 尝试多种可能的字段名
         const latestChapterTitle = w.latest_chapter_title || w.latestChapterTitle || w.last_chapter_title || '';
-        const latestChapterNumber = w.latest_chapter_number || w.latestChapterNumber || w.last_chapter_number || '';
+        const latestChapterNumber = w.latest_chapter_number || w.latestChapterNumber || w.last_chapter_number || 0;
         const lastUpdateTime = w.last_update_time || w.lastUpdateTime || w.updated_at || '';
         
         // 检查是否有番茄的最新章节信息
@@ -1293,13 +1411,53 @@
           }
         }
         
+        // 生成章节计划表
+        let chapterPlanHtml = '';
+        if (latestChapterNumber > 0) {
+          const planChapters = [];
+          for (let i = 0; i < dailyChaptersPerWork; i++) {
+            const chapterNum = latestChapterNumber - i;
+            if (chapterNum > 0) {
+              const isCompleted = completedChapters[workId]?.[chapterNum];
+              planChapters.push({
+                number: chapterNum,
+                completed: isCompleted
+              });
+            }
+          }
+          
+          if (planChapters.length > 0) {
+            chapterPlanHtml = `
+              <div style="border-top: 1px solid var(--border); padding-top: 10px; margin-top: 8px;">
+                <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                  <span>📋 今日更新计划</span>
+                  <span style="font-size: 9px;">
+                    ${planChapters.filter(c => c.completed).length}/${planChapters.length} 已完成
+                  </span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                  ${planChapters.map(ch => `
+                    <div style="display: flex; align-items: center; gap: 6px; padding: 4px 6px; background: ${ch.completed ? 'var(--success-bg, rgba(74, 222, 128, 0.1))' : 'var(--bg-tertiary)'}; border-radius: 4px; cursor: pointer; transition: all 0.2s;"
+                         onclick="toggleChapterComplete('${workId}', ${ch.number})">
+                      <span style="font-size: 14px; ${ch.completed ? 'color: var(--success);' : 'color: var(--text-muted);'}">${ch.completed ? '☑' : '☐'}</span>
+                      <span style="font-size: 11px; ${ch.completed ? 'text-decoration: line-through; color: var(--text-muted);' : 'color: var(--text);'}">
+                        第${ch.number}章
+                      </span>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            `;
+          }
+        }
+        
         return `
         <div class="fanqie-work-card" style="padding: 16px;">
           <div class="fanqie-work-header" style="margin-bottom: 12px;">
             <div>
               <div class="fanqie-work-title" style="font-size: 14px; font-weight: 600;">${w.title}</div>
               <div style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">
-                ID: ${w.work_id?.slice(-8) || w.workId?.slice(-8) || '-'} · ${w.status || '连载中'}
+                ID: ${workId?.slice(-8) || '-'} · ${w.status || '连载中'}
               </div>
             </div>
             <span class="fanqie-work-status ${w.status?.includes('签约') ? 'signed' : 'ongoing'}">${w.status?.includes('签约') ? '已签约' : '连载'}</span>
@@ -1320,6 +1478,8 @@
             </div>
           </div>
           
+          ${chapterPlanHtml}
+          
           ${hasFanqieLatest ? `
             <div style="border-top: 1px solid var(--border); padding-top: 10px; margin-top: 8px;">
               <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 6px;">🆕 番茄最新更新</div>
@@ -1332,14 +1492,7 @@
                 ` : ''}
               </div>
             </div>
-          ` : `
-            <div style="border-top: 1px solid var(--border); padding-top: 10px; margin-top: 8px;">
-              <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 6px;">📋 作品信息</div>
-              <div style="font-size: 11px; padding: 4px 0; color: var(--text-muted);">
-                共 ${w.chapter_count || w.chapterCount || 0} 章 · ${w.word_count || w.wordCount || '-'} 字
-              </div>
-            </div>
-          `}
+          ` : ''}
         </div>
       `}).join('');
     }
