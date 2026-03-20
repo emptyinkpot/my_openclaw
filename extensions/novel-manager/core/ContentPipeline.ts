@@ -168,6 +168,7 @@ export class ContentPipeline {
   
   /**
    * 直接发布到番茄（简化流程）
+   * 自动检测番茄最新章节，发布下一章
    */
   async publishToFanqie(options: {
     workId: number;
@@ -176,12 +177,13 @@ export class ContentPipeline {
     endChapter?: number;
     headless?: boolean;
     dryRun?: boolean;
-    skipStatusCheck?: boolean;  // 跳过润色/审核状态检查
+    skipStatusCheck?: boolean;
+    autoNext?: boolean;  // 自动获取番茄最新章节并发布下一章
     onProgress?: (event: PipelineProgressEvent) => void;
   }): Promise<TaskResult[]> {
-    const { workId, chapterNumber, startChapter, endChapter, headless = false, dryRun = false, skipStatusCheck = true, onProgress } = options;
+    const { workId, chapterNumber, startChapter, endChapter, headless = false, dryRun = false, skipStatusCheck = true, autoNext = true, onProgress } = options;
     
-    console.log('[ContentPipeline] publishToFanqie 参数:', { workId, chapterNumber, startChapter, endChapter, skipStatusCheck });
+    console.log('[ContentPipeline] publishToFanqie 参数:', { workId, chapterNumber, startChapter, endChapter, skipStatusCheck, autoNext });
     
     // 初始化进度
     this.progressCallback = onProgress;
@@ -202,113 +204,129 @@ export class ContentPipeline {
     this.emitProgress('running', 'init', 0, 0, '初始化发布流程...');
     await delay(500);
     
-    // 步骤2: 扫描待发布章节
-    this.emitProgress('running', 'scan', 0, 0, '扫描待发布章节...');
+    // 步骤2: 获取番茄最新章节，确定要发布哪一章
+    let targetChapter: number | undefined = chapterNumber;
     
-    // 根据是否跳过状态检查，使用不同的查询
-    let chapters: ChapterToPublish[];
-    if (skipStatusCheck) {
-      // 跳过状态检查，只获取有内容的章节
+    if (autoNext && !chapterNumber) {
+      this.emitProgress('running', 'scan', 0, 0, '检测番茄最新章节...');
+      
+      // 获取作品标题
       const repo = getChapterRepository();
+      const workInfo = await repo.getWorkInfo(workId);
+      if (!workInfo) {
+        this.emitProgress('error', 'scan', 0, 0, '未找到作品信息', undefined, '作品ID无效');
+        return results;
+      }
+      
+      // 启动浏览器获取番茄最新章节
+      const latestChapter = await this.fanqiePublisher.getLatestChapterFromFanqie(workInfo.title, account, headless);
+      
+      if (latestChapter === null) {
+        this.emitProgress('error', 'scan', 0, 0, '无法获取番茄最新章节');
+        return results;
+      }
+      
+      targetChapter = latestChapter + 1;
+      console.log(`[ContentPipeline] 番茄最新章节: ${latestChapter}，将发布: 第${targetChapter}章`);
+      this.emitProgress('running', 'scan', 0, 1, `番茄最新: ${latestChapter}章，待发布: 第${targetChapter}章`);
+    }
+    
+    // 步骤3: 获取目标章节内容
+    this.emitProgress('running', 'scan', 0, 0, '获取章节内容...');
+    
+    const repo = getChapterRepository();
+    let chapterData: ChapterData | null = null;
+    
+    if (targetChapter) {
+      // 按章节号精确获取
+      chapterData = await repo.getChapterByNumber(workId, targetChapter);
+    } else {
+      // 获取第一个待发布章节
       const pendingChapters = await repo.getPendingProcess({ 
         workId, 
         chapterRange: startChapter && endChapter ? [startChapter, endChapter] : undefined,
-        limit: 100 
+        limit: 1 
       });
-      chapters = pendingChapters.map(ch => ({
-        workId: ch.workId,
-        workTitle: ch.workTitle,
-        chapterNumber: ch.chapterNumber,
-        chapterTitle: ch.chapterTitle || `第${ch.chapterNumber}章`,
-        content: ch.content || '',
-        wordCount: ch.wordCount || ch.content?.length || 0,
-      }));
-    } else {
-      chapters = await this.fanqiePublisher.getPendingChapters(workId, chapterNumber ? 1 : 100);
+      chapterData = pendingChapters.length > 0 ? pendingChapters[0] : null;
     }
     
-    // 如果指定了章节号，只发布那个章节
-    const toPublish = chapterNumber 
-      ? chapters.filter(c => c.chapterNumber === chapterNumber)
-      : chapters;
-    
-    if (toPublish.length === 0) {
-      this.emitProgress('completed', 'scan', 0, 0, '没有待发布章节');
-      logger.info('没有待发布章节');
+    if (!chapterData) {
+      this.emitProgress('completed', 'scan', 0, 0, `没有找到第${targetChapter}章的内容`);
+      logger.info(`没有找到第${targetChapter}章的内容`);
       return results;
     }
     
-    this.emitProgress('running', 'scan', 0, toPublish.length, `找到 ${toPublish.length} 个待发布章节`);
-    logger.info(`待发布 ${toPublish.length} 个章节到番茄`);
+    const chapter = {
+      workId: chapterData.workId,
+      workTitle: chapterData.workTitle,
+      chapterNumber: chapterData.chapterNumber,
+      chapterTitle: chapterData.chapterTitle || `第${chapterData.chapterNumber}章`,
+      content: chapterData.content || '',
+      wordCount: chapterData.wordCount || chapterData.content?.length || 0,
+    };
     
-    // 步骤3: 发布章节
-    for (let i = 0; i < toPublish.length; i++) {
-      const chapter = toPublish[i];
-      const taskStartTime = Date.now();
-      
-      const taskDesc = `${chapter.workTitle} 第${chapter.chapterNumber}章`;
-      this.emitProgress('running', 'publish', i + 1, toPublish.length, `正在发布: ${taskDesc}`);
-      logger.info(`[${i + 1}/${toPublish.length}] 发布: ${taskDesc}`);
-      
-      if (dryRun) {
-        const duration = Date.now() - taskStartTime;
-        results.push({ success: true, task: chapter, duration });
-        this.addResult(true, chapter.workTitle, chapter.chapterNumber, chapter.chapterTitle, '模拟发布成功', duration);
-        continue;
-      }
-      
-      try {
-        const result = await this.fanqiePublisher.publishChapter(chapter, account, { 
-          headless,
-          onProgress: (p: PublishProgress) => {
-            this.emitProgress('running', 'publish', i + 1, toPublish.length, taskDesc, p.action);
-          }
-        });
-        const duration = Date.now() - taskStartTime;
-        
-        results.push({
-          success: result.success,
-          task: chapter,
-          duration,
-          error: result.error,
-        });
-        
-        this.addResult(
-          result.success,
-          chapter.workTitle,
-          chapter.chapterNumber,
-          chapter.chapterTitle,
-          result.message,
-          duration
-        );
-        
-        if (result.success) {
-          logger.info(`  ✓ 发布成功`);
-        } else {
-          logger.error(`  ✗ 发布失败: ${result.error}`);
-        }
-        
-        // 发布间隔
-        if (i < toPublish.length - 1) {
-          await delay(3000);
-        }
-        
-      } catch (error: any) {
-        const duration = Date.now() - taskStartTime;
-        results.push({
-          success: false,
-          task: chapter,
-          duration,
-          error: error.message,
-        });
-        this.addResult(false, chapter.workTitle, chapter.chapterNumber, chapter.chapterTitle, error.message, duration);
-      }
+    const toPublish = [chapter];
+    this.emitProgress('running', 'scan', 1, 1, `找到: ${chapter.workTitle} 第${chapter.chapterNumber}章 ${chapter.chapterTitle}`);
+    logger.info(`待发布: ${chapter.workTitle} 第${chapter.chapterNumber}章`);
+    
+    // 步骤4: 发布章节
+    const taskStartTime = Date.now();
+    const taskDesc = `${chapter.workTitle} 第${chapter.chapterNumber}章`;
+    this.emitProgress('running', 'publish', 1, 1, `正在发布: ${taskDesc}`);
+    logger.info(`[1/1] 发布: ${taskDesc}`);
+    
+    if (dryRun) {
+      const duration = Date.now() - taskStartTime;
+      results.push({ success: true, task: chapter, duration });
+      this.addResult(true, chapter.workTitle, chapter.chapterNumber, chapter.chapterTitle, '模拟发布成功', duration);
+      this.emitProgress('completed', 'done', 1, 1, '模拟发布成功');
+      return results;
     }
     
-    // 完成
-    const successCount = results.filter(r => r.success).length;
-    this.emitProgress('completed', 'done', results.length, toPublish.length, 
-      `发布完成: 成功 ${successCount}/${toPublish.length}`);
+    try {
+      const result = await this.fanqiePublisher.publishChapter(chapter, account, { 
+        headless,
+        onProgress: (p: PublishProgress) => {
+          this.emitProgress('running', 'publish', 1, 1, taskDesc, p.action);
+        }
+      });
+      const duration = Date.now() - taskStartTime;
+      
+      results.push({
+        success: result.success,
+        task: chapter,
+        duration,
+        error: result.error,
+      });
+      
+      this.addResult(
+        result.success,
+        chapter.workTitle,
+        chapter.chapterNumber,
+        chapter.chapterTitle,
+        result.message,
+        duration
+      );
+      
+      if (result.success) {
+        logger.info(`  ✓ 发布成功`);
+        this.emitProgress('completed', 'done', 1, 1, '发布成功!');
+      } else {
+        logger.error(`  ✗ 发布失败: ${result.error}`);
+        this.emitProgress('error', 'done', 1, 1, result.message, result.error);
+      }
+      
+    } catch (error: any) {
+      const duration = Date.now() - taskStartTime;
+      results.push({
+        success: false,
+        task: chapter,
+        duration,
+        error: error.message,
+      });
+      this.addResult(false, chapter.workTitle, chapter.chapterNumber, chapter.chapterTitle, error.message, duration);
+      this.emitProgress('error', 'done', 1, 1, error.message, error.message);
+    }
     
     return results;
   }

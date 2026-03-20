@@ -34,6 +34,45 @@ export class ChapterRepository {
   private db = getDatabaseManager();
 
   /**
+   * 获取作品信息
+   */
+  async getWorkInfo(workId: number): Promise<{ id: number; title: string } | null> {
+    const results = await this.db.query<{ id: number; title: string }>(
+      'SELECT id, title FROM works WHERE id = ? LIMIT 1',
+      [workId]
+    );
+    return results.length > 0 ? results[0] : null;
+  }
+
+  /**
+   * 按章节号获取章节内容（用于发布，不管发布状态）
+   */
+  async getChapterByNumber(workId: number, chapterNumber: number): Promise<ChapterData | null> {
+    const sql = `
+      SELECT 
+        c.work_id as workId,
+        w.title as workTitle,
+        c.chapter_number as chapterNumber,
+        c.title as chapterTitle,
+        c.content,
+        c.word_count as wordCount,
+        c.polish_status as polishStatus,
+        c.audit_status as auditStatus,
+        c.publish_status as publishStatus
+      FROM chapters c
+      JOIN works w ON c.work_id = w.id
+      WHERE c.work_id = ? 
+        AND c.chapter_number = ?
+        AND c.content IS NOT NULL 
+        AND LENGTH(c.content) > 100
+      LIMIT 1
+    `;
+    
+    const results = await this.db.query<ChapterData>(sql, [workId, chapterNumber]);
+    return results.length > 0 ? results[0] : null;
+  }
+
+  /**
    * 获取待发布章节
    * 条件：有内容 + 已润色 + 审核通过 + 未发布
    */

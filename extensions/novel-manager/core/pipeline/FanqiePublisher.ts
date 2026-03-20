@@ -338,6 +338,35 @@ export class FanqiePublisher {
   }
 
   /**
+   * 公开方法：获取番茄作品的最新章节号（独立调用）
+   */
+  async getLatestChapterFromFanqie(workTitle: string, account: FanqieAccount, headless: boolean = true): Promise<number | null> {
+    try {
+      // 初始化浏览器
+      logger.info(`[FanqiePublisher] 获取最新章节: ${workTitle}`);
+      await this.initBrowser(account, headless);
+
+      // 找到作品
+      const fanqieWork = await this.findFanqieWork(workTitle);
+      if (!fanqieWork) {
+        logger.error(`  未找到作品: ${workTitle}`);
+        return null;
+      }
+
+      // 获取最新章节
+      const latestChapter = await this.getFanqieLatestChapter(fanqieWork.id);
+      logger.info(`  最新章节: ${latestChapter}`);
+      
+      return latestChapter;
+    } catch (error: any) {
+      logger.error('获取最新章节失败:', error);
+      return null;
+    } finally {
+      await this.closeBrowser();
+    }
+  }
+
+  /**
    * 执行发布
    */
   private async doPublishToFanqie(
