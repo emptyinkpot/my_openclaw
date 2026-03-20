@@ -327,29 +327,7 @@
             <button class="btn primary" style="width: 100%; margin-bottom: 6px;" onclick="startPipeline()" id="pipelineBtn">▶ 发布下一章</button>
             <button class="btn danger" style="width: 100%;" onclick="stopPipeline()" id="stopBtn" disabled>⏹ 停止</button>
           </div>
-          
-          <!-- 发布设置 -->
-          <div style="padding: 10px; background: var(--bg-tertiary); border-radius: 6px; margin-bottom: 12px;">
-            <div style="font-size: 11px; font-weight: 600; margin-bottom: 8px;">发布设置</div>
-            <label style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px; cursor: pointer; font-size: 11px;">
-              <input type="checkbox" id="dryRunCheck"> 试运行模式
-            </label>
-            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 11px;">
-              <input type="checkbox" id="headlessCheck" checked> 后台运行
-            </label>
-          </div>
-          
-          <!-- 状态 -->
-          <div style="padding-top: 12px; border-top: 1px solid var(--border);">
-            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">自动扫描</div>
-            <div id="autoScanStatus" style="font-size: 12px; color: var(--success);">✓ 每30秒自动刷新</div>
-          </div>
-          
-          <!-- 扫描状态 -->
-          <div style="padding-top: 12px; border-top: 1px solid var(--border); margin-top: 12px;">
-            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">流水线状态</div>
-            <div id="fanqieScanStatus" style="font-size: 12px;">就绪</div>
-          </div>
+
         </div>
       </div>
       
@@ -369,7 +347,7 @@
           <div id="fanqieWorksList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px;">
             <div style="text-align: center; padding: 40px; color: var(--text-muted); grid-column: 1/-1;">
               <div style="font-size: 32px; margin-bottom: 12px;">📡</div>
-              <div style="font-size: 14px;">正在扫描番茄小说作品...</div>
+              <div style="font-size: 14px;">正在加载番茄小说作品...</div>
             </div>
           </div>
         </div>
@@ -1187,12 +1165,180 @@
         showToast('🚀 正在加载数据...', 'info');
         await Promise.all([loadStats(), loadWorks()]);
         
+        // 启动自动扫描番茄作品
+        startAutoScan();
+        
         showToast('✅ 数据加载完成', 'success');
       } catch (err) {
         console.error('初始化失败:', err);
         showToast('❌ 数据加载失败: ' + (err.message || '网络错误'), 'error');
         document.getElementById('worksList').innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-muted);">加载失败，请检查网络连接</div>';
       }
+    }
+
+    // ====== 番茄作品扫描和显示 ======
+    let autoScanTimer = null;
+    let lastScanData = null;
+    const AUTO_SCAN_INTERVAL = 30000; // 30秒
+
+    // 启动自动轮询
+    function startAutoScan() {
+      if (autoScanTimer) clearInterval(autoScanTimer);
+      
+      // 立即执行一次
+      autoScanFanqieWorks();
+      
+      // 设置定时轮询
+      autoScanTimer = setInterval(autoScanFanqieWorks, AUTO_SCAN_INTERVAL);
+      console.log('[AutoScan] 已启动自动轮询，间隔', AUTO_SCAN_INTERVAL / 1000, '秒');
+    }
+
+    // 自动扫描（静默模式）
+    async function autoScanFanqieWorks() {
+      const resultEl = document.getElementById('fanqieWorksList');
+      const lastTimeEl = document.getElementById('lastScanTime');
+      
+      try {
+        // 先从数据库获取已扫描的作品
+        const worksResult = await api('/fanqie/works');
+        let works = worksResult.data || [];
+        
+        // 获取本地作品数据用于对比
+        const localResult = await api('/works');
+        const localWorks = localResult.data || [];
+        
+        // 合并数据，标记更新
+        const enrichedWorks = works.map(fw => {
+          const local = localWorks.find(lw => 
+            lw.title === fw.title || 
+            (fw.work_id && lw.id === parseInt(fw.work_id))
+          );
+          
+          return {
+            ...fw,
+            localId: local?.id,
+            localChapterCount: local?.chapter_count || 0,
+            lastLocalUpdate: local?.updated_at
+          };
+        });
+        
+        lastScanData = enrichedWorks;
+        
+        // 渲染作品列表
+        renderFanqieWorksList(enrichedWorks, localWorks);
+        
+        // 更新时间
+        const now = new Date();
+        if (lastTimeEl) lastTimeEl.textContent = '上次扫描: ' + now.toLocaleTimeString();
+        
+      } catch (err) {
+        console.error('[AutoScan] 扫描失败:', err);
+        if (!lastScanData && resultEl) {
+          resultEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted);grid-column:1/-1;">
+            <div style="font-size:32px;margin-bottom:12px;">📡</div>
+            <div>正在连接番茄小说...</div>
+          </div>`;
+        }
+      }
+    }
+
+    // 渲染番茄作品列表（显示详细章节信息）
+    async function renderFanqieWorksList(fanqieWorks, localWorks) {
+      const resultEl = document.getElementById('fanqieWorksList');
+      
+      if (!resultEl) return;
+      
+      if (fanqieWorks.length === 0) {
+        resultEl.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted);grid-column:1/-1;">
+          <div style="font-size:32px;margin-bottom:12px;">📭</div>
+          <div>暂无作品数据</div>
+        </div>`;
+        return;
+      }
+      
+      // 为每部作品获取最新章节信息
+      const workDetails = await Promise.all(fanqieWorks.map(async (fw) => {
+        let latestChapter = null;
+        let newChapters = [];
+        
+        if (fw.localId) {
+          try {
+            const detailResult = await api(`/works/${fw.localId}`);
+            const chapters = detailResult.data?.chapters || [];
+            
+            // 获取最新的3章
+            const sortedChapters = chapters.sort((a, b) => b.chapter_number - a.chapter_number);
+            latestChapter = sortedChapters[0];
+            
+            // 标记最近24小时内更新的章节
+            const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+            newChapters = sortedChapters.filter(ch => 
+              new Date(ch.updated_at).getTime() > oneDayAgo
+            ).slice(0, 3);
+          } catch (e) {
+            console.error('[WorksList] 获取章节失败:', e);
+          }
+        }
+        
+        return { ...fw, latestChapter, newChapters };
+      }));
+      
+      resultEl.innerHTML = workDetails.map(w => `
+        <div class="fanqie-work-card" style="padding: 16px;">
+          <div class="fanqie-work-header" style="margin-bottom: 12px;">
+            <div>
+              <div class="fanqie-work-title" style="font-size: 14px; font-weight: 600;">${w.title}</div>
+              <div style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">
+                ID: ${w.work_id?.slice(-8) || '-'} · ${w.status || '连载中'}
+              </div>
+            </div>
+            <span class="fanqie-work-status ${w.status?.includes('签约') ? 'signed' : 'ongoing'}">${w.status?.includes('签约') ? '已签约' : '连载'}</span>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; text-align: center;">
+            <div style="padding: 8px; background: var(--bg-tertiary); border-radius: 6px;">
+              <div style="font-size: 16px; font-weight: 600; color: var(--accent);">${w.chapter_count || 0}</div>
+              <div style="font-size: 10px; color: var(--text-muted);">番茄章节</div>
+            </div>
+            <div style="padding: 8px; background: var(--bg-tertiary); border-radius: 6px;">
+              <div style="font-size: 16px; font-weight: 600; color: var(--success);">${w.localChapterCount || 0}</div>
+              <div style="font-size: 10px; color: var(--text-muted);">本地章节</div>
+            </div>
+            <div style="padding: 8px; background: var(--bg-tertiary); border-radius: 6px;">
+              <div style="font-size: 14px; font-weight: 500;">${w.word_count || '-'}</div>
+              <div style="font-size: 10px; color: var(--text-muted);">字数</div>
+            </div>
+          </div>
+          
+          ${w.newChapters && w.newChapters.length > 0 ? `
+            <div style="border-top: 1px solid var(--border); padding-top: 10px; margin-top: 8px;">
+              <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 6px;">🆕 最近更新</div>
+              ${w.newChapters.map(ch => `
+                <div style="font-size: 11px; padding: 4px 0; color: #4ade80;">
+                  第${ch.chapter_number}章: ${ch.title}
+                  <span style="color: var(--text-muted); font-size: 9px; margin-left: 4px;">
+                    ${new Date(ch.updated_at).toLocaleDateString()}
+                  </span>
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
+          
+          ${w.latestChapter ? `
+            <div style="border-top: 1px solid var(--border); padding-top: 8px; margin-top: 8px;">
+              <div style="font-size: 10px; color: var(--text-muted);">
+                最新: 第${w.latestChapter.chapter_number}章 ${w.latestChapter.title}
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      `).join('');
+    }
+
+    // 手动刷新
+    function refreshFanqieData() {
+      showToast('🔄 正在刷新...', 'info');
+      autoScanFanqieWorks();
     }
 
     async function api(endpoint, options = {}) {
