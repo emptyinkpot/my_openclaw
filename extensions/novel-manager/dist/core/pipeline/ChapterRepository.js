@@ -59,6 +59,7 @@ class ChapterRepository {
     async getPendingProcess(filter = {}) {
         const { workId, chapterRange, limit = 100 } = filter;
         const params = [];
+        console.log('[ChapterRepository] getPendingProcess filter:', JSON.stringify(filter));
         let sql = `
       SELECT 
         c.work_id as workId,
@@ -87,7 +88,11 @@ class ChapterRepository {
         // 直接拼接 LIMIT，避免 MySQL prepared statement 问题
         const safeLimit = Math.min(Math.max(1, limit), 1000);
         sql += ` ORDER BY c.work_id, c.chapter_number LIMIT ${safeLimit}`;
-        return await this.db.query(sql, params);
+        console.log('[ChapterRepository] SQL:', sql);
+        console.log('[ChapterRepository] params:', params);
+        const results = await this.db.query(sql, params);
+        console.log('[ChapterRepository] 结果数量:', results.length);
+        return results;
     }
     /**
      * 更新发布状态

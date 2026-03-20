@@ -52,11 +52,11 @@ class NovelService {
         if (this.initialized)
             return;
         try {
-            // 先删除旧表（字符集可能不兼容）
-            await this.db.execute(`DROP TABLE IF EXISTS fanqie_works`).catch(() => { });
-            // 创建fanqie_works表 - 使用utf8mb4字符集
+            // 不要删除表，保留数据！使用 IF NOT EXISTS 创建
+            // await this.db.execute(`DROP TABLE IF EXISTS fanqie_works`).catch(() => {});
+            // 创建fanqie_works表 - 使用utf8mb4字符集（如果不存在）
             await this.db.execute(`
-        CREATE TABLE fanqie_works (
+        CREATE TABLE IF NOT EXISTS fanqie_works (
           id INT PRIMARY KEY AUTO_INCREMENT,
           account_id INT NOT NULL DEFAULT 1,
           work_id VARCHAR(100) NOT NULL,
@@ -433,9 +433,11 @@ class NovelService {
         // 如果 workId 是字符串（番茄ID），通过标题匹配本地作品
         if (typeof workId === 'string' && workId.length > 10) {
             // 从 fanqie_works 表查找作品标题
+            console.log('[Pipeline] 查询 fanqie_works, workId:', workId);
             const fanqieWorks = await this.db.query(`
         SELECT title FROM fanqie_works WHERE work_id = ? LIMIT 1
       `, [workId]);
+            console.log('[Pipeline] fanqieWorks 结果:', fanqieWorks);
             if (fanqieWorks && fanqieWorks.length > 0) {
                 const fanqieTitle = fanqieWorks[0].title;
                 console.log('[Pipeline] 番茄作品:', fanqieTitle);
@@ -443,6 +445,7 @@ class NovelService {
                 const localWorks = await this.db.query(`
           SELECT id, title FROM works WHERE title = ? OR title LIKE ? LIMIT 1
         `, [fanqieTitle, `%${fanqieTitle}%`]);
+                console.log('[Pipeline] localWorks 结果:', localWorks);
                 if (localWorks && localWorks.length > 0) {
                     localWorkId = localWorks[0].id;
                     console.log('[Pipeline] 匹配到本地作品:', localWorks[0].title, 'ID:', localWorkId);
@@ -610,6 +613,46 @@ class NovelService {
         const filePath = path.join(cacheDir, name);
         fs.writeFileSync(filePath, content, 'utf-8');
         return true;
+    }
+    /**
+     * 调试：检查章节详情
+     */
+    async debugChapter(workId, chapterNumber) {
+        const rows = await this.db.query(`
+      SELECT 
+        chapter_number, 
+        title, 
+        word_count,
+        LENGTH(content) as content_length,
+        content IS NULL as content_null,
+        publish_status,
+        polish_status,
+        status
+      FROM chapters 
+      WHERE work_id = ? AND chapter_number = ?
+    `, [workId, chapterNumber]);
+        return rows[0] || null;
+    }
+    /**
+     * 调试：测试查询待发布章节
+     */
+    async debugPendingChapters(workId, startChapter, endChapter) {
+        const sql = `
+      SELECT 
+        c.chapter_number,
+        c.title,
+        LENGTH(c.content) as content_length,
+        c.publish_status
+      FROM chapters c
+      WHERE c.content IS NOT NULL 
+        AND LENGTH(c.content) > 100
+        AND c.work_id = ?
+        AND c.chapter_number BETWEEN ? AND ?
+        AND (c.publish_status IS NULL OR c.publish_status != 'published')
+      ORDER BY c.chapter_number
+    `;
+        const rows = await this.db.query(sql, [workId, startChapter, endChapter]);
+        return { sql, params: [workId, startChapter, endChapter], count: rows.length, rows };
     }
 }
 exports.NovelService = NovelService;

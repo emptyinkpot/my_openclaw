@@ -282,6 +282,27 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
       return true;
     }
 
+    // 调试：检查章节内容
+    const debugChapterMatch = path.match(/^\/api\/novel\/debug\/chapter\/(\d+)\/(\d+)$/);
+    if (debugChapterMatch && method === 'GET') {
+      const workId = parseInt(debugChapterMatch[1]);
+      const chapterNumber = parseInt(debugChapterMatch[2]);
+      const result = await getNovelService().debugChapter(workId, chapterNumber);
+      jsonRes(res, { success: true, data: result });
+      return true;
+    }
+
+    // 调试：测试待发布章节查询
+    const debugPendingMatch = path.match(/^\/api\/novel\/debug\/pending\/(\d+)\/(\d+)-(\d+)$/);
+    if (debugPendingMatch && method === 'GET') {
+      const workId = parseInt(debugPendingMatch[1]);
+      const startChapter = parseInt(debugPendingMatch[2]);
+      const endChapter = parseInt(debugPendingMatch[3]);
+      const result = await getNovelService().debugPendingChapters(workId, startChapter, endChapter);
+      jsonRes(res, { success: true, data: result });
+      return true;
+    }
+
     // 章节列表（按作品ID）
     const chaptersByWorkMatch = path.match(/^\/api\/novel\/works\/(\d+)\/chapters$/);
     if (chaptersByWorkMatch && method === 'GET') {

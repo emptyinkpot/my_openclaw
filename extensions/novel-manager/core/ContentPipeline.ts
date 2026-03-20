@@ -181,6 +181,8 @@ export class ContentPipeline {
   }): Promise<TaskResult[]> {
     const { workId, chapterNumber, startChapter, endChapter, headless = false, dryRun = false, skipStatusCheck = true, onProgress } = options;
     
+    console.log('[ContentPipeline] publishToFanqie 参数:', { workId, chapterNumber, startChapter, endChapter, skipStatusCheck });
+    
     // 初始化进度
     this.progressCallback = onProgress;
     this.startTime = Date.now();

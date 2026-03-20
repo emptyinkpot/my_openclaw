@@ -86,6 +86,8 @@ export class ChapterRepository {
     const { workId, chapterRange, limit = 100 } = filter;
     const params: any[] = [];
 
+    console.log('[ChapterRepository] getPendingProcess filter:', JSON.stringify(filter));
+
     let sql = `
       SELECT 
         c.work_id as workId,
@@ -119,7 +121,12 @@ export class ChapterRepository {
     const safeLimit = Math.min(Math.max(1, limit), 1000);
     sql += ` ORDER BY c.work_id, c.chapter_number LIMIT ${safeLimit}`;
 
-    return await this.db.query<ChapterData>(sql, params);
+    console.log('[ChapterRepository] SQL:', sql);
+    console.log('[ChapterRepository] params:', params);
+
+    const results = await this.db.query<ChapterData>(sql, params);
+    console.log('[ChapterRepository] 结果数量:', results.length);
+    return results;
   }
 
   /**
