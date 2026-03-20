@@ -78,14 +78,16 @@ function parseQuery(url: string): Record<string, string> {
 
 // 获取页面HTML
 function getPageHtml(pageName: string): string {
-  // 原生界面使用control-ui目录
-  if (pageName === 'native.html') {
-    const nativePath = '/usr/lib/node_modules/openclaw/dist/control-ui/index.html';
+  // 原生界面和设置页面使用control-ui目录
+  if (pageName === 'native.html' || pageName === 'settings.html') {
+    const controlUiPath = '/usr/lib/node_modules/openclaw/dist/control-ui';
+    const targetFile = pageName === 'native.html' ? 'index.html' : pageName;
+    const fullPath = path.join(controlUiPath, targetFile);
     try {
-      return fs.readFileSync(nativePath, 'utf-8');
+      return fs.readFileSync(fullPath, 'utf-8');
     } catch (e) {
-      console.error('[novel-manager] 无法读取原生界面:', nativePath);
-      return '<html><body><h1>原生界面加载失败</h1></body></html>';
+      console.error('[novel-manager] 无法读取control-ui页面:', fullPath);
+      return '<html><body><h1>页面加载失败</h1></body></html>';
     }
   }
   
@@ -110,7 +112,8 @@ async function handleNovelPage(req: IncomingMessage, res: ServerResponse): Promi
     '/novel/': 'index.html',
     '/auto.html': 'auto.html',
     '/experience.html': 'experience.html',
-    '/cache.html': 'cache.html'
+    '/cache.html': 'cache.html',
+    '/settings.html': 'settings.html'
   };
 
   const pageFile = pageMap[urlPath];
