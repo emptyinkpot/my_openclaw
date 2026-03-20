@@ -219,7 +219,7 @@
     ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
   </style>
 </head>
-<body><!-- VERSION: 20260320-v10 -->
+<body><!-- VERSION: 20260320-v12 -->
 <div class="nav-bar"><span>🦞 OpenClaw</span><a href="/" class="on">📚 小说管理</a><a href="/auto.html">⚙️ 自动化</a><a href="/experience.html">🧠 经验</a><a href="/cache.html">💾 缓存</a><a href="/native.html">🎯 原生界面</a></div>
   <!-- 顶部工具栏 -->
   <div class="top-bar">
@@ -1363,13 +1363,30 @@
 
     async function startPipeline() {
       console.log('[Pipeline] startPipeline called, selectedFanqieWorkId:', selectedFanqieWorkId);
-      console.log('[Pipeline] dryRun:', document.getElementById('dryRunCheck')?.checked);
-      console.log('[Pipeline] headless:', document.getElementById('headlessCheck')?.checked);
       
+      // 如果没有选择作品，自动扫描并选择第一个
       if (!selectedFanqieWorkId) {
-        showToast('⚠️ 请先选择一个作品（点击作品卡片）', 'warning');
-        console.error('[Pipeline] 没有选择作品 - selectedFanqieWorkId is null');
-        return;
+        showToast('📡 正在扫描作品...', 'info');
+        try {
+          const scanResult = await api('/fanqie/scan', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ accountId: 'account_1' })
+          });
+          
+          if (scanResult.success && scanResult.data?.works?.length > 0) {
+            const firstWork = scanResult.data.works[0];
+            selectedFanqieWorkId = firstWork.workId;
+            console.log('[Pipeline] 自动选择作品:', firstWork.title, firstWork.workId);
+            showToast(`✅ 自动选择: ${firstWork.title}`, 'success');
+          } else {
+            showToast('❌ 未找到可发布的作品', 'error');
+            return;
+          }
+        } catch (err) {
+          showToast('❌ 扫描失败: ' + err.message, 'error');
+          return;
+        }
       }
       
       // 立即显示启动提示
@@ -1483,10 +1500,16 @@
       };
       
       pipelineEventSource.onerror = (err) => {
-        console.error('[SSE] 连接错误:', err, 'readyState:', pipelineEventSource?.readyState);
-        // 不要立即关闭，EventSource 会自动重连
+        const readyState = pipelineEventSource?.readyState;
+        // readyState: 0=CONNECTING, 1=OPEN, 2=CLOSED
+        if (readyState === 0) {
+          // 正在连接中，不是真正的错误
+          console.log('[SSE] 正在重连...');
+          return;
+        }
+        console.error('[SSE] 连接错误:', err, 'readyState:', readyState);
         // 只有在 readyState 为 CLOSED 时才关闭
-        if (pipelineEventSource && pipelineEventSource.readyState === EventSource.CLOSED) {
+        if (readyState === EventSource.CLOSED) {
           showToast('❌ SSE 连接已断开', 'error');
           pipelineEventSource = null;
           document.getElementById('pipelineBtn').disabled = false;
