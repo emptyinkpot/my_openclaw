@@ -212,6 +212,45 @@
     .toast.show { display: flex; animation: slideIn 0.3s ease; }
     @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
     
+    /* AI工具面板 */
+    .ai-panel { position: fixed; top: 40px; right: -420px; width: 400px; height: calc(100vh - 40px); background: var(--bg-secondary); border-left: 1px solid var(--border); box-shadow: -4px 0 20px rgba(0,0,0,0.1); z-index: 9998; transition: right 0.3s ease; display: flex; flex-direction: column; }
+    .ai-panel.show { right: 0; }
+    .ai-panel-header { padding: 12px 16px; background: linear-gradient(135deg, #8250df, #0969da); display: flex; justify-content: space-between; align-items: center; }
+    .ai-panel-header h3 { color: #fff; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+    .ai-panel-close { color: rgba(255,255,255,0.8); font-size: 20px; cursor: default; transition: color 0.2s; }
+    .ai-panel-close:hover { color: #fff; }
+    .ai-panel-tabs { display: flex; background: var(--bg-tertiary); border-bottom: 1px solid var(--border); }
+    .ai-panel-tab { flex: 1; padding: 10px 12px; text-align: center; font-size: 12px; color: var(--text-secondary); cursor: default; border-bottom: 2px solid transparent; transition: all 0.2s; }
+    .ai-panel-tab:hover { background: var(--bg); color: var(--text); }
+    .ai-panel-tab.active { color: var(--accent); border-bottom-color: var(--accent); background: var(--bg); }
+    .ai-panel-content { flex: 1; overflow-y: auto; padding: 16px; }
+    
+    /* 润色面板样式 */
+    .polish-section { margin-bottom: 20px; }
+    .polish-section h4 { font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; text-transform: uppercase; display: flex; align-items: center; gap: 6px; }
+    .polish-textarea { width: 100%; min-height: 150px; padding: 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); font-size: 12px; font-family: inherit; resize: vertical; line-height: 1.6; }
+    .polish-textarea:focus { outline: none; border-color: var(--accent); }
+    .polish-config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+    .polish-config-item { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px; }
+    .polish-config-item label { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .polish-config-item select, .polish-config-item input[type="range"] { width: 100%; }
+    .polish-config-item input[type="range"] { cursor: pointer; }
+    .polish-range-value { text-align: right; font-size: 10px; color: var(--accent); font-weight: 600; margin-top: 4px; }
+    .polish-actions { display: flex; gap: 8px; margin-top: 12px; }
+    .polish-actions .btn { flex: 1; }
+    
+    /* 生成面板样式 */
+    .gen-template-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
+    .gen-template-card { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px; cursor: default; transition: all 0.2s; }
+    .gen-template-card:hover { border-color: var(--accent); background: #ddf4ff; }
+    .gen-template-icon { font-size: 24px; margin-bottom: 8px; }
+    .gen-template-title { font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+    .gen-template-desc { font-size: 10px; color: var(--text-muted); }
+    .gen-input-group { margin-bottom: 12px; }
+    .gen-input-group label { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+    .gen-input-group input, .gen-input-group textarea, .gen-input-group select { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); font-size: 11px; font-family: inherit; }
+    .gen-input-group textarea { min-height: 100px; resize: vertical; }
+    
     /* 滚动条 */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: var(--bg); }
@@ -220,7 +259,7 @@
   </style>
 </head>
 <body><!-- VERSION: 20260320-v18 -->
-<div class="nav-bar"><span>🦞 OpenClaw</span><a href="/novel/" class="on">📚 小说管理</a><a href="/auto.html">⚙️ 自动化</a><a href="/experience.html">🧠 经验</a><a href="/cache.html">💾 缓存</a><a href="/">🎯 原生界面</a></div>
+<div class="nav-bar"><span>🦞 OpenClaw</span><a href="/novel/" class="on">📚 小说管理</a><a href="/auto.html">⚙️ 自动化</a><a href="/experience.html">🧠 经验</a><a href="/cache.html">💾 缓存</a><a href="/">🎯 原生界面</a><a href="javascript:void(0)" onclick="toggleAiPanel()" style="background: linear-gradient(135deg, #8250df, #0969da); color: #fff; font-weight: 600;">✨ AI工具</a></div>
   <!-- 顶部工具栏 -->
   <div class="top-bar">
     <div class="logo">📚 小说管理</div>
@@ -3201,8 +3240,178 @@
       });
     };
 
+    // AI工具面板功能
+    let aiPanelTab = 'polish';
+    
+    function toggleAiPanel() {
+      const panel = document.getElementById('aiPanel');
+      panel.classList.toggle('show');
+    }
+    
+    function switchAiPanelTab(tab) {
+      aiPanelTab = tab;
+      document.querySelectorAll('.ai-panel-tab').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+      
+      // 显示对应内容
+      document.getElementById('aiPanelPolish').style.display = tab === 'polish' ? 'block' : 'none';
+      document.getElementById('aiPanelGenerate').style.display = tab === 'generate' ? 'block' : 'none';
+    }
+    
+    function updateClassicalRange(value) {
+      document.getElementById('classicalRangeValue').textContent = value + '%';
+    }
+    
+    // 润色功能
+    async function startPolish() {
+      const text = document.getElementById('polishText').value;
+      if (!text.trim()) {
+        showToast('⚠️ 请输入要润色的文本', 'warning');
+        return;
+      }
+      
+      showToast('✨ 正在润色中...', 'info');
+      
+      // 模拟润色过程
+      setTimeout(() => {
+        const classicalLevel = document.getElementById('classicalRange').value;
+        const perspective = document.getElementById('perspectiveSelect').value;
+        document.getElementById('polishResult').value = 
+          `【润色结果】\n文言化程度: ${classicalLevel}%\n叙事视角: ${perspective}\n\n原文:\n${text}\n\n润色后:\n[润色后的内容将显示在这里]`;
+        showToast('✅ 润色完成！', 'success');
+      }, 1500);
+    }
+    
+    // 生成功能
+    function selectGenTemplate(type) {
+      document.getElementById('genType').value = type;
+      showToast(`📝 已选择模板: ${type}`, 'info');
+    }
+    
+    async function startGenerate() {
+      const type = document.getElementById('genType').value;
+      const prompt = document.getElementById('genPrompt').value;
+      
+      if (!prompt.trim()) {
+        showToast('⚠️ 请输入生成要求', 'warning');
+        return;
+      }
+      
+      showToast('🤖 正在生成中...', 'info');
+      
+      // 模拟生成过程
+      setTimeout(() => {
+        document.getElementById('genResult').value = 
+          `【生成结果】\n类型: ${type}\n\n要求:\n${prompt}\n\n生成内容:\n[生成的内容将显示在这里]`;
+        showToast('✅ 生成完成！', 'success');
+      }, 2000);
+    }
+    
     // 启动
     init();
   </script>
+  
+  <!-- AI工具面板 -->
+  <div id="aiPanel" class="ai-panel">
+    <div class="ai-panel-header">
+      <h3>✨ AI工具箱</h3>
+      <span class="ai-panel-close" onclick="toggleAiPanel()">×</span>
+    </div>
+    
+    <div class="ai-panel-tabs">
+      <div class="ai-panel-tab active" onclick="switchAiPanelTab('polish')">✏️ 润色</div>
+      <div class="ai-panel-tab" onclick="switchAiPanelTab('generate')">🚀 生成</div>
+    </div>
+    
+    <div class="ai-panel-content">
+      <!-- 润色面板 -->
+      <div id="aiPanelPolish">
+        <div class="polish-section">
+          <h4>📝 输入文本</h4>
+          <textarea id="polishText" class="polish-textarea" placeholder="在此粘贴要润色的文本..."></textarea>
+        </div>
+        
+        <div class="polish-section">
+          <h4>⚙️ 润色配置</h4>
+          <div class="polish-config-grid">
+            <div class="polish-config-item">
+              <label>叙事视角</label>
+              <select id="perspectiveSelect" class="form-input">
+                <option value="first">第一人称沉浸</option>
+                <option value="limited">有限上帝视角</option>
+                <option value="omniscient">全知上帝视角</option>
+              </select>
+            </div>
+            <div class="polish-config-item">
+              <label>文言化程度</label>
+              <input type="range" id="classicalRange" min="0" max="100" value="30" oninput="updateClassicalRange(this.value)">
+              <div class="polish-range-value" id="classicalRangeValue">30%</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="polish-actions">
+          <button class="btn" onclick="document.getElementById('polishText').value='';document.getElementById('polishResult').value=''">🗑️ 清空</button>
+          <button class="btn primary" onclick="startPolish()">✨ 开始润色</button>
+        </div>
+        
+        <div class="polish-section" style="margin-top: 16px;">
+          <h4>✅ 润色结果</h4>
+          <textarea id="polishResult" class="polish-textarea" placeholder="润色结果将显示在这里..." readonly></textarea>
+        </div>
+      </div>
+      
+      <!-- 生成面板 -->
+      <div id="aiPanelGenerate" style="display: none;">
+        <div class="polish-section">
+          <h4>📋 选择模板</h4>
+          <div class="gen-template-grid">
+            <div class="gen-template-card" onclick="selectGenTemplate('chapter')">
+              <div class="gen-template-icon">📖</div>
+              <div class="gen-template-title">章节生成</div>
+              <div class="gen-template-desc">根据大纲生成完整章节</div>
+            </div>
+            <div class="gen-template-card" onclick="selectGenTemplate('dialogue')">
+              <div class="gen-template-icon">💬</div>
+              <div class="gen-template-title">对话生成</div>
+              <div class="gen-template-desc">生成角色对话内容</div>
+            </div>
+            <div class="gen-template-card" onclick="selectGenTemplate('outline')">
+              <div class="gen-template-icon">📋</div>
+              <div class="gen-template-title">大纲生成</div>
+              <div class="gen-template-desc">生成章节大纲</div>
+            </div>
+            <div class="gen-template-card" onclick="selectGenTemplate('character')">
+              <div class="gen-template-icon">👤</div>
+              <div class="gen-template-title">角色生成</div>
+              <div class="gen-template-desc">创建新角色设定</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="polish-section">
+          <h4>🎯 生成要求</h4>
+          <div class="gen-input-group">
+            <label>生成类型</label>
+            <input type="text" id="genType" class="form-input" value="chapter" readonly>
+          </div>
+          <div class="gen-input-group">
+            <label>详细要求</label>
+            <textarea id="genPrompt" class="polish-textarea" placeholder="描述你想要生成的内容..."></textarea>
+          </div>
+        </div>
+        
+        <div class="polish-actions">
+          <button class="btn" onclick="document.getElementById('genPrompt').value='';document.getElementById('genResult').value=''">🗑️ 清空</button>
+          <button class="btn primary" onclick="startGenerate()">🚀 开始生成</button>
+        </div>
+        
+        <div class="polish-section" style="margin-top: 16px;">
+          <h4>✅ 生成结果</h4>
+          <textarea id="genResult" class="polish-textarea" placeholder="生成结果将显示在这里..." readonly></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
