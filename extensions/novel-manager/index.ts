@@ -88,7 +88,8 @@ function getPageHtml(pageName: string): string {
     'index.html': 'novel-home.html',
     'auto.html': 'auto.html',
     'experience.html': 'experience.html',
-    'cache.html': 'cache.html'
+    'cache.html': 'cache.html',
+    'settings.html': 'settings.html'
   };
   
   targetFile = pageMap[pageName] || pageName;
