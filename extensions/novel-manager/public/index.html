@@ -1366,10 +1366,12 @@
       
       // 立即显示启动提示
       showToast('🚀 正在启动流水线...', 'info');
-      updatePipelineUI({ status: 'running', step: 'init', task: '正在扫描作品...', percent: 0, results: [] });
+      updatePipelineUI({ status: 'running', step: 'init', task: '正在检测番茄最新章节...', percent: 0, results: [] });
       
-      const dryRun = document.getElementById('dryRunCheck')?.checked ?? true;
-      const headless = document.getElementById('headlessCheck')?.checked ?? true;
+      // 固定使用 workId: 7 (枪与凋零之花)，有头模式
+      const workId = 7;
+      const headless = document.getElementById('headlessCheck')?.checked ?? false;
+      const dryRun = document.getElementById('dryRunCheck')?.checked ?? false;
       
       pipelineProgressId = 'pipeline_' + Date.now();
       pipelineStartTime = Date.now();
@@ -1383,9 +1385,9 @@
       try {
         // 调用发布API
         const body = {
-          workId: selectedFanqieWorkId,
-          headless,
-          dryRun,
+          workId: workId,
+          headless: headless,
+          dryRun: dryRun,
           skipAudit: true,
           progressId: pipelineProgressId,
         };

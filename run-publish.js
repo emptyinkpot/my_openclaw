@@ -1,8 +1,12 @@
 const { ContentPipeline } = require('./extensions/novel-manager/dist/core/ContentPipeline');
 
 async function main() {
-  console.log('=== 启动发布流水线（有头模式）===');
-  console.log('作品: 枪与凋零之花 (workId: 7)');
+  const workId = parseInt(process.env.WORK_ID || '7', 10);
+  const headless = process.env.HEADLESS === 'true';
+  
+  console.log('=== 启动发布流水线 ===');
+  console.log(`作品 ID: ${workId}`);
+  console.log(`有头模式: ${!headless}`);
   
   const pipeline = new ContentPipeline();
   
@@ -12,8 +16,8 @@ async function main() {
   
   try {
     const results = await pipeline.publishToFanqie({
-      workId: 7,  // 枪与凋零之花
-      headless: false,
+      workId,
+      headless,
       dryRun: false,
       onProgress,
     });

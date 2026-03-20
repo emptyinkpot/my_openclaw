@@ -150,6 +150,33 @@ app.post(`${API_PREFIX}/fanqie/publish`, async (req, res) => {
         res.status(500).json({ success: false, error: err.message });
     }
 });
+// 一键发布下一章（直接运行脚本）
+app.post(`${API_PREFIX}/fanqie/publish-next`, async (req, res) => {
+    try {
+        const { workId = 7, headless = false } = req.body;
+        // 用子进程执行脚本
+        const { spawn } = require('child_process');
+        const path = require('path');
+        const scriptPath = path.join(__dirname, '..', '..', 'run-publish.js');
+        // 响应先返回
+        res.json({ success: true, message: '发布脚本已启动', workId, headless });
+        // 后台执行脚本
+        const child = spawn('node', [scriptPath], {
+            cwd: '/workspace/projects',
+            env: { ...process.env, WORK_ID: String(workId), HEADLESS: String(headless) },
+            stdio: 'inherit'
+        });
+        child.on('error', (err) => {
+            console.error('[PublishNext] 脚本执行错误:', err);
+        });
+        child.on('close', (code) => {
+            console.log(`[PublishNext] 脚本执行完成，退出码: ${code}`);
+        });
+    }
+    catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
 // 经验记录列表
 app.get(`${API_PREFIX}/experience/records`, async (req, res) => {
     try {
