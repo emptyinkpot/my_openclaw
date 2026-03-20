@@ -219,7 +219,7 @@
     ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
   </style>
 </head>
-<body><!-- VERSION: 20260320-v8 -->
+<body><!-- VERSION: 20260320-v9 -->
 <div class="nav-bar"><span>🦞 OpenClaw</span><a href="/" class="on">📚 小说管理</a><a href="/auto.html">⚙️ 自动化</a><a href="/experience.html">🧠 经验</a><a href="/cache.html">💾 缓存</a><a href="/native.html">🎯 原生界面</a></div>
   <!-- 顶部工具栏 -->
   <div class="top-bar">
@@ -1590,6 +1590,9 @@
 
     // 初始化
     async function init() {
+      // 显示版本号确认
+      console.log('=== 小说管理 v20260320-v8 已加载 ===');
+      
       // 处理URL参数，自动跳转到对应子页面
       const urlParams = new URLSearchParams(window.location.search);
       const page = urlParams.get('page');
@@ -1599,7 +1602,7 @@
       }
       
       try {
-        showToast('🚀 正在加载数据...', 'info');
+        showToast('🚀 正在加载数据... (v8)', 'info');
         await Promise.all([loadStats(), loadWorks()]);
         showToast('✅ 数据加载完成', 'success');
       } catch (err) {
