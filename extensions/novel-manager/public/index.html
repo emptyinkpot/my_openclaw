@@ -1155,26 +1155,37 @@
       
       if (!statusEl || !btnEl) return;
       
-      if (pipelineRunning) {
-        // 停止流水线
-        pipelineRunning = false;
-        statusEl.textContent = '已停止';
-        statusEl.style.background = '#ffebe9';
-        statusEl.style.color = 'var(--danger)';
-        btnEl.textContent = '▶️ 启动流水线';
-        btnEl.classList.remove('danger');
-        btnEl.classList.add('primary');
-        showToast('⏹️ 流水线已停止', 'info');
-      } else {
-        // 启动流水线
-        pipelineRunning = true;
-        statusEl.textContent = '运行中';
-        statusEl.style.background = '#dafbe1';
-        statusEl.style.color = 'var(--success)';
-        btnEl.textContent = '⏹️ 停止流水线';
-        btnEl.classList.remove('primary');
-        btnEl.classList.add('danger');
-        showToast('▶️ 流水线已启动', 'success');
+      try {
+        if (pipelineRunning) {
+          // 停止流水线
+          const response = await api('/novel/api/pipeline/stop', { method: 'POST' });
+          if (response.success) {
+            pipelineRunning = false;
+            statusEl.textContent = '已停止';
+            statusEl.style.background = '#ffebe9';
+            statusEl.style.color = 'var(--danger)';
+            btnEl.textContent = '▶️ 启动流水线';
+            btnEl.classList.remove('danger');
+            btnEl.classList.add('primary');
+            showToast('⏹️ 流水线已停止', 'info');
+          }
+        } else {
+          // 启动流水线
+          const response = await api('/novel/api/pipeline/start', { method: 'POST' });
+          if (response.success) {
+            pipelineRunning = true;
+            statusEl.textContent = '运行中';
+            statusEl.style.background = '#dafbe1';
+            statusEl.style.color = 'var(--success)';
+            btnEl.textContent = '⏹️ 停止流水线';
+            btnEl.classList.remove('primary');
+            btnEl.classList.add('danger');
+            showToast('▶️ 流水线已启动', 'success');
+          }
+        }
+      } catch (err) {
+        console.error('流水线操作失败:', err);
+        showToast('❌ 操作失败，请查看控制台', 'error');
       }
     }
 

@@ -24,6 +24,15 @@ export interface NovelStats {
 export class NovelService {
   private db = getDatabaseManager();
   private initialized = false;
+  private contentPipeline: ContentPipeline | null = null;
+  
+  // 获取 ContentPipeline 实例
+  private getPipeline(): ContentPipeline {
+    if (!this.contentPipeline) {
+      this.contentPipeline = new ContentPipeline();
+    }
+    return this.contentPipeline;
+  }
   
   /**
    * 初始化数据库表
@@ -745,5 +754,33 @@ export class NovelService {
     
     const rows = await this.db.query(sql, [workId, startChapter, endChapter]);
     return { sql, params: [workId, startChapter, endChapter], count: rows.length, rows };
+  }
+
+  // ====== ContentPipeline 相关方法 ======
+  
+  /**
+   * 启动内容流水线
+   */
+  async startPipeline() {
+    const pipeline = this.getPipeline();
+    await pipeline.start();
+    return { success: true, message: '流水线已启动' };
+  }
+  
+  /**
+   * 停止内容流水线
+   */
+  async stopPipeline() {
+    const pipeline = this.getPipeline();
+    await pipeline.stop();
+    return { success: true, message: '流水线已停止' };
+  }
+  
+  /**
+   * 获取流水线状态
+   */
+  async getPipelineStatus() {
+    const pipeline = this.getPipeline();
+    return pipeline.getState();
   }
 }

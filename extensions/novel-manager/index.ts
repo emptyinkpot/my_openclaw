@@ -408,6 +408,25 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
       return true;
     }
 
+    // ====== 流水线相关API ======
+    if (path === '/api/novel/pipeline/start' && method === 'POST') {
+      const result = await getNovelService().startPipeline();
+      jsonRes(res, result);
+      return true;
+    }
+
+    if (path === '/api/novel/pipeline/stop' && method === 'POST') {
+      const result = await getNovelService().stopPipeline();
+      jsonRes(res, result);
+      return true;
+    }
+
+    if (path === '/api/novel/pipeline/status' && method === 'GET') {
+      const status = await getNovelService().getPipelineStatus();
+      jsonRes(res, { success: true, data: status });
+      return true;
+    }
+
     // ====== 调度相关API ======
     if (path === '/api/novel/schedules' && method === 'GET') {
       // TODO: 从数据库或配置文件读取
