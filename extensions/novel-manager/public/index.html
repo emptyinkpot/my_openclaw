@@ -1429,8 +1429,8 @@
         pipelineEventSource.close();
       }
       
-      // SSE 使用单独的端点，URL 参数传递 token
-      const sseUrl = '/novel/sse/progress/' + id + '?token=' + encodeURIComponent(GATEWAY_TOKEN);
+      // SSE 直接连接 Novel API 服务端口，避免 Gateway 代理超时
+      const sseUrl = 'http://localhost:3001/novel/sse/progress/' + id + '?token=' + encodeURIComponent(GATEWAY_TOKEN);
       console.log('[SSE] 连接:', sseUrl);
       
       // 更新状态
