@@ -219,7 +219,7 @@
     ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
   </style>
 </head>
-<body>
+<body><!-- VERSION: 20260320-v4 -->
 <div class="nav-bar"><span>🦞 OpenClaw</span><a href="/" class="on">📚 小说管理</a><a href="/auto.html">⚙️ 自动化</a><a href="/experience.html">🧠 经验</a><a href="/cache.html">💾 缓存</a><a href="/native.html">🎯 原生界面</a></div>
   <!-- 顶部工具栏 -->
   <div class="top-bar">
@@ -1191,31 +1191,30 @@
         
         resultEl.innerHTML = `
           <div style="padding: 16px;">
-            <h3 style="margin-bottom: 16px;">📊 番茄作品数据 (${data.length}部)</h3>
+            <h3 style="margin-bottom: 16px;">📊 番茄作品数据 (${data.length}部) <span style="font-size:11px;color:var(--text-muted);">点击选择作品</span></h3>
             ${data.map(w => `
-              <div class="fanqie-work-card">
+              <div class="fanqie-work-card"
+                   onclick="selectFanqieWork('${w.work_id}', '${w.title.replace(/'/g, "\\'")}')"
+                   style="cursor: pointer; border: 2px solid ${selectedFanqieWorkId === w.work_id ? 'var(--accent)' : 'var(--border)'}; transition: all 0.2s;">
                 <div class="fanqie-work-header">
                   <div class="fanqie-work-title">${w.title}</div>
-                  <span class="fanqie-work-status signed">${w.status}</span>
+                  <span class="fanqie-work-status ${w.status?.includes('签约') ? 'signed' : 'ongoing'}">${w.status || '连载'}</span>
                 </div>
                 <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">
-                  账号: ${w.account} | ID: ${w.id}
+                  账号: ${w.account_id || '-'}
                 </div>
                 <div class="fanqie-work-meta">
                   <div class="fanqie-meta-item">
-                    <div class="fanqie-meta-value">${w.totalChapters}</div>
+                    <div class="fanqie-meta-value">${w.chapter_count || 0}</div>
                     <div class="fanqie-meta-label">章节数</div>
                   </div>
                   <div class="fanqie-meta-item">
-                    <div class="fanqie-meta-value">${w.wordCount}</div>
+                    <div class="fanqie-meta-value">${w.word_count || '-'}</div>
                     <div class="fanqie-meta-label">总字数</div>
                   </div>
                   <div class="fanqie-meta-item">
-                    <div class="fanqie-meta-value" style="font-size:12px;cursor:pointer;color:var(--accent);" 
-                         onclick="window.open('https://fanqienovel.com${w.chapterManageUrl}', '_blank')">
-                      📖 章节
-                    </div>
-                    <div class="fanqie-meta-label">管理</div>
+                    <div class="fanqie-meta-value" style="font-size:10px;">${w.work_id?.slice(-6) || '-'}</div>
+                    <div class="fanqie-meta-label">ID</div>
                   </div>
                 </div>
               </div>
@@ -1369,7 +1368,7 @@
       
       if (!selectedFanqieWorkId) {
         showToast('⚠️ 请先选择一个作品（点击作品卡片）', 'warning');
-        console.error('[Pipeline] 没有选择作品 - selectedFanqieWorkId is null');
+        console.error('[Pipeline] 没有选择作品'; alert('请先点击作品卡片选择一个作品！'); console.error('[Pipeline] 没有选择作品 - selectedFanqieWorkId is null');
         return;
       }
       
@@ -1449,11 +1448,11 @@
         try {
           const progress = JSON.parse(event.data);
           
-          // 处理连接确认消息
+          // 处理连接确认消息（只显示一次）
           if (progress.status === 'connected') {
             console.log('[SSE] 连接确认:', progress.message);
             updatePipelineUI({ status: 'running', step: 'init', task: '已连接，等待流水线启动...', percent: 0, results: [] });
-            showToast('📡 ' + progress.message, 'info');
+            // 不再弹窗，只更新状态
             return;
           }
           
