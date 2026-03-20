@@ -362,14 +362,6 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
       return true;
     }
 
-    // 自动发布下一章（扫描第一个作品，获取番茄最新章节，发布下一章）
-    if (path === '/api/novel/fanqie/publish-next' && method === 'POST') {
-      const body = await parseBody(req);
-      const result = await getNovelService().autoPublishNextChapter(body);
-      jsonRes(res, result);
-      return true;
-    }
-
     // 经验记录列表
     if (path === '/api/novel/experience/records' && method === 'GET') {
       const records = await getNovelService().getExperienceRecords();

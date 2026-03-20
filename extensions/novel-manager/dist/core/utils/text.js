@@ -1,6 +1,11 @@
+"use strict";
 /**
  * 文本处理工具函数
  */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.chineseToNumber = chineseToNumber;
+exports.extractChapterNumber = extractChapterNumber;
+exports.formatWordCount = formatWordCount;
 /**
  * 中文数字转阿拉伯数字
  * 支持：零一二三四五六七八九十百千万亿
@@ -9,7 +14,7 @@
  * chineseToNumber('四十九') // 49
  * chineseToNumber('一百零五') // 105
  */
-export function chineseToNumber(chinese) {
+function chineseToNumber(chinese) {
     const chineseNums = {
         '零': 0, '一': 1, '二': 2, '三': 3, '四': 4,
         '五': 5, '六': 6, '七': 7, '八': 8, '九': 9,
@@ -46,7 +51,7 @@ export function chineseToNumber(chinese) {
  * extractChapterNumber('第49章') // 49
  * extractChapterNumber('第四十九章') // 49
  */
-export function extractChapterNumber(text) {
+function extractChapterNumber(text) {
     // 尝试匹配阿拉伯数字：第49章
     const arabicMatch = text.match(/第\s*(\d+)\s*章/);
     if (arabicMatch) {
@@ -62,9 +67,10 @@ export function extractChapterNumber(text) {
 /**
  * 格式化字数显示
  */
-export function formatWordCount(count) {
+function formatWordCount(count) {
     if (count >= 10000) {
         return (count / 10000).toFixed(1) + '万';
     }
     return count.toLocaleString();
 }
+//# sourceMappingURL=text.js.map

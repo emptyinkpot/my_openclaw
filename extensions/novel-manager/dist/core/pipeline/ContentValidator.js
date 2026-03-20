@@ -1,8 +1,12 @@
+"use strict";
 /**
  * 内容验证器
  * 检查章节内容是否符合润色网站要求
  */
-export class ContentValidator {
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ContentValidator = void 0;
+exports.cleanContentEnhanced = cleanContentEnhanced;
+class ContentValidator {
     constructor(rules) {
         this.rules = rules;
     }
@@ -73,10 +77,11 @@ export class ContentValidator {
         return !this.rules.forbiddenFormats.some(rule => rule.severity === 'error' && rule.pattern.test(content));
     }
 }
+exports.ContentValidator = ContentValidator;
 /**
  * 增强版内容清理函数
  */
-export function cleanContentEnhanced(content, options = {}) {
+function cleanContentEnhanced(content, options = {}) {
     let cleaned = content;
     if (options.removeMarkdown !== false) {
         cleaned = cleaned
@@ -104,3 +109,4 @@ export function cleanContentEnhanced(content, options = {}) {
     }
     return cleaned;
 }
+//# sourceMappingURL=ContentValidator.js.map

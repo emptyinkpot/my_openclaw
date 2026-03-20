@@ -1,8 +1,11 @@
+"use strict";
 /**
  * 任务监控服务
  * 监控流水线各阶段的失败原因
  */
-export class TaskMonitor {
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.TaskMonitor = void 0;
+class TaskMonitor {
     constructor() {
         this.externalErrorKeywords = [
             'timeout', 'ETIMEDOUT', 'ECONNREFUSED', 'ECONNRESET', 'ENOTFOUND',
@@ -57,7 +60,7 @@ export class TaskMonitor {
             workName,
             action,
             chapterNum,
-            errorMessage: errorMessage === null || errorMessage === void 0 ? void 0 : errorMessage.substring(0, 500),
+            errorMessage: errorMessage?.substring(0, 500),
             errorType: analysis.errorType,
             summary: analysis.summary,
             timestamp: new Date().toISOString(),
@@ -141,3 +144,5 @@ export class TaskMonitor {
         return errorMessage.substring(0, 100).replace(/\n/g, ' ');
     }
 }
+exports.TaskMonitor = TaskMonitor;
+//# sourceMappingURL=TaskMonitor.js.map

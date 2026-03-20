@@ -1,6 +1,10 @@
+"use strict";
 /**
  * 日志工具
  */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.logger = void 0;
+exports.createLogger = createLogger;
 class Logger {
     constructor() {
         this.level = 'info';
@@ -28,11 +32,12 @@ class Logger {
         console.error(this.prefix, message, ...args);
     }
 }
-export const logger = new Logger();
-export function createLogger(prefix, level) {
+exports.logger = new Logger();
+function createLogger(prefix, level) {
     const log = new Logger();
     if (level)
         log.setLevel(level);
     log.prefix = prefix;
     return log;
 }
+//# sourceMappingURL=logger.js.map

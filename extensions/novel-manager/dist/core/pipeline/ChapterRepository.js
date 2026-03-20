@@ -1,32 +1,59 @@
+"use strict";
 /**
  * 章节数据仓库
  * 统一章节相关的数据访问逻辑
  *
  * 职责：封装所有章节相关的数据库操作
  */
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-import { getDatabaseManager } from '../database';
-export class ChapterRepository {
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ChapterRepository = void 0;
+exports.getChapterRepository = getChapterRepository;
+const database_1 = require("../database");
+class ChapterRepository {
     constructor() {
-        this.db = getDatabaseManager();
+        this.db = (0, database_1.getDatabaseManager)();
+    }
+    /**
+     * 获取作品信息
+     */
+    async getWorkInfo(workId) {
+        const results = await this.db.query('SELECT id, title FROM works WHERE id = ? LIMIT 1', [workId]);
+        return results.length > 0 ? results[0] : null;
+    }
+    /**
+     * 按章节号获取章节内容（用于发布，不管发布状态）
+     */
+    async getChapterByNumber(workId, chapterNumber) {
+        const sql = `
+      SELECT 
+        c.work_id as workId,
+        w.title as workTitle,
+        c.chapter_number as chapterNumber,
+        c.title as chapterTitle,
+        c.content,
+        c.word_count as wordCount,
+        c.polish_status as polishStatus,
+        c.audit_status as auditStatus,
+        c.publish_status as publishStatus
+      FROM chapters c
+      JOIN works w ON c.work_id = w.id
+      WHERE c.work_id = ? 
+        AND c.chapter_number = ?
+        AND c.content IS NOT NULL 
+        AND LENGTH(c.content) > 100
+      LIMIT 1
+    `;
+        const results = await this.db.query(sql, [workId, chapterNumber]);
+        return results.length > 0 ? results[0] : null;
     }
     /**
      * 获取待发布章节
      * 条件：有内容 + 已润色 + 审核通过 + 未发布
      */
-    getPendingPublish() {
-        return __awaiter(this, arguments, void 0, function* (filter = {}) {
-            const { workId, chapterNumber, limit = 10 } = filter;
-            const params = [];
-            let sql = `
+    async getPendingPublish(filter = {}) {
+        const { workId, chapterNumber, limit = 10 } = filter;
+        const params = [];
+        let sql = `
       SELECT 
         c.work_id as workId,
         w.title as workTitle,
@@ -45,30 +72,28 @@ export class ChapterRepository {
         AND c.audit_status = 'passed'
         AND (c.publish_status IS NULL OR c.publish_status != 'published')
     `;
-            if (workId) {
-                sql += ' AND c.work_id = ?';
-                params.push(workId);
-            }
-            if (chapterNumber) {
-                sql += ' AND c.chapter_number = ?';
-                params.push(chapterNumber);
-            }
-            // 直接拼接 LIMIT，避免 MySQL prepared statement 问题
-            const safeLimit = Math.min(Math.max(1, limit), 1000);
-            sql += ` ORDER BY c.work_id, c.chapter_number LIMIT ${safeLimit}`;
-            return yield this.db.query(sql, params);
-        });
+        if (workId) {
+            sql += ' AND c.work_id = ?';
+            params.push(workId);
+        }
+        if (chapterNumber) {
+            sql += ' AND c.chapter_number = ?';
+            params.push(chapterNumber);
+        }
+        // 直接拼接 LIMIT，避免 MySQL prepared statement 问题
+        const safeLimit = Math.min(Math.max(1, limit), 1000);
+        sql += ` ORDER BY c.work_id, c.chapter_number LIMIT ${safeLimit}`;
+        return await this.db.query(sql, params);
     }
     /**
      * 获取待处理章节（流水线用）
      * 条件：有内容 + 未发布
      */
-    getPendingProcess() {
-        return __awaiter(this, arguments, void 0, function* (filter = {}) {
-            const { workId, chapterRange, limit = 100 } = filter;
-            const params = [];
-            console.log('[ChapterRepository] getPendingProcess filter:', JSON.stringify(filter));
-            let sql = `
+    async getPendingProcess(filter = {}) {
+        const { workId, chapterRange, limit = 100 } = filter;
+        const params = [];
+        console.log('[ChapterRepository] getPendingProcess filter:', JSON.stringify(filter));
+        let sql = `
       SELECT 
         c.work_id as workId,
         w.title as workTitle,
@@ -84,70 +109,63 @@ export class ChapterRepository {
       WHERE c.content IS NOT NULL 
         AND LENGTH(c.content) > 100
     `;
-            if (workId) {
-                sql += ' AND c.work_id = ?';
-                params.push(workId);
-            }
-            if (chapterRange) {
-                sql += ' AND c.chapter_number BETWEEN ? AND ?';
-                params.push(chapterRange[0], chapterRange[1]);
-            }
-            sql += " AND (c.publish_status IS NULL OR c.publish_status != 'published')";
-            // 直接拼接 LIMIT，避免 MySQL prepared statement 问题
-            const safeLimit = Math.min(Math.max(1, limit), 1000);
-            sql += ` ORDER BY c.work_id, c.chapter_number LIMIT ${safeLimit}`;
-            console.log('[ChapterRepository] SQL:', sql);
-            console.log('[ChapterRepository] params:', params);
-            const results = yield this.db.query(sql, params);
-            console.log('[ChapterRepository] 结果数量:', results.length);
-            return results;
-        });
+        if (workId) {
+            sql += ' AND c.work_id = ?';
+            params.push(workId);
+        }
+        if (chapterRange) {
+            sql += ' AND c.chapter_number BETWEEN ? AND ?';
+            params.push(chapterRange[0], chapterRange[1]);
+        }
+        sql += " AND (c.publish_status IS NULL OR c.publish_status != 'published')";
+        // 直接拼接 LIMIT，避免 MySQL prepared statement 问题
+        const safeLimit = Math.min(Math.max(1, limit), 1000);
+        sql += ` ORDER BY c.work_id, c.chapter_number LIMIT ${safeLimit}`;
+        console.log('[ChapterRepository] SQL:', sql);
+        console.log('[ChapterRepository] params:', params);
+        const results = await this.db.query(sql, params);
+        console.log('[ChapterRepository] 结果数量:', results.length);
+        return results;
     }
     /**
      * 更新发布状态
      */
-    updatePublishStatus(workId, chapterNumber, status) {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this.db.execute(`UPDATE chapters 
+    async updatePublishStatus(workId, chapterNumber, status) {
+        await this.db.execute(`UPDATE chapters 
        SET publish_status = ?, published_at = NOW() 
        WHERE work_id = ? AND chapter_number = ?`, [status, workId, chapterNumber]);
-        });
     }
     /**
      * 更新审核状态
      */
-    updateAuditStatus(workId, chapterNumber, status, issues) {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this.db.execute(`UPDATE chapters 
+    async updateAuditStatus(workId, chapterNumber, status, issues) {
+        await this.db.execute(`UPDATE chapters 
        SET audit_status = ?, audit_issues = ?, audited_at = NOW() 
        WHERE work_id = ? AND chapter_number = ?`, [status, issues || null, workId, chapterNumber]);
-        });
     }
     /**
      * 更新润色状态
      */
-    updatePolishStatus(workId, chapterNumber, status, polishedContent) {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this.db.execute(`UPDATE chapters 
+    async updatePolishStatus(workId, chapterNumber, status, polishedContent) {
+        await this.db.execute(`UPDATE chapters 
        SET polish_status = ?, polished_content = ?, polished_at = NOW() 
        WHERE work_id = ? AND chapter_number = ?`, [status, polishedContent || null, workId, chapterNumber]);
-        });
     }
     /**
      * 获取章节内容
      */
-    getChapterContent(workId, chapterNumber) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const row = yield this.db.queryOne('SELECT content FROM chapters WHERE work_id = ? AND chapter_number = ?', [workId, chapterNumber]);
-            return (row === null || row === void 0 ? void 0 : row.content) || null;
-        });
+    async getChapterContent(workId, chapterNumber) {
+        const row = await this.db.queryOne('SELECT content FROM chapters WHERE work_id = ? AND chapter_number = ?', [workId, chapterNumber]);
+        return row?.content || null;
     }
 }
+exports.ChapterRepository = ChapterRepository;
 // 单例
 let instance = null;
-export function getChapterRepository() {
+function getChapterRepository() {
     if (!instance) {
         instance = new ChapterRepository();
     }
     return instance;
 }
+//# sourceMappingURL=ChapterRepository.js.map

@@ -1,35 +1,61 @@
+"use strict";
 /**
  * 小说数据服务
  */
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-import { getDatabaseManager, withTransaction } from '../core/database';
-import { ContentPipeline } from '../core/ContentPipeline';
-import { broadcastProgress } from '../core/pipeline/ProgressManager';
-export class NovelService {
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.NovelService = void 0;
+const database_1 = require("../core/database");
+const ContentPipeline_1 = require("../core/ContentPipeline");
+const ProgressManager_1 = require("../core/pipeline/ProgressManager");
+class NovelService {
     constructor() {
-        this.db = getDatabaseManager();
+        this.db = (0, database_1.getDatabaseManager)();
         this.initialized = false;
     }
     /**
      * 初始化数据库表
      */
-    initTables() {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (this.initialized)
-                return;
-            try {
-                // 不要删除表，保留数据！使用 IF NOT EXISTS 创建
-                // await this.db.execute(`DROP TABLE IF EXISTS fanqie_works`).catch(() => {});
-                // 创建fanqie_works表 - 使用utf8mb4字符集（如果不存在）
-                yield this.db.execute(`
+    async initTables() {
+        if (this.initialized)
+            return;
+        try {
+            // 不要删除表，保留数据！使用 IF NOT EXISTS 创建
+            // await this.db.execute(`DROP TABLE IF EXISTS fanqie_works`).catch(() => {});
+            // 创建fanqie_works表 - 使用utf8mb4字符集（如果不存在）
+            await this.db.execute(`
         CREATE TABLE IF NOT EXISTS fanqie_works (
           id INT PRIMARY KEY AUTO_INCREMENT,
           account_id INT NOT NULL DEFAULT 1,
@@ -47,8 +73,8 @@ export class NovelService {
           INDEX idx_account (account_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `).catch(() => { });
-                // 创建experience_records表
-                yield this.db.execute(`
+            // 创建experience_records表
+            await this.db.execute(`
         CREATE TABLE IF NOT EXISTS experience_records (
           id INT PRIMARY KEY AUTO_INCREMENT,
           type VARCHAR(50) NOT NULL,
@@ -66,314 +92,286 @@ export class NovelService {
           INDEX idx_timestamp (timestamp)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `).catch(() => { });
-                this.initialized = true;
-            }
-            catch (e) {
-                console.error('[NovelService] 初始化表失败:', e);
-            }
-        });
+            this.initialized = true;
+        }
+        catch (e) {
+            console.error('[NovelService] 初始化表失败:', e);
+        }
     }
     /**
      * 获取所有作品
      */
-    getWorks(filter) {
-        return __awaiter(this, void 0, void 0, function* () {
-            let sql = `
+    async getWorks(filter) {
+        let sql = `
       SELECT w.*, 
         COUNT(c.id) as chapter_count,
         SUM(CASE WHEN c.content IS NOT NULL AND LENGTH(c.content) > 100 THEN 1 ELSE 0 END) as has_content_count
       FROM works w
       LEFT JOIN chapters c ON w.id = c.work_id
     `;
-            const conditions = [];
-            const params = [];
-            if (filter === null || filter === void 0 ? void 0 : filter.status) {
-                conditions.push('w.status = ?');
-                params.push(filter.status);
-            }
-            if (filter === null || filter === void 0 ? void 0 : filter.platform) {
-                conditions.push('w.platform = ?');
-                params.push(filter.platform);
-            }
-            if (filter === null || filter === void 0 ? void 0 : filter.search) {
-                conditions.push('(w.title LIKE ? OR w.description LIKE ?)');
-                params.push(`%${filter.search}%`, `%${filter.search}%`);
-            }
-            if (conditions.length > 0) {
-                sql += ' WHERE ' + conditions.join(' AND ');
-            }
-            sql += ' GROUP BY w.id ORDER BY w.id';
-            return yield this.db.query(sql, params);
-        });
+        const conditions = [];
+        const params = [];
+        if (filter?.status) {
+            conditions.push('w.status = ?');
+            params.push(filter.status);
+        }
+        if (filter?.platform) {
+            conditions.push('w.platform = ?');
+            params.push(filter.platform);
+        }
+        if (filter?.search) {
+            conditions.push('(w.title LIKE ? OR w.description LIKE ?)');
+            params.push(`%${filter.search}%`, `%${filter.search}%`);
+        }
+        if (conditions.length > 0) {
+            sql += ' WHERE ' + conditions.join(' AND ');
+        }
+        sql += ' GROUP BY w.id ORDER BY w.id';
+        return await this.db.query(sql, params);
     }
     /**
      * 获取作品详情
      */
-    getWorkById(id) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const work = yield this.db.queryOne(`
+    async getWorkById(id) {
+        const work = await this.db.queryOne(`
       SELECT w.*, COUNT(c.id) as chapter_count
       FROM works w
       LEFT JOIN chapters c ON w.id = c.work_id
       WHERE w.id = ?
       GROUP BY w.id
     `, [id]);
-            if (!work)
-                return null;
-            // 获取章节列表
-            const chapters = yield this.db.query(`
+        if (!work)
+            return null;
+        // 获取章节列表
+        const chapters = await this.db.query(`
       SELECT * FROM chapters WHERE work_id = ? ORDER BY chapter_number
     `, [id]);
-            // 获取角色列表
-            const characters = yield this.db.query(`
+        // 获取角色列表
+        const characters = await this.db.query(`
       SELECT * FROM characters WHERE work_id = ? ORDER BY id
     `, [id]);
-            // 获取卷纲
-            const volumes = yield this.db.query(`
+        // 获取卷纲
+        const volumes = await this.db.query(`
       SELECT * FROM volume_outlines WHERE work_id = ? ORDER BY volume_number
     `, [id]);
-            return Object.assign(Object.assign({}, work), { chapters,
-                characters,
-                volumes });
-        });
+        return {
+            ...work,
+            chapters,
+            characters,
+            volumes,
+        };
     }
     /**
      * 获取章节详情
      */
-    getChapterById(id) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return yield this.db.queryOne(`
+    async getChapterById(id) {
+        return await this.db.queryOne(`
       SELECT * FROM chapters WHERE id = ?
     `, [id]);
-        });
     }
     /**
      * 获取作品的所有章节
      */
-    getChaptersByWorkId(workId) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return yield this.db.query(`
+    async getChaptersByWorkId(workId) {
+        return await this.db.query(`
       SELECT id, chapter_number, title, word_count, status, created_at, updated_at
       FROM chapters WHERE work_id = ? ORDER BY chapter_number
     `, [workId]);
-        });
     }
     /**
      * 获取作品的所有角色
      */
-    getCharactersByWorkId(workId) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return yield this.db.query(`
+    async getCharactersByWorkId(workId) {
+        return await this.db.query(`
       SELECT * FROM characters WHERE work_id = ? ORDER BY id
     `, [workId]);
-        });
     }
     /**
      * 获取统计信息
      */
-    getStats() {
-        return __awaiter(this, void 0, void 0, function* () {
-            const [workStats] = yield this.db.query('SELECT COUNT(*) as count FROM works');
-            const [chapterStats] = yield this.db.query('SELECT COUNT(*) as count FROM chapters');
-            const [wordStats] = yield this.db.query('SELECT SUM(LENGTH(content)) as total FROM chapters WHERE content IS NOT NULL');
-            const [hasContentStats] = yield this.db.query('SELECT COUNT(*) as count FROM chapters WHERE content IS NOT NULL AND LENGTH(content) > 100');
-            const [characterStats] = yield this.db.query('SELECT COUNT(*) as count FROM characters');
-            return {
-                works: parseInt((workStats === null || workStats === void 0 ? void 0 : workStats.count) || '0'),
-                chapters: parseInt((chapterStats === null || chapterStats === void 0 ? void 0 : chapterStats.count) || '0'),
-                totalWords: parseInt((wordStats === null || wordStats === void 0 ? void 0 : wordStats.total) || '0'),
-                has_content: parseInt((hasContentStats === null || hasContentStats === void 0 ? void 0 : hasContentStats.count) || '0'),
-                outlines: 0,
-                characters: parseInt((characterStats === null || characterStats === void 0 ? void 0 : characterStats.count) || '0'),
-            };
-        });
+    async getStats() {
+        const [workStats] = await this.db.query('SELECT COUNT(*) as count FROM works');
+        const [chapterStats] = await this.db.query('SELECT COUNT(*) as count FROM chapters');
+        const [wordStats] = await this.db.query('SELECT SUM(LENGTH(content)) as total FROM chapters WHERE content IS NOT NULL');
+        const [hasContentStats] = await this.db.query('SELECT COUNT(*) as count FROM chapters WHERE content IS NOT NULL AND LENGTH(content) > 100');
+        const [characterStats] = await this.db.query('SELECT COUNT(*) as count FROM characters');
+        return {
+            works: parseInt(workStats?.count || '0'),
+            chapters: parseInt(chapterStats?.count || '0'),
+            totalWords: parseInt(wordStats?.total || '0'),
+            has_content: parseInt(hasContentStats?.count || '0'),
+            outlines: 0,
+            characters: parseInt(characterStats?.count || '0'),
+        };
     }
     /**
      * 导入章节
      */
-    importChapters(workId, chapters) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return yield withTransaction((conn) => __awaiter(this, void 0, void 0, function* () {
-                var _a;
-                let imported = 0;
-                for (const ch of chapters) {
-                    const [existing] = yield conn.execute(`
+    async importChapters(workId, chapters) {
+        return await (0, database_1.withTransaction)(async (conn) => {
+            let imported = 0;
+            for (const ch of chapters) {
+                const [existing] = await conn.execute(`
           SELECT id FROM chapters WHERE work_id = ? AND chapter_number = ?
         `, [workId, ch.number]);
-                    if (existing.length === 0) {
-                        yield conn.execute(`
+                if (existing.length === 0) {
+                    await conn.execute(`
             INSERT INTO chapters (work_id, chapter_number, title, content, word_count, status, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, 'draft', NOW(), NOW())
           `, [
-                            workId,
-                            ch.number,
-                            ch.title || null,
-                            ch.content || null,
-                            ch.word_count || ((_a = ch.content) === null || _a === void 0 ? void 0 : _a.length) || 0,
-                        ]);
-                        imported++;
-                    }
+                        workId,
+                        ch.number,
+                        ch.title || null,
+                        ch.content || null,
+                        ch.word_count || ch.content?.length || 0,
+                    ]);
+                    imported++;
                 }
-                // 更新作品章节数
-                yield conn.execute(`
+            }
+            // 更新作品章节数
+            await conn.execute(`
         UPDATE works SET current_chapters = (
           SELECT COUNT(*) FROM chapters WHERE work_id = ?
         ), updated_at = NOW() WHERE id = ?
       `, [workId, workId]);
-                return imported;
-            }));
+            return imported;
         });
     }
     /**
      * 删除作品
      */
-    deleteWork(id) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return yield withTransaction((conn) => __awaiter(this, void 0, void 0, function* () {
-                // 删除关联数据
-                yield conn.execute('DELETE FROM chapters WHERE work_id = ?', [id]);
-                yield conn.execute('DELETE FROM characters WHERE work_id = ?', [id]);
-                yield conn.execute('DELETE FROM volume_outlines WHERE work_id = ?', [id]);
-                yield conn.execute('DELETE FROM chapter_outlines WHERE work_id = ?', [id]);
-                yield conn.execute('DELETE FROM world_settings WHERE work_id = ?', [id]);
-                // 删除作品
-                yield conn.execute('DELETE FROM works WHERE id = ?', [id]);
-                return true;
-            }));
+    async deleteWork(id) {
+        return await (0, database_1.withTransaction)(async (conn) => {
+            // 删除关联数据
+            await conn.execute('DELETE FROM chapters WHERE work_id = ?', [id]);
+            await conn.execute('DELETE FROM characters WHERE work_id = ?', [id]);
+            await conn.execute('DELETE FROM volume_outlines WHERE work_id = ?', [id]);
+            await conn.execute('DELETE FROM chapter_outlines WHERE work_id = ?', [id]);
+            await conn.execute('DELETE FROM world_settings WHERE work_id = ?', [id]);
+            // 删除作品
+            await conn.execute('DELETE FROM works WHERE id = ?', [id]);
+            return true;
         });
     }
     /**
      * 更新章节
      */
-    updateChapter(id, data) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const updates = [];
-            const params = [];
-            if (data.title !== undefined) {
-                updates.push('title = ?');
-                params.push(data.title);
-            }
-            if (data.content !== undefined) {
-                updates.push('content = ?');
-                updates.push('word_count = ?');
-                params.push(data.content, data.content.length);
-            }
-            if (data.status !== undefined) {
-                updates.push('status = ?');
-                params.push(data.status);
-            }
-            if (updates.length === 0)
-                return;
-            updates.push('updated_at = NOW()');
-            params.push(id);
-            yield this.db.execute(`
+    async updateChapter(id, data) {
+        const updates = [];
+        const params = [];
+        if (data.title !== undefined) {
+            updates.push('title = ?');
+            params.push(data.title);
+        }
+        if (data.content !== undefined) {
+            updates.push('content = ?');
+            updates.push('word_count = ?');
+            params.push(data.content, data.content.length);
+        }
+        if (data.status !== undefined) {
+            updates.push('status = ?');
+            params.push(data.status);
+        }
+        if (updates.length === 0)
+            return;
+        updates.push('updated_at = NOW()');
+        params.push(id);
+        await this.db.execute(`
       UPDATE chapters SET ${updates.join(', ')} WHERE id = ?
     `, params);
-        });
     }
     /**
      * 根据卷纲生成章节
      */
-    generateChaptersFromVolumes(workId) {
-        return __awaiter(this, void 0, void 0, function* () {
-            var _a;
-            const volumes = yield this.db.query(`
+    async generateChaptersFromVolumes(workId) {
+        const volumes = await this.db.query(`
       SELECT * FROM volume_outlines WHERE work_id = ? ORDER BY volume_number
     `, [workId]);
-            let generated = 0;
-            for (const vol of volumes) {
-                const rangeMatch = (_a = vol.chapter_range) === null || _a === void 0 ? void 0 : _a.match(/(\d+)-(\d+)/);
-                if (!rangeMatch)
-                    continue;
-                const start = parseInt(rangeMatch[1]);
-                const end = parseInt(rangeMatch[2]);
-                for (let num = start; num <= end; num++) {
-                    // 检查是否已存在
-                    const existing = yield this.db.queryOne(`
+        let generated = 0;
+        for (const vol of volumes) {
+            const rangeMatch = vol.chapter_range?.match(/(\d+)-(\d+)/);
+            if (!rangeMatch)
+                continue;
+            const start = parseInt(rangeMatch[1]);
+            const end = parseInt(rangeMatch[2]);
+            for (let num = start; num <= end; num++) {
+                // 检查是否已存在
+                const existing = await this.db.queryOne(`
           SELECT id FROM chapters WHERE work_id = ? AND chapter_number = ?
         `, [workId, num]);
-                    if (!existing) {
-                        yield this.db.execute(`
+                if (!existing) {
+                    await this.db.execute(`
             INSERT INTO chapters (work_id, chapter_number, title, content, word_count, status, created_at, updated_at)
             VALUES (?, ?, ?, NULL, 0, 'pending', NOW(), NOW())
           `, [workId, num, `第${num}章`]);
-                        generated++;
-                    }
+                    generated++;
                 }
             }
-            // 更新作品章节数
-            const total = yield this.db.queryOne(`
+        }
+        // 更新作品章节数
+        const total = await this.db.queryOne(`
       SELECT COUNT(*) as count FROM chapters WHERE work_id = ?
     `, [workId]);
-            yield this.db.execute(`
+        await this.db.execute(`
       UPDATE works SET current_chapters = ?, updated_at = NOW() WHERE id = ?
-    `, [(total === null || total === void 0 ? void 0 : total.count) || 0, workId]);
-            return { generated, total: (total === null || total === void 0 ? void 0 : total.count) || 0 };
-        });
+    `, [total?.count || 0, workId]);
+        return { generated, total: total?.count || 0 };
     }
     /**
      * 获取番茄作品列表
      */
-    getFanqieWorks() {
-        return __awaiter(this, void 0, void 0, function* () {
-            var _a;
-            try {
-                return yield this.db.query(`
+    async getFanqieWorks() {
+        try {
+            return await this.db.query(`
         SELECT * FROM fanqie_works ORDER BY updated_at DESC
       `);
+        }
+        catch (e) {
+            // 表不存在时返回空数组
+            if (e.message?.includes("doesn't exist")) {
+                return [];
             }
-            catch (e) {
-                // 表不存在时返回空数组
-                if ((_a = e.message) === null || _a === void 0 ? void 0 : _a.includes("doesn't exist")) {
-                    return [];
-                }
-                throw e;
-            }
-        });
+            throw e;
+        }
     }
     /**
      * 获取番茄作品列表（按账号）
      */
-    getFanqieWorksByAccount(accountId) {
-        return __awaiter(this, void 0, void 0, function* () {
-            var _a;
-            try {
-                return yield this.db.query(`
+    async getFanqieWorksByAccount(accountId) {
+        try {
+            return await this.db.query(`
         SELECT * FROM fanqie_works WHERE account_id = ? ORDER BY updated_at DESC
       `, [accountId]);
+        }
+        catch (e) {
+            // 表不存在时返回空数组
+            if (e.message?.includes("doesn't exist")) {
+                return [];
             }
-            catch (e) {
-                // 表不存在时返回空数组
-                if ((_a = e.message) === null || _a === void 0 ? void 0 : _a.includes("doesn't exist")) {
-                    return [];
-                }
-                throw e;
-            }
-        });
+            throw e;
+        }
     }
     /**
      * 扫描番茄作品 - 调用 FanqieScanner
      */
-    scanFanqieWorks(accountId) {
-        return __awaiter(this, void 0, void 0, function* () {
-            var _a;
-            console.log('[NovelService] 扫描番茄作品, accountId:', accountId);
-            try {
-                // 动态导入 FanqieScanner
-                const { getFanqieScanner } = require('../core/pipeline/FanqieScanner');
-                const scanner = getFanqieScanner();
-                // 调用真实扫描
-                const result = yield scanner.scan({
-                    accountId,
-                    headed: false
-                });
-                // 保存到数据库
-                if (result.success && result.works && result.works.length > 0) {
-                    for (const work of result.works) {
-                        try {
-                            // 将账号ID转换为数字 (account_1 -> 1, account_2 -> 2)
-                            const accountNum = parseInt((work.accountId || 'account_1').replace('account_', ''), 10) || 1;
-                            yield this.db.execute(`
+    async scanFanqieWorks(accountId) {
+        console.log('[NovelService] 扫描番茄作品, accountId:', accountId);
+        try {
+            // 动态导入 FanqieScanner
+            const { getFanqieScanner } = require('../core/pipeline/FanqieScanner');
+            const scanner = getFanqieScanner();
+            // 调用真实扫描
+            const result = await scanner.scan({
+                accountId,
+                headed: false
+            });
+            // 保存到数据库
+            if (result.success && result.works && result.works.length > 0) {
+                for (const work of result.works) {
+                    try {
+                        // 将账号ID转换为数字 (account_1 -> 1, account_2 -> 2)
+                        const accountNum = parseInt((work.accountId || 'account_1').replace('account_', ''), 10) || 1;
+                        await this.db.execute(`
               INSERT INTO fanqie_works (account_id, work_id, title, chapter_count, word_count, status, last_synced_at)
               VALUES (?, ?, ?, ?, ?, ?, NOW())
               ON DUPLICATE KEY UPDATE 
@@ -383,290 +381,244 @@ export class NovelService {
                 status = VALUES(status),
                 last_synced_at = NOW()
             `, [
-                                accountNum,
-                                work.workId || work.title,
-                                work.title,
-                                work.totalChapters || 0,
-                                work.wordCount || '',
-                                work.status || 'ongoing'
-                            ]);
-                        }
-                        catch (e) {
-                            console.error('[NovelService] 保存番茄作品失败:', e);
-                        }
+                            accountNum,
+                            work.workId || work.title,
+                            work.title,
+                            work.totalChapters || 0,
+                            work.wordCount || '',
+                            work.status || 'ongoing'
+                        ]);
+                    }
+                    catch (e) {
+                        console.error('[NovelService] 保存番茄作品失败:', e);
                     }
                 }
-                return {
-                    success: result.success,
-                    message: result.error || `扫描完成，找到 ${((_a = result.works) === null || _a === void 0 ? void 0 : _a.length) || 0} 个作品`,
-                    works: result.works || []
-                };
             }
-            catch (e) {
-                console.error('[NovelService] 扫描失败:', e);
-                // 尝试读取缓存
-                try {
-                    const { getFanqieScanner } = require('../core/pipeline/FanqieScanner');
-                    const scanner = getFanqieScanner();
-                    const cachedWorks = scanner.readCache(accountId);
-                    if (cachedWorks && cachedWorks.length > 0) {
-                        return {
-                            success: true,
-                            message: `从缓存读取到 ${cachedWorks.length} 个作品`,
-                            works: cachedWorks
-                        };
-                    }
+            return {
+                success: result.success,
+                message: result.error || `扫描完成，找到 ${result.works?.length || 0} 个作品`,
+                works: result.works || []
+            };
+        }
+        catch (e) {
+            console.error('[NovelService] 扫描失败:', e);
+            // 尝试读取缓存
+            try {
+                const { getFanqieScanner } = require('../core/pipeline/FanqieScanner');
+                const scanner = getFanqieScanner();
+                const cachedWorks = scanner.readCache(accountId);
+                if (cachedWorks && cachedWorks.length > 0) {
+                    return {
+                        success: true,
+                        message: `从缓存读取到 ${cachedWorks.length} 个作品`,
+                        works: cachedWorks
+                    };
                 }
-                catch (_b) { }
-                return {
-                    success: false,
-                    message: `扫描失败: ${e.message}`,
-                    works: []
-                };
             }
-        });
+            catch { }
+            return {
+                success: false,
+                message: `扫描失败: ${e.message}`,
+                works: []
+            };
+        }
     }
     /**
      * 启动番茄发布
      */
-    startFanqiePublish(options) {
-        return __awaiter(this, void 0, void 0, function* () {
-            var _a;
-            let { workId, startChapter, endChapter, headless = true, dryRun = false, skipAudit = true, progressId, autoNext } = options;
-            // 自动模式：扫描第一个作品，获取番茄最新章节，发布下一章
-            if (autoNext || workId === 'auto') {
-                console.log('[Pipeline] 自动模式：扫描作品...');
-                if (progressId) {
-                    broadcastProgress(progressId, {
-                        status: 'running', step: 'scan', stepLabel: '扫描',
-                        current: 0, total: 0, task: '正在扫描番茄作品...', percent: 0, results: []
-                    });
-                }
-                // 扫描作品
-                const scanResult = yield this.scanFanqieWorks('account_1');
-                if (!scanResult.success || !((_a = scanResult.works) === null || _a === void 0 ? void 0 : _a.length)) {
-                    const errorMsg = '未找到番茄作品';
-                    if (progressId) {
-                        broadcastProgress(progressId, {
-                            status: 'error', step: 'scan', stepLabel: '扫描',
-                            current: 0, total: 0, task: errorMsg, error: errorMsg, percent: 0, results: []
-                        });
-                    }
-                    return { success: false, message: errorMsg };
-                }
-                const firstWork = scanResult.works[0];
-                workId = firstWork.workId;
-                console.log('[Pipeline] 自动选择作品:', firstWork.title, 'workId:', workId);
-                if (progressId) {
-                    broadcastProgress(progressId, {
-                        status: 'running', step: 'scan', stepLabel: '扫描',
-                        current: 1, total: 1, task: `已选择: ${firstWork.title}`, percent: 10, results: []
-                    });
-                }
-            }
-            // 查找本地作品ID（workId 可能是番茄的字符串ID，需要转换为本地ID）
-            let localWorkId = typeof workId === 'number' ? workId : parseInt(workId, 10);
-            // 如果 workId 是字符串（番茄ID），通过标题匹配本地作品
-            if (typeof workId === 'string' && workId.length > 10) {
-                // 从 fanqie_works 表查找作品标题
-                console.log('[Pipeline] 查询 fanqie_works, workId:', workId);
-                const fanqieWorks = yield this.db.query(`
+    async startFanqiePublish(options) {
+        const { workId, startChapter, endChapter, headless = true, dryRun = false, skipAudit = true, progressId } = options;
+        // 查找本地作品ID（workId 可能是番茄的字符串ID，需要转换为本地ID）
+        let localWorkId = typeof workId === 'number' ? workId : parseInt(workId, 10);
+        // 如果 workId 是字符串（番茄ID），通过标题匹配本地作品
+        if (typeof workId === 'string' && workId.length > 10) {
+            // 从 fanqie_works 表查找作品标题
+            console.log('[Pipeline] 查询 fanqie_works, workId:', workId);
+            const fanqieWorks = await this.db.query(`
         SELECT title FROM fanqie_works WHERE work_id = ? LIMIT 1
       `, [workId]);
-                console.log('[Pipeline] fanqieWorks 结果:', fanqieWorks);
-                if (fanqieWorks && fanqieWorks.length > 0) {
-                    const fanqieTitle = fanqieWorks[0].title;
-                    console.log('[Pipeline] 番茄作品:', fanqieTitle);
-                    // 通过标题匹配本地作品
-                    const localWorks = yield this.db.query(`
+            console.log('[Pipeline] fanqieWorks 结果:', fanqieWorks);
+            if (fanqieWorks && fanqieWorks.length > 0) {
+                const fanqieTitle = fanqieWorks[0].title;
+                console.log('[Pipeline] 番茄作品:', fanqieTitle);
+                // 通过标题匹配本地作品
+                const localWorks = await this.db.query(`
           SELECT id, title FROM works WHERE title = ? OR title LIKE ? LIMIT 1
         `, [fanqieTitle, `%${fanqieTitle}%`]);
-                    console.log('[Pipeline] localWorks 结果:', localWorks);
-                    if (localWorks && localWorks.length > 0) {
-                        localWorkId = localWorks[0].id;
-                        console.log('[Pipeline] 匹配到本地作品:', localWorks[0].title, 'ID:', localWorkId);
+                console.log('[Pipeline] localWorks 结果:', localWorks);
+                if (localWorks && localWorks.length > 0) {
+                    localWorkId = localWorks[0].id;
+                    console.log('[Pipeline] 匹配到本地作品:', localWorks[0].title, 'ID:', localWorkId);
+                }
+                else {
+                    // 没有匹配的本地作品
+                    if (progressId) {
+                        (0, ProgressManager_1.broadcastProgress)(progressId, {
+                            status: 'error',
+                            step: 'init',
+                            stepLabel: '初始化',
+                            current: 0,
+                            total: 0,
+                            task: '未找到匹配的本地作品',
+                            error: `番茄作品 "${fanqieTitle}" 没有对应的本地作品数据`,
+                            percent: 0,
+                            results: [],
+                        });
                     }
-                    else {
-                        // 没有匹配的本地作品
-                        if (progressId) {
-                            broadcastProgress(progressId, {
-                                status: 'error',
-                                step: 'init',
-                                stepLabel: '初始化',
-                                current: 0,
-                                total: 0,
-                                task: '未找到匹配的本地作品',
-                                error: `番茄作品 "${fanqieTitle}" 没有对应的本地作品数据`,
-                                percent: 0,
-                                results: [],
-                            });
-                        }
-                        return {
-                            success: false,
-                            message: '未找到匹配的本地作品',
-                            note: `番茄作品 "${fanqieTitle}" 需要先在本地创建对应的作品`
-                        };
-                    }
+                    return {
+                        success: false,
+                        message: '未找到匹配的本地作品',
+                        note: `番茄作品 "${fanqieTitle}" 需要先在本地创建对应的作品`
+                    };
                 }
             }
-            // 创建流水线实例
-            const pipeline = new ContentPipeline();
-            // 进度回调
-            const onProgress = (event) => {
-                console.log('[Pipeline] 进度:', event.step, event.task, event.percent + '%');
-                if (progressId) {
-                    broadcastProgress(progressId, event);
-                }
-            };
-            // 异步执行发布流程
-            pipeline.publishToFanqie({
-                workId: localWorkId,
-                startChapter,
-                endChapter,
-                headless,
-                dryRun,
-                skipStatusCheck: skipAudit,
-                onProgress,
-            }).then(results => {
-                const successCount = results.filter(r => r.success).length;
-                console.log(`[Pipeline] 发布完成: 成功 ${successCount}/${results.length}`);
-            }).catch(error => {
-                console.error('[Pipeline] 发布失败:', error);
-                if (progressId) {
-                    broadcastProgress(progressId, {
-                        status: 'error',
-                        step: 'done',
-                        stepLabel: '完成',
-                        current: 0,
-                        total: 0,
-                        task: '发布失败',
-                        error: error.message,
-                        percent: 0,
-                        results: [],
-                    });
-                }
-            });
-            return {
-                success: true,
-                message: '流水线已启动',
-                note: '请通过 SSE 订阅进度更新: /novel/sse/progress/' + progressId + '?token=YOUR_TOKEN',
-                progressId
-            };
+        }
+        // 创建流水线实例
+        const pipeline = new ContentPipeline_1.ContentPipeline();
+        // 进度回调
+        const onProgress = (event) => {
+            console.log('[Pipeline] 进度:', event.step, event.task, event.percent + '%');
+            if (progressId) {
+                (0, ProgressManager_1.broadcastProgress)(progressId, event);
+            }
+        };
+        // 异步执行发布流程
+        pipeline.publishToFanqie({
+            workId: localWorkId,
+            startChapter,
+            endChapter,
+            headless,
+            dryRun,
+            skipStatusCheck: skipAudit,
+            onProgress,
+        }).then(results => {
+            const successCount = results.filter(r => r.success).length;
+            console.log(`[Pipeline] 发布完成: 成功 ${successCount}/${results.length}`);
+        }).catch(error => {
+            console.error('[Pipeline] 发布失败:', error);
+            if (progressId) {
+                (0, ProgressManager_1.broadcastProgress)(progressId, {
+                    status: 'error',
+                    step: 'done',
+                    stepLabel: '完成',
+                    current: 0,
+                    total: 0,
+                    task: '发布失败',
+                    error: error.message,
+                    percent: 0,
+                    results: [],
+                });
+            }
         });
+        return {
+            success: true,
+            message: '流水线已启动',
+            note: '请通过 SSE 订阅进度更新: /novel/sse/progress/' + progressId + '?token=YOUR_TOKEN',
+            progressId
+        };
     }
     /**
      * 获取经验记录
      */
-    getExperienceRecords() {
-        return __awaiter(this, void 0, void 0, function* () {
-            // 先尝试从数据库读取
-            try {
-                const records = yield this.db.query(`
+    async getExperienceRecords() {
+        // 先尝试从数据库读取
+        try {
+            const records = await this.db.query(`
         SELECT * FROM experience_records ORDER BY timestamp DESC LIMIT 100
       `);
-                if (records && records.length > 0) {
-                    return records;
-                }
+            if (records && records.length > 0) {
+                return records;
             }
-            catch (e) {
-                console.log('[NovelService] 数据库无经验记录，尝试读取文件');
+        }
+        catch (e) {
+            console.log('[NovelService] 数据库无经验记录，尝试读取文件');
+        }
+        // 从experience-manager读取JSON文件
+        const fs = require('fs');
+        const path = require('path');
+        const expPath = '/workspace/projects/extensions/experience-manager/data/experiences.json';
+        try {
+            if (fs.existsSync(expPath)) {
+                const content = fs.readFileSync(expPath, 'utf-8');
+                const data = JSON.parse(content);
+                return data.records || [];
             }
-            // 从experience-manager读取JSON文件
-            const fs = require('fs');
-            const path = require('path');
-            const expPath = '/workspace/projects/extensions/experience-manager/data/experiences.json';
-            try {
-                if (fs.existsSync(expPath)) {
-                    const content = fs.readFileSync(expPath, 'utf-8');
-                    const data = JSON.parse(content);
-                    return data.records || [];
-                }
-            }
-            catch (e) {
-                console.error('[NovelService] 读取经验文件失败:', e);
-            }
-            return [];
-        });
+        }
+        catch (e) {
+            console.error('[NovelService] 读取经验文件失败:', e);
+        }
+        return [];
     }
     /**
      * 添加经验记录
      */
-    addExperienceRecord(record) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const result = yield this.db.execute(`
+    async addExperienceRecord(record) {
+        const result = await this.db.execute(`
       INSERT INTO experience_records (
         type, title, description, user_query, solution, 
         experience_applied, experience_gained, tags, difficulty, xp_gained, timestamp
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
     `, [
-                record.type,
-                record.title,
-                record.description,
-                record.userQuery,
-                record.solution,
-                JSON.stringify(record.experienceApplied || []),
-                JSON.stringify(record.experienceGained || []),
-                JSON.stringify(record.tags || []),
-                record.difficulty,
-                record.xpGained || record.difficulty * 50,
-            ]);
-            return Object.assign({ id: result.insertId }, record);
-        });
+            record.type,
+            record.title,
+            record.description,
+            record.userQuery,
+            record.solution,
+            JSON.stringify(record.experienceApplied || []),
+            JSON.stringify(record.experienceGained || []),
+            JSON.stringify(record.tags || []),
+            record.difficulty,
+            record.xpGained || record.difficulty * 50,
+        ]);
+        return { id: result.insertId, ...record };
     }
     /**
      * 获取缓存文件列表
      */
-    getCacheFiles() {
-        return __awaiter(this, void 0, void 0, function* () {
-            const cacheDir = '/workspace/projects/workspace/storage';
-            const fs = yield import('fs');
-            const path = yield import('path');
-            if (!fs.existsSync(cacheDir)) {
-                return [];
-            }
-            const files = fs.readdirSync(cacheDir).filter(f => f.endsWith('.json'));
-            return files.map(f => ({
-                name: f,
-                path: path.join(cacheDir, f),
-                size: fs.statSync(path.join(cacheDir, f)).size,
-                modified: fs.statSync(path.join(cacheDir, f)).mtime,
-            }));
-        });
+    async getCacheFiles() {
+        const cacheDir = '/workspace/projects/workspace/storage';
+        const fs = await Promise.resolve().then(() => __importStar(require('fs')));
+        const path = await Promise.resolve().then(() => __importStar(require('path')));
+        if (!fs.existsSync(cacheDir)) {
+            return [];
+        }
+        const files = fs.readdirSync(cacheDir).filter(f => f.endsWith('.json'));
+        return files.map(f => ({
+            name: f,
+            path: path.join(cacheDir, f),
+            size: fs.statSync(path.join(cacheDir, f)).size,
+            modified: fs.statSync(path.join(cacheDir, f)).mtime,
+        }));
     }
     /**
      * 获取缓存文件内容
      */
-    getCacheFileContent(name) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const fs = yield import('fs');
-            const path = yield import('path');
-            const cacheDir = '/workspace/projects/workspace/storage';
-            const filePath = path.join(cacheDir, name);
-            if (!fs.existsSync(filePath)) {
-                throw new Error('文件不存在');
-            }
-            return fs.readFileSync(filePath, 'utf-8');
-        });
+    async getCacheFileContent(name) {
+        const fs = await Promise.resolve().then(() => __importStar(require('fs')));
+        const path = await Promise.resolve().then(() => __importStar(require('path')));
+        const cacheDir = '/workspace/projects/workspace/storage';
+        const filePath = path.join(cacheDir, name);
+        if (!fs.existsSync(filePath)) {
+            throw new Error('文件不存在');
+        }
+        return fs.readFileSync(filePath, 'utf-8');
     }
     /**
      * 保存缓存文件内容
      */
-    saveCacheFileContent(name, content) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const fs = yield import('fs');
-            const path = yield import('path');
-            const cacheDir = '/workspace/projects/workspace/storage';
-            const filePath = path.join(cacheDir, name);
-            fs.writeFileSync(filePath, content, 'utf-8');
-            return true;
-        });
+    async saveCacheFileContent(name, content) {
+        const fs = await Promise.resolve().then(() => __importStar(require('fs')));
+        const path = await Promise.resolve().then(() => __importStar(require('path')));
+        const cacheDir = '/workspace/projects/workspace/storage';
+        const filePath = path.join(cacheDir, name);
+        fs.writeFileSync(filePath, content, 'utf-8');
+        return true;
     }
     /**
      * 调试：检查章节详情
      */
-    debugChapter(workId, chapterNumber) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const rows = yield this.db.query(`
+    async debugChapter(workId, chapterNumber) {
+        const rows = await this.db.query(`
       SELECT 
         chapter_number, 
         title, 
@@ -679,15 +631,13 @@ export class NovelService {
       FROM chapters 
       WHERE work_id = ? AND chapter_number = ?
     `, [workId, chapterNumber]);
-            return rows[0] || null;
-        });
+        return rows[0] || null;
     }
     /**
      * 调试：测试查询待发布章节
      */
-    debugPendingChapters(workId, startChapter, endChapter) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const sql = `
+    async debugPendingChapters(workId, startChapter, endChapter) {
+        const sql = `
       SELECT 
         c.chapter_number,
         c.title,
@@ -701,8 +651,9 @@ export class NovelService {
         AND (c.publish_status IS NULL OR c.publish_status != 'published')
       ORDER BY c.chapter_number
     `;
-            const rows = yield this.db.query(sql, [workId, startChapter, endChapter]);
-            return { sql, params: [workId, startChapter, endChapter], count: rows.length, rows };
-        });
+        const rows = await this.db.query(sql, [workId, startChapter, endChapter]);
+        return { sql, params: [workId, startChapter, endChapter], count: rows.length, rows };
     }
 }
+exports.NovelService = NovelService;
+//# sourceMappingURL=novel-service.js.map

@@ -1,8 +1,11 @@
+"use strict";
 /**
  * 润色特征检测器
  * 动态感知润色网站的配置和规则
  */
-export class PolishFeatureDetector {
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.PolishFeatureDetector = void 0;
+class PolishFeatureDetector {
     constructor(options = {}) {
         this.defaultFeatures = {
             disableMarkdown: true,
@@ -36,7 +39,7 @@ export class PolishFeatureDetector {
         };
     }
     setFeatures(features) {
-        const merged = Object.assign(Object.assign({}, this.defaultFeatures), features);
+        const merged = { ...this.defaultFeatures, ...features };
         this.cache = {
             features: merged,
             timestamp: Date.now(),
@@ -47,7 +50,7 @@ export class PolishFeatureDetector {
         if (this.cache.features && Date.now() - this.cache.timestamp < this.options.cacheTimeout) {
             return this.cache.features;
         }
-        return Object.assign({}, this.defaultFeatures);
+        return { ...this.defaultFeatures };
     }
     detectFromContent(content) {
         const rawFeatures = {
@@ -71,7 +74,7 @@ export class PolishFeatureDetector {
         return features;
     }
     parseFeatures(rawFeatures) {
-        const result = Object.assign({}, this.defaultFeatures);
+        const result = { ...this.defaultFeatures };
         if (rawFeatures._foundKeywords) {
             for (const keyword of rawFeatures._foundKeywords) {
                 const mapped = this.featureMapping[keyword];
@@ -150,3 +153,5 @@ export class PolishFeatureDetector {
         return descriptions.join('、') || '默认配置';
     }
 }
+exports.PolishFeatureDetector = PolishFeatureDetector;
+//# sourceMappingURL=PolishFeatureDetector.js.map
