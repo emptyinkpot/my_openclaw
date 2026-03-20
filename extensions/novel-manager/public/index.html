@@ -1411,14 +1411,25 @@
           }
         }
         
-        // 生成章节计划表
+        // 生成章节计划表 - 调试版本
         let chapterPlanHtml = '';
-        if (latestChapterNumber > 0) {
+        
+        // 调试信息
+        const debugInfo = `
+          <div style="font-size: 9px; color: var(--text-muted); margin-bottom: 4px;">
+            调试: workId=${workId}, latestChapter=${latestChapterNumber}, daily=${dailyChaptersPerWork}
+          </div>
+        `;
+        
+        // 确保我们有章节号是数字
+        const safeLatestChapter = parseInt(latestChapterNumber) || 0;
+        
+        if (safeLatestChapter > 0) {
           const planChapters = [];
           for (let i = 0; i < dailyChaptersPerWork; i++) {
-            const chapterNum = latestChapterNumber - i;
+            const chapterNum = safeLatestChapter - i;
             if (chapterNum > 0) {
-              const isCompleted = completedChapters[workId]?.[chapterNum];
+              const isCompleted = !!(completedChapters[workId]?.[chapterNum]);
               planChapters.push({
                 number: chapterNum,
                 completed: isCompleted
@@ -1426,21 +1437,26 @@
             }
           }
           
+          // 至少显示一个示例，不管有没有数据
+          if (planChapters.length === 0 && safeLatestChapter > 0) {
+            planChapters.push({ number: safeLatestChapter, completed: false });
+          }
+          
           if (planChapters.length > 0) {
             chapterPlanHtml = `
-              <div style="border-top: 1px solid var(--border); padding-top: 10px; margin-top: 8px;">
-                <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+              <div style="border-top: 2px solid var(--accent); padding-top: 12px; margin-top: 10px;">
+                <div style="font-size: 11px; color: var(--text); margin-bottom: 10px; font-weight: 600; display: flex; justify-content: space-between; align-items: center;">
                   <span>📋 今日更新计划</span>
-                  <span style="font-size: 9px;">
-                    ${planChapters.filter(c => c.completed).length}/${planChapters.length} 已完成
+                  <span style="font-size: 10px; background: var(--accent); color: white; padding: 2px 8px; border-radius: 10px;">
+                    ${planChapters.filter(c => c.completed).length}/${planChapters.length}
                   </span>
                 </div>
-                <div style="display: flex; flex-direction: column; gap: 4px;">
+                <div style="display: flex; flex-direction: column; gap: 6px;">
                   ${planChapters.map(ch => `
-                    <div style="display: flex; align-items: center; gap: 6px; padding: 4px 6px; background: ${ch.completed ? 'var(--success-bg, rgba(74, 222, 128, 0.1))' : 'var(--bg-tertiary)'}; border-radius: 4px; cursor: pointer; transition: all 0.2s;"
+                    <div style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: ${ch.completed ? 'rgba(74, 222, 128, 0.15)' : 'var(--bg-tertiary)'}; border: 1px solid ${ch.completed ? 'rgba(74, 222, 128, 0.3)' : 'var(--border)'}; border-radius: 6px; cursor: pointer; transition: all 0.2s;"
                          onclick="toggleChapterComplete('${workId}', ${ch.number})">
-                      <span style="font-size: 14px; ${ch.completed ? 'color: var(--success);' : 'color: var(--text-muted);'}">${ch.completed ? '☑' : '☐'}</span>
-                      <span style="font-size: 11px; ${ch.completed ? 'text-decoration: line-through; color: var(--text-muted);' : 'color: var(--text);'}">
+                      <span style="font-size: 18px; ${ch.completed ? 'color: #22c55e;' : 'color: #9ca3af;'}">${ch.completed ? '☑' : '☐'}</span>
+                      <span style="font-size: 12px; ${ch.completed ? 'text-decoration: line-through; color: #9ca3af;' : 'color: var(--text); font-weight: 500;'}">
                         第${ch.number}章
                       </span>
                     </div>
@@ -1449,6 +1465,14 @@
               </div>
             `;
           }
+        } else {
+          // 如果没有章节数据，显示提示
+          chapterPlanHtml = `
+            <div style="border-top: 1px solid var(--border); padding-top: 10px; margin-top: 8px;">
+              <div style="font-size: 10px; color: var(--text-muted);">
+                ⏳ 等待章节数据...</div>
+            </div>
+          `;
         }
         
         return `
