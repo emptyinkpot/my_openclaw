@@ -1384,132 +1384,12 @@
         return;
       }
       
-      // 调试输出第一个作品的所有字段
-      if (fanqieWorks.length > 0) {
-        console.log('[Render] 第一个作品的字段:', Object.keys(fanqieWorks[0]));
-        console.log('[Render] 第一个作品完整数据:', fanqieWorks[0]);
-      }
-      
-      // 获取今日日期（用于判断是否当日更新）
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
       resultEl.innerHTML = fanqieWorks.map(w => {
         const workId = w.work_id || w.workId;
-        
-        // 尝试多种可能的字段名
-        const latestChapterTitle = w.latest_chapter_title || w.latestChapterTitle || w.last_chapter_title || '';
-        const latestChapterNumber = w.latest_chapter_number || w.latestChapterNumber || w.last_chapter_number || 0;
-        const lastUpdateTime = w.last_update_time || w.lastUpdateTime || w.updated_at || '';
-        
-        // 检查是否有番茄的最新章节信息
-        const hasFanqieLatest = latestChapterTitle && latestChapterNumber;
-        
-        // 判断是否当日更新
-        let isTodayUpdate = false;
-        let updateDate = null;
-        
-        if (lastUpdateTime) {
-          updateDate = new Date(lastUpdateTime);
-          if (!isNaN(updateDate.getTime())) {
-            const updateDateOnly = new Date(updateDate);
-            updateDateOnly.setHours(0, 0, 0, 0);
-            isTodayUpdate = updateDateOnly.getTime() === today.getTime();
-          } else {
-            updateDate = null;
-          }
-        }
-        
-        // 生成章节计划表 - 显示所有可用字段
-        let chapterPlanHtml = '';
-        
-        // 显示所有字段的调试信息
-        const allFields = Object.keys(w).join(', ');
-        const debugInfo = `
-          <div style="font-size: 8px; color: var(--text-muted); margin-bottom: 4px; background: #000; padding: 4px; border-radius: 4px; overflow-wrap: break-word;">
-            字段: ${allFields}<br>
-            数据: ${JSON.stringify(w).substring(0, 200)}...
-          </div>
-        `;
-        
-        // 尝试所有可能的章节数字段
-        const safeLatestChapter = parseInt(
-          w.latest_chapter_number || 
-          w.latestChapterNumber || 
-          w.last_chapter_number || 
-          w.chapter_count || 
-          w.chapterCount || 
-          w.totalChapters ||
-          0
-        );
-        
-        // 如果没有章节号，先用一个模拟的来演示
-        const demoChapter = safeLatestChapter > 0 ? safeLatestChapter : 100;
-        
-        // 获取今日日期
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        
-
-        
-        const planChapters = [];
-        let completedCount = 0;
-        
-        for (let i = 1; i <= dailyChaptersPerWork; i++) {
-          const chapterNum = safeLatestChapter + i;
-          
-          // 检查本地是否有这一章，并且发布日期是今天
-          const localChapter = localChapters.find(c => c.chapter_number === chapterNum);
-          let isCompleted = false;
-          
-          if (localChapter) {
-            const chapterDate = new Date(localChapter.updated_at || localChapter.created_at);
-            if (chapterDate && !isNaN(chapterDate.getTime())) {
-              const chapterDateOnly = new Date(chapterDate);
-              chapterDateOnly.setHours(0, 0, 0, 0);
-              isCompleted = chapterDateOnly.getTime() === today.getTime();
-            }
-          }
-          
-          if (isCompleted) {
-            completedCount++;
-          }
-          
-          planChapters.push({
-            number: chapterNum,
-            completed: isCompleted,
-            chapterDate: localChapter?.updated_at || localChapter?.created_at
-          });
-        }
-        // 从小到大的顺序（63, 64, 65...）
-        planChapters.sort((a, b) => a.number - b.number);
-        
-        chapterPlanHtml = `
-          <div style="border-top: 2px solid var(--accent); padding-top: 12px; margin-top: 10px;">
-            <div style="font-size: 11px; color: var(--text); margin-bottom: 10px; font-weight: 600; display: flex; justify-content: space-between; align-items: center;">
-              <span>📋 今日更新计划</span>
-              <span style="font-size: 10px; background: var(--accent); color: white; padding: 2px 8px; border-radius: 10px;">
-                ${planChapters.filter(c => c.completed).length}/${planChapters.length}
-              </span>
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 6px;">
-              ${planChapters.map(ch => `
-                <div style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: ${ch.completed ? 'rgba(74, 222, 128, 0.15)' : 'var(--bg-tertiary)'}; border: 1px solid ${ch.completed ? 'rgba(74, 222, 128, 0.3)' : 'var(--border)'}; border-radius: 6px; cursor: default; transition: all 0.2s;"
-
-                  <span style="font-size: 18px; ${ch.completed ? 'color: #22c55e;' : 'color: #9ca3af;'}">${ch.completed ? '☑' : '☐'}</span>
-                  <span style="font-size: 12px; ${ch.completed ? 'text-decoration: line-through; color: #9ca3af;' : 'color: var(--text); font-weight: 500;'}">
-                    第${ch.number}章
-                    ${ch.chapterDate ? `
-                    <span style="color: var(--text-muted); font-size: 9px; margin-left: 6px;">
-                      (${new Date(ch.chapterDate).toLocaleDateString()})
-                    </span>
-                    ` : ''}
-                  </span>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-        `;
+        const chapterCount = w.chapter_count || w.chapterCount || 0;
+        const localWork = localWorks.find(lw => 
+          lw.title === w.title || (w.work_id && lw.id === parseInt(w.work_id)));
+        const localChapterCount = localWork?.chapter_count || 0;
         
         return `
         <div class="fanqie-work-card" style="padding: 16px;">
@@ -1525,11 +1405,11 @@
           
           <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; text-align: center;">
             <div style="padding: 8px; background: var(--bg-tertiary); border-radius: 6px;">
-              <div style="font-size: 16px; font-weight: 600; color: var(--accent);">${w.chapter_count || w.chapterCount || 0}</div>
+              <div style="font-size: 16px; font-weight: 600; color: var(--accent);">${chapterCount}</div>
               <div style="font-size: 10px; color: var(--text-muted);">番茄章节</div>
             </div>
             <div style="padding: 8px; background: var(--bg-tertiary); border-radius: 6px;">
-              <div style="font-size: 16px; font-weight: 600; color: var(--success);">${w.localChapterCount || 0}</div>
+              <div style="font-size: 16px; font-weight: 600; color: var(--success);">${localChapterCount}</div>
               <div style="font-size: 10px; color: var(--text-muted);">本地章节</div>
             </div>
             <div style="padding: 8px; background: var(--bg-tertiary); border-radius: 6px;">
@@ -1537,22 +1417,6 @@
               <div style="font-size: 10px; color: var(--text-muted);">字数</div>
             </div>
           </div>
-          
-          ${chapterPlanHtml}
-          
-          ${hasFanqieLatest ? `
-            <div style="border-top: 1px solid var(--border); padding-top: 10px; margin-top: 8px;">
-              <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 6px;">🆕 番茄最新更新</div>
-              <div style="font-size: 11px; padding: 4px 0; ${isTodayUpdate ? 'color: #4ade80; font-weight: 500;' : 'color: var(--text);'}">
-                第${latestChapterNumber}章: ${latestChapterTitle}
-                ${updateDate ? `
-                <span style="color: var(--text-muted); font-size: 9px; margin-left: 4px;">
-                  ${isTodayUpdate ? '今天 ' + updateDate.toLocaleTimeString() : updateDate.toLocaleDateString()}
-                </span>
-                ` : ''}
-              </div>
-            </div>
-          ` : ''}
         </div>
       `}).join('');
     }
