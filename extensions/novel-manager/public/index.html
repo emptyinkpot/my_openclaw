@@ -1328,32 +1328,53 @@
         const worksResult = await api('/fanqie/works');
         let works = worksResult.data || [];
         
-        // 调试输出：看看实际的数据结构
-        console.log('[AutoScan] 番茄作品数据:', works);
-        
-        // 获取本地作品数据用于对比
+        // 获取本地作品数据
         const localResult = await api('/works');
         const localWorks = localResult.data || [];
         
-        // 合并数据，标记更新
-        const enrichedWorks = works.map(fw => {
-          const local = localWorks.find(lw => 
-            lw.title === fw.title || 
-            (fw.work_id && lw.id === parseInt(fw.work_id))
-          );
+        // 获取今日日期
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        // 先获取所有本地作品的章节数据，并标记哪些是今日发布的
+        const worksWithChapters = await Promise.all(works.map(async (fw) => {
+          const localWork = localWorks.find(lw => 
+            lw.title === fw.title || (fw.work_id && lw.id === parseInt(fw.work_id)));
+          
+          let localChapters = [];
+          const todayPublishedChapters = new Set();
+          
+          if (localWork?.id) {
+            try {
+              const result = await api(`/works/${localWork.id}`);
+              localChapters = result.data?.chapters || [];
+              
+              // 找出今日发布的章节
+              localChapters.forEach(ch => {
+                const chDate = new Date(ch.updated_at || ch.created_at);
+                if (!isNaN(chDate.getTime())) {
+                  const chDateOnly = new Date(chDate);
+                  chDateOnly.setHours(0, 0, 0, 0);
+                  if (chDateOnly.getTime() === today.getTime()) {
+                    todayPublishedChapters.add(ch.chapter_number);
+                  }
+                }
+              });
+            } catch (e) {}
+          }
           
           return {
             ...fw,
-            localId: local?.id,
-            localChapterCount: local?.chapter_count || 0,
-            lastLocalUpdate: local?.updated_at
+            localId: localWork?.id,
+            localChapterCount: localWork?.chapter_count || 0,
+            todayPublishedChapters
           };
-        });
+        }));
         
-        lastScanData = enrichedWorks;
+        lastScanData = worksWithChapters;
         
         // 渲染作品列表
-        renderFanqieWorksList(enrichedWorks, localWorks);
+        renderFanqieWorksList(worksWithChapters, localWorks);
         
         // 更新时间
         const now = new Date();
@@ -1388,26 +1409,33 @@
         const workId = w.work_id || w.workId;
         const chapterCount = w.chapter_count || w.chapterCount || 0;
         const fanqieLatest = parseInt(w.latest_chapter_number || w.latestChapterNumber || w.chapter_count || w.chapterCount || 0);
-        const localWork = localWorks.find(lw => 
-          lw.title === w.title || (w.work_id && lw.id === parseInt(w.work_id)));
-        const localChapterCount = localWork?.chapter_count || 0;
+        const localChapterCount = w.localChapterCount || 0;
+        const todayPublished = w.todayPublishedChapters || new Set();
         
-        // 生成简单的章节计划
+        // 生成章节计划
         let chapterPlanHtml = '';
+        let completedCount = 0;
+        
         if (fanqieLatest > 0) {
           const planChapters = [];
           for (let i = 1; i <= dailyChaptersPerWork; i++) {
-            planChapters.push(fanqieLatest + i);
+            const chNum = fanqieLatest + i;
+            const isCompleted = todayPublished.has(chNum);
+            if (isCompleted) completedCount++;
+            planChapters.push({ num: chNum, completed: isCompleted });
           }
           
           chapterPlanHtml = `
             <div style="border-top: 2px solid var(--accent); padding-top: 12px; margin-top: 10px;">
-              <div style="font-size: 11px; color: var(--text); margin-bottom: 10px; font-weight: 600;">📋 今日更新计划</div>
+              <div style="font-size: 11px; color: var(--text); margin-bottom: 10px; font-weight: 600; display: flex; justify-content: space-between;">
+                <span>📋 今日更新计划</span>
+                <span style="background: var(--accent); color: white; padding: 2px 8px; border-radius: 10px;">${completedCount}/${planChapters.length}</span>
+              </div>
               <div style="display: flex; flex-direction: column; gap: 6px;">
-                ${planChapters.map(chNum => `
-                  <div style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 6px; cursor: default;">
-                    <span style="font-size: 18px; color: #9ca3af;">☐</span>
-                    <span style="font-size: 12px; color: var(--text); font-weight: 500;">第${chNum}章</span>
+                ${planChapters.map(ch => `
+                  <div style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: ${ch.completed ? 'rgba(74, 222, 128, 0.15)' : 'var(--bg-tertiary)'}; border: 1px solid ${ch.completed ? 'rgba(74, 222, 128, 0.3)' : 'var(--border)'}; border-radius: 6px; cursor: default;">
+                    <span style="font-size: 18px; ${ch.completed ? 'color: #22c55e;' : 'color: #9ca3af;'}">${ch.completed ? '☑' : '☐'}</span>
+                    <span style="font-size: 12px; ${ch.completed ? 'text-decoration: line-through; color: #9ca3af;' : 'color: var(--text); font-weight: 500;'}">第${ch.num}章</span>
                   </div>
                 `).join('')}
               </div>
