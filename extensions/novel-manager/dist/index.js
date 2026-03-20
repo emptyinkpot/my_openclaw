@@ -106,7 +106,17 @@ function parseQuery(url) {
 }
 // 获取页面HTML
 function getPageHtml(pageName) {
-    // 所有页面都使用control-ui目录
+    // 对于 settings.html，优先从插件自己的 public 目录读取
+    if (pageName === 'settings.html') {
+        const htmlPath = path.join(__dirname, 'public', pageName);
+        try {
+            return fs.readFileSync(htmlPath, 'utf-8');
+        }
+        catch (e) {
+            console.error('[novel-manager] 无法读取插件settings页面:', htmlPath);
+        }
+    }
+    // 其他页面使用control-ui目录
     const controlUiPath = '/usr/lib/node_modules/openclaw/dist/control-ui';
     let targetFile = pageName;
     // 映射页面名称到control-ui的文件名
@@ -148,7 +158,9 @@ async function handleNovelPage(req, res) {
         '/auto.html': 'auto.html',
         '/experience.html': 'experience.html',
         '/cache.html': 'cache.html',
-        '/settings.html': 'settings.html'
+        '/settings': 'settings.html',
+        '/settings/': 'settings.html',
+        '/novel-settings.html': 'settings.html'
     };
     const pageFile = pageMap[urlPath];
     if (pageFile) {
@@ -538,7 +550,9 @@ const plugin = {
             { path: '/novel', match: 'exact' },
             { path: '/auto.html', match: 'exact' },
             { path: '/experience.html', match: 'exact' },
-            { path: '/cache.html', match: 'exact' }
+            { path: '/cache.html', match: 'exact' },
+            { path: '/settings', match: 'exact' },
+            { path: '/settings/', match: 'exact' }
         ];
         // 注册页面路由 - 不需要认证
         if (api?.registerHttpRoute) {
