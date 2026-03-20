@@ -1371,7 +1371,7 @@
     }
 
     // 渲染番茄作品列表（显示详细章节信息）
-    async function renderFanqieWorksList(fanqieWorks, localWorks) {
+    function renderFanqieWorksList(fanqieWorks, localWorks) {
       const resultEl = document.getElementById('fanqieWorksList');
       
       if (!resultEl) return;
@@ -1450,18 +1450,7 @@
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
-        // 查找对应的本地作品
-        const localWork = localWorks.find(lw => 
-          lw.title === w.title || (w.work_id && lw.id === parseInt(w.work_id)));
-        
-        // 获取本地章节
-        let localChapters = [];
-        if (localWork?.id) {
-          try {
-            const result = await api(`/works/${localWork.id}`);
-            localChapters = result.data?.chapters || [];
-          } catch (e) {}
-        }
+
         
         const planChapters = [];
         let completedCount = 0;
