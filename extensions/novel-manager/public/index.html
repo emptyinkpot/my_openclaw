@@ -1084,8 +1084,8 @@
 
     // ====== 番茄扫描功能 ======
     async function loadFanqieWorks() {
-      // fanqieWorkSelect 元素已移除，此函数保留以避免调用报错
-      // 作品列表通过 scanFanqieWorks() 的卡片形式展示
+      // 番茄扫描页面使用自动轮询，此函数保留空实现
+      // 避免切换页面时重复加载
       return;
     }
 
@@ -2935,6 +2935,9 @@
 
     async function refreshCacheList() {
       const listEl = document.getElementById('cacheFileList');
+      if (!listEl) return;
+      
+      // 先显示加载状态
       listEl.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-muted);"><div style="font-size: 24px; margin-bottom: 8px;">⏳</div><div style="font-size: 11px;">加载中...</div></div>';
       
       try {
@@ -3121,6 +3124,12 @@
 
     // 加载经验数据
     async function loadExperience() {
+      // 先显示加载状态
+      const contentArea = document.getElementById('expContentArea');
+      if (contentArea) {
+        contentArea.innerHTML = '<div style="text-align: center; padding: 60px; color: var(--text-muted);"><div style="font-size: 32px; margin-bottom: 12px;">⏳</div><div>加载中...</div></div>';
+      }
+      
       try {
         const [statsRes, recordsRes] = await Promise.all([
           api('/experience/stats'),
@@ -3447,14 +3456,16 @@
         targetPage.classList.add('active');
       }
       
-      // 调用原始函数的其他逻辑（如加载数据）
-      if (pageName === 'fanqie-scan') {
-        loadFanqieWorks();
-      } else if (pageName === 'cache-manage') {
-        refreshCacheList();
-      } else if (pageName === 'experience') {
-        loadExperience();
-      }
+      // 异步加载数据，不阻塞页面切换
+      setTimeout(() => {
+        if (pageName === 'fanqie-scan') {
+          loadFanqieWorks();
+        } else if (pageName === 'cache-manage') {
+          refreshCacheList();
+        } else if (pageName === 'experience') {
+          loadExperience();
+        }
+      }, 0);
       
       // 更新按钮状态
       const btnTextMap = { 
