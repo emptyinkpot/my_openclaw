@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- Version: 2026-03-20-v6 Debug More Pipeline UI Fix -->
-  <title>📚 小说数据中心 - Novel Data Center</title>
+  <title>📚 MySQL数据中心 - Novel Data Center</title>
   <style>
     :root {
       --bg: #f6f8fa; --bg-secondary: #ffffff; --bg-tertiary: #f3f4f6;
@@ -264,7 +264,7 @@
   <div class="top-bar">
     <div class="logo">📚 小说管理</div>
     <div class="divider"></div>
-    <button class="btn primary" onclick="showSubPage('novel-data')">📖 小说数据</button>
+    <button class="btn primary" onclick="showSubPage('novel-data')">📖 MySQL数据</button>
     <button class="btn" onclick="showSubPage('control-panel')">⚙️ 控制面板</button>
     <div class="divider"></div>
     <button class="btn" onclick="showSubPage('fanqie-scan')">🍅 番茄扫描</button>
@@ -281,7 +281,7 @@
 
   <!-- 子页面容器 -->
   <div id="subPageContainer">
-    <!-- 小说数据页面 -->
+    <!-- MySQL数据页面 -->
     <div id="novelDataPage" class="sub-page active">
       <div class="main" style="height: calc(100vh - 36px);">
         <!-- 左侧边栏 - 作品列表 -->
@@ -1161,7 +1161,7 @@
       
       // 更新子页面按钮状态
       const subPageBtns = [
-        { name: 'novel-data', text: '小说数据' },
+        { name: 'novel-data', text: 'MySQL数据' },
         { name: 'control-panel', text: '控制面板' },
         { name: 'fanqie-scan', text: '番茄扫描' },
         { name: 'cache-manage', text: '缓存管理' }
@@ -1173,7 +1173,7 @@
         if (isSubPageBtn) {
           btn.classList.remove('primary');
           const pageMap = { 
-            'novel-data': '小说数据', 
+            'novel-data': 'MySQL数据', 
             'control-panel': '控制面板',
             'fanqie-scan': '番茄扫描', 
             'cache-manage': '缓存管理' 
@@ -3376,7 +3376,7 @@
       
       // 更新按钮状态
       const btnTextMap = { 
-        'novel-data': '小说数据', 
+        'novel-data': 'MySQL数据', 
         'control-panel': '控制面板',
         'fanqie-scan': '番茄扫描', 
         'cache-manage': '缓存管理',
