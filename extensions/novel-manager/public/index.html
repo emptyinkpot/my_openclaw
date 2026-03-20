@@ -1387,9 +1387,33 @@
       resultEl.innerHTML = fanqieWorks.map(w => {
         const workId = w.work_id || w.workId;
         const chapterCount = w.chapter_count || w.chapterCount || 0;
+        const fanqieLatest = parseInt(w.latest_chapter_number || w.latestChapterNumber || w.chapter_count || w.chapterCount || 0);
         const localWork = localWorks.find(lw => 
           lw.title === w.title || (w.work_id && lw.id === parseInt(w.work_id)));
         const localChapterCount = localWork?.chapter_count || 0;
+        
+        // 生成简单的章节计划
+        let chapterPlanHtml = '';
+        if (fanqieLatest > 0) {
+          const planChapters = [];
+          for (let i = 1; i <= dailyChaptersPerWork; i++) {
+            planChapters.push(fanqieLatest + i);
+          }
+          
+          chapterPlanHtml = `
+            <div style="border-top: 2px solid var(--accent); padding-top: 12px; margin-top: 10px;">
+              <div style="font-size: 11px; color: var(--text); margin-bottom: 10px; font-weight: 600;">📋 今日更新计划</div>
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                ${planChapters.map(chNum => `
+                  <div style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 6px; cursor: default;">
+                    <span style="font-size: 18px; color: #9ca3af;">☐</span>
+                    <span style="font-size: 12px; color: var(--text); font-weight: 500;">第${chNum}章</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }
         
         return `
         <div class="fanqie-work-card" style="padding: 16px;">
@@ -1417,6 +1441,8 @@
               <div style="font-size: 10px; color: var(--text-muted);">字数</div>
             </div>
           </div>
+          
+          ${chapterPlanHtml}
         </div>
       `}).join('');
     }
