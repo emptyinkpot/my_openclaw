@@ -1632,13 +1632,17 @@
     }
     
     function updateStatsUI(data) {
-      document.getElementById('statWorks').textContent = data.works || 0;
-      document.getElementById('statChapters').textContent = data.chapters || 0;
-      document.getElementById('statWords').textContent = data.totalWords ? (data.totalWords / 10000).toFixed(1) + 'w' : '0';
-      document.getElementById('statCompleted').textContent = data.has_content || 0;
-      document.getElementById('statOutlines').textContent = data.outlines || 0;
-      document.getElementById('statCharacters').textContent = data.characters || 0;
-      document.getElementById('charBadge').textContent = data.characters || 0;
+      const setText = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+      };
+      setText('statWorks', data.works || 0);
+      setText('statChapters', data.chapters || 0);
+      setText('statWords', data.totalWords ? (data.totalWords / 10000).toFixed(1) + 'w' : '0');
+      setText('statCompleted', data.has_content || 0);
+      setText('statOutlines', data.outlines || 0);
+      setText('statCharacters', data.characters || 0);
+      setText('charBadge', data.characters || 0);
     }
 
     // 加载作品列表（带缓存）
