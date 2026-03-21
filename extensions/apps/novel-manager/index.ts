@@ -499,16 +499,16 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
       const rows = await db.query(`
         SELECT 
           id,
-          content AS name,
+          content,
           category,
           tags,
-          note AS description,
+          note,
           created_at,
           updated_at
         FROM vocabulary
         ORDER BY content ASC
       `);
-      jsonRes(res, { success: true, data: rows });
+      jsonRes(res, { success: true, items: rows });
       return true;
     }
 
@@ -518,10 +518,10 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
       const rows = await db.query(`
         SELECT 
           id,
-          title AS name,
+          title,
           author,
           tags,
-          note AS description,
+          note,
           content,
           priority,
           created_at,
@@ -529,7 +529,7 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
         FROM literature
         ORDER BY title ASC
       `);
-      jsonRes(res, { success: true, data: rows });
+      jsonRes(res, { success: true, items: rows });
       return true;
     }
 
@@ -539,17 +539,17 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
       const rows = await db.query(`
         SELECT 
           id,
-          content AS name,
+          content,
           type,
           category,
           reason,
-          alternative AS replacement,
+          alternative,
           created_at,
           updated_at
         FROM banned_words
         ORDER BY content ASC
       `);
-      jsonRes(res, { success: true, data: rows });
+      jsonRes(res, { success: true, items: rows });
       return true;
     }
 
