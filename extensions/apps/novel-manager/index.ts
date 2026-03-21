@@ -15,6 +15,8 @@ import { configManager } from './core/content-craft/src/config-manager';
 import { GenerationPipeline } from './core/content-craft/src/generation-pipeline';
 // 导入文本润色功能
 import { PolishPipeline } from './core/content-craft/src/pipeline';
+// 导入番茄发布功能
+import { FanqieSimplePipeline } from './core/fanqie-simple-pipeline/FanqieSimplePipeline';
 
 // 尝试导入 registerPluginHttpRoute
 let registerPluginHttpRoute: any;
@@ -534,6 +536,7 @@ async function handleNovelPage(req: IncomingMessage, res: ServerResponse): Promi
     // 新拆分的独立页面
     '/logs.html': 'logs.html',
     '/cache-manage.html': 'cache-manage.html',
+    '/publish.html': 'publish.html',
     // 静态资源文件
     '/settings-modal.html': 'settings-modal.html',
     '/nav-bar.html': 'nav-bar.html',
@@ -749,6 +752,84 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
       } catch (error) {
         console.error('[ConfigAPI] 重置配置失败:', error);
         jsonRes(res, { success: false, error: '重置配置失败' }, 500);
+      }
+      return true;
+    }
+
+    // ====== 番茄发布API ======
+    // 发布章节
+    if (path === '/api/novel/publish' && method === 'POST') {
+      try {
+        const body = await parseBody(req);
+        const { workId, chapterNumber, headless = true, dryRun = false } = body;
+        
+        if (!workId) {
+          jsonRes(res, { success: false, error: '缺少必要参数：workId' }, 400);
+          return true;
+        }
+
+        console.log('[PublishAPI] 启动番茄发布, workId:', workId, 'chapterNumber:', chapterNumber);
+
+        // 创建番茄发布流水线
+        const pipeline = new FanqieSimplePipeline();
+        
+        // 生成 progressId（可选）
+        const progressId = body.progressId || `publish_${Date.now()}`;
+        
+        // 异步执行发布
+        pipeline.publishToFanqie({
+          workId: parseInt(workId as string, 10),
+          chapterNumber: chapterNumber ? parseInt(chapterNumber as string, 10) : undefined,
+          headless,
+          dryRun,
+          onProgress: (event) => {
+            console.log('[PublishAPI] 进度:', event.stepLabel, event.task, `${event.percent}%`);
+            // 这里可以添加 SSE 广播
+          }
+        }).then((results) => {
+          const successCount = results.filter(r => r.success).length;
+          console.log(`[PublishAPI] 发布完成: 成功 ${successCount}/${results.length}`);
+        }).catch((error) => {
+          console.error('[PublishAPI] 发布失败:', error);
+        });
+
+        jsonRes(res, { 
+          success: true, 
+          message: '发布任务已启动', 
+          progressId,
+          note: '发布任务正在后台执行中'
+        });
+      } catch (error) {
+        console.error('[PublishAPI] 发布失败:', error);
+        jsonRes(res, { success: false, error: error instanceof Error ? error.message : '发布失败' }, 500);
+      }
+      return true;
+    }
+
+    // 获取作品列表（用于发布选择）
+    if (path === '/api/novel/publish/works' && method === 'GET') {
+      try {
+        const service = getNovelService();
+        const works = await service.getWorks();
+        jsonRes(res, { success: true, data: works });
+      } catch (error) {
+        console.error('[PublishAPI] 获取作品列表失败:', error);
+        jsonRes(res, { success: false, error: '获取作品列表失败' }, 500);
+      }
+      return true;
+    }
+
+    // 获取作品章节列表
+    const chaptersMatch = path.match(/^\/api\/novel\/publish\/works\/(\d+)\/chapters$/);
+    if (chaptersMatch && method === 'GET') {
+      try {
+        const workId = parseInt(chaptersMatch[1], 10);
+        const service = getNovelService();
+        const chapters = await service.getChaptersByWorkId(workId);
+        jsonRes(res, { success: true, data: chapters });
+      } catch (error) {
+        console.error('[PublishAPI] 获取章节列表失败:', error);
+        jsonRes(res, { success: false, error: '获取章节列表失败' }, 500);
       }
       return true;
     }
