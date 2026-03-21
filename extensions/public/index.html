@@ -17,12 +17,6 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); font-size: 12px; height: 100vh; overflow: hidden; }
     
-    /* 导航栏 */
-    .nav-bar { position: fixed; top: 0; left: 0; right: 0; height: 40px; background: #24292f; display: flex; align-items: center; padding: 0 16px; gap: 4px; z-index: 9999; }
-    .nav-bar span { color: #fff; font-weight: 600; font-size: 14px; margin-right: 16px; }
-    .nav-bar a { color: #8b949e; font-size: 13px; padding: 6px 14px; border-radius: 4px; text-decoration: none; user-select: none; }
-    .nav-bar a:hover { background: rgba(255,255,255,0.1); color: #fff; }
-    .nav-bar a.on { background: #0969da; color: #fff; }
     .main,.sub-page{height:calc(100vh - 76px)!important}
     
     /* 顶部工具栏 */
@@ -259,7 +253,7 @@
   </style>
 </head>
 <body><!-- VERSION: 20260320-v18 -->
-<div class="nav-bar"><a href="javascript:void(0)" onclick="showView('settings')" style="padding: 6px 14px; border-radius: 4px; color: #8b949e; text-decoration: none;">⚙️ 设置</a><a href="/novel/" class="on">📚 小说管理</a><a href="javascript:void(0)" onclick="showSubPage('logs-view')">📋 日志</a><a href="/experience.html">🧠 经验</a><a href="/cache.html">💾 缓存</a><a href="/">🎯 原生界面</a></div>
+<script src="/nav-bar.js"></script>
   <!-- 顶部工具栏 -->
   <div class="top-bar">
     <div class="logo">📚 小说管理</div>
