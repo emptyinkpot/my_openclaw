@@ -1124,6 +1124,10 @@
       
       list.innerHTML = htmlContent;
       console.log('[Experience] list.innerHTML 已设置');
+      
+      // 确保 expList 有 active 类，确保显示
+      list.classList.add('active');
+      console.log('[Experience] 已给 expList 添加 active 类');
     }
     
     // 过滤
