@@ -1,6 +1,31 @@
 {
   "records": [
     {
+      "title": "修复点击设置按钮出现旧导航栏重叠的问题",
+      "problem": "在非小说管理页面点击\"设置\"按钮时，没有弹出设置弹窗，反而出现旧导航栏重叠在新导航栏上。通过浏览器控制台调试发现，fetch(\"/settings-modal.html\") 错误地返回了原生界面的 HTML（里面包含旧导航栏），而不是我们想要的设置弹窗内容。",
+      "solution": "将 settings-modal.html 的完整内容（包括样式、HTML结构和JavaScript函数）直接硬编码到 nav-bar.html 中，完全避免使用 fetch 动态加载。这样无论在哪个页面，点击\"设置\"按钮都能直接使用本地嵌入的设置弹窗，不再依赖网络请求和路由匹配。",
+      "tags": [
+        "导航栏",
+        "设置弹窗",
+        "fetch",
+        "路由问题",
+        "前端调试",
+        "控制台日志"
+      ],
+      "difficulty": 3,
+      "type": "bugfix",
+      "steps": [
+        "通过浏览器控制台添加 console.log 调试信息",
+        "观察到 fetch(\"/settings-modal.html\") 返回的是原生界面 HTML",
+        "决定放弃动态加载，直接嵌入内容",
+        "将 settings-modal.html 的样式、HTML 和 JS 复制到 nav-bar.html",
+        "简化 openGlobalSettingsModal 函数，直接操作 DOM 显示/隐藏弹窗",
+        "测试验证修复成功"
+      ],
+      "id": "exp_1774135313784_ptkw9icwv",
+      "timestamp": 1774135313784
+    },
+    {
       "type": "feature_dev",
       "difficulty": 3,
       "title": "完整的前端与后端开发流程 - 从页面创建到路由注册",
