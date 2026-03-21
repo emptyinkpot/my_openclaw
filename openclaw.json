@@ -422,14 +422,16 @@
       "feishu-openclaw-plugin",
       "novel-manager",
       "experience-manager",
-      "memory-lancedb-pro"
+      "memory-lancedb-pro",
+      "automation-hub"
     ],
     "load": {
       "paths": [
         "/workspace/projects/extensions/apps/novel-manager",
         "/workspace/projects/extensions/apps/experience-manager",
         "/workspace/projects/extensions/apps/memory-lancedb-pro",
-        "/workspace/projects/extensions/apps/feishu-openclaw-plugin"
+        "/workspace/projects/extensions/apps/feishu-openclaw-plugin",
+        "/workspace/projects/extensions/apps/automation-hub"
       ]
     },
     "entries": {
@@ -443,6 +445,9 @@
         "enabled": true
       },
       "experience-manager": {
+        "enabled": true
+      },
+      "automation-hub": {
         "enabled": true
       }
     },

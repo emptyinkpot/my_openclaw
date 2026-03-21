@@ -445,7 +445,7 @@
         'Authorization': `Bearer ${GATEWAY_TOKEN}`,
         ...(options.headers || {})
       };
-      const res = await fetch(url, { ...options, headers });
+      const res = await fetch('/api/automation' + url, { ...options, headers });
       return res.json();
     }
 
@@ -495,7 +495,7 @@
     // ============================================
     async function loadFromFile() {
       try {
-        const data = await api('/api/novel/schedules');
+        const data = await api('/schedules');
         if (data.success) { schedules = data.data.schedules || []; addLog(`加载了 ${schedules.length} 个任务`, 'info'); }
       } catch (err) { addLog('加载失败: ' + err.message, 'error'); }
     }
@@ -505,7 +505,7 @@
       try {
         setSyncStatus('pending');
         const config = { version: '1.0', schedules: schedules };
-        const data = await api('/api/novel/schedules/save', { method: 'POST', body: JSON.stringify(config) });
+        const data = await api('/schedules/save', { method: 'POST', body: JSON.stringify(config) });
         if (data.success) {
           unsavedChanges.clear();
           setSyncStatus('synced');
@@ -580,7 +580,7 @@
     async function loadFeishuData() {
       addLog('加载飞书配置...', 'info');
       try {
-        const data = await api('/api/novel/feishu/config');
+        const data = await api('/feishu/config');
         if (data.success) {
           feishuConfig = data.data;
           updateFeishuUI();
@@ -589,7 +589,7 @@
       } catch (err) { addLog('加载配置失败: ' + err.message, 'error'); }
 
       try {
-        const data = await api('/api/novel/feishu/messages?limit=100');
+        const data = await api('/feishu/messages?limit=100');
         if (data.success) {
           feishuMessages = data.data.messages || [];
           renderFeishuMessages();
@@ -707,7 +707,7 @@
       input.value = '';
       
       try {
-        await api('/api/novel/feishu/messages/add', {
+        await api('/feishu/messages/add', {
           method: 'POST', body: JSON.stringify(msg)
         });
         addLog('消息已发送: ' + content.substring(0, 30) + '...', 'success');
@@ -769,7 +769,7 @@
       feishuMessages = [];
       renderFeishuMessages();
       updateFeishuStats();
-      await api('/api/novel/feishu/messages/clear', { method: 'POST' });
+      await api('/feishu/messages/clear', { method: 'POST' });
       addLog('所有消息已清空', 'info');
     }
 
@@ -786,7 +786,7 @@
       feishuConfig.enabled = document.getElementById('fs-enabled').checked;
       
       try {
-        await api('/api/novel/feishu/config/save', {
+        await api('/feishu/config/save', {
           method: 'POST', body: JSON.stringify(feishuConfig)
         });
         addLog('飞书配置已保存', 'success');

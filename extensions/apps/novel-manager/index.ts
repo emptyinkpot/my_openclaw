@@ -529,7 +529,6 @@ async function handleNovelPage(req: IncomingMessage, res: ServerResponse): Promi
     '/': 'native.html',          // 默认首页 = 原生界面
     '/novel': 'index.html',
     '/novel/': 'index.html',
-    '/auto.html': 'auto.html',
     '/cache.html': 'cache.html',
     '/project-structure.html': 'project-structure.html',
     // 静态资源文件
@@ -1491,54 +1490,6 @@ ${vocabulary.slice(0, 50).map((w: any) => `- ${w.word}`).join('\n')}
       }
     }
 
-    // ====== 调度相关API ======
-    if (path === '/api/novel/schedules' && method === 'GET') {
-      // TODO: 从数据库或配置文件读取
-      jsonRes(res, { success: true, data: { schedules: [] } });
-      return true;
-    }
-
-    if (path === '/api/novel/schedules/save' && method === 'POST') {
-      const body = await parseBody(req);
-      // TODO: 保存到数据库或配置文件
-      console.log('[novel-manager] 保存调度配置:', body);
-      jsonRes(res, { success: true });
-      return true;
-    }
-
-    // ====== 飞书相关API ======
-    if (path === '/api/novel/feishu/config' && method === 'GET') {
-      // TODO: 从配置读取
-      jsonRes(res, { success: true, data: { appId: '', appSecret: '', enabled: false } });
-      return true;
-    }
-
-    if (path === '/api/novel/feishu/config/save' && method === 'POST') {
-      const body = await parseBody(req);
-      console.log('[novel-manager] 保存飞书配置:', body);
-      jsonRes(res, { success: true });
-      return true;
-    }
-
-    if (path === '/api/novel/feishu/messages' && method === 'GET') {
-      // TODO: 从数据库读取
-      jsonRes(res, { success: true, data: [] });
-      return true;
-    }
-
-    if (path === '/api/novel/feishu/messages/add' && method === 'POST') {
-      const body = await parseBody(req);
-      console.log('[novel-manager] 添加飞书消息:', body);
-      jsonRes(res, { success: true });
-      return true;
-    }
-
-    if (path === '/api/novel/feishu/messages/clear' && method === 'POST') {
-      console.log('[novel-manager] 清除飞书消息');
-      jsonRes(res, { success: true });
-      return true;
-    }
-
     // ====== 经验统计API ======
     if (path === '/api/novel/experience/stats' && method === 'GET') {
       const records = await getNovelService().getExperienceRecords();
@@ -1730,7 +1681,6 @@ const plugin = {
     const pageRoutes = [
       { path: '/', match: 'exact' as const },
       { path: '/novel', match: 'exact' as const },
-      { path: '/auto.html', match: 'exact' as const },
       { path: '/cache.html', match: 'exact' as const },
       { path: '/project-structure.html', match: 'exact' as const }
     ];
