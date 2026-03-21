@@ -606,106 +606,17 @@
           
           <!-- 资源库子页面 -->
           <div id="resourceLibrarySubPage" class="subtab-content" style="flex: 1; display: none; overflow-y: auto; padding: 20px;">
-            <div style="max-width: 1400px; margin: 0 auto;">
+            <div style="max-width: 1200px; margin: 0 auto;">
               <h2 style="font-size: 18px; font-weight: 600; margin-bottom: 20px;">📦 资源库</h2>
               
-              <!-- 统计卡片 -->
-              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;">
-                <div style="background: linear-gradient(135deg, #0969da 0%, #0550ae 100%); border-radius: 12px; padding: 20px; color: #fff;">
-                  <div style="font-size: 32px; margin-bottom: 8px;">📚</div>
-                  <div style="font-size: 24px; font-weight: 700;">908</div>
-                  <div style="font-size: 12px; opacity: 0.9;">词汇库</div>
-                </div>
-                <div style="background: linear-gradient(135deg, #8250df 0%, #6f42c1 100%); border-radius: 12px; padding: 20px; color: #fff;">
-                  <div style="font-size: 32px; margin-bottom: 8px;">📖</div>
-                  <div style="font-size: 24px; font-weight: 700;">55</div>
-                  <div style="font-size: 12px; opacity: 0.9;">文献库</div>
-                </div>
-                <div style="background: linear-gradient(135deg, #cf222e 0%, #a61e1e 100%); border-radius: 12px; padding: 20px; color: #fff;">
-                  <div style="font-size: 32px; margin-bottom: 8px;">🚫</div>
-                  <div style="font-size: 24px; font-weight: 700;">162</div>
-                  <div style="font-size: 12px; opacity: 0.9;">禁用词</div>
-                </div>
+              <div style="margin-bottom: 16px; display: flex; gap: 8px; align-items: center;">
+                <button class="btn primary" onclick="loadResourceFromCloud()">🔄 从云库加载</button>
               </div>
               
-              <!-- 资源库内容 -->
-              <div style="display: grid; grid-template-columns: 280px 1fr; gap: 16px;">
-                <!-- 左侧分类 -->
-                <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 12px; height: fit-content;">
-                  <div style="font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; padding: 0 4px;">资源分类</div>
-                  <div style="display: flex; flex-direction: column; gap: 4px;">
-                    <div style="padding: 8px 12px; border-radius: 6px; cursor: pointer; background: #ddf4ff; color: var(--accent); font-weight: 500;">📚 词汇库</div>
-                    <div style="padding: 8px 12px; border-radius: 6px; cursor: pointer; background: var(--bg); color: var(--text);">📖 文献库</div>
-                    <div style="padding: 8px 12px; border-radius: 6px; cursor: pointer; background: var(--bg); color: var(--text);">🚫 禁用词</div>
-                  </div>
-                  
-                  <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border);">
-                    <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">数据来源</div>
-                    <div style="font-size: 10px; color: var(--text-muted); line-height: 1.6;">polish-resources-2026-03-21.json</div>
-                  </div>
-                </div>
-                
-                <!-- 右侧内容 -->
-                <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
-                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border);">
-                    <div style="font-size: 14px; font-weight: 600;">词汇库 - 宏大叙事分类 (前20条)</div>
-                    <div style="font-size: 11px; color: var(--text-muted);">共 908 条</div>
-                  </div>
-                  
-                  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px;">
-                    <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px;">
-                      <div style="font-size: 14px; font-weight: 600; margin-bottom: 6px;">天命</div>
-                      <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                        <span style="padding: 2px 8px; background: var(--bg-tertiary); border-radius: 10px; font-size: 10px;">宏大叙事</span>
-                      </div>
-                    </div>
-                    <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px;">
-                      <div style="font-size: 14px; font-weight: 600; margin-bottom: 6px;">国运</div>
-                      <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                        <span style="padding: 2px 8px; background: var(--bg-tertiary); border-radius: 10px; font-size: 10px;">宏大叙事</span>
-                      </div>
-                    </div>
-                    <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px;">
-                      <div style="font-size: 14px; font-weight: 600; margin-bottom: 6px;">坤舆</div>
-                      <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                        <span style="padding: 2px 8px; background: var(--bg-tertiary); border-radius: 10px; font-size: 10px;">宏大叙事</span>
-                      </div>
-                    </div>
-                    <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px;">
-                      <div style="font-size: 14px; font-weight: 600; margin-bottom: 6px;">气运</div>
-                      <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                        <span style="padding: 2px 8px; background: var(--bg-tertiary); border-radius: 10px; font-size: 10px;">宏大叙事</span>
-                      </div>
-                    </div>
-                    <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px;">
-                      <div style="font-size: 14px; font-weight: 600; margin-bottom: 6px;">鼎革</div>
-                      <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                        <span style="padding: 2px 8px; background: var(--bg-tertiary); border-radius: 10px; font-size: 10px;">宏大叙事</span>
-                      </div>
-                    </div>
-                    <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px;">
-                      <div style="font-size: 14px; font-weight: 600; margin-bottom: 6px;">维新</div>
-                      <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                        <span style="padding: 2px 8px; background: var(--bg-tertiary); border-radius: 10px; font-size: 10px;">宏大叙事</span>
-                      </div>
-                    </div>
-                    <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px;">
-                      <div style="font-size: 14px; font-weight: 600; margin-bottom: 6px;">肇建</div>
-                      <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                        <span style="padding: 2px 8px; background: var(--bg-tertiary); border-radius: 10px; font-size: 10px;">宏大叙事</span>
-                      </div>
-                    </div>
-                    <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px;">
-                      <div style="font-size: 14px; font-weight: 600; margin-bottom: 6px;">廓清</div>
-                      <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                        <span style="padding: 2px 8px; background: var(--bg-tertiary); border-radius: 10px; font-size: 10px;">宏大叙事</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); text-align: center; font-size: 11px; color: var(--text-muted);">
-                    显示前 8 条，共 908 条词汇
-                  </div>
+              <div id="resourceCloudContent" style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
+                <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+                  <div style="font-size: 48px; margin-bottom: 16px;">📦</div>
+                  <div style="font-size: 14px;">点击上方按钮从云库加载数据</div>
                 </div>
               </div>
             </div>
@@ -2452,6 +2363,60 @@
       // 如果切换到 MySQL 字段页面，实时从数据库读取
       if (subtab === 'mysql-fields') {
         await loadDatabaseSchema();
+      }
+    }
+    
+    // 从云库加载资源
+    async function loadResourceFromCloud() {
+      const container = document.getElementById('resourceCloudContent');
+      if (!container) return;
+      
+      container.innerHTML = `
+        <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+          <div style="font-size: 32px; margin-bottom: 12px;">⏳</div>
+          <div style="font-size: 14px;">正在从云库加载数据...</div>
+        </div>
+      `;
+      
+      try {
+        // 尝试加载词汇
+        const vocabResponse = await fetch('/api/main-library');
+        const vocabData = await vocabResponse.json();
+        
+        let html = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px;">';
+        
+        if (vocabData.success && vocabData.data?.items && vocabData.data.items.length > 0) {
+          const items = vocabData.data.items.slice(0, 20);
+          html += items.map((item: any) => `
+            <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px;">
+              <div style="font-size: 14px; font-weight: 600; margin-bottom: 6px;">${item.content || '无内容'}</div>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <span style="padding: 2px 8px; background: var(--bg-tertiary); border-radius: 10px; font-size: 10px;">${item.category || '通用'}</span>
+              </div>
+            </div>
+          `).join('');
+          html += `</div><div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); text-align: center; font-size: 11px; color: var(--text-muted);">显示前 20 条，共 ${vocabData.data.items.length} 条词汇</div>`;
+        } else {
+          html += `
+            <div style="grid-column: 1/-1; text-align: center; padding: 60px; color: var(--text-muted);">
+              <div style="font-size: 48px; margin-bottom: 16px;">📚</div>
+              <div style="font-size: 14px;">云库中暂无词汇数据</div>
+            </div>
+          `;
+          html += '</div>';
+        }
+        
+        container.innerHTML = html;
+        showToast('✅ 数据加载成功', 'success');
+      } catch (err) {
+        console.error('[loadResourceFromCloud] 加载失败:', err);
+        container.innerHTML = `
+          <div style="text-align: center; padding: 60px; color: var(--danger);">
+            <div style="font-size: 48px; margin-bottom: 16px;">❌</div>
+            <div style="font-size: 14px;">加载失败: ${err.message}</div>
+          </div>
+        `;
+        showToast('❌ 加载失败', 'error');
       }
     }
     
