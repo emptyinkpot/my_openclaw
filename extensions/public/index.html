@@ -354,18 +354,28 @@
   <div id="subPageContainer">
     <!-- MySQL数据页面 -->
     <div id="novelDataPage" class="sub-page active">
-      <div class="main" style="height: calc(100vh - 36px);">
-        <!-- 左侧边栏 - 作品列表 -->
-        <div class="sidebar" id="worksSidebar">
-          <div class="sidebar-header">
-            <span class="sidebar-title">📚 作品列表</span>
-            <button class="btn btn-sm" onclick="addWork()">+</button>
-          </div>
-          <div class="sidebar-scroll" id="worksList"></div>
+      <div class="main" style="height: calc(100vh - 36px); flex-direction: column;">
+        <!-- 三级标签栏 -->
+        <div class="tabs" style="border-bottom: 1px solid var(--border); background: var(--bg-secondary);">
+          <div class="tab active" onclick="switchNovelDataSubTab('novel-data')" data-subtab="novel-data">📚 小说数据</div>
+          <div class="tab" onclick="switchNovelDataSubTab('mysql-fields')" data-subtab="mysql-fields">🗄️ MySQL字段</div>
         </div>
+        
+        <!-- 三级标签内容区 -->
+        <div id="novelDataSubTabContent" style="flex: 1; display: flex; overflow: hidden;">
+          <!-- 小说数据子页面 -->
+          <div id="novelDataSubPage" class="subtab-content" style="flex: 1; display: flex; overflow: hidden;">
+            <!-- 左侧边栏 - 作品列表 -->
+            <div class="sidebar" id="worksSidebar">
+              <div class="sidebar-header">
+                <span class="sidebar-title">📚 作品列表</span>
+                <button class="btn btn-sm" onclick="addWork()">+</button>
+              </div>
+              <div class="sidebar-scroll" id="worksList"></div>
+            </div>
 
-        <!-- 中间内容区 -->
-        <div class="content" id="mainContent">
+            <!-- 中间内容区 -->
+            <div class="content" id="mainContent">
           <!-- 统计行 -->
           <div class="stats-row">
             <div class="stat-card"><div class="stat-value" id="statWorks">-</div><div class="stat-label">作品</div></div>
@@ -421,6 +431,171 @@
             </div>
           </div>
         </div>
+          </div>
+          <!-- /小说数据子页面 -->
+          
+          <!-- MySQL字段子页面 -->
+          <div id="mysqlFieldsSubPage" class="subtab-content" style="flex: 1; display: none; overflow-y: auto; padding: 20px;">
+            <div style="max-width: 1200px; margin: 0 auto;">
+              <h2 style="font-size: 18px; font-weight: 600; margin-bottom: 20px;">🗄️ MySQL 数据库字段说明</h2>
+              
+              <!-- works 表 -->
+              <div style="margin-bottom: 32px;">
+                <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border);">📚 works 表 - 作品表</h3>
+                <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                  <thead>
+                    <tr style="background: var(--bg-tertiary);">
+                      <th style="padding: 10px 12px; text-align: left; border: 1px solid var(--border);">字段名</th>
+                      <th style="padding: 10px 12px; text-align: left; border: 1px solid var(--border);">类型</th>
+                      <th style="padding: 10px 12px; text-align: left; border: 1px solid var(--border);">说明</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border); font-family: monospace;">id</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">INT AUTO_INCREMENT PRIMARY KEY</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">作品唯一标识</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border); font-family: monospace;">title</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">VARCHAR(255)</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">作品标题</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border); font-family: monospace;">status</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">VARCHAR(50)</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">作品状态（completed/pending/outline）</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border); font-family: monospace;">platform</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">VARCHAR(100)</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">发布平台</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border); font-family: monospace;">total_words</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">INT DEFAULT 0</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">总字数</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border); font-family: monospace;">created_at</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">TIMESTAMP DEFAULT CURRENT_TIMESTAMP</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">创建时间</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border); font-family: monospace;">updated_at</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">更新时间</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              
+              <!-- chapters 表 -->
+              <div style="margin-bottom: 32px;">
+                <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border);">📑 chapters 表 - 章节表</h3>
+                <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                  <thead>
+                    <tr style="background: var(--bg-tertiary);">
+                      <th style="padding: 10px 12px; text-align: left; border: 1px solid var(--border);">字段名</th>
+                      <th style="padding: 10px 12px; text-align: left; border: 1px solid var(--border);">类型</th>
+                      <th style="padding: 10px 12px; text-align: left; border: 1px solid var(--border);">说明</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border); font-family: monospace;">id</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">INT AUTO_INCREMENT PRIMARY KEY</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">章节唯一标识</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border); font-family: monospace;">work_id</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">INT</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">所属作品ID</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border); font-family: monospace;">chapter_number</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">INT</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">章节序号</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border); font-family: monospace;">title</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">VARCHAR(255)</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">章节标题</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border); font-family: monospace;">content</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">TEXT</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">章节内容</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border); font-family: monospace;">word_count</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">INT DEFAULT 0</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">字数</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border); font-family: monospace;">status</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">VARCHAR(50)</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">状态（completed/pending）</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border); font-family: monospace;">created_at</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">TIMESTAMP DEFAULT CURRENT_TIMESTAMP</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">创建时间</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border); font-family: monospace;">updated_at</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">更新时间</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              
+              <!-- characters 表 -->
+              <div style="margin-bottom: 32px;">
+                <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border);">👥 characters 表 - 角色表</h3>
+                <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                  <thead>
+                    <tr style="background: var(--bg-tertiary);">
+                      <th style="padding: 10px 12px; text-align: left; border: 1px solid var(--border);">字段名</th>
+                      <th style="padding: 10px 12px; text-align: left; border: 1px solid var(--border);">类型</th>
+                      <th style="padding: 10px 12px; text-align: left; border: 1px solid var(--border);">说明</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border); font-family: monospace;">id</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">INT AUTO_INCREMENT PRIMARY KEY</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">角色唯一标识</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border); font-family: monospace;">work_id</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">INT</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">所属作品ID</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border); font-family: monospace;">name</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">VARCHAR(255)</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">角色名称</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border); font-family: monospace;">description</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">TEXT</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">角色描述</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border); font-family: monospace;">created_at</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">TIMESTAMP DEFAULT CURRENT_TIMESTAMP</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">创建时间</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <!-- /MySQL字段子页面 -->
+        </div>
+        <!-- /三级标签内容区 -->
       </div>
     </div>
     <!-- /小说数据页面 -->
@@ -2031,6 +2206,17 @@
       } catch (err) {
         showToast('❌ 删除失败: ' + err.message, 'error');
       }
+    }
+
+    // 切换 MySQL数据 三级标签
+    function switchNovelDataSubTab(subtab) {
+      // 更新三级标签 active 状态
+      document.querySelectorAll('#novelDataPage .tabs .tab').forEach(el => el.classList.remove('active'));
+      document.querySelector(`#novelDataPage .tabs .tab[data-subtab="${subtab}"]`)?.classList.add('active');
+      
+      // 显示对应的子页面
+      document.getElementById('novelDataSubPage').style.display = subtab === 'novel-data' ? 'flex' : 'none';
+      document.getElementById('mysqlFieldsSubPage').style.display = subtab === 'mysql-fields' ? 'block' : 'none';
     }
 
     // 切换标签
