@@ -1043,7 +1043,20 @@
     
     // 初始化
     async function init() {
-      await Promise.all([loadData(), loadNotes()]);
+      // 先加载经验数据（必须）
+      try {
+        await loadData();
+      } catch (err) {
+        console.error('加载经验数据失败:', err);
+      }
+      
+      // 再尝试加载笔记数据（可选，失败不影响）
+      try {
+        await loadNotes();
+      } catch (err) {
+        console.error('加载笔记数据失败（可选功能）:', err);
+        // 笔记功能不可用，不影响经验功能
+      }
     }
     
     // 切换标签
@@ -1295,6 +1308,12 @@
     // 加载笔记
     async function loadNotes() {
       try {
+        // 笔记功能当前不可用，静默失败
+        noteData = [];
+        renderNoteList();
+        return;
+        
+        /* 待后续实现笔记 API 后启用
         const [notesRes, categoriesRes] = await Promise.all([
           api('/notes'),
           api('/notes/categories')
@@ -1308,15 +1327,24 @@
         if (categoriesRes.success) {
           renderNoteCategories(categoriesRes.data);
         }
+        */
       } catch (err) {
-        console.error('加载笔记失败:', err);
+        console.error('加载笔记失败（可选功能）:', err);
+        // 笔记功能不可用，设置为空数组
+        noteData = [];
+        renderNoteList();
       }
     }
     
     // 渲染笔记分类标签
     function renderNoteCategories(categories) {
       const tabsContainer = document.getElementById('noteCategoryTabs');
+      if (!tabsContainer) return;
+      
       tabsContainer.innerHTML = '<div class="filter-tab active" onclick="filterNotes(\'all\')">全部</div>';
+      
+      // 笔记功能当前不可用，不渲染分类
+      if (!categories || categories.length === 0) return;
       
       categories.forEach(cat => {
         const info = noteCategoryMap[cat] || { label: cat, icon: '📦' };
