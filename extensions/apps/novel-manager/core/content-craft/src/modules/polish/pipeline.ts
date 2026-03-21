@@ -7,7 +7,6 @@
  */
 
 import { StepRegistry } from './steps/registry';
-import { ServiceTokens, container } from '@/core/di';
 import { getDatabaseManager } from '../../../../index';
 import type { 
   PolishInput, 
@@ -18,7 +17,6 @@ import type {
   ReplacementRecord,
   StepReport,
 } from './types';
-import type { IQuoteProtector } from '@/core/di/types';
 
 /**
  * 润色处理流水线
@@ -35,15 +33,6 @@ import type { IQuoteProtector } from '@/core/di/types';
  * ```
  */
 export class PolishPipeline {
-  private quoteProtector: IQuoteProtector | null = null;
-  
-  constructor() {
-    // 尝试获取引用保护器
-    const protector = container.tryResolve<IQuoteProtector>(
-      ServiceTokens.QUOTE_PROTECTOR
-    );
-    this.quoteProtector = protector ?? null;
-  }
   
   /**
    * 从 MySQL 加载资源库数据
@@ -272,11 +261,6 @@ export class PolishPipeline {
     protectedText: string;
     quoteMap: Map<string, string>;
   } {
-    if (this.quoteProtector) {
-      const { text: protectedText, map } = this.quoteProtector.protect(text);
-      return { protectedText, quoteMap: map };
-    }
-    
     // 使用内置保护逻辑
     const quoteMap = new Map<string, string>();
     let protectedText = text;

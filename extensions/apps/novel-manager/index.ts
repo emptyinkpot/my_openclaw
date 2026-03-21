@@ -7,6 +7,9 @@ import * as path from 'path';
 import { NovelService } from './services/novel-service';
 import { getDatabaseManager } from './core/data-scan-storage/database';
 
+// 导入禁用词处理步骤
+import { BannedWordsStep } from './core/content-craft/src/modules/polish/steps/process/banned-words';
+
 // 尝试导入 registerPluginHttpRoute
 let registerPluginHttpRoute: any;
 try {
@@ -551,6 +554,68 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
       `);
       jsonRes(res, { success: true, items: rows });
       return true;
+    }
+
+    // ====== 禁用词替换API ======
+    if (path === '/api/novel/banned-words-replace' && method === 'POST') {
+      const body = await parseBody(req);
+      const { text } = body;
+      
+      if (!text?.trim()) {
+        jsonRes(res, { success: false, error: '请提供要处理的文本' }, 400);
+        return true;
+      }
+      
+      try {
+        // 从 MySQL 加载禁用词
+        const db = getDatabaseManager();
+        const bannedWords = await db.query(`
+          SELECT content AS word, alternative AS replacement, reason
+          FROM banned_words
+          ORDER BY content ASC
+        `);
+        
+        // 构建禁用词映射
+        const bannedMap = new Map();
+        bannedWords.forEach(item => {
+          if (item.word && item.replacement) {
+            bannedMap.set(item.word, item.replacement);
+          } else if (item.word) {
+            bannedMap.set(item.word, '***');
+          }
+        });
+        
+        // 执行替换
+        let result = text;
+        const replacements = [];
+        
+        bannedMap.forEach((replacement, word) => {
+          if (result.includes(word)) {
+            const regex = new RegExp(word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+            const matches = result.match(regex);
+            
+            if (matches) {
+              result = result.replace(regex, replacement);
+              replacements.push({
+                original: word,
+                replaced: replacement,
+                reason: '禁用词替换',
+                source: 'MySQL禁用词库'
+              });
+            }
+          }
+        });
+        
+        jsonRes(res, { 
+          success: true, 
+          data: { text: result, replacements } 
+        });
+        return true;
+      } catch (error) {
+        console.error('[BannedWordsReplace] Error:', error);
+        jsonRes(res, { success: false, error: error instanceof Error ? error.message : '处理失败' }, 500);
+        return true;
+      }
     }
 
     // ====== 调度相关API ======

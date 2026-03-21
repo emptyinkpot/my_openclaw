@@ -4312,14 +4312,35 @@
       
       showToast('✨ 正在润色中...', 'info');
       
-      // 模拟润色过程
-      setTimeout(() => {
-        const classicalLevel = document.getElementById('classicalRange').value;
-        const perspective = document.getElementById('perspectiveSelect').value;
-        document.getElementById('polishResult').value = 
-          `【润色结果】\n文言化程度: ${classicalLevel}%\n叙事视角: ${perspective}\n\n原文:\n${text}\n\n润色后:\n[润色后的内容将显示在这里]`;
+      try {
+        // 调用禁用词替换 API
+        const response = await fetch('/api/novel/banned-words-replace', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer e1647cdb-1b80-4eee-a975-7599160cc89b'
+          },
+          body: JSON.stringify({ text })
+        });
+        
+        const result = await response.json();
+        if (!result.success) {
+          throw new Error(result.error || '禁用词替换失败');
+        }
+        
+        // 显示结果
+        let outputText = `【润色结果】\n\n原文:\n${text}\n\n润色后:\n${result.data.text}`;
+        
+        if (result.data.replacements && result.data.replacements.length > 0) {
+          outputText += `\n\n禁用词替换详情：\n${result.data.replacements.map(r => `- ${r.original} → ${r.replaced}`).join('\n')}`;
+        }
+        
+        document.getElementById('polishResult').value = outputText;
         showToast('✅ 润色完成！', 'success');
-      }, 1500);
+      } catch (error) {
+        console.error('润色失败:', error);
+        showToast('❌ 润色失败: ' + (error.message || '未知错误'), 'error');
+      }
     }
     
     // 生成功能

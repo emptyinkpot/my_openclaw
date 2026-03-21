@@ -8,6 +8,7 @@
 
 import type { BaseStep, Step } from './base';
 import type { ProcessPhase, PolishStepConfig } from '../types';
+import { BannedWordsStep } from './process/banned-words';
 
 /**
  * 步骤注册表
@@ -40,40 +41,9 @@ export class StepRegistry {
   static initialize(): void {
     if (this.initialized) return;
     
-    // 动态导入所有步骤
-    // 注意：这里使用动态导入确保步骤按需加载
-    const stepModules = [
-      // 配置阶段
-      import('./config/detect'),
-      import('./config/proper-noun'),
-      import('./config/narrative'),
-      import('./config/classical'),
-      import('./config/citation'),
-      import('./config/particle'),
-      import('./config/punctuation'),
-      import('./config/quote-protect'),
-      import('./config/title-extract'),
-      
-      // 处理阶段
-      import('./process/polish'),
-      import('./process/banned-words'),
-      import('./process/sentence-patterns'),
-      import('./process/meme-fuse'),
-      import('./process/style-forge'),
-      
-      // 后处理阶段
-      import('./postprocess/markdown-clean'),
-      
-      // 审稿阶段
-      import('./review/semantic'),
-      import('./review/final'),
-      import('./review/word-usage'),
-      import('./review/smart-fix'),
-      import('./review/breath-segment'),
-    ];
+    // 注册我们需要的步骤
+    this.register(new BannedWordsStep());
     
-    // 由于动态导入是异步的，这里使用同步方式
-    // 在实际使用时，步骤会在首次访问时延迟注册
     this.initialized = true;
   }
   
