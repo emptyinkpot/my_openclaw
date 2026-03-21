@@ -1446,6 +1446,11 @@
     let autoPublishEnabled = false;
     let scanInterval = 30; // 秒
     let autoScanTimer = null;
+    
+    // ====== 今日计划 ======
+    let dailyChaptersPerWork = 1;
+    let completedChapters = {}; // { workId: { chapterNumber: true } }
+    let lastPlanDate = null;
 
     // 切换自动扫描
     function toggleAutoScan() {
@@ -1572,6 +1577,50 @@
             <div>加载账号失败</div>
           </div>
         `;
+      }
+    }
+
+    // ====== 今日计划功能 ======
+    // 加载每日设置
+    function loadDailySettings() {
+      try {
+        const saved = localStorage.getItem('fanqieDailySettings');
+        if (saved) {
+          const data = JSON.parse(saved);
+          dailyChaptersPerWork = data.dailyChaptersPerWork || 1;
+          completedChapters = data.completedChapters || {};
+          lastPlanDate = data.lastPlanDate;
+          
+          // 检查是否是新的一天
+          const today = new Date().toDateString();
+          if (lastPlanDate !== today) {
+            // 新的一天，重置完成状态
+            completedChapters = {};
+            lastPlanDate = today;
+            saveDailySettings();
+          }
+        }
+      } catch (e) {
+        console.error('[DailyPlan] 加载设置失败:', e);
+      }
+    }
+    
+    // 保存每日设置
+    function saveDailySettings() {
+      try {
+        const data = {
+          dailyChaptersPerWork,
+          completedChapters,
+          lastPlanDate: lastPlanDate || new Date().toDateString()
+        };
+        localStorage.setItem('fanqieDailySettings', JSON.stringify(data));
+        
+        // 重新渲染
+        if (lastScanData) {
+          renderFanqieWorksList(lastScanData, []);
+        }
+      } catch (e) {
+        console.error('[DailyPlan] 保存设置失败:', e);
       }
     }
 
@@ -1872,6 +1921,9 @@
       try {
         showToast('🚀 正在加载数据...', 'info');
         
+        // 加载每日计划设置
+        loadDailySettings();
+        
         // 加载自动设置
         loadAutoSettings();
         
@@ -2048,8 +2100,49 @@
               <div style="font-size: 10px; color: var(--text-muted);">字数</div>
             </div>
           </div>
+          
+          <!-- 今日计划章节显示 -->
+          <div style="margin-top: 12px;">
+            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">今日计划</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+              ${(() => {
+                const workCompletes = completedChapters[workId] || {};
+                let listHtml = '';
+                for (let i = 0; i < dailyChaptersPerWork; i++) {
+                  const chapterNum = fanqieLatest + i + 1;
+                  const isDone = workCompletes[chapterNum];
+                  listHtml += `<span style="
+                    display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;
+                    font-size:12px;cursor:pointer;user-select:none;
+                    ${isDone 
+                      ? 'background:var(--success);color:white;' 
+                      : 'background:var(--bg-tertiary);color:var(--text-secondary);'
+                    }
+                  " onclick="toggleChapterComplete('${workId}', ${chapterNum})">
+                    ${isDone ? '☑' : '☐'} 第${chapterNum}章
+                  </span>`;
+                }
+                return listHtml || '<span style="font-size:11px;color:var(--text-muted);">无计划</span>';
+              })()}
+            </div>
+          </div>
         </div>
       `}).join('');
+    }
+
+    // 切换章节完成状态
+    function toggleChapterComplete(workId, chapterNumber) {
+      if (!completedChapters[workId]) {
+        completedChapters[workId] = {};
+      }
+      
+      if (completedChapters[workId][chapterNumber]) {
+        delete completedChapters[workId][chapterNumber];
+      } else {
+        completedChapters[workId][chapterNumber] = true;
+      }
+      
+      saveDailySettings();
     }
 
     // 手动刷新
