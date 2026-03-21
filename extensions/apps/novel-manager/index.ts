@@ -26,18 +26,9 @@ function getNovelService(): NovelService {
   return novelService;
 }
 
-// 获取小说管理界面HTML
+// 获取小说管理界面HTML（已删除旧 UI）
 function getNovelHtml(): string {
-  if (htmlCache) return htmlCache;
-  
-  const htmlPath = path.join(__dirname, 'ui', 'index.html');
-  try {
-    htmlCache = fs.readFileSync(htmlPath, 'utf-8');
-    return htmlCache;
-  } catch (e) {
-    console.error('[novel-manager] 无法读取HTML文件:', htmlPath);
-    return '<html><body><h1>小说管理界面加载失败</h1></body></html>';
-  }
+  return '<html><body><h1>小说管理界面</h1><p>旧 UI 已删除，请使用新界面</p></body></html>';
 }
 
 // JSON响应辅助函数
@@ -76,7 +67,7 @@ function parseQuery(url: string): Record<string, string> {
   return query;
 }
 
-// 获取页面HTML
+// 获取页面HTML（已删除旧 UI）
 function getPageHtml(pageName: string): string {
   // 原生界面使用control-ui目录
   if (pageName === 'native.html') {
@@ -89,13 +80,7 @@ function getPageHtml(pageName: string): string {
     }
   }
   
-  const htmlPath = path.join(__dirname, 'ui', pageName);
-  try {
-    return fs.readFileSync(htmlPath, 'utf-8');
-  } catch (e) {
-    console.error('[novel-manager] 无法读取HTML文件:', htmlPath);
-    return '<html><body><h1>页面加载失败</h1></body></html>';
-  }
+  return '<html><body><h1>页面已删除</h1><p>旧 UI 已删除</p></body></html>';
 }
 
 // 路由处理器 - 处理页面请求（不需要认证）
