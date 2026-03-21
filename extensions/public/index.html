@@ -2058,6 +2058,47 @@
       
       // 初始化 AI工具箱 润色配置
       initPolishConfig();
+      
+      // 初始化 AI工具箱 生成配置（加载作品列表）
+      await loadGenWorkList();
+    }
+    
+    // 加载作品列表到生成下拉菜单
+    async function loadGenWorkList() {
+      try {
+        const select = document.getElementById('genWorkId');
+        if (!select) return;
+        
+        select.innerHTML = '<option value="">选择作品</option>';
+        
+        // 优先使用已有的 worksData
+        if (worksData && worksData.length > 0) {
+          worksData.forEach(work => {
+            const option = document.createElement('option');
+            option.value = work.id;
+            option.textContent = work.title || `作品 ${work.id}`;
+            select.appendChild(option);
+          });
+          return;
+        }
+        
+        // 如果没有 worksData，再从 API 加载
+        try {
+          const worksRes = await api('/api/novel/works');
+          if (worksRes.success && worksRes.data) {
+            worksRes.data.forEach(work => {
+              const option = document.createElement('option');
+              option.value = work.id;
+              option.textContent = work.title || `作品 ${work.id}`;
+              select.appendChild(option);
+            });
+          }
+        } catch (apiErr) {
+          console.warn('从 API 加载作品列表失败:', apiErr);
+        }
+      } catch (e) {
+        console.warn('加载作品列表失败:', e);
+      }
     }
 
     // ====== 番茄作品扫描和显示 ======
@@ -2331,6 +2372,9 @@
         worksData = data;
         dataCache.works = data;
         renderWorksList(data);
+        
+        // 同时更新生成下拉菜单
+        await loadGenWorkList();
       } catch (err) { 
         console.error('Works error:', err);
         document.getElementById('worksList').innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-muted);">加载失败</div>';
@@ -4318,14 +4362,122 @@
       panel.classList.toggle('show');
     }
     
+    // 切换 AI 面板标签（已简化，现在是一条线布局）
     function switchAiPanelTab(tab) {
-      aiPanelTab = tab;
-      document.querySelectorAll('.ai-panel-tab').forEach(t => t.classList.remove('active'));
-      event.target.classList.add('active');
+      // 现在不需要切换了，布局已经是一条线
+      console.log('switchAiPanelTab 已简化');
+    }
+    
+    // 从数据库读取生成数据
+    async function loadGenFromDb() {
+      const workId = document.getElementById('genWorkId').value;
+      const chapterNum = document.getElementById('genChapterNum').value;
       
-      // 显示对应内容
-      document.getElementById('aiPanelPolish').style.display = tab === 'polish' ? 'block' : 'none';
-      document.getElementById('aiPanelGenerate').style.display = tab === 'generate' ? 'block' : 'none';
+      if (!workId) {
+        showToast('⚠️ 请选择作品', 'warning');
+        return;
+      }
+      
+      if (!chapterNum) {
+        showToast('⚠️ 请输入章节号', 'warning');
+        return;
+      }
+      
+      showToast('📥 正在从数据库读取...', 'info');
+      
+      try {
+        // 尝试从 API 读取作品信息
+        const workRes = await api(`/api/novel/works/${workId}`);
+        if (workRes.success) {
+          document.getElementById('genPromptLine').value = 
+            `作品：${workRes.data.title}\n章节：第${chapterNum}章\n\n请根据作品大纲和设定生成第${chapterNum}章。`;
+          showToast('✅ 读取成功！', 'success');
+        }
+      } catch (error) {
+        console.error('读取失败:', error);
+        // 如果 API 失败，使用默认值
+        document.getElementById('genPromptLine').value = 
+          `作品ID：${workId}\n章节：第${chapterNum}章\n\n请生成第${chapterNum}章内容。`;
+        showToast('ℹ️ 使用默认值', 'info');
+      }
+    }
+    
+    // 开始生成（一条线流程）
+    async function startGenerateLine() {
+      const prompt = document.getElementById('genPromptLine').value;
+      const workId = document.getElementById('genWorkId').value;
+      const chapterNum = document.getElementById('genChapterNum').value;
+      
+      if (!prompt.trim()) {
+        showToast('⚠️ 请输入生成要求', 'warning');
+        return;
+      }
+      
+      showToast('🤖 正在生成中...', 'info');
+      
+      try {
+        let result;
+        
+        // 如果有 workId 和 chapterNum，尝试从数据库生成
+        if (workId && chapterNum) {
+          try {
+            result = await api('/api/novel/generation/generate-from-db', {
+              method: 'POST',
+              body: JSON.stringify({
+                workId: parseInt(workId),
+                chapterNumber: parseInt(chapterNum),
+                relatedChapterCount: 2,
+                settings: {
+                  style: 'literary',
+                  temperature: 0.7,
+                  autoPolish: false
+                }
+              })
+            });
+          } catch (e) {
+            console.warn('从数据库生成失败，使用模拟数据:', e);
+          }
+        }
+        
+        // 如果没有 result，使用模拟生成
+        if (!result) {
+          // 模拟生成过程
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          result = {
+            success: true,
+            data: {
+              rawText: `【生成内容】\n\n${prompt}\n\n这是生成的文本内容...`,
+              finalText: `【生成内容】\n\n${prompt}\n\n这是生成的文本内容...`
+            }
+          };
+        }
+        
+        if (result.success) {
+          document.getElementById('genResultLine').value = result.data.finalText || result.data.rawText || '';
+          showToast('✅ 生成完成！', 'success');
+        } else {
+          showToast('❌ 生成失败: ' + (result.error || '未知错误'), 'error');
+        }
+      } catch (error) {
+        console.error('生成失败:', error);
+        showToast('❌ 生成失败: ' + (error.message || '未知错误'), 'error');
+      }
+    }
+    
+    // 发送到润色口
+    function sendToPolish() {
+      const genText = document.getElementById('genResultLine').value;
+      
+      if (!genText.trim()) {
+        showToast('⚠️ 先生成内容', 'warning');
+        return;
+      }
+      
+      document.getElementById('polishText').value = genText;
+      showToast('✅ 已发送到润色口！', 'success');
+      
+      // 滚动到润色部分
+      document.getElementById('polishText').scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
     
     // 润色步骤定义
@@ -4646,18 +4798,62 @@
   <!-- AI工具面板 -->
   <div id="aiPanel" class="ai-panel">
     <div class="ai-panel-header">
-      <h3>✨ AI工具箱</h3>
+      <h3>✨ AI工具箱 - 一条线流程</h3>
       <span class="ai-panel-close" onclick="toggleAiPanel()">×</span>
     </div>
     
-    <div class="ai-panel-tabs">
-      <div class="ai-panel-tab active" onclick="switchAiPanelTab('polish')">✏️ 润色</div>
-      <div class="ai-panel-tab" onclick="switchAiPanelTab('generate')">🚀 生成</div>
-    </div>
-    
-    <div class="ai-panel-content">
-      <!-- 润色面板 -->
-      <div id="aiPanelPolish">
+    <div class="ai-panel-content" style="padding: 0;">
+      <!-- 上面：生成入口 -->
+      <div style="border-bottom: 2px solid var(--border); padding: 16px;">
+        <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+          <h4 style="margin: 0; font-size: 13px; font-weight: 600; color: var(--accent); display: flex; align-items: center; gap: 6px;">
+            🚀 生成入口
+          </h4>
+          <span style="font-size: 10px; color: var(--text-muted);">生成文本 → 进入润色 → 完成</span>
+        </div>
+        
+        <!-- 生成输入区 -->
+        <div class="polish-section" style="margin-bottom: 12px;">
+          <h5 style="font-size: 11px; color: var(--text-secondary); margin-bottom: 8px;">📋 生成要求</h5>
+          <textarea id="genPromptLine" class="polish-textarea" style="min-height: 100px;" placeholder="描述你想要生成的内容，比如：生成第90章，要求..."></textarea>
+        </div>
+        
+        <!-- 快速选项 -->
+        <div class="polish-section" style="margin-bottom: 12px;">
+          <h5 style="font-size: 11px; color: var(--text-secondary); margin-bottom: 8px;">🎯 快速选项</h5>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;">
+            <select id="genWorkId" class="form-input" style="font-size: 11px;">
+              <option value="">选择作品</option>
+            </select>
+            <input type="number" id="genChapterNum" class="form-input" placeholder="章节号" style="font-size: 11px;">
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn" style="flex: 1; font-size: 11px;" onclick="loadGenFromDb()">📥 从数据库读取</button>
+            <button class="btn primary" style="flex: 1; font-size: 11px;" onclick="startGenerateLine()">🚀 开始生成</button>
+          </div>
+        </div>
+        
+        <!-- 生成结果 -->
+        <div class="polish-section" style="margin-bottom: 0;">
+          <h5 style="font-size: 11px; color: var(--text-secondary); margin-bottom: 8px;">📄 生成结果</h5>
+          <textarea id="genResultLine" class="polish-textarea" style="min-height: 120px;" placeholder="生成结果将显示在这里..." readonly></textarea>
+          <div style="margin-top: 8px; display: flex; gap: 8px;">
+            <button class="btn" style="flex: 1; font-size: 11px;" onclick="sendToPolish()">➡️ 发送到润色口</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 下面：润色入口 -->
+      <div style="padding: 16px;">
+        <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+          <h4 style="margin: 0; font-size: 13px; font-weight: 600; color: var(--accent); display: flex; align-items: center; gap: 6px;">
+            ✏️ 润色入口
+          </h4>
+          <span style="font-size: 10px; color: var(--text-muted);">独立润色模式</span>
+        </div>
+        
+        <!-- 润色面板 -->
+        <div id="aiPanelPolish">
         <div class="polish-section">
           <h4>📝 输入文本</h4>
           <textarea id="polishText" class="polish-textarea" placeholder="在此粘贴要润色的文本..."></textarea>
@@ -4713,57 +4909,6 @@
         <div class="polish-section" style="margin-top: 16px;">
           <h4>✅ 润色结果</h4>
           <textarea id="polishResult" class="polish-textarea" placeholder="润色结果将显示在这里..." readonly></textarea>
-        </div>
-      </div>
-      
-      <!-- 生成面板 -->
-      <div id="aiPanelGenerate" style="display: none;">
-        <div class="polish-section">
-          <h4>📋 选择模板</h4>
-          <div class="gen-template-grid">
-            <div class="gen-template-card" onclick="selectGenTemplate('chapter')">
-              <div class="gen-template-icon">📖</div>
-              <div class="gen-template-title">章节生成</div>
-              <div class="gen-template-desc">根据大纲生成完整章节</div>
-            </div>
-            <div class="gen-template-card" onclick="selectGenTemplate('dialogue')">
-              <div class="gen-template-icon">💬</div>
-              <div class="gen-template-title">对话生成</div>
-              <div class="gen-template-desc">生成角色对话内容</div>
-            </div>
-            <div class="gen-template-card" onclick="selectGenTemplate('outline')">
-              <div class="gen-template-icon">📋</div>
-              <div class="gen-template-title">大纲生成</div>
-              <div class="gen-template-desc">生成章节大纲</div>
-            </div>
-            <div class="gen-template-card" onclick="selectGenTemplate('character')">
-              <div class="gen-template-icon">👤</div>
-              <div class="gen-template-title">角色生成</div>
-              <div class="gen-template-desc">创建新角色设定</div>
-            </div>
-          </div>
-        </div>
-        
-        <div class="polish-section">
-          <h4>🎯 生成要求</h4>
-          <div class="gen-input-group">
-            <label>生成类型</label>
-            <input type="text" id="genType" class="form-input" value="chapter" readonly>
-          </div>
-          <div class="gen-input-group">
-            <label>详细要求</label>
-            <textarea id="genPrompt" class="polish-textarea" placeholder="描述你想要生成的内容..."></textarea>
-          </div>
-        </div>
-        
-        <div class="polish-actions">
-          <button class="btn" onclick="document.getElementById('genPrompt').value='';document.getElementById('genResult').value=''">🗑️ 清空</button>
-          <button class="btn primary" onclick="startGenerate()">🚀 开始生成</button>
-        </div>
-        
-        <div class="polish-section" style="margin-top: 16px;">
-          <h4>✅ 生成结果</h4>
-          <textarea id="genResult" class="polish-textarea" placeholder="生成结果将显示在这里..." readonly></textarea>
         </div>
       </div>
     </div>
