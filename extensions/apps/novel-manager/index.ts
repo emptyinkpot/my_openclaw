@@ -618,6 +618,113 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
       }
     }
 
+    // ====== 优选词替换API ======
+    if (path === '/api/novel/preferred-words-replace' && method === 'POST') {
+      const body = await parseBody(req);
+      const { text } = body;
+      
+      if (!text?.trim()) {
+        jsonRes(res, { success: false, error: '请提供要处理的文本' }, 400);
+        return true;
+      }
+      
+      try {
+        // 从 MySQL 加载优选词
+        const db = getDatabaseManager();
+        const vocabulary = await db.query(`
+          SELECT content AS word, category, tags, note
+          FROM vocabulary
+          ORDER BY content ASC
+        `);
+        
+        // 构建优选词映射（常见词到优选词）
+        const preferredMap = new Map();
+        
+        // 固定的常见替换对
+        const fixedReplacements = [
+          { common: '很多', preferred: '诸多' },
+          { common: '非常', preferred: '极其' },
+          { common: '特别', preferred: '格外' },
+          { common: '好像', preferred: '仿佛' },
+          { common: '但是', preferred: '然而' },
+          { common: '所以', preferred: '故而' },
+          { common: '因为', preferred: '由于' },
+          { common: '如果', preferred: '倘若' },
+          { common: '就', preferred: '便' },
+          { common: '才', preferred: '方' },
+          { common: '都', preferred: '皆' },
+          { common: '也', preferred: '亦' },
+          { common: '不', preferred: '弗' },
+          { common: '没有', preferred: '无' },
+          { common: '的', preferred: '之' },
+          { common: '在', preferred: '于' },
+          { common: '是', preferred: '乃' },
+          { common: '有', preferred: '存有' },
+          { common: '人', preferred: '人士' },
+          { common: '地方', preferred: '所在' },
+          { common: '时候', preferred: '之际' },
+          { common: '事情', preferred: '事宜' },
+          { common: '东西', preferred: '物事' },
+        ];
+        
+        fixedReplacements.forEach(item => {
+          preferredMap.set(item.common, item.preferred);
+        });
+        
+        // 从 vocabulary 表中添加（如果有 note 说明替换关系）
+        vocabulary.forEach(item => {
+          if (item.note && item.note.includes('替换')) {
+            const noteParts = item.note.split(/替换|→|->/);
+            if (noteParts.length >= 2) {
+              const common = noteParts[0].trim();
+              if (common && common.length > 0) {
+                preferredMap.set(common, item.word);
+              }
+            }
+          }
+        });
+        
+        // 执行替换
+        let result = text;
+        const replacements = [];
+        
+        preferredMap.forEach((preferred, common) => {
+          if (result.includes(common)) {
+            const regex = new RegExp(common.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+            const matches = result.match(regex);
+            
+            if (matches) {
+              // 只替换一部分，避免过度替换
+              let applied = 0;
+              result = result.replace(regex, (match) => {
+                if (applied < matches.length * 0.3) {
+                  applied++;
+                  replacements.push({
+                    original: match,
+                    replaced: preferred,
+                    reason: '优选词替换',
+                    source: 'MySQL优选词库'
+                  });
+                  return preferred;
+                }
+                return match;
+              });
+            }
+          }
+        });
+        
+        jsonRes(res, { 
+          success: true, 
+          data: { text: result, replacements, vocabularyCount: vocabulary.length } 
+        });
+        return true;
+      } catch (error) {
+        console.error('[PreferredWordsReplace] Error:', error);
+        jsonRes(res, { success: false, error: error instanceof Error ? error.message : '处理失败' }, 500);
+        return true;
+      }
+    }
+
 
 
     // ====== 调度相关API ======
