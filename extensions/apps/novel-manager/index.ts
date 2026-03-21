@@ -5,6 +5,7 @@ import { IncomingMessage, ServerResponse } from 'http';
 import * as fs from 'fs';
 import * as path from 'path';
 import { NovelService } from './services/novel-service';
+import { getDatabaseManager } from './core/data-scan-storage/database';
 
 // 尝试导入 registerPluginHttpRoute
 let registerPluginHttpRoute: any;
