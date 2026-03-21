@@ -6,7 +6,7 @@
 import * as mysql from 'mysql2/promise';
 import * as path from 'path';
 import * as fs from 'fs';
-import { getConfig } from './config';
+import { getConfig } from '../config';
 
 // 查询结果类型
 export interface QueryResult<T = any> {
@@ -38,8 +38,6 @@ export function getPool(): mysql.Pool {
       connectionLimit: 10,
       queueLimit: 0,
       connectTimeout: 30000, // 延长到 30秒
-      acquireTimeout: 30000,
-      timeout: 60000,
       enableKeepAlive: true,
       keepAliveInitialDelay: 10000,
     });

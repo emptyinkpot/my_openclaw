@@ -853,12 +853,11 @@ export class NovelService {
           const accountId = options?.accountId;
           const dryRun = options?.dryRun ?? false;
           
-          console.log('[NovelService] 调用 FanqieSimplePipeline.publishToFanqie, workId:', workId, ', accountId:', accountId);
+          console.log('[NovelService] 调用 FanqieSimplePipeline.publishToFanqie, workId:', workId);
           
           // 真正调用 publishToFanqie
           const results = await pipeline.publishToFanqie({ 
             workId, 
-            accountId,
             headless: true,  // 无头模式，不卡住
             dryRun,    // 是否模拟发布
             onProgress: (event) => {

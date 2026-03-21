@@ -10,7 +10,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "declaration": false,
+    "declaration": true,
     "sourceMap": true,
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
@@ -28,6 +28,11 @@
     "node_modules",
     "dist",
     "tests",
-    "test"
+    "test",
+    "core/cache",
+    "core/data",
+    "core/logs",
+    "core/storage",
+    "core/temp"
   ]
 }
