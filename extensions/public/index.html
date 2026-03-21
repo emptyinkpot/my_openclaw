@@ -603,19 +603,31 @@
           <span class="sidebar-title">🍅 番茄扫描中心</span>
         </div>
         <div class="sidebar-scroll" style="padding: 12px;">
-          <!-- 流水线开关 -->
+          <!-- 自动扫描番茄作品 -->
           <div style="margin-bottom: 16px; padding: 12px; background: var(--bg-tertiary); border-radius: 6px;">
-            <div style="font-size: 11px; font-weight: 600; margin-bottom: 8px;">🔄 内容流水线</div>
-            <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 12px;">流水线状态</span>
-              <span id="pipelineStatus" style="padding: 2px 8px; border-radius: 10px; font-size: 10px; background: #ffebe9; color: var(--danger);">已停止</span>
+            <div style="font-size: 11px; font-weight: 600; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+              <span>🔍 自动扫描番茄作品</span>
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="autoScanToggle" checked onchange="toggleAutoScan()" style="width: 16px; height: 16px; cursor: pointer;">
+                <span id="autoScanStatus" style="font-size: 10px; padding: 2px 8px; border-radius: 10px; background: #dafbe1; color: var(--success);">已开启</span>
+              </label>
             </div>
-            <button id="pipelineToggleBtn" class="btn primary" style="width: 100%; margin-bottom: 8px;" onclick="togglePipeline()">▶️ 启动流水线</button>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 11px; color: var(--text-muted);">扫描间隔:</span>
+              <input type="number" id="scanInterval" value="30" min="5" max="3600" style="width: 80px; padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 11px;" onchange="saveScanInterval()">
+              <span style="font-size: 11px; color: var(--text-muted);">s秒</span>
+            </div>
           </div>
           
-          <!-- 快捷操作 -->
-          <div style="margin-bottom: 12px;">
-            <button class="btn primary" style="width: 100%; margin-bottom: 6px;" onclick="scanFanqieNow()">🔍 立即扫描番茄作品</button>
+          <!-- 自动发布作品 -->
+          <div style="margin-bottom: 16px; padding: 12px; background: var(--bg-tertiary); border-radius: 6px;">
+            <div style="font-size: 11px; font-weight: 600; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+              <span>🚀 自动发布作品</span>
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="autoPublishToggle" onchange="toggleAutoPublish()" style="width: 16px; height: 16px; cursor: pointer;">
+                <span id="autoPublishStatus" style="font-size: 10px; padding: 2px 8px; border-radius: 10px; background: #ffebe9; color: var(--danger);">已关闭</span>
+              </label>
+            </div>
           </div>
 
         </div>
@@ -1415,6 +1427,152 @@
       }
     }
 
+    // ====== 自动扫描和自动发布功能 ======
+    let autoScanEnabled = true;
+    let autoPublishEnabled = false;
+    let scanInterval = 30; // 秒
+    let autoScanTimer = null;
+
+    // 切换自动扫描
+    function toggleAutoScan() {
+      const toggle = document.getElementById('autoScanToggle');
+      const status = document.getElementById('autoScanStatus');
+      
+      if (!toggle || !status) return;
+      
+      autoScanEnabled = toggle.checked;
+      
+      if (autoScanEnabled) {
+        status.textContent = '已开启';
+        status.style.background = '#dafbe1';
+        status.style.color = 'var(--success)';
+        startAutoScan();
+        showToast('🔍 自动扫描已开启', 'success');
+      } else {
+        status.textContent = '已关闭';
+        status.style.background = '#ffebe9';
+        status.style.color = 'var(--danger)';
+        stopAutoScan();
+        showToast('🔍 自动扫描已关闭', 'info');
+      }
+      
+      saveAutoSettings();
+    }
+
+    // 保存扫描间隔
+    function saveScanInterval() {
+      const input = document.getElementById('scanInterval');
+      if (!input) return;
+      
+      scanInterval = parseInt(input.value) || 30;
+      if (scanInterval < 5) scanInterval = 5;
+      if (scanInterval > 3600) scanInterval = 3600;
+      
+      input.value = scanInterval;
+      
+      // 如果自动扫描已开启，重启定时器
+      if (autoScanEnabled) {
+        stopAutoScan();
+        startAutoScan();
+      }
+      
+      saveAutoSettings();
+      showToast('⏱️ 扫描间隔已更新', 'success');
+    }
+
+    // 切换自动发布
+    function toggleAutoPublish() {
+      const toggle = document.getElementById('autoPublishToggle');
+      const status = document.getElementById('autoPublishStatus');
+      
+      if (!toggle || !status) return;
+      
+      autoPublishEnabled = toggle.checked;
+      
+      if (autoPublishEnabled) {
+        status.textContent = '已开启';
+        status.style.background = '#dafbe1';
+        status.style.color = 'var(--success)';
+        showToast('🚀 自动发布已开启', 'success');
+      } else {
+        status.textContent = '已关闭';
+        status.style.background = '#ffebe9';
+        status.style.color = 'var(--danger)';
+        showToast('🚀 自动发布已关闭', 'info');
+      }
+      
+      saveAutoSettings();
+    }
+
+    // 保存自动设置到 localStorage
+    function saveAutoSettings() {
+      try {
+        const data = {
+          autoScanEnabled,
+          autoPublishEnabled,
+          scanInterval
+        };
+        localStorage.setItem('fanqieAutoSettings', JSON.stringify(data));
+      } catch (e) {
+        console.error('[AutoSettings] 保存失败:', e);
+      }
+    }
+
+    // 加载自动设置
+    function loadAutoSettings() {
+      try {
+        const saved = localStorage.getItem('fanqieAutoSettings');
+        if (saved) {
+          const data = JSON.parse(saved);
+          autoScanEnabled = data.autoScanEnabled !== false;
+          autoPublishEnabled = data.autoPublishEnabled === true;
+          scanInterval = data.scanInterval || 30;
+          
+          // 更新 UI
+          const autoScanToggle = document.getElementById('autoScanToggle');
+          const autoScanStatus = document.getElementById('autoScanStatus');
+          const scanIntervalInput = document.getElementById('scanInterval');
+          const autoPublishToggle = document.getElementById('autoPublishToggle');
+          const autoPublishStatus = document.getElementById('autoPublishStatus');
+          
+          if (autoScanToggle) autoScanToggle.checked = autoScanEnabled;
+          if (autoScanStatus) {
+            autoScanStatus.textContent = autoScanEnabled ? '已开启' : '已关闭';
+            autoScanStatus.style.background = autoScanEnabled ? '#dafbe1' : '#ffebe9';
+            autoScanStatus.style.color = autoScanEnabled ? 'var(--success)' : 'var(--danger)';
+          }
+          if (scanIntervalInput) scanIntervalInput.value = scanInterval;
+          if (autoPublishToggle) autoPublishToggle.checked = autoPublishEnabled;
+          if (autoPublishStatus) {
+            autoPublishStatus.textContent = autoPublishEnabled ? '已开启' : '已关闭';
+            autoPublishStatus.style.background = autoPublishEnabled ? '#dafbe1' : '#ffebe9';
+            autoPublishStatus.style.color = autoPublishEnabled ? 'var(--success)' : 'var(--danger)';
+          }
+        }
+      } catch (e) {
+        console.error('[AutoSettings] 加载失败:', e);
+      }
+    }
+
+    // 停止自动扫描定时器
+    function stopAutoScan() {
+      if (autoScanTimer) {
+        clearInterval(autoScanTimer);
+        autoScanTimer = null;
+      }
+    }
+
+    // 启动自动扫描（修改原 startAutoScan）
+    function startAutoScan() {
+      stopAutoScan();
+      
+      if (!autoScanEnabled) return;
+      
+      autoScanTimer = setInterval(() => {
+        autoScanFanqieWorks();
+      }, scanInterval * 1000);
+    }
+
     // ====== 流水线开关功能 ======
 
     async function togglePipeline() {
@@ -1657,6 +1815,9 @@
       try {
         showToast('🚀 正在加载数据...', 'info');
         
+        // 加载自动设置
+        loadAutoSettings();
+        
         await Promise.all([loadStats(), loadWorks()]);
         
         // 启动自动扫描番茄作品
@@ -1671,9 +1832,7 @@
     }
 
     // ====== 番茄作品扫描和显示 ======
-    let autoScanTimer = null;
     let lastScanData = null;
-    const AUTO_SCAN_INTERVAL = 30000; // 30秒
     
     // 本地章节数据缓存
     let localWorksCache = {};
@@ -1691,35 +1850,6 @@
       } catch (e) {
           return [];
         }
-    }
-
-    // 启动自动轮询
-    function startAutoScan() {
-      if (autoScanTimer) clearInterval(autoScanTimer);
-      
-      // 立即执行一次
-      autoScanFanqieWorks();
-      
-      // 设置定时轮询
-      autoScanTimer = setInterval(autoScanFanqieWorks, AUTO_SCAN_INTERVAL);
-      console.log('[AutoScan] 已启动自动轮询，间隔', AUTO_SCAN_INTERVAL / 1000, '秒');
-    }
-
-    // 立即扫描（手动触发）
-    async function scanFanqieNow() {
-      showToast('🔍 正在扫描番茄作品...', 'info');
-      try {
-        const result = await api('/fanqie/scan', { method: 'POST' });
-        if (result.success) {
-          showToast('✅ 扫描成功！', 'success');
-          await autoScanFanqieWorks(); // 扫描完成后刷新页面
-        } else {
-          showToast('❌ 扫描失败: ' + (result.message || '未知错误'), 'error');
-        }
-      } catch (err) {
-        console.error('[scanFanqieNow] 错误:', err);
-        showToast('❌ 扫描失败: ' + (err.message || '网络错误'), 'error');
-      }
     }
 
     // 自动扫描（静默模式，定期调用后端扫描）
