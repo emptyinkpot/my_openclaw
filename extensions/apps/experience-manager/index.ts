@@ -8,6 +8,8 @@
  */
 
 import { IncomingMessage, ServerResponse } from 'http';
+import * as fs from 'fs';
+import * as path from 'path';
 import { experienceRepo } from './src/core/ExperienceRepository';
 import { syncExperienceToMemory } from './src/core/MemorySync';
 
@@ -184,7 +186,38 @@ async function handleExperienceApi(req: IncomingMessage, res: ServerResponse): P
   }
 }
 
-// 页面路由现在由 novel-manager 插件处理，experience-manager 只提供 API
+// 获取经验页面HTML
+function getExperiencePageHtml(): string {
+  const htmlPath = path.join(__dirname, '..', '..', 'public', 'experience.html');
+  try {
+    return fs.readFileSync(htmlPath, 'utf-8');
+  } catch (e) {
+    console.error('[experience-manager] 无法读取HTML文件:', htmlPath);
+    return '<html><body><h1>页面加载失败</h1></body></html>';
+  }
+}
+
+/**
+ * 处理经验页面请求
+ */
+async function handleExperiencePage(req: IncomingMessage, res: ServerResponse): Promise<boolean | void> {
+  const url = req.url || '';
+  const path = url.split('?')[0];
+  
+  if (path === '/experience.html' || path === '/experience') {
+    res.writeHead(200, {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+      'Access-Control-Allow-Origin': '*'
+    });
+    res.end(getExperiencePageHtml());
+    return true;
+  }
+  
+  return false;
+}
 
 /**
  * 初始化数据
@@ -218,9 +251,17 @@ const plugin = {
   register(api: any) {
     console.log(`[${PLUGIN_ID}] Plugin registered`);
     
-    // 注册 API 路由
+    // 注册页面路由和 API 路由
     if (api?.registerHttpRoute) {
       console.log(`[${PLUGIN_ID}] 注册 HTTP 路由...`);
+      
+      // 页面路由 - 无需认证
+      api.registerHttpRoute({
+        path: '/experience.html',
+        match: 'exact',
+        handler: handleExperiencePage,
+        auth: 'plugin'
+      });
       
       // API 路由 - 需要 Gateway 认证
       api.registerHttpRoute({

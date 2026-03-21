@@ -531,7 +531,6 @@ async function handleNovelPage(req: IncomingMessage, res: ServerResponse): Promi
     '/': 'native.html',          // 默认首页 = 原生界面
     '/novel': 'index.html',
     '/novel/': 'index.html',
-    '/experience.html': 'experience.html',
     '/cache.html': 'cache.html',
     '/project-structure.html': 'project-structure.html',
     // 新拆分的独立页面
@@ -1767,7 +1766,6 @@ const plugin = {
     const pageRoutes = [
       { path: '/', match: 'exact' as const },
       { path: '/novel', match: 'exact' as const },
-      { path: '/experience.html', match: 'exact' as const },
       { path: '/cache.html', match: 'exact' as const },
       { path: '/project-structure.html', match: 'exact' as const },
       { path: '/logs.html', match: 'exact' as const },
