@@ -1769,7 +1769,10 @@ const plugin = {
       { path: '/novel', match: 'exact' as const },
       { path: '/experience.html', match: 'exact' as const },
       { path: '/cache.html', match: 'exact' as const },
-      { path: '/project-structure.html', match: 'exact' as const }
+      { path: '/project-structure.html', match: 'exact' as const },
+      { path: '/logs.html', match: 'exact' as const },
+      { path: '/cache-manage.html', match: 'exact' as const },
+      { path: '/publish.html', match: 'exact' as const }
     ];
     
     // 注册页面路由 - 不需要认证
