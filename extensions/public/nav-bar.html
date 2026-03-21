@@ -69,10 +69,64 @@
 }
 </style>
 <div class="nav-bar">
-  <a href="javascript:void(0)" onclick="var modal = document.getElementById('settingsModal'); if (modal) modal.classList.add('show'); else alert('请在小说管理页面使用设置功能');">⚙️ 设置</a>
+  <a href="javascript:void(0)" onclick="openGlobalSettingsModal();">⚙️ 设置</a>
   <a href="/novel/">📚 小说管理</a>
   <a href="/auto.html">⚙️ 自动化</a>
   <a href="/experience.html">🧠 经验</a>
   <a href="/cache.html">💾 缓存</a>
   <a href="/">🎯 原生界面</a>
 </div>
+
+<!-- 加载全局设置弹窗 -->
+<script>
+// 全局设置弹窗功能
+function openGlobalSettingsModal() {
+  // 先检查是否已经加载了全局设置弹窗
+  let modal = document.getElementById('globalSettingsModal');
+  if (modal) {
+    modal.classList.add('show');
+    return;
+  }
+  
+  // 如果没有，尝试加载
+  fetch('/novel/settings-modal.html')
+    .then(response => response.text())
+    .then(html => {
+      // 插入到页面
+      const container = document.createElement('div');
+      container.innerHTML = html;
+      document.body.appendChild(container);
+      
+      // 延迟一下再打开，确保样式和脚本加载完成
+      setTimeout(() => {
+        modal = document.getElementById('globalSettingsModal');
+        if (modal) {
+          modal.classList.add('show');
+        }
+      }, 100);
+    })
+    .catch(err => {
+      console.error('[NavBar] 加载全局设置弹窗失败:', err);
+      
+      // 降级方案 1: 尝试使用页面原有的 settingsModal
+      const oldModal = document.getElementById('settingsModal');
+      if (oldModal) {
+        oldModal.classList.add('show');
+        return;
+      }
+      
+      // 降级方案 2: 提示用户
+      alert('请在小说管理页面使用设置功能');
+    });
+}
+
+// 页面加载时尝试预加载设置弹窗（可选）
+let hasPreloaded = false;
+window.addEventListener('load', function() {
+  if (!hasPreloaded && window.location.pathname.startsWith('/novel/')) {
+    // 在小说管理页面预加载
+    hasPreloaded = true;
+    fetch('/novel/settings-modal.html').catch(() => {});
+  }
+});
+</script>

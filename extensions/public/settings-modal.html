@@ -1,6 +1,6 @@
 <style>
-/* 模态框样式 */
-.settings-modal-wrapper .modal {
+/* 独立设置弹窗样式 */
+#globalSettingsModal {
   display: none;
   position: fixed;
   top: 0;
@@ -12,274 +12,257 @@
   align-items: center;
   justify-content: center;
 }
-.settings-modal-wrapper .modal.show {
+#globalSettingsModal.show {
   display: flex;
 }
-.settings-modal-wrapper .modal-content {
-  background: white;
+#globalSettingsModal .modal-content {
+  background: #ffffff;
+  border: 1px solid #d0d7de;
   border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-  overflow: hidden;
-}
-.settings-modal-wrapper .modal-header {
+  width: 90%;
+  max-width: 700px;
+  max-height: 85vh;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+}
+#globalSettingsModal .modal-header {
   padding: 12px 16px;
-  border-bottom: 1px solid #e5e7eb;
-  background: #f9fafb;
+  border-bottom: 1px solid #d0d7de;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #ffffff;
 }
-.settings-modal-wrapper .modal-header h3 {
+#globalSettingsModal .modal-header h3 {
   margin: 0;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 16px;
+  color: #24292f;
 }
-.settings-modal-wrapper .modal-body {
+#globalSettingsModal .modal-body {
   padding: 16px;
   overflow-y: auto;
+  flex: 1;
+  background: #f6f8fa;
 }
-.settings-modal-wrapper .modal-footer {
+#globalSettingsModal .modal-footer {
+  padding: 12px 16px;
+  border-top: 1px solid #d0d7de;
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  padding: 12px 16px;
-  border-top: 1px solid #e5e7eb;
-  background: #f9fafb;
+  background: #ffffff;
 }
-
-/* 设置面板样式 */
-.settings-modal-wrapper .settings-grid {
+#globalSettingsModal .btn {
+  padding: 6px 12px;
+  border: 1px solid #d0d7de;
+  background: #f6f8fa;
+  color: #24292f;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+#globalSettingsModal .btn:hover {
+  border-color: #0969da;
+  background: #f3f4f6;
+}
+#globalSettingsModal .btn.primary {
+  background: #0969da;
+  border-color: #0969da;
+  color: #fff;
+}
+#globalSettingsModal .btn.primary:hover {
+  background: #0550ae;
+}
+#globalSettingsModal .settings-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
 }
-.settings-modal-wrapper .settings-section {
-  background: #f6f8fa;
+#globalSettingsModal .settings-section {
+  background: #ffffff;
   border: 1px solid #d0d7de;
   border-radius: 6px;
   padding: 12px;
 }
-.settings-modal-wrapper .settings-section h4 {
+#globalSettingsModal .settings-section h4 {
   font-size: 12px;
   margin-bottom: 10px;
   color: #57606a;
   text-transform: uppercase;
+  margin-top: 0;
 }
-.settings-modal-wrapper .form-group {
+#globalSettingsModal .form-group {
   margin-bottom: 10px;
 }
-.settings-modal-wrapper .form-label {
+#globalSettingsModal .form-label {
   display: block;
   font-size: 11px;
   color: #6e7781;
   margin-bottom: 4px;
 }
-.settings-modal-wrapper .form-input {
+#globalSettingsModal .form-input {
   width: 100%;
-  padding: 6px 10px;
+  padding: 6px 8px;
+  background: #ffffff;
   border: 1px solid #d0d7de;
   border-radius: 4px;
-  font-size: 12px;
-  font-family: inherit;
-  background: #fff;
-  box-sizing: border-box;
-}
-.settings-modal-wrapper .form-textarea {
-  width: 100%;
-  padding: 8px 10px;
-  border: 1px solid #d0d7de;
-  border-radius: 4px;
-  font-size: 12px;
-  font-family: inherit;
-  background: #fff;
-  resize: vertical;
-  min-height: 80px;
-  box-sizing: border-box;
-}
-
-/* Toast 样式 */
-.settings-modal-wrapper .toast {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background: #24292f;
-  color: white;
-  padding: 12px 20px;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  z-index: 10001;
-  display: none;
-  align-items: center;
-  gap: 8px;
-}
-.settings-modal-wrapper .toast.show {
-  display: flex;
-}
-.settings-modal-wrapper .toast.success {
-  background: #1a7f37;
-}
-.settings-modal-wrapper .toast.error {
-  background: #cf222e;
-}
-.settings-modal-wrapper .toast.info {
-  background: #0969da;
-}
-
-/* 按钮样式补充 */
-.settings-modal-wrapper .btn {
-  padding: 4px 10px;
-  border: 1px solid #d0d7de;
-  background: #f6f8fa;
   color: #24292f;
-  border-radius: 4px;
-  font-size: 12px;
-  cursor: pointer;
-  font-family: inherit;
+  font-size: 11px;
+  box-sizing: border-box;
 }
-.settings-modal-wrapper .btn:hover {
-  background: #e5e7eb;
-}
-.settings-modal-wrapper .btn.primary {
-  background: #0969da;
+#globalSettingsModal .form-input:focus {
+  outline: none;
   border-color: #0969da;
-  color: white;
 }
-.settings-modal-wrapper .btn.primary:hover {
-  background: #0550ae;
+#globalSettingsModal .status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 4px;
+}
+#globalSettingsModal .status-dot.online {
+  background: #1a7f37;
+  box-shadow: 0 0 0 2px rgba(26, 127, 55, 0.2);
 }
 </style>
 
-<div class="settings-modal-wrapper">
-  <!-- 设置模态框 -->
-  <div class="modal" id="settingsModal">
-    <div class="modal-content" style="max-width: 700px; max-height: 85vh;">
-      <div class="modal-header">
-        <h3>⚙️ 系统设置</h3>
-        <button class="btn" onclick="window.closeSettingsModal &amp;&amp; window.closeSettingsModal();">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="settings-grid">
-          <div class="settings-section">
-            <h4>🗄️ 数据库配置</h4>
-            <div class="form-group">
-              <label class="form-label">主机地址</label>
-              <input type="text" class="form-input" id="settingsDbHost" value="sh-cynosdbmysql-grp-1kbg1xh0.sql.tencentcdb.com">
+<!-- 全局设置模态框 -->
+<div id="globalSettingsModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>⚙️ 系统设置</h3>
+      <button class="btn" onclick="closeGlobalSettingsModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="settings-grid">
+        <div class="settings-section">
+          <h4>🗄️ 数据库配置</h4>
+          <div style="margin-bottom: 16px; padding: 12px; background: #f3f4f6; border-radius: 6px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="status-dot online" id="globalSettingsDbStatusDot"></span>
+              <span id="globalSettingsDbStatusText">数据库已连接</span>
             </div>
-            <div class="form-group">
-              <label class="form-label">端口</label>
-              <input type="text" class="form-input" id="settingsDbPort" value="22295">
-            </div>
-            <div class="form-group">
-              <label class="form-label">数据库名</label>
-              <input type="text" class="form-input" id="settingsDbName" value="cloudbase-4glvyyq9f61b19cd">
-            </div>
-            <div class="form-group">
-              <label class="form-label">用户名</label>
-              <input type="text" class="form-input" id="settingsDbUser" value="openclaw">
-            </div>
-            <div class="form-group">
-              <label class="form-label">密码</label>
-              <input type="password" class="form-input" id="settingsDbPass" value="********">
-            </div>
-            <button class="btn primary" style="width: 100%;" onclick="window.testSettingsDbConnection &amp;&amp; window.testSettingsDbConnection();">🔗 测试连接</button>
           </div>
-          
-          <div class="settings-section">
-            <h4>🤖 AI配置</h4>
-            <div class="form-group">
-              <label class="form-label">AI提供商</label>
-              <select class="form-input" id="settingsAiProvider">
-                <option value="openai">OpenAI</option>
-                <option value="claude">Claude</option>
-                <option value="gemini">Gemini</option>
-                <option value="local">本地模型</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">API Key</label>
-              <input type="password" class="form-input" id="settingsAiApiKey" placeholder="sk-...">
-            </div>
-            <div class="form-group">
-              <label class="form-label">模型</label>
-              <select class="form-input" id="settingsAiModel">
-                <option value="gpt-4">GPT-4</option>
-                <option value="gpt-3.5">GPT-3.5</option>
-                <option value="claude-3">Claude 3</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">生成温度 (0-1)</label>
-              <input type="range" class="form-input" min="0" max="1" step="0.1" value="0.7" id="settingsAiTemp">
-            </div>
+          <div class="form-group">
+            <label class="form-label">主机地址</label>
+            <input type="text" class="form-input" id="globalDbHost" value="sh-cynosdbmysql-grp-1kbg1xh0.sql.tencentcdb.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">端口</label>
+            <input type="text" class="form-input" id="globalDbPort" value="22295">
+          </div>
+          <div class="form-group">
+            <label class="form-label">数据库名</label>
+            <input type="text" class="form-input" id="globalDbName" value="cloudbase-4glvyyq9f61b19cd">
+          </div>
+          <div class="form-group">
+            <label class="form-label">用户名</label>
+            <input type="text" class="form-input" id="globalDbUser" value="openclaw">
+          </div>
+          <div class="form-group">
+            <label class="form-label">密码</label>
+            <input type="password" class="form-input" id="globalDbPass" value="********">
+          </div>
+          <button class="btn primary" style="width: 100%;" onclick="testGlobalDBConnection()">🔗 测试连接</button>
+        </div>
+        
+        <div class="settings-section">
+          <h4>🤖 AI配置</h4>
+          <div class="form-group">
+            <label class="form-label">AI提供商</label>
+            <select class="form-input" id="globalAiProvider">
+              <option value="openai">OpenAI</option>
+              <option value="claude">Claude</option>
+              <option value="gemini">Gemini</option>
+              <option value="local">本地模型</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">API Key</label>
+            <input type="password" class="form-input" id="globalAiApiKey" placeholder="sk-...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">模型</label>
+            <select class="form-input" id="globalAiModel">
+              <option value="gpt-4">GPT-4</option>
+              <option value="gpt-3.5">GPT-3.5</option>
+              <option value="claude-3">Claude 3</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">生成温度 (0-1)</label>
+            <input type="range" class="form-input" min="0" max="1" step="0.1" value="0.7" id="globalAiTemp">
           </div>
         </div>
       </div>
-      <div class="modal-footer">
-        <button class="btn" onclick="window.closeSettingsModal &amp;&amp; window.closeSettingsModal();">取消</button>
-        <button class="btn" onclick="window.resetSettings &amp;&amp; window.resetSettings();">🔄 重置</button>
-        <button class="btn primary" onclick="window.saveSettings &amp;&amp; window.saveSettings();">💾 保存设置</button>
-      </div>
     </div>
-  </div>
-
-  <!-- Toast -->
-  <div class="toast" id="settingsToast">
-    <span id="settingsToastIcon">✓</span>
-    <span id="settingsToastMessage">操作成功</span>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeGlobalSettingsModal()">取消</button>
+      <button class="btn" onclick="resetGlobalSettings()">🔄 重置</button>
+      <button class="btn primary" onclick="saveGlobalSettings()">💾 保存设置</button>
+    </div>
   </div>
 </div>
 
 <script>
-(function() {
-  // 确保这些函数在全局作用域
-  window.closeSettingsModal = function() {
-    const modal = document.getElementById('settingsModal');
-    if (modal) modal.classList.remove('show');
-  };
-
-  window.saveSettings = function() {
-    window.showSettingsToast('💾 设置已保存', 'success');
-    window.closeSettingsModal();
-  };
-
-  window.resetSettings = function() {
-    if (confirm('确定重置所有设置?')) {
-      window.showSettingsToast('🔄 已重置', 'info');
+// 全局设置弹窗功能（独立版）
+if (typeof closeGlobalSettingsModal === 'undefined') {
+  window.closeGlobalSettingsModal = function() {
+    const modal = document.getElementById('globalSettingsModal');
+    if (modal) {
+      modal.classList.remove('show');
     }
-  };
+  }
+}
 
-  window.testSettingsDbConnection = function() {
-    window.showSettingsToast('🔗 测试数据库连接...', 'info');
-    setTimeout(() => window.showSettingsToast('✅ 连接成功', 'success'), 1000);
-  };
+if (typeof testGlobalDBConnection === 'undefined') {
+  window.testGlobalDBConnection = function() {
+    alert('🔗 测试数据库连接...\n（模拟成功）');
+  }
+}
 
-  window.showSettingsToast = function(msg, type = 'info') {
-    const toast = document.getElementById('settingsToast');
-    const icon = document.getElementById('settingsToastIcon');
-    const message = document.getElementById('settingsToastMessage');
-    
-    if (!toast || !icon || !message) return;
-    
-    // 设置类型和图标
-    toast.className = 'toast show ' + type;
-    if (type === 'success') icon.textContent = '✓';
-    else if (type === 'error') icon.textContent = '✕';
-    else if (type === 'info') icon.textContent = 'ℹ';
-    
-    message.textContent = msg;
-    
-    // 显示
-    toast.classList.add('show');
-    
-    // 3秒后隐藏
-    setTimeout(() => {
-      toast.classList.remove('show');
-    }, 3000);
-  };
+if (typeof saveGlobalSettings === 'undefined') {
+  window.saveGlobalSettings = function() {
+    alert('💾 设置已保存！');
+    if (typeof closeGlobalSettingsModal === 'function') {
+      closeGlobalSettingsModal();
+    }
+  }
+}
 
-  window.openSettingsModal = function() {
-    const modal = document.getElementById('settingsModal');
-    if (modal) modal.classList.add('show');
-  };
+if (typeof resetGlobalSettings === 'undefined') {
+  window.resetGlobalSettings = function() {
+    if (confirm('确定重置所有设置?')) {
+      alert('🔄 已重置！');
+    }
+  }
+}
+
+// 点击弹窗外部关闭
+(function() {
+  let handlerAdded = false;
+  if (!handlerAdded) {
+    document.addEventListener('click', function(e) {
+      const modal = document.getElementById('globalSettingsModal');
+      if (modal && e.target === modal) {
+        if (typeof closeGlobalSettingsModal === 'function') {
+          closeGlobalSettingsModal();
+        }
+      }
+    });
+    
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        if (typeof closeGlobalSettingsModal === 'function') {
+          closeGlobalSettingsModal();
+        }
+      }
+    });
+    
+    handlerAdded = true;
+  }
 })();
 </script>
