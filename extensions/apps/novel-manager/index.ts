@@ -1767,6 +1767,7 @@ const plugin = {
     const pageRoutes = [
       { path: '/', match: 'exact' as const },
       { path: '/novel', match: 'exact' as const },
+      { path: '/experience.html', match: 'exact' as const },
       { path: '/cache.html', match: 'exact' as const },
       { path: '/project-structure.html', match: 'exact' as const }
     ];
