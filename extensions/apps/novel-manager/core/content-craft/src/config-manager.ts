@@ -52,16 +52,33 @@ export class ConfigManager {
    * 获取默认设置
    */
   getDefaultSettings(): PolishSettings {
-    const defaultSettings: PolishSettings = { ...DEFAULT_SETTINGS };
+    // 初始化全新的默认设置对象
+    const defaultSettings: PolishSettings = {
+      steps: {},
+      global: {
+        style: 'literary',
+        temperature: 0.7,
+        maxLength: 100000,
+      },
+      resources: {},
+    };
     
     // 初始化所有步骤的默认设置
     StepRegistry.initialize();
     const allSteps = StepRegistry.getAll();
     
+    // 定义默认启用的非固定步骤
+    const defaultEnabledNonFixedSteps = [
+      'titleExtract',     // 标题提取
+      'punctuationApply', // 标点规范
+      'bannedWords',      // 禁用词替换
+      'preferredWords'    // 优选词替换
+    ];
+    
     allSteps.forEach(step => {
       defaultSettings.steps[step.id] = {
         ...step.defaultSettings,
-        enabled: !step.fixed, // 非固定步骤默认启用
+        enabled: step.fixed || defaultEnabledNonFixedSteps.includes(step.id), 
       };
     });
     
