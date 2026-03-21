@@ -1089,7 +1089,7 @@
         return;
       }
       
-      list.innerHTML = filtered.map(exp => {
+      const htmlContent = filtered.map(exp => {
         const typeInfo = expTypeMap[exp.type] || { label: exp.type || '未知', icon: '📌', color: '#666', bg: '#f0f0f0' };
         const stars = '⭐'.repeat(exp.difficulty || 1);
         const date = exp.timestamp ? new Date(exp.timestamp).toLocaleDateString() : '未知日期';
@@ -1118,6 +1118,12 @@
           </div>
         `;
       }).join('');
+      
+      console.log('[Experience] 生成的 HTML 长度:', htmlContent.length);
+      console.log('[Experience] 生成的 HTML 预览:', htmlContent.substring(0, 300));
+      
+      list.innerHTML = htmlContent;
+      console.log('[Experience] list.innerHTML 已设置');
     }
     
     // 过滤
