@@ -649,6 +649,84 @@ ${bannedWords.map((w: any) => `- ${w.word}`).join('\n')}
       }
     }
 
+    // ====== 优选词替换API（使用LLM智能评估） ======
+    if (path === '/api/novel/preferred-words-replace' && method === 'POST') {
+      const body = await parseBody(req);
+      const { text } = body;
+      
+      if (!text?.trim()) {
+        jsonRes(res, { success: false, error: '请提供要处理的文本' }, 400);
+        return true;
+      }
+      
+      try {
+        // 从 MySQL 加载所有908个优选词
+        const db = getDatabaseManager();
+        const vocabulary = await db.query(`
+          SELECT content AS word, category, tags, note
+          FROM vocabulary
+          ORDER BY content ASC
+        `);
+        
+        // 使用LLM进行智能评估和替换
+        const { LLMClient, Config } = require('coze-coding-dev-sdk');
+        const config = new Config();
+        const client = new LLMClient(config);
+        
+        const systemPrompt = `你是一个专业的中文文本润色专家，专门处理优选词替换任务。
+
+任务要求：
+1. 给定一段文本和优选词库，将文本中的普通词汇智能替换为更合适的优选词
+2. 替换后的文本必须：
+   - 语义通顺、流畅、无歧义
+   - 不损失原文语义和信息
+   - 符合文学性表达（适合小说创作）
+   - 禁止欧化表达，禁止不符合中文习惯的外文语序
+   - 不要过度替换，保持自然
+3. 优选词库（共${vocabulary.length}个，部分示例）：
+${vocabulary.slice(0, 50).map((w: any) => `- ${w.word}`).join('\n')}
+
+请直接返回替换后的完整文本，不要添加任何解释或说明。`;
+
+        const messages = [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: text }
+        ];
+        
+        const response = await client.invoke(messages, { 
+          temperature: 0.5,
+          model: "doubao-seed-1-8-251228"
+        });
+        
+        const resultText = response.content;
+        
+        // 简单记录替换（因为是LLM智能替换）
+        const replacements: any[] = [];
+        if (resultText !== text) {
+          replacements.push({
+            original: '(原文本)',
+            replaced: '(智能润色)',
+            reason: '优选词智能替换',
+            source: 'MySQL优选词库+LLM智能评估'
+          });
+        }
+        
+        jsonRes(res, { 
+          success: true, 
+          data: { 
+            text: resultText, 
+            replacements,
+            vocabularyCount: vocabulary.length
+          } 
+        });
+        return true;
+      } catch (error) {
+        console.error('[PreferredWordsReplace] Error:', error);
+        jsonRes(res, { success: false, error: error instanceof Error ? error.message : '处理失败' }, 500);
+        return true;
+      }
+    }
+
     // ====== 调度相关API ======
     if (path === '/api/novel/schedules' && method === 'GET') {
       // TODO: 从数据库或配置文件读取
