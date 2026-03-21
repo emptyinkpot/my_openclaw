@@ -12,11 +12,14 @@ node_modules/
 pnpm-lock.yaml
 package-lock.json
 yarn.lock
+**/node_modules/
 
 # 编译产物
 dist/
 *.js.map
 *.d.ts.map
+**/dist/
+**/tsconfig.tsbuildinfo
 
 # IDE
 .vscode/
@@ -28,8 +31,34 @@ dist/
 # 测试文件
 test-*.js
 test-*.ts
+**/test-*.js
+**/test-*.ts
 
 # 其他
 .DS_Store
 Thumbs.db
 openclaw.json.bak*
+
+# 临时测试文件
+check-*.js
+simple-test.js
+
+# Cron 运行记录
+cron/runs/
+
+# 设备配对记录
+devices/paired.json
+
+# 浏览器缓存
+**/Default/Cache/
+**/Default/Code Cache/
+**/Default/IndexedDB/
+**/Default/Local Storage/
+**/Default/Session Storage/
+**/Default/Sessions/
+**/Default/Site Characteristics Database/
+**/Default/Sync Data/
+**/Default/shared_proto_db/
+**/GrShaderCache/
+**/GraphiteDawnCache/
+**/ShaderCache/
