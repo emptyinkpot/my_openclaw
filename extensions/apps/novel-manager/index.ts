@@ -8,7 +8,7 @@ import { NovelService } from './services/novel-service';
 import { getDatabaseManager } from './core/data-scan-storage/database';
 
 // 导入禁用词处理步骤
-import { BannedWordsStep } from './core/content-craft/src/modules/polish/steps/process/banned-words';
+import { BannedWordsStep } from './core/content-craft/src/steps/process/banned-words';
 
 // 尝试导入 registerPluginHttpRoute
 let registerPluginHttpRoute: any;
