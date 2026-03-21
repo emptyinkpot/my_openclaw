@@ -9,6 +9,8 @@ import { getDatabaseManager } from './core/data-scan-storage/database';
 
 // 导入禁用词处理步骤
 import { BannedWordsStep } from './core/content-craft/src/steps/process/banned-words';
+// 导入配置管理器
+import { configManager } from './core/content-craft/src/config-manager';
 
 // 尝试导入 registerPluginHttpRoute
 let registerPluginHttpRoute: any;
@@ -237,6 +239,86 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
         'Access-Control-Allow-Headers': 'Content-Type'
       });
       res.end();
+      return true;
+    }
+
+    // ====== 配置管理API ======
+    // 获取配置
+    if (path === '/api/novel/config' && method === 'GET') {
+      try {
+        const settings = configManager.getSettings();
+        const stepConfigs = configManager.getAllStepConfigs();
+        jsonRes(res, { 
+          success: true, 
+          data: { 
+            settings, 
+            stepConfigs 
+          } 
+        });
+      } catch (error) {
+        console.error('[ConfigAPI] 获取配置失败:', error);
+        jsonRes(res, { success: false, error: '获取配置失败' }, 500);
+      }
+      return true;
+    }
+
+    // 保存配置
+    if (path === '/api/novel/config' && method === 'POST') {
+      try {
+        const body = await parseBody(req);
+        const { settings } = body;
+        if (settings) {
+          configManager.saveSettings(settings);
+        }
+        jsonRes(res, { success: true, message: '配置保存成功' });
+      } catch (error) {
+        console.error('[ConfigAPI] 保存配置失败:', error);
+        jsonRes(res, { success: false, error: '保存配置失败' }, 500);
+      }
+      return true;
+    }
+
+    // 更新单个步骤配置
+    if (path === '/api/novel/config/step' && method === 'POST') {
+      try {
+        const body = await parseBody(req);
+        const { stepId, settings } = body;
+        if (stepId && settings) {
+          configManager.updateStepSetting(stepId, settings);
+        }
+        jsonRes(res, { success: true, message: '步骤配置更新成功' });
+      } catch (error) {
+        console.error('[ConfigAPI] 更新步骤配置失败:', error);
+        jsonRes(res, { success: false, error: '更新步骤配置失败' }, 500);
+      }
+      return true;
+    }
+
+    // 更新全局配置
+    if (path === '/api/novel/config/global' && method === 'POST') {
+      try {
+        const body = await parseBody(req);
+        const { global } = body;
+        if (global) {
+          configManager.updateGlobalSetting(global);
+        }
+        jsonRes(res, { success: true, message: '全局配置更新成功' });
+      } catch (error) {
+        console.error('[ConfigAPI] 更新全局配置失败:', error);
+        jsonRes(res, { success: false, error: '更新全局配置失败' }, 500);
+      }
+      return true;
+    }
+
+    // 重置配置
+    if (path === '/api/novel/config/reset' && method === 'POST') {
+      try {
+        configManager.resetToDefaults();
+        jsonRes(res, { success: true, message: '配置已重置为默认值' });
+      } catch (error) {
+        console.error('[ConfigAPI] 重置配置失败:', error);
+        jsonRes(res, { success: false, error: '重置配置失败' }, 500);
+      }
       return true;
     }
 

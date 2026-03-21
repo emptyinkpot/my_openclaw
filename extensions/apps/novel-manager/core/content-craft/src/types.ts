@@ -236,7 +236,7 @@ export interface PolishSettings {
   /** 全局配置 */
   global: {
     /** 目标风格 */
-    style?: 'formal' | 'casual' | 'academic' | 'narrative';
+    style?: 'formal' | 'casual' | 'academic' | 'narrative' | 'historical' | 'literary' | 'japanese';
     /** 输出语言 */
     language?: string;
     /** 温度参数 */

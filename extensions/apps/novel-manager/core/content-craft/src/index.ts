@@ -4,6 +4,9 @@
  * @module modules/polish
  */
 
+// 配置管理器
+export { ConfigManager, configManager } from './config-manager';
+
 // 类型
 export type {
   // 基础类型
