@@ -746,7 +746,7 @@
 </head>
 <body>
 <div class="nav-bar">
-  <a href="javascript:void(0)" onclick="var modal = document.getElementById('settingsModal'); if (modal) modal.classList.add('show'); else alert('请在小说管理页面使用设置功能');">⚙️ 设置</a>
+  <a href="javascript:void(0)" onclick="openGlobalSettingsModal();">⚙️ 设置</a>
   <a href="/novel/">📚 小说管理</a>
   <a href="/auto.html">⚙️ 自动化</a>
   <a href="/experience.html" class="on">🧠 经验</a>
@@ -1421,6 +1421,57 @@
     
     // 初始化
     init();
+  </script>
+  
+  <!-- 全局设置弹窗脚本 -->
+  <script>
+    // 全局设置弹窗功能
+    function openGlobalSettingsModal() {
+      let modal = document.getElementById('globalSettingsModal');
+      if (modal) {
+        modal.classList.add('show');
+        return;
+      }
+      
+      // 如果弹窗不存在，动态加载
+      fetch('/novel/settings-modal.html')
+        .then(response => response.text())
+        .then(html => {
+          const div = document.createElement('div');
+          div.innerHTML = html;
+          document.body.appendChild(div);
+          setTimeout(() => {
+            modal = document.getElementById('globalSettingsModal');
+            if (modal) modal.classList.add('show');
+          }, 100);
+        })
+        .catch(err => {
+          console.error('[Experience] 加载设置弹窗失败:', err);
+          const oldModal = document.getElementById('settingsModal');
+          if (oldModal) {
+            oldModal.classList.add('show');
+          } else {
+            alert('请在小说管理页面使用设置功能');
+          }
+        });
+    }
+    
+    // 点击弹窗外部关闭
+    document.addEventListener('click', function(e) {
+      const modal = document.getElementById('globalSettingsModal');
+      if (modal && e.target === modal) {
+        const closeFunc = window.closeGlobalSettingsModal;
+        if (typeof closeFunc === 'function') closeFunc();
+      }
+    });
+    
+    // ESC键关闭
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        const closeFunc = window.closeGlobalSettingsModal;
+        if (typeof closeFunc === 'function') closeFunc();
+      }
+    });
   </script>
 </body>
 </html>
