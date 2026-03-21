@@ -352,6 +352,7 @@
         <div class="tabs" style="border-bottom: 1px solid var(--border); background: var(--bg-secondary);">
           <div class="tab active" onclick="switchNovelDataSubTab('novel-data')" data-subtab="novel-data">📚 小说数据</div>
           <div class="tab" onclick="switchNovelDataSubTab('mysql-fields')" data-subtab="mysql-fields">🗄️ MySQL字段</div>
+          <div class="tab" onclick="switchNovelDataSubTab('resource-library')" data-subtab="resource-library">📦 资源库</div>
         </div>
         
         <!-- 三级标签内容区 -->
@@ -602,6 +603,26 @@
             </div>
           </div>
           <!-- /MySQL字段子页面 -->
+          
+          <!-- 资源库子页面 -->
+          <div id="resourceLibrarySubPage" class="subtab-content" style="flex: 1; display: none; overflow-y: auto; padding: 20px;">
+            <div style="max-width: 1200px; margin: 0 auto;">
+              <h2 style="font-size: 18px; font-weight: 600; margin-bottom: 20px;">📦 资源库</h2>
+              
+              <div style="margin-bottom: 16px; display: flex; gap: 8px; align-items: center;">
+                <button class="btn primary" onclick="uploadPolishResources()">📤 上传 Polish Resources</button>
+                <button class="btn" onclick="refreshResourceLibrary()">🔄 刷新</button>
+              </div>
+              
+              <div id="resourceLibraryContent" style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
+                <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+                  <div style="font-size: 48px; margin-bottom: 16px;">📦</div>
+                  <div style="font-size: 14px;">资源库内容将在这里显示</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- /资源库子页面 -->
         </div>
         <!-- /三级标签内容区 -->
       </div>
