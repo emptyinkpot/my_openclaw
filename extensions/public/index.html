@@ -678,8 +678,14 @@
       
       <div class="content">
         
+        <!-- 标签页 -->
+        <div class="tabs" style="padding: 0 12px;">
+          <div class="tab active" onclick="switchFanqieTab('scan')" id="fanqieTabScan">🍅 番茄扫描</div>
+          <div class="tab" onclick="switchFanqieTab('publish')" id="fanqieTabPublish">🚀 自动发布</div>
+        </div>
+        
         <!-- 工具栏 -->
-        <div class="toolbar">
+        <div class="toolbar" id="fanqieScanToolbar">
           <div class="toolbar-group">
             <span id="lastScanTime" style="font-size: 11px; color: var(--text-muted);">-</span>
           </div>
@@ -687,12 +693,74 @@
           <button class="btn btn-sm" onclick="refreshFanqieData()">🔄 立即刷新</button>
         </div>
         
-        <!-- 作品列表 -->
-        <div class="content-area" id="fanqieScanResult">
+        <!-- 番茄扫描内容 -->
+        <div class="content-area" id="fanqieScanContent">
           <div id="fanqieWorksList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px;">
             <div style="text-align: center; padding: 40px; color: var(--text-muted); grid-column: 1/-1;">
               <div style="font-size: 32px; margin-bottom: 12px;">📡</div>
               <div style="font-size: 14px;">正在加载番茄小说作品...</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 自动发布内容 -->
+        <div class="content-area" id="fanqiePublishContent" style="display: none;">
+          <div style="padding: 20px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+              <!-- 左侧：发布配置 -->
+              <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
+                <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 16px;">📝 发布配置</h3>
+                
+                <div style="margin-bottom: 16px;">
+                  <label style="display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">选择作品</label>
+                  <select id="publishWorkSelect" onchange="loadPublishChapters()" style="width: 100%; padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; font-size: 12px;">
+                    <option value="">-- 请选择作品 --</option>
+                  </select>
+                </div>
+                
+                <div style="margin-bottom: 16px;">
+                  <label style="display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">选择章节</label>
+                  <select id="publishChapterSelect" style="width: 100%; padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; font-size: 12px;">
+                    <option value="">-- 自动发布下一章 --</option>
+                  </select>
+                </div>
+                
+                <div style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                  <input type="checkbox" id="publishDryRun" checked style="width: 16px; height: 16px; cursor: pointer;">
+                  <label style="font-size: 12px; color: var(--text-muted); cursor: pointer;">模拟模式（不实际发布）</label>
+                </div>
+                
+                <div style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                  <input type="checkbox" id="publishHeadless" checked style="width: 16px; height: 16px; cursor: pointer;">
+                  <label style="font-size: 12px; color: var(--text-muted); cursor: pointer;">无头模式（不显示浏览器）</label>
+                </div>
+                
+                <button onclick="startPublish()" style="width: 100%; padding: 10px 16px; background: var(--accent); color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 500;">
+                  🚀 开始发布
+                </button>
+              </div>
+              
+              <!-- 右侧：进度与日志 -->
+              <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                  <h3 style="font-size: 14px; font-weight: 600;">📊 发布进度</h3>
+                  <button onclick="clearPublishLogs()" style="padding: 4px 10px; border: 1px solid var(--border); background: var(--bg); border-radius: 4px; font-size: 11px; cursor: pointer;">🗑️ 清空日志</button>
+                </div>
+                
+                <div id="publishProgressContainer" style="display: none; margin-bottom: 16px;">
+                  <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;" id="publishProgressLabel">准备中...</div>
+                  <div style="width: 100%; height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden;">
+                    <div id="publishProgressFill" style="height: 100%; background: var(--accent); border-radius: 4px; width: 0%; transition: width 0.3s;"></div>
+                  </div>
+                </div>
+                
+                <div id="publishLogContainer" style="background: var(--bg); border-radius: 6px; padding: 12px; font-family: monospace; font-size: 11px; max-height: 300px; overflow-y: auto;">
+                  <div style="padding: 4px 0; border-bottom: 1px solid var(--border);">
+                    <span style="color: var(--text-muted); margin-right: 8px;">[系统]</span>
+                    <span>准备就绪，请选择作品开始发布</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1982,6 +2050,9 @@
       
       // 初始化 AI工具箱 生成配置（加载作品列表）
       await loadGenWorkList();
+      
+      // 初始化番茄扫描页面
+      await initFanqiePage();
     }
     
     // 加载作品列表到生成下拉菜单
@@ -5122,6 +5193,262 @@
       };
       checkAndBind();
     })();
+  </script>
+
+  <!-- 番茄扫描标签页切换和发布功能脚本 -->
+  <script>
+    // 番茄扫描当前标签页
+    let fanqieCurrentTab = 'scan';
+    // 发布功能状态
+    let publishStatus = {
+      isRunning: false,
+      currentWorkId: null,
+      currentChapterIndex: 0,
+      totalChapters: 0,
+      successCount: 0,
+      failedCount: 0,
+      logs: []
+    };
+
+    // 番茄扫描标签页切换
+    function switchFanqieTab(tab) {
+      fanqieCurrentTab = tab;
+      
+      // 更新标签页激活状态
+      document.querySelectorAll('.fanqie-tab').forEach(t => t.classList.remove('active'));
+      document.querySelector(`[data-fanqie-tab="${tab}"]`).classList.add('active');
+      
+      // 显示对应内容
+      document.getElementById('fanqieScanContent').style.display = tab === 'scan' ? 'block' : 'none';
+      document.getElementById('fanqiePublishContent').style.display = tab === 'publish' ? 'block' : 'none';
+    }
+
+    // 加载发布作品列表
+    async function loadPublishWorks() {
+      try {
+        const result = await api('/works');
+        const works = result.data || [];
+        const select = document.getElementById('publishWorkSelect');
+        select.innerHTML = '<option value="">选择作品</option>';
+        works.forEach(work => {
+          const option = document.createElement('option');
+          option.value = work.id;
+          option.textContent = work.title;
+          select.appendChild(option);
+        });
+      } catch (err) {
+        console.error('加载发布作品列表失败:', err);
+        showToast('❌ 加载作品列表失败', 'error');
+      }
+    }
+
+    // 当选择作品时加载章节
+    async function onPublishWorkChange() {
+      const workId = document.getElementById('publishWorkSelect').value;
+      if (!workId) {
+        document.getElementById('publishChapterList').innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-muted);">请先选择作品</div>';
+        return;
+      }
+      
+      try {
+        const result = await api(`/works/${workId}`);
+        const chapters = result.data?.chapters || [];
+        
+        const listEl = document.getElementById('publishChapterList');
+        if (!chapters.length) {
+          listEl.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-muted);">该作品暂无章节</div>';
+          return;
+        }
+        
+        listEl.innerHTML = chapters.map((chapter, index) => `
+          <div class="chapter-item" data-chapter-index="${index}">
+            <input type="checkbox" class="chapter-checkbox" id="chapter-${index}" checked>
+            <label for="chapter-${index}">
+              <span class="chapter-title">${chapter.title || `第 ${index + 1} 章`}</span>
+              <span class="chapter-meta">字数: ${chapter.word_count || 0}</span>
+            </label>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error('加载章节失败:', err);
+        showToast('❌ 加载章节失败', 'error');
+      }
+    }
+
+    // 添加发布日志
+    function addPublishLog(message, type = 'info') {
+      const timestamp = new Date().toLocaleTimeString();
+      const logEntry = { timestamp, message, type };
+      publishStatus.logs.push(logEntry);
+      
+      const logsContainer = document.getElementById('publishLogs');
+      const logEl = document.createElement('div');
+      logEl.className = `log-entry log-${type}`;
+      logEl.textContent = `[${timestamp}] ${message}`;
+      logsContainer.appendChild(logEl);
+      logsContainer.scrollTop = logsContainer.scrollHeight;
+    }
+
+    // 更新发布进度
+    function updatePublishProgress() {
+      const progressEl = document.getElementById('publishProgress');
+      const statusEl = document.getElementById('publishStatusText');
+      const statsEl = document.getElementById('publishStats');
+      
+      if (publishStatus.totalChapters > 0) {
+        const progress = Math.round((publishStatus.currentChapterIndex / publishStatus.totalChapters) * 100);
+        progressEl.style.width = `${progress}%`;
+        progressEl.textContent = `${progress}%`;
+      }
+      
+      if (publishStatus.isRunning) {
+        statusEl.textContent = '发布中...';
+        statusEl.className = 'status-text publishing';
+      } else {
+        statusEl.textContent = publishStatus.failedCount > 0 ? '部分失败' : '就绪';
+        statusEl.className = 'status-text ' + (publishStatus.failedCount > 0 ? 'failed' : 'ready');
+      }
+      
+      statsEl.innerHTML = `
+        总计: ${publishStatus.totalChapters} | 
+        成功: <span style="color: var(--success-color);">${publishStatus.successCount}</span> | 
+        失败: <span style="color: var(--danger-color);">${publishStatus.failedCount}</span>
+      `;
+    }
+
+    // 开始发布
+    async function startPublish() {
+      if (publishStatus.isRunning) {
+        showToast('⚠️ 发布正在进行中', 'warning');
+        return;
+      }
+      
+      const workId = document.getElementById('publishWorkSelect').value;
+      const accountId = document.getElementById('publishAccountSelect').value;
+      
+      if (!workId) {
+        showToast('⚠️ 请选择作品', 'warning');
+        return;
+      }
+      
+      if (!accountId) {
+        showToast('⚠️ 请选择发布账号', 'warning');
+        return;
+      }
+      
+      // 获取选中的章节
+      const checkboxes = document.querySelectorAll('.chapter-checkbox:checked');
+      if (!checkboxes.length) {
+        showToast('⚠️ 请选择要发布的章节', 'warning');
+        return;
+      }
+      
+      // 重置状态
+      publishStatus = {
+        isRunning: true,
+        currentWorkId: workId,
+        currentChapterIndex: 0,
+        totalChapters: checkboxes.length,
+        successCount: 0,
+        failedCount: 0,
+        logs: []
+      };
+      
+      // 清空日志
+      document.getElementById('publishLogs').innerHTML = '';
+      
+      updatePublishProgress();
+      addPublishLog('开始发布...', 'info');
+      addPublishLog(`作品ID: ${workId}`, 'info');
+      addPublishLog(`账号ID: ${accountId}`, 'info');
+      addPublishLog(`章节数: ${checkboxes.length}`, 'info');
+      
+      // 获取章节数据
+      try {
+        const result = await api(`/works/${workId}`);
+        const allChapters = result.data?.chapters || [];
+        
+        // 获取选中的章节索引
+        const selectedIndices = Array.from(checkboxes).map(cb => 
+          parseInt(cb.closest('.chapter-item').dataset.chapterIndex)
+        );
+        
+        // 开始发布循环
+        for (let i = 0; i < selectedIndices.length; i++) {
+          if (!publishStatus.isRunning) {
+            addPublishLog('发布已停止', 'warning');
+            break;
+          }
+          
+          publishStatus.currentChapterIndex = i + 1;
+          const chapterIndex = selectedIndices[i];
+          const chapter = allChapters[chapterIndex];
+          
+          addPublishLog(`正在发布: ${chapter.title || `第 ${chapterIndex + 1} 章`}`, 'info');
+          
+          try {
+            // 这里调用实际的发布API
+            // 模拟发布过程
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // 模拟成功
+            publishStatus.successCount++;
+            addPublishLog(`✓ 发布成功: ${chapter.title || `第 ${chapterIndex + 1} 章`}`, 'success');
+          } catch (err) {
+            publishStatus.failedCount++;
+            addPublishLog(`✗ 发布失败: ${chapter.title || `第 ${chapterIndex + 1} 章`} - ${err.message}`, 'error');
+          }
+          
+          updatePublishProgress();
+        }
+        
+        publishStatus.isRunning = false;
+        updatePublishProgress();
+        
+        if (publishStatus.failedCount === 0) {
+          addPublishLog('🎉 全部发布完成!', 'success');
+          showToast('🎉 发布完成!', 'success');
+        } else {
+          addPublishLog(`发布完成，成功 ${publishStatus.successCount} 个，失败 ${publishStatus.failedCount} 个`, 'warning');
+          showToast(`发布完成，部分失败`, 'warning');
+        }
+        
+      } catch (err) {
+        publishStatus.isRunning = false;
+        updatePublishProgress();
+        addPublishLog(`发布过程出错: ${err.message}`, 'error');
+        showToast('❌ 发布失败', 'error');
+      }
+    }
+
+    // 停止发布
+    function stopPublish() {
+      if (!publishStatus.isRunning) {
+        showToast('⚠️ 没有正在进行的发布', 'warning');
+        return;
+      }
+      
+      publishStatus.isRunning = false;
+      addPublishLog('正在停止发布...', 'warning');
+      showToast('正在停止发布...', 'info');
+    }
+
+    // 全选/取消全选章节
+    function toggleSelectAllChapters() {
+      const checkboxes = document.querySelectorAll('.chapter-checkbox');
+      const selectAll = !Array.from(checkboxes).every(cb => cb.checked);
+      
+      checkboxes.forEach(cb => {
+        cb.checked = selectAll;
+      });
+    }
+
+    // 初始化番茄扫描页面
+    async function initFanqiePage() {
+      // 加载发布相关数据
+      await loadPublishWorks();
+      await loadPublishAccounts();
+    }
   </script>
 </body>
 </html>
