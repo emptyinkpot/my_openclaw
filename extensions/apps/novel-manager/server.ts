@@ -16,6 +16,21 @@ const API_PREFIX = '/novel/api';
 app.use(cors());
 app.use(express.json());
 
+// 数据库连接
+let dbConnection: any = null;
+
+// 初始化数据库连接
+async function initDatabase() {
+  try {
+    const dbManager = getDatabaseManager();
+    dbConnection = dbManager.getConnection();
+    console.log('[Database] 连接已准备好');
+  } catch (error) {
+    console.error('[Database] 初始化失败:', error);
+  }
+}
+initDatabase();
+
 // 服务实例
 let novelService: NovelService | null = null;
 
@@ -172,6 +187,73 @@ app.get(`${API_PREFIX}/pipeline/status`, async (req: Request, res: Response) => 
   try {
     const status = await getNovelService().getPipelineStatus();
     res.json({ success: true, data: status });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ====== 资源库相关API ======
+// 资源库：词汇表
+app.get(`${API_PREFIX}/main-library`, async (req: Request, res: Response) => {
+  try {
+    const [rows] = await dbConnection.execute(`
+      SELECT 
+        id,
+        word AS name,
+        category,
+        tags,
+        example AS example_usage,
+        explanation AS description,
+        created_at,
+        updated_at
+      FROM vocabulary
+      ORDER BY word ASC
+    `);
+    res.json({ success: true, data: rows });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 资源库：文献
+app.get(`${API_PREFIX}/literature`, async (req: Request, res: Response) => {
+  try {
+    const [rows] = await dbConnection.execute(`
+      SELECT 
+        id,
+        title AS name,
+        category,
+        tags,
+        summary,
+        content,
+        created_at,
+        updated_at
+      FROM literature
+      ORDER BY title ASC
+    `);
+    res.json({ success: true, data: rows });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 资源库：禁用词
+app.get(`${API_PREFIX}/banned-words`, async (req: Request, res: Response) => {
+  try {
+    const [rows] = await dbConnection.execute(`
+      SELECT 
+        id,
+        word AS name,
+        category,
+        tags,
+        reason,
+        replacement,
+        created_at,
+        updated_at
+      FROM banned_words
+      ORDER BY word ASC
+    `);
+    res.json({ success: true, data: rows });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }

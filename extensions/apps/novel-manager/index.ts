@@ -492,6 +492,67 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
       return true;
     }
 
+    // ====== 资源库相关API ======
+    // 资源库：词汇表
+    if (path === '/api/novel/main-library' && method === 'GET') {
+      const db = getDatabaseManager();
+      const rows = await db.query(`
+        SELECT 
+          id,
+          content AS name,
+          category,
+          tags,
+          note AS description,
+          created_at,
+          updated_at
+        FROM vocabulary
+        ORDER BY content ASC
+      `);
+      jsonRes(res, { success: true, data: rows });
+      return true;
+    }
+
+    // 资源库：文献
+    if (path === '/api/novel/literature' && method === 'GET') {
+      const db = getDatabaseManager();
+      const rows = await db.query(`
+        SELECT 
+          id,
+          title AS name,
+          author,
+          tags,
+          note AS description,
+          content,
+          priority,
+          created_at,
+          updated_at
+        FROM literature
+        ORDER BY title ASC
+      `);
+      jsonRes(res, { success: true, data: rows });
+      return true;
+    }
+
+    // 资源库：禁用词
+    if (path === '/api/novel/banned-words' && method === 'GET') {
+      const db = getDatabaseManager();
+      const rows = await db.query(`
+        SELECT 
+          id,
+          content AS name,
+          type,
+          category,
+          reason,
+          alternative AS replacement,
+          created_at,
+          updated_at
+        FROM banned_words
+        ORDER BY content ASC
+      `);
+      jsonRes(res, { success: true, data: rows });
+      return true;
+    }
+
     // ====== 调度相关API ======
     if (path === '/api/novel/schedules' && method === 'GET') {
       // TODO: 从数据库或配置文件读取

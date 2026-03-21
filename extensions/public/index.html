@@ -2454,21 +2454,29 @@
     async function loadResourceLibrary() {
       try {
         console.log('[loadResourceLibrary] 开始从 MySQL 加载资源...');
+        console.log('[loadResourceLibrary] API_BASE:', API_BASE);
         
         // 加载词汇
         console.log('[loadResourceLibrary] 加载词汇...');
         const vocabData = await api('/main-library');
         console.log('[loadResourceLibrary] 词汇 API 返回:', vocabData);
+        console.log('[loadResourceLibrary] vocabData.success:', vocabData?.success);
+        console.log('[loadResourceLibrary] vocabData.items:', vocabData?.items);
+        console.log('[loadResourceLibrary] vocabData.items?.length:', vocabData?.items?.length);
+        
         if (vocabData.success && vocabData.items) {
           resourceData.vocabulary = vocabData.items;
           document.getElementById('vocabCount').textContent = resourceData.vocabulary.length;
           console.log('[loadResourceLibrary] 词汇加载成功，数量:', resourceData.vocabulary.length);
+        } else {
+          console.warn('[loadResourceLibrary] 词汇加载条件不满足！');
         }
         
         // 加载文献
         try {
           console.log('[loadResourceLibrary] 加载文献...');
           const litData = await api('/literature');
+          console.log('[loadResourceLibrary] 文献 API 返回:', litData);
           if (litData.success && litData.items) {
             resourceData.literature = litData.items;
             document.getElementById('litCount').textContent = resourceData.literature.length;
@@ -2482,6 +2490,7 @@
         try {
           console.log('[loadResourceLibrary] 加载禁用词...');
           const bannedData = await api('/banned-words');
+          console.log('[loadResourceLibrary] 禁用词 API 返回:', bannedData);
           if (bannedData.success && bannedData.items) {
             resourceData.bannedWords = bannedData.items;
             document.getElementById('bannedCount').textContent = resourceData.bannedWords.length;
