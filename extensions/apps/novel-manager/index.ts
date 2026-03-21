@@ -13,6 +13,8 @@ import { BannedWordsStep } from './core/content-craft/src/steps/process/banned-w
 import { configManager } from './core/content-craft/src/config-manager';
 // 导入文本生成功能
 import { GenerationPipeline } from './core/content-craft/src/generation-pipeline';
+// 导入文本润色功能
+import { PolishPipeline } from './core/content-craft/src/pipeline';
 
 // 尝试导入 registerPluginHttpRoute
 let registerPluginHttpRoute: any;
@@ -744,6 +746,52 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
       } catch (error) {
         console.error('[ConfigAPI] 重置配置失败:', error);
         jsonRes(res, { success: false, error: '重置配置失败' }, 500);
+      }
+      return true;
+    }
+
+    // ====== 文本润色API（优化版） ======
+    // 从数据库读取章节内容并润色
+    if (path === '/api/novel/polish/from-db' && method === 'POST') {
+      try {
+        const body = await parseBody(req);
+        const { workId, chapterNumber, settings } = body;
+        
+        if (!workId || !chapterNumber) {
+          jsonRes(res, { success: false, error: '缺少必要参数：workId, chapterNumber' }, 400);
+          return true;
+        }
+
+        console.log('[PolishAPI] 从数据库读取并润色，workId:', workId, 'chapter:', chapterNumber);
+
+        // 1. 从数据库读取章节内容
+        const db = getDatabaseManager();
+        const chapter = await db.queryOne(
+          'SELECT * FROM chapters WHERE work_id = ? AND chapter_number = ?', 
+          [workId, chapterNumber]
+        );
+        
+        if (!chapter || !chapter.content) {
+          jsonRes(res, { success: false, error: '未找到章节内容' }, 404);
+          return true;
+        }
+
+        // 2. 使用 PolishPipeline 润色
+        const polishPipeline = new PolishPipeline();
+        const result = await polishPipeline.execute({
+          text: chapter.content,
+          settings: settings || configManager.getSettings()
+        }, (progress) => {
+          console.log(`[PolishAPI] [进度] ${progress.currentStep || 'processing'}: ${progress.message} (${progress.progress}%)`);
+        });
+        
+        jsonRes(res, { 
+          success: true, 
+          data: result 
+        });
+      } catch (error) {
+        console.error('[PolishAPI] 润色失败:', error);
+        jsonRes(res, { success: false, error: error instanceof Error ? error.message : '润色失败' }, 500);
       }
       return true;
     }
