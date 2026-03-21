@@ -82,29 +82,44 @@
 
 <!-- 加载全局设置弹窗 -->
 <script>
-// 全局设置弹窗功能
+// 全局设置弹窗功能（简化调试版）
 function openGlobalSettingsModal() {
+  console.log('[NavBar] openGlobalSettingsModal 被调用');
+  
   // 先检查是否已经加载了全局设置弹窗
   let modal = document.getElementById('globalSettingsModal');
   if (modal) {
+    console.log('[NavBar] 找到已有的 globalSettingsModal，显示它');
     modal.classList.add('show');
     return;
   }
   
+  console.log('[NavBar] 没有找到 globalSettingsModal，尝试加载');
+  
   // 如果没有，尝试加载
   fetch('/settings-modal.html')
-    .then(response => response.text())
+    .then(response => {
+      console.log('[NavBar] fetch 响应状态:', response.status);
+      return response.text();
+    })
     .then(html => {
+      console.log('[NavBar] 成功获取 settings-modal.html，长度:', html.length);
+      
       // 插入到页面
       const container = document.createElement('div');
       container.innerHTML = html;
       document.body.appendChild(container);
       
+      console.log('[NavBar] 已将 settings-modal.html 插入到页面');
+      
       // 延迟一下再打开，确保样式和脚本加载完成
       setTimeout(() => {
         modal = document.getElementById('globalSettingsModal');
         if (modal) {
+          console.log('[NavBar] 找到 globalSettingsModal，显示它');
           modal.classList.add('show');
+        } else {
+          console.error('[NavBar] 插入后仍然找不到 globalSettingsModal');
         }
       }, 100);
     })
@@ -114,6 +129,7 @@ function openGlobalSettingsModal() {
       // 降级方案 1: 尝试使用页面原有的 settingsModal
       const oldModal = document.getElementById('settingsModal');
       if (oldModal) {
+        console.log('[NavBar] 找到旧的 settingsModal，显示它');
         oldModal.classList.add('show');
         return;
       }
@@ -129,6 +145,7 @@ window.addEventListener('load', function() {
   if (!hasPreloaded && window.location.pathname.startsWith('/novel/')) {
     // 在小说管理页面预加载
     hasPreloaded = true;
+    console.log('[NavBar] 在小说管理页面，预加载 settings-modal.html');
     fetch('/settings-modal.html').catch(() => {});
   }
 });
