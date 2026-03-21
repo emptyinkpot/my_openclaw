@@ -22,27 +22,7 @@ export class BannedWordsStep extends BaseStep {
   readonly fixed = false;
   readonly dependencies = ['polish'];
   
-  // 常见禁用词库
-  private readonly BANNED_WORDS: Map<string, string> = new Map([
-    // 政治敏感
-    ['习近平', '某领导人'],
-    ['共产党', '执政党'],
-    
-    // 粗俗用语
-    ['傻逼', '愚蠢'],
-    ['妈的', '可恶'],
-    ['他妈', '真是'],
-    ['卧槽', '天哪'],
-    
-    // 歧视用语
-    ['弱智', '智力障碍'],
-    ['脑残', '欠考虑'],
-    ['白痴', '糊涂'],
-    
-    // 过时表达
-    ['小编', '笔者'],
-    ['亲们', '各位'],
-  ]);
+  // 禁用词库（完全从 MySQL 读取，无内置硬编码）
   
   async execute(context: StepContext): Promise<StepResult> {
     const { text, settings, resources, reportProgress } = context;
@@ -90,14 +70,14 @@ export class BannedWordsStep extends BaseStep {
   }
   
   /**
-   * 构建禁用词映射表
+   * 构建禁用词映射表（完全从 MySQL 读取）
    */
   private buildBannedWordsMap(
     customBannedWords?: Array<{ word: string; replacement?: string; reason?: string }>
   ): Map<string, string> {
-    const map = new Map(this.BANNED_WORDS);
+    const map = new Map<string, string>();
     
-    // 添加自定义禁用词
+    // 只从 MySQL 读取禁用词
     if (customBannedWords) {
       customBannedWords.forEach(item => {
         if (item.word && item.replacement) {
