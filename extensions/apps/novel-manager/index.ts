@@ -528,7 +528,6 @@ async function handleNovelPage(req: IncomingMessage, res: ServerResponse): Promi
     '/novel': 'index.html',
     '/novel/': 'index.html',
     '/auto.html': 'auto.html',
-    '/experience.html': 'experience.html',
     '/cache.html': 'cache.html',
     '/project-structure.html': 'project-structure.html',
     // 静态资源文件
@@ -1824,7 +1823,6 @@ const plugin = {
       { path: '/', match: 'exact' as const },
       { path: '/novel', match: 'exact' as const },
       { path: '/auto.html', match: 'exact' as const },
-      { path: '/experience.html', match: 'exact' as const },
       { path: '/cache.html', match: 'exact' as const },
       { path: '/project-structure.html', match: 'exact' as const }
     ];
