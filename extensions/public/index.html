@@ -605,64 +605,18 @@
           <!-- /MySQL字段子页面 -->
           
           <!-- 资源库子页面 -->
-          <div id="resourceLibrarySubPage" class="subtab-content" style="flex: 1; display: none; overflow: hidden;">
-            <div style="display: flex; height: 100%;">
-              <!-- 左侧分类导航 -->
-              <div style="width: 240px; background: var(--bg-secondary); border-right: 1px solid var(--border); display: flex; flex-direction: column;">
-                <div class="sidebar-header">
-                  <span class="sidebar-title">📦 资源分类</span>
-                </div>
-                <div class="sidebar-scroll" id="resourceCategoryList" style="padding: 8px;">
-                  <div class="work-item active" onclick="switchResourceTab('vocabulary')" data-resource-tab="vocabulary">
-                    <div class="work-title">📚 词汇库</div>
-                    <div class="work-meta"><span id="vocabCount">0</span> 条</div>
-                  </div>
-                  <div class="work-item" onclick="switchResourceTab('literature')" data-resource-tab="literature">
-                    <div class="work-title">📖 文献库</div>
-                    <div class="work-meta"><span id="litCount">0</span> 条</div>
-                  </div>
-                  <div class="work-item" onclick="switchResourceTab('banned')" data-resource-tab="banned">
-                    <div class="work-title">🚫 禁用词</div>
-                    <div class="work-meta"><span id="bannedCount">0</span> 条</div>
-                  </div>
-                </div>
+          <div id="resourceLibrarySubPage" class="subtab-content" style="flex: 1; display: none; overflow-y: auto; padding: 20px;">
+            <div style="max-width: 1200px; margin: 0 auto;">
+              <h2 style="font-size: 18px; font-weight: 600; margin-bottom: 20px;">📦 资源库</h2>
+              
+              <div style="margin-bottom: 16px; display: flex; gap: 8px; align-items: center;">
+                <button class="btn primary" onclick="loadResourceFromCloud()">🔄 从云库加载</button>
               </div>
               
-              <!-- 右侧内容区 -->
-              <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
-                <!-- 工具栏 -->
-                <div class="toolbar">
-                  <div class="toolbar-group">
-                    <button class="btn primary" onclick="uploadPolishResources()">📤 上传 Polish Resources</button>
-                    <button class="btn" onclick="refreshResourceLibrary()">🔄 刷新</button>
-                  </div>
-                  <div class="spacer"></div>
-                  <div class="toolbar-group">
-                    <div class="search-box">
-                      <input type="text" id="resourceSearch" placeholder="搜索资源..." onkeyup="searchResources()">
-                    </div>
-                  </div>
-                </div>
-                
-                <!-- 内容区 -->
-                <div class="content-area" id="resourceContentArea" style="flex: 1; overflow-y: auto;">
-                  <!-- 词汇库视图 -->
-                  <div id="vocabularyView" style="display: block;">
-                    <div id="vocabularyList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px;">
-                    </div>
-                  </div>
-                  
-                  <!-- 文献库视图 -->
-                  <div id="literatureView" style="display: none;">
-                    <div id="literatureList" style="display: flex; flex-direction: column; gap: 12px;">
-                    </div>
-                  </div>
-                  
-                  <!-- 禁用词视图 -->
-                  <div id="bannedView" style="display: none;">
-                    <div id="bannedList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px;">
-                    </div>
-                  </div>
+              <div id="resourceCloudContent" style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
+                <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+                  <div style="font-size: 48px; margin-bottom: 16px;">📦</div>
+                  <div style="font-size: 14px;">点击上方按钮从云库加载数据</div>
                 </div>
               </div>
             </div>
@@ -2412,7 +2366,7 @@
       // 显示对应的子页面
       document.getElementById('novelDataSubPage').style.display = subtab === 'novel-data' ? 'flex' : 'none';
       document.getElementById('mysqlFieldsSubPage').style.display = subtab === 'mysql-fields' ? 'block' : 'none';
-      document.getElementById('resourceLibrarySubPage').style.display = subtab === 'resource-library' ? 'flex' : 'none';
+      document.getElementById('resourceLibrarySubPage').style.display = subtab === 'resource-library' ? 'block' : 'none';
       
       // 如果切换到 MySQL 字段页面，实时从数据库读取
       if (subtab === 'mysql-fields') {
@@ -2420,212 +2374,58 @@
       }
     }
     
-    // 资源库数据
-    let resourceData = {
-      vocabulary: [],
-      literature: [],
-      bannedWords: []
-    };
-    let currentResourceTab = 'vocabulary';
-    
-    // 切换资源库标签
-    function switchResourceTab(tab) {
-      currentResourceTab = tab;
+    // 从云库加载资源
+    async function loadResourceFromCloud() {
+      const container = document.getElementById('resourceCloudContent');
+      if (!container) return;
       
-      // 更新左侧分类导航
-      document.querySelectorAll('#resourceCategoryList .work-item').forEach(el => el.classList.remove('active'));
-      document.querySelector(`#resourceCategoryList .work-item[data-resource-tab="${tab}"]`)?.classList.add('active');
+      container.innerHTML = `
+        <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+          <div style="font-size: 32px; margin-bottom: 12px;">⏳</div>
+          <div style="font-size: 14px;">正在从云库加载数据...</div>
+        </div>
+      `;
       
-      // 显示对应的视图
-      document.getElementById('vocabularyView').style.display = tab === 'vocabulary' ? 'block' : 'none';
-      document.getElementById('literatureView').style.display = tab === 'literature' ? 'block' : 'none';
-      document.getElementById('bannedView').style.display = tab === 'banned' ? 'block' : 'none';
-      
-      // 渲染数据
-      renderCurrentResourceTab();
-    }
-    
-    // 加载资源库
-    async function loadResourceLibrary() {
       try {
-        // 加载词汇
+        // 尝试加载词汇
         const vocabResponse = await fetch('/api/main-library');
         const vocabData = await vocabResponse.json();
-        if (vocabData.success && vocabData.data?.items) {
-          resourceData.vocabulary = vocabData.data.items;
-          document.getElementById('vocabCount').textContent = resourceData.vocabulary.length;
+        
+        let html = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px;">';
+        
+        if (vocabData.success && vocabData.data?.items && vocabData.data.items.length > 0) {
+          const items = vocabData.data.items.slice(0, 20);
+          html += items.map((item) => `
+            <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px;">
+              <div style="font-size: 14px; font-weight: 600; margin-bottom: 6px;">${item.content || '无内容'}</div>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <span style="padding: 2px 8px; background: var(--bg-tertiary); border-radius: 10px; font-size: 10px;">${item.category || '通用'}</span>
+              </div>
+            </div>
+          `).join('');
+          html += `</div><div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); text-align: center; font-size: 11px; color: var(--text-muted);">显示前 20 条，共 ${vocabData.data.items.length} 条词汇</div>`;
+        } else {
+          html += `
+            <div style="grid-column: 1/-1; text-align: center; padding: 60px; color: var(--text-muted);">
+              <div style="font-size: 48px; margin-bottom: 16px;">📚</div>
+              <div style="font-size: 14px;">云库中暂无词汇数据</div>
+            </div>
+          `;
+          html += '</div>';
         }
         
-        // 加载文献
-        try {
-          const litResponse = await fetch('/api/literature');
-          const litData = await litResponse.json();
-          if (litData.success && litData.items) {
-            resourceData.literature = litData.items;
-            document.getElementById('litCount').textContent = resourceData.literature.length;
-          }
-        } catch (e) {
-          console.error('[loadResourceLibrary] 文献加载失败:', e);
-        }
-        
-        // 加载禁用词
-        try {
-          const bannedResponse = await fetch('/api/banned-words');
-          const bannedData = await bannedResponse.json();
-          if (bannedData.success && bannedData.items) {
-            resourceData.bannedWords = bannedData.items;
-            document.getElementById('bannedCount').textContent = resourceData.bannedWords.length;
-          }
-        } catch (e) {
-          console.error('[loadResourceLibrary] 禁用词加载失败:', e);
-        }
-        
-        renderCurrentResourceTab();
-        showToast('✅ 资源库加载成功', 'success');
+        container.innerHTML = html;
+        showToast('✅ 数据加载成功', 'success');
       } catch (err) {
-        console.error('[loadResourceLibrary] 加载失败:', err);
-        showToast('❌ 资源库加载失败', 'error');
-      }
-    }
-    
-    // 渲染当前资源标签
-    function renderCurrentResourceTab() {
-      const searchTerm = document.getElementById('resourceSearch')?.value?.toLowerCase() || '';
-      
-      if (currentResourceTab === 'vocabulary') {
-        renderVocabularyList(searchTerm);
-      } else if (currentResourceTab === 'literature') {
-        renderLiteratureList(searchTerm);
-      } else if (currentResourceTab === 'banned') {
-        renderBannedWordsList(searchTerm);
-      }
-    }
-    
-    // 渲染词汇列表
-    function renderVocabularyList(searchTerm = '') {
-      const container = document.getElementById('vocabularyList');
-      if (!container) return;
-      
-      const items = resourceData.vocabulary.filter(item => 
-        !searchTerm || 
-        item.content?.toLowerCase().includes(searchTerm) || 
-        item.category?.toLowerCase().includes(searchTerm)
-      );
-      
-      if (items.length === 0) {
+        console.error('[loadResourceFromCloud] 加载失败:', err);
         container.innerHTML = `
-          <div style="grid-column: 1/-1; text-align: center; padding: 60px; color: var(--text-muted);">
-            <div style="font-size: 48px; margin-bottom: 16px;">📚</div>
-            <div style="font-size: 14px;">暂无词汇数据</div>
+          <div style="text-align: center; padding: 60px; color: var(--danger);">
+            <div style="font-size: 48px; margin-bottom: 16px;">❌</div>
+            <div style="font-size: 14px;">加载失败: ${err.message}</div>
           </div>
         `;
-        return;
+        showToast('❌ 加载失败', 'error');
       }
-      
-      container.innerHTML = items.map(item => `
-        <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 12px;">
-          <div style="font-size: 14px; font-weight: 600; margin-bottom: 8px;">${item.content}</div>
-          <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
-            <span style="padding: 2px 8px; background: var(--bg-tertiary); border-radius: 10px; font-size: 10px;">${item.category || '通用'}</span>
-          </div>
-          <div style="font-size: 10px; color: var(--text-muted);">ID: ${item.id}</div>
-        </div>
-      `).join('');
-    }
-    
-    // 渲染文献列表
-    function renderLiteratureList(searchTerm = '') {
-      const container = document.getElementById('literatureList');
-      if (!container) return;
-      
-      const items = resourceData.literature.filter(item => 
-        !searchTerm || 
-        item.title?.toLowerCase().includes(searchTerm) || 
-        item.content?.toLowerCase().includes(searchTerm) ||
-        item.author?.toLowerCase().includes(searchTerm) ||
-        (item.tags && item.tags.some((tag) => tag.toLowerCase().includes(searchTerm)))
-      );
-      
-      if (items.length === 0) {
-        container.innerHTML = `
-          <div style="text-align: center; padding: 60px; color: var(--text-muted);">
-            <div style="font-size: 48px; margin-bottom: 16px;">📖</div>
-            <div style="font-size: 14px;">暂无文献数据</div>
-          </div>
-        `;
-        return;
-      }
-      
-      container.innerHTML = items.map(item => `
-        <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-            <div>
-              <div style="font-size: 16px; font-weight: 600; margin-bottom: 4px;">${item.title}</div>
-              <div style="font-size: 11px; color: var(--text-muted);">${item.author || '佚名'}</div>
-            </div>
-            <div style="display: flex; gap: 4px;">
-              ${item.priority ? `<span style="padding: 2px 8px; background: var(--accent); color: #fff; border-radius: 10px; font-size: 10px;">优先级 ${item.priority}</span>` : ''}
-            </div>
-          </div>
-          ${item.content ? `<div style="font-size: 12px; line-height: 1.6; margin-bottom: 12px; color: var(--text-secondary);">${item.content.substring(0, 200)}${item.content.length > 200 ? '...' : ''}</div>` : ''}
-          ${item.tags && item.tags.length > 0 ? `
-            <div style="display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 8px;">
-              ${item.tags.map((tag) => `<span style="padding: 2px 8px; background: var(--bg-tertiary); border-radius: 10px; font-size: 10px;">${tag}</span>`).join('')}
-            </div>
-          ` : ''}
-          ${item.note ? `<div style="font-size: 10px; color: var(--text-muted); margin-top: 8px;">📝 ${item.note}</div>` : ''}
-        </div>
-      `).join('');
-    }
-    
-    // 渲染禁用词列表
-    function renderBannedWordsList(searchTerm = '') {
-      const container = document.getElementById('bannedList');
-      if (!container) return;
-      
-      const items = resourceData.bannedWords.filter(item => 
-        !searchTerm || 
-        item.content?.toLowerCase().includes(searchTerm) || 
-        item.category?.toLowerCase().includes(searchTerm) ||
-        item.reason?.toLowerCase().includes(searchTerm)
-      );
-      
-      if (items.length === 0) {
-        container.innerHTML = `
-          <div style="grid-column: 1/-1; text-align: center; padding: 60px; color: var(--text-muted);">
-            <div style="font-size: 48px; margin-bottom: 16px;">🚫</div>
-            <div style="font-size: 14px;">暂无禁用词数据</div>
-          </div>
-        `;
-        return;
-      }
-      
-      container.innerHTML = items.map(item => `
-        <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 12px;">
-          <div style="font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--danger);">🚫 ${item.content}</div>
-          <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
-            <span style="padding: 2px 8px; background: #ffebe9; color: var(--danger); border-radius: 10px; font-size: 10px;">${item.category || '现代词汇'}</span>
-            <span style="padding: 2px 8px; background: var(--bg-tertiary); border-radius: 10px; font-size: 10px;">${item.type || 'modern'}</span>
-          </div>
-          ${item.reason ? `<div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 8px;">📌 ${item.reason}</div>` : ''}
-          ${item.alternative ? `<div style="font-size: 11px; color: var(--success);">✅ 替代: ${item.alternative}</div>` : ''}
-        </div>
-      `).join('');
-    }
-    
-    // 搜索资源
-    function searchResources() {
-      renderCurrentResourceTab();
-    }
-    
-    // 刷新资源库
-    function refreshResourceLibrary() {
-      loadResourceLibrary();
-    }
-    
-    // 上传 Polish Resources
-    async function uploadPolishResources() {
-      showToast('📤 上传功能开发中...', 'info');
     }
     
     // 实时从数据库加载表结构
