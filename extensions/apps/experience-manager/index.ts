@@ -206,6 +206,50 @@ function injectNavBar(html: string, currentPage: string): string {
     navBarHtml = navBarHtml.replace('href="/experience.html"', 'href="/experience.html" class="on"');
   }
   
+  // 添加动态设置导航栏高度的脚本
+  const dynamicHeightScript = `
+<script>
+// 动态设置导航栏高度
+(function() {
+  function setNavHeight() {
+    const navBar = document.querySelector('.nav-bar');
+    if (navBar) {
+      const height = navBar.offsetHeight;
+      document.documentElement.style.setProperty('--nav-height', height + 'px');
+      
+      // 给 body 添加 padding-top
+      document.body.style.paddingTop = 'var(--nav-height)';
+    }
+  }
+  
+  // 使用 MutationObserver 监听导航栏加载
+  const observer = new MutationObserver(function() {
+    const navBar = document.querySelector('.nav-bar');
+    if (navBar) {
+      observer.disconnect();
+      setNavHeight();
+    }
+  });
+  
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+  
+  // 立即尝试执行
+  setNavHeight();
+  
+  // DOMContentLoaded 时再次执行
+  document.addEventListener('DOMContentLoaded', setNavHeight);
+  
+  // load 时再次执行
+  window.addEventListener('load', setNavHeight);
+  
+  // 监听窗口大小变化
+  window.addEventListener('resize', setNavHeight);
+})();
+</script>
+`;
+  
+  navBarHtml = navBarHtml + dynamicHeightScript;
+  
   // 尝试替换页面中的 <div class="nav-bar"> 部分
   const navBarRegex = /<div class="nav-bar">[\s\S]*?<\/div>\s*<\/div>?/;
   
