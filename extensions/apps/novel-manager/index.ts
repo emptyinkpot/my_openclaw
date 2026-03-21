@@ -34,6 +34,117 @@ function getNovelService(): NovelService {
   return novelService;
 }
 
+// 获取项目结构
+async function getProjectStructure() {
+  const projectRoot = path.join(__dirname, '..', '..', '..');
+  
+  // 获取插件列表
+  const pluginsDir = path.join(projectRoot, 'extensions', 'apps');
+  const plugins: string[] = [];
+  try {
+    const entries = fs.readdirSync(pluginsDir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (entry.isDirectory()) {
+        plugins.push(entry.name);
+      }
+    }
+  } catch (e) {
+    console.error('[ProjectStructure] 获取插件列表失败:', e);
+  }
+
+  // 获取 API 路由列表（从本文件中提取）
+  const apiRoutes: string[] = [];
+  try {
+    const content = fs.readFileSync(__filename, 'utf-8');
+    const matches = content.match(/path === '\/api\/novel\/[^']+'/g);
+    if (matches) {
+      const uniqueRoutes = new Set<string>();
+      matches.forEach(m => {
+        const route = m.match(/'(\/api\/novel\/[^']+)'/)?.[1];
+        if (route) uniqueRoutes.add(route);
+      });
+      apiRoutes.push(...Array.from(uniqueRoutes).sort());
+    }
+  } catch (e) {
+    console.error('[ProjectStructure] 获取API路由失败:', e);
+  }
+
+  // 获取内容工艺模块的步骤
+  const contentCraftSteps: string[] = [];
+  try {
+    const stepsDir = path.join(__dirname, 'core', 'content-craft', 'src', 'steps');
+    if (fs.existsSync(stepsDir)) {
+      const entries = fs.readdirSync(stepsDir, { withFileTypes: true });
+      for (const entry of entries) {
+        if (entry.isDirectory()) {
+          contentCraftSteps.push(entry.name);
+        }
+      }
+    }
+  } catch (e) {
+    console.error('[ProjectStructure] 获取内容工艺步骤失败:', e);
+  }
+
+  // 获取服务列表
+  const services: string[] = [];
+  try {
+    const servicesDir = path.join(__dirname, 'services');
+    if (fs.existsSync(servicesDir)) {
+      const entries = fs.readdirSync(servicesDir, { withFileTypes: true });
+      for (const entry of entries) {
+        if (entry.isFile() && (entry.name.endsWith('.ts') || entry.name.endsWith('.js'))) {
+          services.push(entry.name.replace(/\.(ts|js)$/, ''));
+        }
+      }
+    }
+  } catch (e) {
+    console.error('[ProjectStructure] 获取服务列表失败:', e);
+  }
+
+  return {
+    projectRoot,
+    timestamp: new Date().toISOString(),
+    modules: {
+      plugins,
+      apiRoutes,
+      contentCraftSteps,
+      services
+    },
+    structure: {
+      frontend: {
+        status: 'active',
+        description: 'Control UI (原生界面)',
+        components: ['Control UI', 'Dashboard']
+      },
+      backend: {
+        routing: {
+          status: 'active',
+          count: apiRoutes.length,
+          routes: apiRoutes
+        },
+        services: {
+          status: 'active',
+          count: services.length,
+          list: services
+        },
+        database: {
+          status: 'active',
+          description: 'SQLite 数据库'
+        }
+      },
+      contentCraft: {
+        status: 'active',
+        steps: contentCraftSteps
+      },
+      plugins: {
+        status: 'active',
+        count: plugins.length,
+        list: plugins
+      }
+    }
+  };
+}
+
 // 获取小说管理界面HTML
 function getNovelHtml(): string {
   if (htmlCache) return htmlCache;
@@ -106,6 +217,306 @@ function getPageHtml(pageName: string): string {
   }
 }
 
+// 处理项目结构页面
+function getProjectStructureHtml(): string {
+  return `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>工程结构 - 项目监视器</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --bg-secondary: #1e293b;
+      --card: #1e293b;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --border: #334155;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .header h1 .badge {
+      font-size: 14px;
+      font-weight: 500;
+      background: var(--accent);
+      padding: 4px 12px;
+      border-radius: 6px;
+    }
+    .refresh-btn {
+      padding: 10px 20px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .refresh-btn:hover { background: var(--accent-hover); }
+    .refresh-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid var(--border);
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0;
+    }
+    .status-badge {
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+    .status-active { background: var(--success); color: white; }
+    .status-warning { background: var(--warning); color: #1f2937; }
+    .status-danger { background: var(--danger); color: white; }
+    .stat-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+    .stat-label {
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+    .list {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .list-item {
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .list-item:last-child { border-bottom: none; }
+    .list-item code {
+      background: var(--bg);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    .timestamp {
+      color: var(--text-muted);
+      font-size: 12px;
+      margin-top: 12px;
+    }
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-muted);
+    }
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin: 20px 0 12px 0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .full-width {
+      grid-column: 1 / -1;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>
+        🏗️ 工程结构
+        <span class="badge">项目监视器</span>
+      </h1>
+      <button class="refresh-btn" id="refreshBtn" onclick="loadData()">
+        <span>🔄</span>
+        刷新
+      </button>
+    </div>
+
+    <div id="content">
+      <div class="loading">加载中...</div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = '/api/novel';
+    const TOKEN = 'e1647cdb-1b80-4eee-a975-7599160cc89b';
+
+    async function api(path, options = {}) {
+      const res = await fetch(API_BASE + path, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + TOKEN,
+          ...(options.headers || {})
+        }
+      });
+      return res.json();
+    }
+
+    async function loadData() {
+      const btn = document.getElementById('refreshBtn');
+      btn.disabled = true;
+      
+      try {
+        const result = await api('/project-structure');
+        if (result.success) {
+          renderData(result.data);
+        } else {
+          document.getElementById('content').innerHTML = \`
+            <div class="loading">加载失败: \${result.error}</div>
+          \`;
+        }
+      } catch (e) {
+        document.getElementById('content').innerHTML = \`
+          <div class="loading">网络错误: \${e.message}</div>
+        \`;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function renderData(data) {
+      const { structure, modules, timestamp } = data;
+      
+      document.getElementById('content').innerHTML = \`
+        <div class="timestamp">最后更新: \${new Date(timestamp).toLocaleString('zh-CN')}</div>
+        
+        <div class="grid">
+          <!-- 前端模块 -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">🎨 前端层</h3>
+              <span class="status-badge status-active">Active</span>
+            </div>
+            <div class="stat-value">\${structure.frontend.components.length}</div>
+            <div class="stat-label">组件</div>
+            <div class="list">
+              \${structure.frontend.components.map(c => \`<div class="list-item">\${c}</div>\`).join('')}
+            </div>
+          </div>
+
+          <!-- 后端路由 -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">🔌 后端路由层</h3>
+              <span class="status-badge status-active">Active</span>
+            </div>
+            <div class="stat-value">\${structure.backend.routing.count}</div>
+            <div class="stat-label">API 端点</div>
+          </div>
+
+          <!-- 后端服务 -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">⚙️ 后端服务层</h3>
+              <span class="status-badge status-active">Active</span>
+            </div>
+            <div class="stat-value">\${structure.backend.services.count}</div>
+            <div class="stat-label">服务</div>
+            <div class="list">
+              \${structure.backend.services.list.map(s => \`<div class="list-item"><code>\${s}</code></div>\`).join('')}
+            </div>
+          </div>
+
+          <!-- 内容工艺 -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">✏️ 内容工艺模块</h3>
+              <span class="status-badge status-active">Active</span>
+            </div>
+            <div class="stat-value">\${structure.contentCraft.steps.length}</div>
+            <div class="stat-label">处理步骤</div>
+            <div class="list">
+              \${structure.contentCraft.steps.map(s => \`<div class="list-item"><code>\${s}</code></div>\`).join('')}
+            </div>
+          </div>
+
+          <!-- 插件模块 -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">🔌 插件模块</h3>
+              <span class="status-badge status-active">Active</span>
+            </div>
+            <div class="stat-value">\${structure.plugins.count}</div>
+            <div class="stat-label">插件</div>
+            <div class="list">
+              \${structure.plugins.list.map(p => \`<div class="list-item"><code>\${p}</code></div>\`).join('')}
+            </div>
+          </div>
+        </div>
+
+        <!-- API 路由详情 -->
+        <div class="card full-width">
+          <div class="card-header">
+            <h3 class="card-title">📋 API 端点详情</h3>
+          </div>
+          <div class="list">
+            \${structure.backend.routing.routes.map(r => \`<div class="list-item"><code>\${r}</code></div>\`).join('')}
+          </div>
+        </div>
+      \`;
+    }
+
+    loadData();
+  </script>
+</body>
+</html>`;
+}
+
 // 路由处理器 - 处理页面请求（不需要认证）
 async function handleNovelPage(req: IncomingMessage, res: ServerResponse): Promise<boolean | void> {
   const url = req.url || '';
@@ -119,6 +530,7 @@ async function handleNovelPage(req: IncomingMessage, res: ServerResponse): Promi
     '/auto.html': 'auto.html',
     '/experience.html': 'experience.html',
     '/cache.html': 'cache.html',
+    '/project-structure.html': 'project-structure.html',
     // 静态资源文件
     '/settings-modal.html': 'settings-modal.html',
     '/nav-bar.html': 'nav-bar.html',
@@ -130,6 +542,19 @@ async function handleNovelPage(req: IncomingMessage, res: ServerResponse): Promi
 
   const pageFile = pageMap[urlPath];
   if (pageFile) {
+    // 特殊处理项目结构页面
+    if (pageFile === 'project-structure.html') {
+      res.writeHead(200, {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'Access-Control-Allow-Origin': '*'
+      });
+      res.end(getProjectStructureHtml());
+      return true;
+    }
+    
     // 根据文件类型设置 Content-Type
     let contentType = 'text/html; charset=utf-8';
     if (pageFile.endsWith('.js')) {
@@ -1356,6 +1781,19 @@ ${vocabulary.slice(0, 50).map((w: any) => `- ${w.word}`).join('\n')}
       return true;
     }
 
+    // ====== 项目结构API ======
+    // 获取项目结构
+    if (path === '/api/novel/project-structure' && method === 'GET') {
+      try {
+        const structure = await getProjectStructure();
+        jsonRes(res, { success: true, data: structure });
+      } catch (error) {
+        console.error('[ProjectStructureAPI] 获取项目结构失败:', error);
+        jsonRes(res, { success: false, error: '获取项目结构失败' }, 500);
+      }
+      return true;
+    }
+
     // 404
     jsonRes(res, { success: false, error: 'API路由不存在' }, 404);
     return true;
@@ -1387,7 +1825,8 @@ const plugin = {
       { path: '/novel', match: 'exact' as const },
       { path: '/auto.html', match: 'exact' as const },
       { path: '/experience.html', match: 'exact' as const },
-      { path: '/cache.html', match: 'exact' as const }
+      { path: '/cache.html', match: 'exact' as const },
+      { path: '/project-structure.html', match: 'exact' as const }
     ];
     
     // 注册页面路由 - 不需要认证

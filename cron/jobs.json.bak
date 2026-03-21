@@ -40,7 +40,7 @@
       "description": "每天早上自动发布番茄小说章节",
       "enabled": true,
       "createdAtMs": 1773805800000,
-      "updatedAtMs": 1773968531413,
+      "updatedAtMs": 1774054871889,
       "schedule": {
         "kind": "cron",
         "expr": "0 9 * * *",
@@ -57,14 +57,14 @@
         "channel": "last"
       },
       "state": {
-        "nextRunAtMs": 1774054800000,
-        "lastRunAtMs": 1773968458076,
+        "nextRunAtMs": 1774141200000,
+        "lastRunAtMs": 1774054800003,
         "lastRunStatus": "error",
         "lastStatus": "error",
-        "lastDurationMs": 73337,
+        "lastDurationMs": 71886,
         "lastDeliveryStatus": "unknown",
-        "consecutiveErrors": 2,
-        "runningAtMs": 1774054800002
+        "consecutiveErrors": 3,
+        "lastError": "Channel is required (no configured channels detected). Set delivery.channel explicitly or use a main session with a previous channel."
       }
     },
     {
@@ -97,7 +97,7 @@
         "lastDurationMs": 67041,
         "lastDeliveryStatus": "unknown",
         "consecutiveErrors": 1,
-        "lastError": "Channel is required (no configured channels detected). Set delivery.channel explicitly or use a main session with a previous channel."
+        "runningAtMs": 1774094400001
       }
     }
   ]
