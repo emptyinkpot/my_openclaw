@@ -11,6 +11,7 @@ import { IncomingMessage, ServerResponse } from 'http';
 import * as fs from 'fs';
 import * as path from 'path';
 import { experienceRepo } from './src/core/ExperienceRepository';
+import { noteRepo } from './src/core/NoteRepository';
 import { syncExperienceToMemory } from './src/core/MemorySync';
 
 // 插件信息
@@ -175,6 +176,65 @@ async function handleExperienceApi(req: IncomingMessage, res: ServerResponse): P
       return true;
     }
 
+    // ========== 笔记相关 API ==========
+
+    // GET /api/experience/notes - 获取所有笔记
+    if (path === '/api/experience/notes' && method === 'GET') {
+      const notes = noteRepo.getAll();
+      jsonRes(res, { success: true, data: notes });
+      return true;
+    }
+
+    // GET /api/experience/notes/categories - 获取笔记分类
+    if (path === '/api/experience/notes/categories' && method === 'GET') {
+      const categories = noteRepo.getCategories();
+      jsonRes(res, { success: true, data: categories });
+      return true;
+    }
+
+    // POST /api/experience/notes - 创建笔记
+    if (path === '/api/experience/notes' && method === 'POST') {
+      const body = await parseBody(req);
+      const note = noteRepo.create(body);
+      jsonRes(res, { success: true, data: note });
+      return true;
+    }
+
+    // GET /api/experience/notes/:id - 获取单条笔记
+    const noteMatch = path.match(/^\/api\/experience\/notes\/([a-zA-Z0-9-_]+)$/);
+    if (noteMatch && method === 'GET') {
+      const note = noteRepo.getById(noteMatch[1]);
+      if (!note) {
+        jsonRes(res, { success: false, error: '笔记不存在' }, 404);
+        return true;
+      }
+      jsonRes(res, { success: true, data: note });
+      return true;
+    }
+
+    // PUT /api/experience/notes/:id - 更新笔记
+    if (noteMatch && method === 'PUT') {
+      const body = await parseBody(req);
+      const note = noteRepo.update(noteMatch[1], body);
+      if (!note) {
+        jsonRes(res, { success: false, error: '笔记不存在' }, 404);
+        return true;
+      }
+      jsonRes(res, { success: true, data: note });
+      return true;
+    }
+
+    // DELETE /api/experience/notes/:id - 删除笔记
+    if (noteMatch && method === 'DELETE') {
+      const success = noteRepo.delete(noteMatch[1]);
+      if (!success) {
+        jsonRes(res, { success: false, error: '笔记不存在' }, 404);
+        return true;
+      }
+      jsonRes(res, { success: true });
+      return true;
+    }
+
     // 未匹配的路由
     jsonRes(res, { success: false, error: 'Not found' }, 404);
     return true;
@@ -309,6 +369,9 @@ async function initializeData() {
   try {
     const stats = experienceRepo.getStats();
     console.log(`[experience-manager] 已加载 ${stats.totalRecords} 条经验记录`);
+    
+    const notes = noteRepo.getAll();
+    console.log(`[experience-manager] 已加载 ${notes.length} 条笔记`);
   } catch (error) {
     console.error('[experience-manager] 初始化数据失败:', error);
   }
