@@ -1,2 +1,5 @@
-2026/03/21-12:43:06.037 512c2 Creating DB /workspace/projects/browser/fanqie-account-2/Default/Local Storage/leveldb since it was missing.
-2026/03/21-12:43:06.047 512c2 Reusing MANIFEST /workspace/projects/browser/fanqie-account-2/Default/Local Storage/leveldb/MANIFEST-000001
+2026/03/21-12:46:33.371 515ef Reusing MANIFEST /workspace/projects/browser/fanqie-account-2/Default/Local Storage/leveldb/MANIFEST-000001
+2026/03/21-12:46:33.394 515ef Recovering log #3
+2026/03/21-12:46:33.394 515ef Level-0 table #3: started
+2026/03/21-12:46:33.401 515ef Level-0 table #3: 36569 bytes OK
+2026/03/21-12:46:33.409 515ef Delete type=0 #3

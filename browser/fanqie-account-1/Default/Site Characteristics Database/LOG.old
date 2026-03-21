@@ -1,5 +1,0 @@
-2026/03/21-12:42:55.067 511c1 Log #3: 1 ops saved to Table #4 OK
-2026/03/21-12:42:55.067 511c1 Archiving /workspace/projects/browser/fanqie-account-1/Default/Site Characteristics Database/000003.log: OK
-2026/03/21-12:42:55.067 511c1 Table #4: 1 entries OK
-2026/03/21-12:42:55.067 511c1 Archiving /workspace/projects/browser/fanqie-account-1/Default/Site Characteristics Database/MANIFEST-000001: OK
-2026/03/21-12:42:55.073 511c1 **** Repaired leveldb /workspace/projects/browser/fanqie-account-1/Default/Site Characteristics Database; recovered 1 files; 130 bytes. Some data may have been lost. ****

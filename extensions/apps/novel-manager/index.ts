@@ -110,13 +110,21 @@ async function handleNovelPage(req: IncomingMessage, res: ServerResponse): Promi
     '/novel/': 'index.html',
     '/auto.html': 'auto.html',
     '/experience.html': 'experience.html',
-    '/cache.html': 'cache.html'
+    '/cache.html': 'cache.html',
+    '/nav-bar.html': 'nav-bar.html',
+    '/nav-bar.js': 'nav-bar.js'
   };
 
   const pageFile = pageMap[urlPath];
   if (pageFile) {
+    // 根据文件类型设置 Content-Type
+    let contentType = 'text/html; charset=utf-8';
+    if (pageFile.endsWith('.js')) {
+      contentType = 'application/javascript; charset=utf-8';
+    }
+    
     res.writeHead(200, {
-      'Content-Type': 'text/html; charset=utf-8',
+      'Content-Type': contentType,
       'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
       'Pragma': 'no-cache',
       'Expires': '0'
