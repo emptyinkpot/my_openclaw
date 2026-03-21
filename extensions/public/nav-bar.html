@@ -104,13 +104,20 @@ function openGlobalSettingsModal() {
     })
     .then(html => {
       console.log('[NavBar] 成功获取 settings-modal.html，长度:', html.length);
+      console.log('[NavBar] settings-modal.html 内容预览:', html.substring(0, 200));
       
       // 插入到页面
       const container = document.createElement('div');
       container.innerHTML = html;
+      console.log('[NavBar] container .innerHTML 预览:', container.innerHTML.substring(0, 200));
+      console.log('[NavBar] container.childNodes.length:', container.childNodes.length);
+      
       document.body.appendChild(container);
       
       console.log('[NavBar] 已将 settings-modal.html 插入到页面');
+      console.log('[NavBar] 现在查询 document.getElementById("globalSettingsModal"):', document.getElementById('globalSettingsModal'));
+      console.log('[NavBar] 查询 document.querySelectorAll("#globalSettingsModal"):', document.querySelectorAll('#globalSettingsModal').length);
+      console.log('[NavBar] 查询 document.body.lastChild:', document.body.lastChild);
       
       // 延迟一下再打开，确保样式和脚本加载完成
       setTimeout(() => {
@@ -120,6 +127,8 @@ function openGlobalSettingsModal() {
           modal.classList.add('show');
         } else {
           console.error('[NavBar] 插入后仍然找不到 globalSettingsModal');
+          console.error('[NavBar] 再次查询 container:', container);
+          console.error('[NavBar] container.innerHTML:', container.innerHTML);
         }
       }, 100);
     })
