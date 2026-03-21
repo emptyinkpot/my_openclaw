@@ -41,6 +41,12 @@ export class BannedWordsStep extends BaseStep {
     try {
       reportProgress?.('正在使用LLM检查禁用词...');
       
+      // 检查是否启用禁用词处理
+      const stepSettings = settings.steps[this.id] || {};
+      if (!stepSettings.enabled) {
+        return this.createSkipResult(text, '禁用词处理已禁用');
+      }
+      
       // 获取禁用词列表（从MySQL加载的所有禁用词）
       const bannedWords = resources?.bannedWords || [];
       
