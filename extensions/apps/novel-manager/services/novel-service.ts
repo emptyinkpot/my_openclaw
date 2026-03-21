@@ -168,6 +168,80 @@ export class NovelService {
         console.log('[NovelService] suggested_action 添加跳过');
       }
       
+      // 创建角色表
+      await this.db.execute(`
+        CREATE TABLE IF NOT EXISTS characters (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          work_id INT NOT NULL,
+          name VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+          aliases JSON,
+          description TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+          personality JSON,
+          appearance TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+          background TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+          relationships JSON,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          INDEX idx_work_id (work_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `).catch(() => {});
+      
+      // 创建世界观/故事背景表
+      await this.db.execute(`
+        CREATE TABLE IF NOT EXISTS story_backgrounds (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          work_id INT NOT NULL,
+          name VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+          world_setting TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+          timeline JSON,
+          geography TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+          society TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+          other TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          INDEX idx_work_id (work_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `).catch(() => {});
+      
+      // 创建大纲表
+      await this.db.execute(`
+        CREATE TABLE IF NOT EXISTS outlines (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          work_id INT NOT NULL,
+          name VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+          summary TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+          theme TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+          style VARCHAR(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+          volumes JSON,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          INDEX idx_work_id (work_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `).catch(() => {});
+      
+      // 创建细纲表
+      await this.db.execute(`
+        CREATE TABLE IF NOT EXISTS chapter_outlines (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          work_id INT NOT NULL,
+          volume_number INT,
+          chapter_number INT NOT NULL,
+          title VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+          summary TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+          key_events JSON,
+          characters JSON,
+          location VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+          time VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+          mood VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+          target_word_count INT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          UNIQUE KEY uk_work_chapter (work_id, chapter_number),
+          INDEX idx_work_id (work_id),
+          INDEX idx_chapter_number (chapter_number)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+      `).catch(() => {});
+      
       this.initialized = true;
     } catch (e) {
       console.error('[NovelService] 初始化表失败:', e);
@@ -276,6 +350,62 @@ export class NovelService {
     return await this.db.query(`
       SELECT * FROM characters WHERE work_id = ? ORDER BY id
     `, [workId]);
+  }
+  
+  /**
+   * 获取作品的故事背景
+   */
+  async getStoryBackgroundByWorkId(workId: number) {
+    return await this.db.queryOne(`
+      SELECT * FROM story_backgrounds WHERE work_id = ? ORDER BY id DESC LIMIT 1
+    `, [workId]);
+  }
+  
+  /**
+   * 获取作品的大纲
+   */
+  async getOutlineByWorkId(workId: number) {
+    return await this.db.queryOne(`
+      SELECT * FROM outlines WHERE work_id = ? ORDER BY id DESC LIMIT 1
+    `, [workId]);
+  }
+  
+  /**
+   * 获取章节细纲
+   */
+  async getChapterOutline(workId: number, chapterNumber: number) {
+    return await this.db.queryOne(`
+      SELECT * FROM chapter_outlines 
+      WHERE work_id = ? AND chapter_number = ? 
+      LIMIT 1
+    `, [workId, chapterNumber]);
+  }
+  
+  /**
+   * 获取关联章节（前面的章节）
+   */
+  async getRelatedChapters(workId: number, chapterNumber: number, count: number = 2) {
+    const startChapter = Math.max(1, chapterNumber - count);
+    const endChapter = chapterNumber - 1;
+    
+    if (startChapter > endChapter) {
+      return [];
+    }
+    
+    return await this.db.query(`
+      SELECT 
+        chapter_number as chapterNumber,
+        title,
+        content,
+        (SELECT summary FROM chapter_outlines 
+         WHERE work_id = c.work_id AND chapter_number = c.chapter_number) as summary
+      FROM chapters c
+      WHERE work_id = ? 
+        AND chapter_number BETWEEN ? AND ?
+        AND content IS NOT NULL
+        AND LENGTH(content) > 100
+      ORDER BY chapter_number
+    `, [workId, startChapter, endChapter]);
   }
   
   /**

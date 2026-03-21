@@ -428,6 +428,77 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
       return true;
     }
 
+    // 从数据库生成文本（完整流程：生成 + 润色）
+    if (path === '/api/novel/generation/generate-from-db' && method === 'POST') {
+      try {
+        const body = await parseBody(req);
+        const { workId, chapterNumber, relatedChapterCount = 2, settings } = body;
+        
+        if (!workId || !chapterNumber) {
+          jsonRes(res, { success: false, error: '缺少必要参数：workId, chapterNumber' }, 400);
+          return true;
+        }
+
+        console.log('[GenerationAPI] 从数据库生成，workId:', workId, 'chapter:', chapterNumber);
+
+        const generator = new GenerationPipeline();
+        const result = await generator.generateFromDatabase({
+          workId,
+          chapterNumber,
+          relatedChapterCount,
+          settings
+        }, (progress) => {
+          console.log(`[GenerationAPI] [进度] ${progress.phase}: ${progress.message} (${progress.progress}%)`);
+        });
+        
+        jsonRes(res, { 
+          success: true, 
+          data: result 
+        });
+      } catch (error) {
+        console.error('[GenerationAPI] 从数据库生成失败:', error);
+        jsonRes(res, { success: false, error: error instanceof Error ? error.message : '生成失败' }, 500);
+      }
+      return true;
+    }
+
+    // 从数据库仅生成文本（不润色）
+    if (path === '/api/novel/generation/generate-raw-from-db' && method === 'POST') {
+      try {
+        const body = await parseBody(req);
+        const { workId, chapterNumber, relatedChapterCount = 2, settings } = body;
+        
+        if (!workId || !chapterNumber) {
+          jsonRes(res, { success: false, error: '缺少必要参数：workId, chapterNumber' }, 400);
+          return true;
+        }
+
+        console.log('[GenerationAPI] 从数据库生成原始文本，workId:', workId, 'chapter:', chapterNumber);
+
+        const generator = new GenerationPipeline();
+        const result = await generator.generateFromDatabase({
+          workId,
+          chapterNumber,
+          relatedChapterCount,
+          settings: {
+            ...(settings || {}),
+            autoPolish: false
+          }
+        }, (progress) => {
+          console.log(`[GenerationAPI] [进度] ${progress.phase}: ${progress.message} (${progress.progress}%)`);
+        });
+        
+        jsonRes(res, { 
+          success: true, 
+          data: result 
+        });
+      } catch (error) {
+        console.error('[GenerationAPI] 从数据库生成失败:', error);
+        jsonRes(res, { success: false, error: error instanceof Error ? error.message : '生成失败' }, 500);
+      }
+      return true;
+    }
+
     // 测试浏览器（截图版本）
     if (path === '/api/novel/test-browser' && method === 'POST') {
       try {
@@ -1414,3 +1485,22 @@ const plugin = {
 export default plugin;
 export const register = plugin.register;
 export const activate = plugin.activate;
+
+// 导出 content-craft 模块的主要类和函数
+export { configManager, PolishPipeline } from './core/content-craft/src';
+export { GenerationPipeline } from './core/content-craft/src/generation-pipeline';
+export type { 
+  GenerationInput, 
+  GenerationOutput, 
+  GenerationSettings,
+  GenerateFromDbInput,
+  Character,
+  StoryBackground,
+  ChapterOutline,
+  RelatedChapter
+} from './core/content-craft/src/generation-types';
+export type { 
+  PolishInput, 
+  PolishOutput, 
+  PolishSettings 
+} from './core/content-craft/src/types';

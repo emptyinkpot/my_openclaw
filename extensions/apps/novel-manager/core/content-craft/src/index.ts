@@ -64,6 +64,8 @@ export type {
   GenerationPhase,
   GenerationReport,
   PolishReport,
+  // 数据库生成输入
+  GenerateFromDbInput,
 } from './generation-types';
 
 export { GenerationPipeline } from './generation-pipeline';

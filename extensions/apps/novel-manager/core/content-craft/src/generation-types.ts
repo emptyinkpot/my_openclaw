@@ -4,6 +4,20 @@
  * @module modules/generation/types
  */
 
+/**
+ * 从数据库生成的输入参数
+ */
+export interface GenerateFromDbInput {
+  /** 作品 ID */
+  workId: number;
+  /** 要生成的章节号 */
+  chapterNumber: number;
+  /** 关联章节数量（默认 2） */
+  relatedChapterCount?: number;
+  /** 生成设置（可选，使用默认值） */
+  settings?: GenerationSettings;
+}
+
 // ============================================
 // 基础类型
 // ============================================

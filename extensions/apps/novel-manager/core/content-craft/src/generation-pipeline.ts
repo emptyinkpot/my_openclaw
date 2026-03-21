@@ -7,6 +7,7 @@
  */
 
 import { LLMClient, Config } from 'coze-coding-dev-sdk';
+import { getDatabaseManager } from '../../data-scan-storage/database';
 import type { 
   GenerationInput, 
   GenerationOutput, 
@@ -16,9 +17,24 @@ import type {
   StoryBackground,
   ChapterOutline,
   RelatedChapter,
+  GenerationSettings,
 } from './generation-types';
 import { PolishPipeline } from './pipeline';
 import type { PolishInput, PolishSettings } from './types';
+
+/**
+ * 从数据库生成的输入参数
+ */
+export interface GenerateFromDbInput {
+  /** 作品 ID */
+  workId: number;
+  /** 要生成的章节号 */
+  chapterNumber: number;
+  /** 关联章节数量（默认 2） */
+  relatedChapterCount?: number;
+  /** 生成设置（可选，使用默认值） */
+  settings?: GenerationSettings;
+}
 
 /**
  * 文本生成流水线
@@ -26,21 +42,177 @@ import type { PolishInput, PolishSettings } from './types';
  * @example
  * ```ts
  * const generator = new GenerationPipeline();
- * const result = await generator.generate({
+ * // 方式1：直接传入所有数据
+ * const result1 = await generator.generate({
  *   chapterOutline: { ... },
  *   characters: [ ... ],
  *   background: { ... },
  *   relatedChapters: [ ... ],
  *   settings: { ... }
  * });
+ * 
+ * // 方式2：从数据库读取（推荐）
+ * const result2 = await generator.generateFromDatabase({
+ *   workId: 1,
+ *   chapterNumber: 90,
+ *   relatedChapterCount: 2
+ * });
  * ```
  */
 export class GenerationPipeline {
   private llmClient: LLMClient;
+  private db = getDatabaseManager();
 
   constructor() {
     const config = new Config();
     this.llmClient = new LLMClient(config);
+  }
+
+  /**
+   * 从数据库读取数据并生成文本
+   * 
+   * @param input 数据库生成输入
+   * @param onProgress 进度回调
+   * @returns 生成输出
+   */
+  async generateFromDatabase(
+    input: GenerateFromDbInput,
+    onProgress?: (progress: GenerationProgress) => void
+  ): Promise<GenerationOutput> {
+    const { workId, chapterNumber, relatedChapterCount = 2, settings } = input;
+
+    this.reportProgress(onProgress, 'preparing', 2, '正在从数据库读取数据...');
+
+    // ========================================
+    // 1. 读取作品基本信息
+    // ========================================
+    const work = await this.db.queryOne('SELECT * FROM works WHERE id = ?', [workId]);
+    if (!work) {
+      throw new Error(`未找到作品，workId: ${workId}`);
+    }
+
+    // ========================================
+    // 2. 读取人物设定
+    // ========================================
+    this.reportProgress(onProgress, 'preparing', 5, '正在读取人物设定...');
+    const characters = await this.db.query('SELECT * FROM characters WHERE work_id = ?', [workId]);
+    const formattedCharacters: Character[] = characters.map((char: any) => ({
+      id: char.id.toString(),
+      name: char.name,
+      aliases: char.aliases ? JSON.parse(char.aliases) : [],
+      description: char.description || '',
+      personality: char.personality ? JSON.parse(char.personality) : [],
+      appearance: char.appearance || '',
+      background: char.background || '',
+      relationships: char.relationships ? JSON.parse(char.relationships) : []
+    }));
+
+    // ========================================
+    // 3. 读取故事背景
+    // ========================================
+    this.reportProgress(onProgress, 'preparing', 8, '正在读取故事背景...');
+    const background = await this.db.queryOne(
+      'SELECT * FROM story_backgrounds WHERE work_id = ? ORDER BY id DESC LIMIT 1', 
+      [workId]
+    );
+    const formattedBackground: StoryBackground = {
+      id: background?.id?.toString() || '1',
+      name: background?.name || work.title || '故事背景',
+      worldSetting: background?.world_setting || '',
+      timeline: background?.timeline ? JSON.parse(background.timeline) : [],
+      geography: background?.geography || '',
+      society: background?.society || '',
+      other: background?.other || ''
+    };
+
+    // ========================================
+    // 4. 读取章节细纲
+    // ========================================
+    this.reportProgress(onProgress, 'preparing', 12, '正在读取章节细纲...');
+    const chapterOutline = await this.db.queryOne(
+      'SELECT * FROM chapter_outlines WHERE work_id = ? AND chapter_number = ? LIMIT 1', 
+      [workId, chapterNumber]
+    );
+    
+    if (!chapterOutline) {
+      throw new Error(`未找到章节细纲，workId: ${workId}, chapterNumber: ${chapterNumber}`);
+    }
+
+    const formattedChapterOutline: ChapterOutline = {
+      chapterNumber: chapterOutline.chapter_number,
+      title: chapterOutline.title || '',
+      summary: chapterOutline.summary || '',
+      keyEvents: chapterOutline.key_events ? JSON.parse(chapterOutline.key_events) : [],
+      characters: chapterOutline.characters ? JSON.parse(chapterOutline.characters) : [],
+      location: chapterOutline.location || '',
+      time: chapterOutline.time || '',
+      mood: chapterOutline.mood || '',
+      targetWordCount: chapterOutline.target_word_count || 2000
+    };
+
+    // ========================================
+    // 5. 读取关联章节
+    // ========================================
+    this.reportProgress(onProgress, 'preparing', 15, '正在读取关联章节...');
+    const relatedChapters: RelatedChapter[] = [];
+    
+    if (relatedChapterCount > 0) {
+      const startChapter = Math.max(1, chapterNumber - relatedChapterCount);
+      const endChapter = chapterNumber - 1;
+      
+      if (startChapter <= endChapter) {
+        const chapters = await this.db.query(`
+          SELECT 
+            chapter_number as chapterNumber,
+            title,
+            content
+          FROM chapters 
+          WHERE work_id = ? 
+            AND chapter_number BETWEEN ? AND ?
+            AND content IS NOT NULL
+            AND LENGTH(content) > 100
+          ORDER BY chapter_number
+        `, [workId, startChapter, endChapter]);
+        
+        // 尝试获取细纲作为 summary
+        for (const ch of chapters) {
+          const outline = await this.db.queryOne(
+            'SELECT summary FROM chapter_outlines WHERE work_id = ? AND chapter_number = ?',
+            [workId, ch.chapterNumber]
+          );
+          
+          relatedChapters.push({
+            chapterNumber: ch.chapterNumber,
+            title: ch.title || '',
+            content: ch.content,
+            summary: outline?.summary || this.summarizeContent(ch.content, 300)
+          });
+        }
+      }
+    }
+
+    // ========================================
+    // 6. 构建默认设置
+    // ========================================
+    const defaultSettings: GenerationSettings = {
+      style: 'literary',
+      temperature: 0.7,
+      maxLength: 10000,
+      autoPolish: true
+    };
+
+    // ========================================
+    // 7. 调用 generate 方法
+    // ========================================
+    this.reportProgress(onProgress, 'preparing', 18, '数据读取完成，开始生成...');
+    
+    return this.generate({
+      chapterOutline: formattedChapterOutline,
+      characters: formattedCharacters,
+      background: formattedBackground,
+      relatedChapters,
+      settings: settings || defaultSettings
+    }, onProgress);
   }
 
   /**
