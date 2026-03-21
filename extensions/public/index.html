@@ -4521,15 +4521,55 @@
       }
     };
     
-    // 初始化润色配置
-    function initPolishConfig() {
-      polishStepDefinitions.forEach(step => {
-        currentPolishConfig.steps[step.id] = {
-          enabled: step.enabled,
-          order: polishStepDefinitions.findIndex(s => s.id === step.id)
-        };
-      });
+    // 初始化润色配置 - 从后端加载
+    async function initPolishConfig() {
+      try {
+        const result = await api('/config');
+        if (result.success && result.data) {
+          if (result.data.settings) {
+            currentPolishConfig = result.data.settings;
+          }
+          // 确保所有步骤都有配置
+          polishStepDefinitions.forEach(step => {
+            if (!currentPolishConfig.steps[step.id]) {
+              currentPolishConfig.steps[step.id] = {
+                enabled: step.enabled,
+                order: polishStepDefinitions.findIndex(s => s.id === step.id)
+              };
+            }
+          });
+          // 更新 UI
+          if (currentPolishConfig.global?.style) {
+            document.getElementById('polishStyle').value = currentPolishConfig.global.style;
+          }
+          if (currentPolishConfig.global?.temperature) {
+            const tempValue = Math.round(currentPolishConfig.global.temperature * 100);
+            document.getElementById('polishTemperature').value = tempValue;
+            updateTemperatureValue(tempValue);
+          }
+        }
+      } catch (e) {
+        // 如果加载失败，使用默认值
+        polishStepDefinitions.forEach(step => {
+          currentPolishConfig.steps[step.id] = {
+            enabled: step.enabled,
+            order: polishStepDefinitions.findIndex(s => s.id === step.id)
+          };
+        });
+      }
       renderPolishStepsList();
+    }
+    
+    // 保存配置到后端
+    async function savePolishConfig() {
+      try {
+        await api('/config', {
+          method: 'POST',
+          body: JSON.stringify({ settings: currentPolishConfig })
+        });
+      } catch (e) {
+        console.warn('[Config] 保存配置失败:', e);
+      }
     }
     
     // 渲染步骤列表
@@ -4645,27 +4685,30 @@
         currentPolishConfig.steps[stepId].enabled = enabled;
       }
       renderPolishStepsList();
+      // 保存配置
+      savePolishConfig();
     }
     
     // 重置配置
-    function resetPolishConfig() {
-      initPolishConfig();
-      document.getElementById('polishStyle').value = 'narrative';
-      document.getElementById('polishTemperature').value = '70';
-      updateTemperatureValue('70');
-      showToast('🔄 配置已重置', 'success');
-    }
-    
-    // 更新温度值显示
-    function updateTemperatureValue(value) {
-      document.getElementById('temperatureValue').textContent = (value / 100).toFixed(1);
-      currentPolishConfig.global.temperature = value / 100;
+    async function resetPolishConfig() {
+      try {
+        await api('/config/reset', { method: 'POST' });
+        await initPolishConfig();
+        document.getElementById('polishStyle').value = 'narrative';
+        document.getElementById('polishTemperature').value = '70';
+        updateTemperatureValue('70');
+        showToast('🔄 配置已重置', 'success');
+      } catch (e) {
+        showToast('❌ 重置失败', 'error');
+      }
     }
     
     // 更新温度值
     function updateTemperatureValue(value) {
       document.getElementById('temperatureValue').textContent = (value / 100).toFixed(1);
       currentPolishConfig.global.temperature = value / 100;
+      // 保存配置
+      savePolishConfig();
     }
     
     // 更新文言化程度（保留兼容性）
@@ -5183,6 +5226,24 @@
       }
     }
     
+    // 初始化 polishStyle 监听
+    (function initStyleListener() {
+      // 等待 DOM 完全加载后再绑定
+      const checkAndBind = () => {
+        const styleSelect = document.getElementById('polishStyle');
+        if (styleSelect) {
+          styleSelect.addEventListener('change', function() {
+            currentPolishConfig.global.style = this.value;
+            savePolishConfig();
+          });
+        } else {
+          // 如果元素还没加载，500ms 后再试
+          setTimeout(checkAndBind, 500);
+        }
+      };
+      checkAndBind();
+    })();
+
     // 点击弹窗外部关闭
     document.addEventListener('click', function(e) {
       const modal = document.getElementById('globalSettingsModal');

@@ -1,0 +1,114 @@
+[
+  {
+    "step": "AI检测",
+    "report": "跳过: AI检测已禁用",
+    "success": true
+  },
+  {
+    "step": "专有名词检查",
+    "report": "处理 4 个专有名词",
+    "duration": 105485,
+    "success": true
+  },
+  {
+    "step": "叙事视角",
+    "report": "叙事视角检查完成",
+    "success": true
+  },
+  {
+    "step": "古典润色",
+    "report": "古典润色检查完成",
+    "success": true
+  },
+  {
+    "step": "引用应用",
+    "report": "引用检查完成",
+    "success": true
+  },
+  {
+    "step": "助词优化",
+    "report": "助词优化检查完成",
+    "success": true
+  },
+  {
+    "step": "标点规范",
+    "report": "标点规范完成（90 处）",
+    "duration": 87643,
+    "success": true
+  },
+  {
+    "step": "引用保护",
+    "report": "引用保护完成（0 处）",
+    "success": true
+  },
+  {
+    "step": "标题提取",
+    "report": "标题: 无标题",
+    "success": true
+  },
+  {
+    "step": "智能润色",
+    "report": "润色完成",
+    "duration": 96258,
+    "success": true
+  },
+  {
+    "step": "禁用词处理",
+    "report": "未加载禁用词库",
+    "success": true
+  },
+  {
+    "step": "优选词替换",
+    "report": "优选词库为空",
+    "success": true
+  },
+  {
+    "step": "句式优化",
+    "report": "句式优化检查完成",
+    "success": true
+  },
+  {
+    "step": "梗融合",
+    "report": "梗融合检查完成",
+    "success": true
+  },
+  {
+    "step": "风格锻造",
+    "report": "风格锻造检查完成",
+    "success": true
+  },
+  {
+    "step": "格式清理",
+    "report": "无需清理",
+    "duration": 1,
+    "success": true
+  },
+  {
+    "step": "语义检查",
+    "report": "语义检查完成: 发现语义问题并进行了修正",
+    "duration": 92524,
+    "success": true
+  },
+  {
+    "step": "用词检查",
+    "report": "用词智能检查完成",
+    "duration": 95266,
+    "success": true
+  },
+  {
+    "step": "最终审校",
+    "report": "最终智能审校完成",
+    "duration": 91606,
+    "success": true
+  },
+  {
+    "step": "智能修复",
+    "report": "智能修复检查完成",
+    "success": true
+  },
+  {
+    "step": "呼吸段优化",
+    "report": "呼吸段优化检查完成",
+    "success": true
+  }
+]
