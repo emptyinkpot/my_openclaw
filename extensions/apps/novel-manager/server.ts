@@ -360,7 +360,10 @@ app.put(`${API_PREFIX}/cache/files/:name`, async (req: Request, res: Response) =
   }
 });
 
-// 静态文件服务（已删除旧 UI）
+// 静态文件服务（开发模式）
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/novel', express.static(path.join(__dirname, '..', '..', 'public')));
+}
 
 // 启动服务
 if (require.main === module) {
