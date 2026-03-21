@@ -456,8 +456,8 @@
                     </tr>
                     <tr>
                       <td style="padding: 10px 12px; border: 1px solid var(--border); font-family: monospace;">status</td>
-                      <td style="padding: 10px 12px; border: 1px solid var(--border);">VARCHAR(50)</td>
-                      <td style="padding: 10px 12px; border: 1px solid var(--border);">作品状态（completed/pending/outline）</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">VARCHAR(50) DEFAULT 'outline'</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">作品状态（outline/pending/audited/published）</td>
                     </tr>
                     <tr>
                       <td style="padding: 10px 12px; border: 1px solid var(--border); font-family: monospace;">platform</td>
@@ -527,8 +527,23 @@
                     </tr>
                     <tr>
                       <td style="padding: 10px 12px; border: 1px solid var(--border); font-family: monospace;">status</td>
-                      <td style="padding: 10px 12px; border: 1px solid var(--border);">VARCHAR(50)</td>
-                      <td style="padding: 10px 12px; border: 1px solid var(--border);">状态（completed/pending）</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">VARCHAR(50) DEFAULT 'pending'</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">章节状态（outline/pending/audited/published）</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border); font-family: monospace;">audit_status</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">VARCHAR(50) DEFAULT 'pending'</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">审核状态（pending/reviewing/passed/failed）</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border); font-family: monospace;">audit_issues</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">JSON</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">审核问题列表</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border); font-family: monospace;">suggested_action</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">VARCHAR(50) DEFAULT 'none'</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">建议操作（auto_fix/manual/none）</td>
                     </tr>
                     <tr>
                       <td style="padding: 10px 12px; border: 1px solid var(--border); font-family: monospace;">created_at</td>
@@ -2315,7 +2330,7 @@
     }
 
     // 切换 MySQL数据 三级标签
-    function switchNovelDataSubTab(subtab) {
+    async function switchNovelDataSubTab(subtab) {
       // 更新三级标签 active 状态
       document.querySelectorAll('#novelDataPage .tabs .tab').forEach(el => el.classList.remove('active'));
       document.querySelector(`#novelDataPage .tabs .tab[data-subtab="${subtab}"]`)?.classList.add('active');
@@ -2323,6 +2338,77 @@
       // 显示对应的子页面
       document.getElementById('novelDataSubPage').style.display = subtab === 'novel-data' ? 'flex' : 'none';
       document.getElementById('mysqlFieldsSubPage').style.display = subtab === 'mysql-fields' ? 'block' : 'none';
+      
+      // 如果切换到 MySQL 字段页面，实时从数据库读取
+      if (subtab === 'mysql-fields') {
+        await loadDatabaseSchema();
+      }
+    }
+    
+    // 实时从数据库加载表结构
+    async function loadDatabaseSchema() {
+      const container = document.getElementById('mysqlFieldsSubPage');
+      container.innerHTML = `
+        <div style="max-width: 1200px; margin: 0 auto; text-align: center; padding: 60px;">
+          <div style="font-size: 32px; margin-bottom: 12px;">🗄️</div>
+          <div style="font-size: 14px;">正在从数据库读取表结构...</div>
+        </div>
+      `;
+      
+      try {
+        const result = await api('/db/schema');
+        if (!result.success) throw new Error(result.error);
+        
+        const schema = result.data;
+        let html = '<div style="max-width: 1200px; margin: 0 auto;">';
+        html += '<h2 style="font-size: 18px; font-weight: 600; margin-bottom: 20px;">🗄️ MySQL 数据库字段说明（实时读取）</h2>';
+        
+        for (const [tableName, columns] of Object.entries(schema)) {
+          const tableIcon = tableName === 'works' ? '📚' : tableName === 'chapters' ? '📑' : tableName === 'characters' ? '👥' : '📋';
+          html += `
+            <div style="margin-bottom: 32px;">
+              <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border);">
+                ${tableIcon} ${tableName} 表
+              </h3>
+              <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                <thead>
+                  <tr style="background: var(--bg-tertiary);">
+                    <th style="padding: 10px 12px; text-align: left; border: 1px solid var(--border);">字段名</th>
+                    <th style="padding: 10px 12px; text-align: left; border: 1px solid var(--border);">类型</th>
+                    <th style="padding: 10px 12px; text-align: left; border: 1px solid var(--border);">允许NULL</th>
+                    <th style="padding: 10px 12px; text-align: left; border: 1px solid var(--border);">键</th>
+                    <th style="padding: 10px 12px; text-align: left; border: 1px solid var(--border);">默认值</th>
+                    <th style="padding: 10px 12px; text-align: left; border: 1px solid var(--border);">额外</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${columns.map(col => `
+                    <tr>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border); font-family: monospace;">${col.name}</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">${col.type}</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">${col.null}</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">${col.key}</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">${col.default || '-'}</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border);">${col.extra || '-'}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          `;
+        }
+        
+        html += '</div>';
+        container.innerHTML = html;
+        
+      } catch (error) {
+        container.innerHTML = `
+          <div style="max-width: 1200px; margin: 0 auto; text-align: center; padding: 60px;">
+            <div style="font-size: 32px; margin-bottom: 12px;">❌</div>
+            <div style="font-size: 14px; color: var(--danger);">读取失败: ${error.message}</div>
+          </div>
+        `;
+      }
     }
 
     // 切换标签

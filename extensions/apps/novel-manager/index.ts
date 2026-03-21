@@ -563,6 +563,37 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
       return true;
     }
     
+    // ====== 数据库表结构API ======
+    if (path === '/api/novel/db/schema' && method === 'GET') {
+      const db = getDatabaseManager();
+      
+      try {
+        // 获取所有表
+        const tables = await db.query('SHOW TABLES');
+        const tableNames = tables.map(t => Object.values(t)[0]);
+        
+        const schemaData = {};
+        
+        for (const tableName of tableNames) {
+          const columns = await db.query(`DESCRIBE ${tableName}`);
+          schemaData[tableName] = columns.map(col => ({
+            name: col.Field,
+            type: col.Type,
+            null: col.Null,
+            key: col.Key,
+            default: col.Default,
+            extra: col.Extra,
+          }));
+        }
+        
+        jsonRes(res, { success: true, data: schemaData });
+        return true;
+      } catch (error) {
+        jsonRes(res, { success: false, error: error.message }, 500);
+        return true;
+      }
+    }
+
     // ====== 笔记API ======
     if (path === '/api/novel/notes' && method === 'GET') {
       const category = query.category;
