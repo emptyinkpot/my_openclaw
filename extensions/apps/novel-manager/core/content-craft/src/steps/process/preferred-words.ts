@@ -59,7 +59,7 @@ export class PreferredWordsStep extends BaseStep {
         const config = new Config();
         const client = new LLMClient(config);
         
-        const systemPrompt = `你是一个专业的文本润色专家，专门处理优选词替换任务。
+        const systemPrompt = `你是一个专业的中文文本润色专家，专门处理优选词替换任务。
 
 任务要求：
 1. 给定一段文本和优选词库，将文本中的普通词汇智能替换为更合适的优选词
@@ -67,6 +67,7 @@ export class PreferredWordsStep extends BaseStep {
    - 语义通顺、流畅、无歧义
    - 不损失原文语义和信息
    - 符合文学性表达（适合小说创作）
+   - 禁止欧化表达，禁止不符合中文习惯的外文语序
    - 不要过度替换，保持自然
 3. 优选词库（共${vocabulary.length}个，部分示例）：
 ${vocabulary.slice(0, 50).map((w: any) => `- ${w.word}`).join('\n')}

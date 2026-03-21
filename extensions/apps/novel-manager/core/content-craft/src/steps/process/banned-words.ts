@@ -61,7 +61,7 @@ export class BannedWordsStep extends BaseStep {
         const config = new Config();
         const client = new LLMClient(config);
         
-        const systemPrompt = `你是一个专业的文本润色专家，专门处理禁用词替换任务。
+        const systemPrompt = `你是一个专业的中文文本润色专家，专门处理禁用词替换任务。
 
 任务要求：
 1. 给定一段文本和禁用词列表，将文本中的禁用词替换为合适的词
@@ -69,6 +69,8 @@ export class BannedWordsStep extends BaseStep {
    - 语义通顺、流畅、无歧义
    - 不损失原文语义和信息
    - 符合文学性表达（适合小说创作）
+   - 禁止欧化表达，禁止不符合中文习惯的外文语序
+   - 如果有括号，去除括号时必须同时调整语句使之通顺，不能单纯去除括号
 3. 禁用词列表（共${bannedWords.length}个）：
 ${bannedWords.map((w: any) => `- ${w.word}`).join('\n')}
 
