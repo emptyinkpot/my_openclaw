@@ -1,5 +1,5 @@
 /**
- * 智能润色步骤
+ * 智能润色步骤（使用 coze-coding-dev-sdk）
  * 
  * 职责：
  * 1. 调用LLM进行智能润色
@@ -11,8 +11,18 @@
 
 import { BaseStep } from '../base';
 import type { StepContext, StepResult, StepSettings } from '../../types';
-import { ServiceTokens, container } from '@/core/di';
-import type { ILLMClient, LLMMessage } from '@/core/di/types';
+
+// 动态导入LLM SDK
+let LLMClient: any;
+let Config: any;
+
+try {
+  const sdk = require('coze-coding-dev-sdk');
+  LLMClient = sdk.LLMClient;
+  Config = sdk.Config;
+} catch (e) {
+  console.warn('[PolishStep] coze-coding-dev-sdk not available');
+}
 
 /**
  * 智能润色步骤
@@ -27,55 +37,62 @@ export class PolishStep extends BaseStep {
   readonly timeout = 120000; // 润色可能需要更长时间
   
   async execute(context: StepContext): Promise<StepResult> {
-    const { text, settings, reportProgress, streamChunk } = context;
+    const { text, settings, reportProgress } = context;
     const startTime = Date.now();
     
     try {
       reportProgress?.('正在进行智能润色...');
       
+      // 检查是否启用智能润色
+      const stepSettings = settings.steps[this.id] || {};
+      if (!stepSettings.enabled) {
+        return this.createSkipResult(text, '智能润色已禁用');
+      }
+      
       // 获取步骤设置
-      const stepSettings = (settings.steps[this.id] || {}) as Record<string, unknown>;
       const style = (stepSettings.style as string) || settings.global?.style || 'narrative';
       const temperature = settings.global?.temperature || 0.7;
       
-      // 获取LLM客户端
-      const llmClient = container.resolve<ILLMClient>(ServiceTokens.LLM_CLIENT);
+      let polishedText = text;
       
-      // 构建Prompt
-      const systemPrompt = this.buildSystemPrompt(style);
-      const userPrompt = this.buildUserPrompt(text, stepSettings);
-      
-      const messages: LLMMessage[] = [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ];
-      
-      // 调用LLM
-      let polishedText: string;
-      
-      if (streamChunk) {
-        // 流式输出
-        polishedText = await llmClient.generateStream(
-          messages,
-          { temperature, maxTokens: 4000 },
-          (chunk) => streamChunk(chunk)
-        );
-      } else {
-        // 同步调用
-        polishedText = await llmClient.generate(messages, {
+      if (LLMClient && Config) {
+        const config = new Config();
+        const client = new LLMClient(config);
+        
+        // 构建Prompt
+        const systemPrompt = this.buildSystemPrompt(style);
+        const userPrompt = this.buildUserPrompt(text, stepSettings);
+        
+        const messages = [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ];
+        
+        // 调用LLM
+        const response = await client.invoke(messages, { 
           temperature,
-          maxTokens: 4000,
+          model: "doubao-seed-1-8-251228"
         });
+        
+        polishedText = response.content;
+        
+        // 清理可能的Markdown格式
+        polishedText = this.cleanMarkdown(polishedText);
+      } else {
+        // 如果LLM不可用，返回原文本
+        return this.createSuccessResult(
+          text,
+          false,
+          [],
+          'LLM SDK不可用，跳过智能润色'
+        );
       }
-      
-      // 清理可能的Markdown格式
-      polishedText = this.cleanMarkdown(polishedText);
       
       const duration = Date.now() - startTime;
       
       return {
         text: polishedText,
-        modified: true,
+        modified: polishedText !== text,
         report: {
           step: this.name,
           report: '润色完成',
@@ -85,6 +102,7 @@ export class PolishStep extends BaseStep {
       };
       
     } catch (error) {
+      console.error('[PolishStep] Error:', error);
       return this.createErrorResult(text, error as Error);
     }
   }
@@ -130,9 +148,34 @@ export class PolishStep extends BaseStep {
 - 避免过于书面化的词汇
 - 保持轻松愉快的语气
 - 增强可读性和亲和力`,
+      
+      literary: `你是一位专业的中文文学编辑，擅长文学文本润色。
+你的任务是提升文本的文学性和表达质量。
+风格要求：
+- 保持文学性表达
+- 使用典雅但不晦涩的词汇
+- 注重节奏感和画面感
+- 适当使用修辞手法
+- 禁止欧化表达，禁止不符合中文习惯的外文语序`,
+      
+      historical: `你是一位专业的历史叙事编辑，擅长历史文本润色。
+你的任务是提升文本的历史叙事感和表达质量。
+风格要求：
+- 保持历史叙事的韵味
+- 使用典雅但不晦涩的词汇
+- 注重历史感和厚重感
+- 适当使用修辞手法`,
+      
+      japanese: `你是一位专业的日文风格中文编辑，擅长日式文风润色。
+你的任务是提升文本的日式文风表达。
+风格要求：
+- 保持日式文风的含蓄和雅致
+- 使用适合日式文风的词汇
+- 注重细腻的描写
+- 适当使用日式修辞`,
     };
     
-    return styleGuides[style] || styleGuides.narrative;
+    return styleGuides[style] || styleGuides.literary;
   }
   
   /**

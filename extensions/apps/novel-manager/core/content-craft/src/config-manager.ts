@@ -30,10 +30,11 @@ const DEFAULT_SETTINGS: PolishSettings = {
  */
 export class ConfigManager {
   private static instance: ConfigManager;
-  private settings: PolishSettings | null = null;
+  private settings: PolishSettings; // 不再是 null
   private readonly STORAGE_KEY = 'content_craft_settings';
   
   private constructor() {
+    this.settings = this.getDefaultSettings(); // 初始化默认值
     this.loadSettings();
   }
   
@@ -59,8 +60,8 @@ export class ConfigManager {
     
     allSteps.forEach(step => {
       defaultSettings.steps[step.id] = {
-        enabled: !step.fixed ? true : false, // 非固定步骤默认启用，固定步骤不显示
         ...step.defaultSettings,
+        enabled: !step.fixed, // 非固定步骤默认启用
       };
     });
     
@@ -139,9 +140,6 @@ export class ConfigManager {
    * 获取当前设置
    */
   getSettings(): PolishSettings {
-    if (!this.settings) {
-      this.settings = this.loadSettings();
-    }
     return this.settings;
   }
   

@@ -7,7 +7,6 @@
  */
 
 import { StepRegistry } from './steps/registry';
-import { getDatabaseManager } from '../../../../index';
 import type { 
   PolishInput, 
   PolishOutput, 
@@ -35,55 +34,40 @@ import type {
 export class PolishPipeline {
   
   /**
-   * 从 MySQL 加载资源库数据
+   * 从外部传入的资源（如果有）
+   */
+  private externalResources: {
+    vocabulary?: Array<{ word: string; category: string }>;
+    bannedWords?: Array<{ word: string; replacement: string }>;
+    literature?: Array<{ title: string; content: string }>;
+  } | null = null;
+  
+  /**
+   * 设置外部资源
+   */
+  setResources(resources: {
+    vocabulary?: Array<{ word: string; category: string }>;
+    bannedWords?: Array<{ word: string; replacement: string }>;
+    literature?: Array<{ title: string; content: string }>;
+  }) {
+    this.externalResources = resources;
+  }
+  
+  /**
+   * 从 MySQL 加载资源库数据（备用方法）
    */
   private async loadResourcesFromMySQL() {
-    try {
-      const db = getDatabaseManager();
-      
-      // 加载词汇表
-      const vocabulary = await db.query(`
-        SELECT 
-          content AS word,
-          category,
-          tags,
-          note,
-          example AS example_usage,
-          explanation AS description
-        FROM vocabulary
-        ORDER BY content ASC
-      `);
-      
-      // 加载禁用词表
-      const bannedWords = await db.query(`
-        SELECT 
-          content AS word,
-          alternative AS replacement,
-          reason,
-          category,
-          type
-        FROM banned_words
-        ORDER BY content ASC
-      `);
-      
-      // 加载文献表
-      const literature = await db.query(`
-        SELECT 
-          title,
-          content,
-          author,
-          tags,
-          note,
-          priority
-        FROM literature
-        ORDER BY title ASC
-      `);
-      
-      return { vocabulary, bannedWords, literature };
-    } catch (error) {
-      console.error('[PolishPipeline] 从 MySQL 加载资源失败:', error);
-      return { vocabulary: [], bannedWords: [], literature: [] };
+    // 如果有外部资源，直接使用外部资源
+    if (this.externalResources) {
+      return {
+        vocabulary: this.externalResources.vocabulary || [],
+        bannedWords: this.externalResources.bannedWords || [],
+        literature: this.externalResources.literature || [],
+      };
     }
+    
+    // 否则返回空资源
+    return { vocabulary: [], bannedWords: [], literature: [] };
   }
   
   /**

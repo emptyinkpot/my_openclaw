@@ -1,5 +1,5 @@
 /**
- * 引用保护步骤
+ * 引用保护步骤（简化版，无外部依赖）
  * 
  * 职责：
  * 1. 保护引号内的内容不被修改
@@ -11,8 +11,6 @@
 
 import { BaseStep } from '../base';
 import type { StepContext, StepResult, StepSettings } from '../../types';
-import { ServiceTokens, container } from '@/core/di';
-import type { IQuoteProtector } from '@/core/di/types';
 
 /**
  * 引用保护步骤
@@ -33,35 +31,19 @@ export class QuoteProtectStep extends BaseStep {
     const startTime = Date.now();
     
     try {
-      // 获取引用保护器
-      const protector = container.tryResolve<IQuoteProtector>(ServiceTokens.QUOTE_PROTECTOR);
+      reportProgress?.('正在执行引用保护...');
       
-      if (!protector) {
-        // 使用内置保护逻辑
-        const result = this.builtinProtect(text);
-        return this.createSuccessResult(
-          result.text,
-          true,
-          [],
-          `引用保护完成（${result.count} 处）`
-        );
-      }
-      
-      // 使用注入的保护器
-      const { text: protectedText, count } = protector.protect(text);
+      // 使用内置保护逻辑
+      const result = this.builtinProtect(text);
       
       const duration = Date.now() - startTime;
       
-      return {
-        text: protectedText,
-        modified: count > 0,
-        report: {
-          step: this.name,
-          report: `引用保护完成（${count} 处）`,
-          duration,
-          success: true,
-        },
-      };
+      return this.createSuccessResult(
+        result.text,
+        true,
+        [],
+        `引用保护完成（${result.count} 处）`
+      );
       
     } catch (error) {
       return this.createErrorResult(text, error as Error);

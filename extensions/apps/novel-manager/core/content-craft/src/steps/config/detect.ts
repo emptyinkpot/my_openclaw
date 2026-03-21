@@ -1,5 +1,5 @@
 /**
- * AI检测步骤
+ * AI检测步骤（简化版，无外部依赖）
  * 
  * 职责：
  * 1. 检测文本是否由AI生成
@@ -11,7 +11,6 @@
 
 import { BaseStep } from '../base';
 import type { StepContext, StepResult, StepSettings } from '../../types';
-import { ServiceTokens, container } from '@/core/di';
 
 /**
  * AI检测步骤
@@ -37,35 +36,17 @@ export class DetectStep extends BaseStep {
         return this.createSkipResult(text, 'AI检测已禁用');
       }
       
-      // 获取AI检测器（如果有）
-      const detector = container.tryResolve<IAIDetector>(ServiceTokens.AI_DETECTOR);
-      
-      if (!detector) {
-        // 如果没有注册检测器，使用简单的启发式检测
-        const result = this.heuristicDetect(text);
-        return this.createSuccessResult(
-          text,
-          false,
-          [],
-          `AI检测完成: 可能性 ${result.probability}% (${result.method})`
-        );
-      }
-      
-      // 使用专业检测器
-      const result = await detector.detect(text);
+      // 使用启发式检测
+      const result = this.heuristicDetect(text);
       
       const duration = Date.now() - startTime;
       
-      return {
+      return this.createSuccessResult(
         text,
-        modified: false,
-        report: {
-          step: this.name,
-          report: `AI生成可能性: ${(result.probability * 100).toFixed(1)}%`,
-          duration,
-          success: true,
-        },
-      };
+        false,
+        [],
+        `AI检测完成: 可能性 ${result.probability}% (${result.method})`
+      );
       
     } catch (error) {
       return this.createErrorResult(text, error as Error);
@@ -116,14 +97,4 @@ export class DetectStep extends BaseStep {
       method: '启发式分析',
     };
   }
-}
-
-/**
- * AI检测器接口（简化版）
- */
-interface IAIDetector {
-  detect(text: string): Promise<{
-    probability: number;
-    features?: string[];
-  }>;
 }

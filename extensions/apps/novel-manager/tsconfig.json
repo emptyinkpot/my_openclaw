@@ -18,11 +18,10 @@
     "emitDecoratorMetadata": true
   },
   "include": [
-    "core/**/*.ts",
+    "core/content-craft/**/*.ts",
     "services/**/*.ts",
     "utils/**/*.ts",
-    "index.ts",
-    "server.ts"
+    "index.ts"
   ],
   "exclude": [
     "node_modules",
@@ -33,6 +32,12 @@
     "core/data",
     "core/logs",
     "core/storage",
-    "core/temp"
+    "core/temp",
+    "core/pipeline",
+    "core/content-pipeline",
+    "core/audit",
+    "core/browser",
+    "core/fanqie-simple-pipeline",
+    "core/data-scan-storage"
   ]
 }
