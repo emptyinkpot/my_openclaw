@@ -7,7 +7,7 @@
       "description": "每日自动维护任务日志系统",
       "enabled": true,
       "createdAtMs": 1773627549638,
-      "updatedAtMs": 1773946824026,
+      "updatedAtMs": 1774033223750,
       "schedule": {
         "kind": "cron",
         "expr": "0 3 * * *",
@@ -24,13 +24,13 @@
         "channel": "last"
       },
       "state": {
-        "nextRunAtMs": 1774033200000,
-        "lastRunAtMs": 1773946800003,
+        "nextRunAtMs": 1774119600000,
+        "lastRunAtMs": 1774033200002,
         "lastRunStatus": "error",
         "lastStatus": "error",
-        "lastDurationMs": 24023,
+        "lastDurationMs": 23748,
         "lastDeliveryStatus": "unknown",
-        "consecutiveErrors": 2,
+        "consecutiveErrors": 3,
         "lastError": "Channel is required (no configured channels detected). Set delivery.channel explicitly or use a main session with a previous channel."
       }
     },
@@ -64,7 +64,7 @@
         "lastDurationMs": 73337,
         "lastDeliveryStatus": "unknown",
         "consecutiveErrors": 2,
-        "lastError": "Channel is required (no configured channels detected). Set delivery.channel explicitly or use a main session with a previous channel."
+        "runningAtMs": 1774054800002
       }
     },
     {
@@ -73,7 +73,7 @@
       "description": "每天晚上自动发布番茄小说章节",
       "enabled": true,
       "createdAtMs": 1773805800001,
-      "updatedAtMs": 1773921601830,
+      "updatedAtMs": 1774009751451,
       "schedule": {
         "kind": "cron",
         "expr": "0 20 * * *",
@@ -91,14 +91,13 @@
       },
       "state": {
         "nextRunAtMs": 1774094400000,
-        "lastRunAtMs": 1773921600006,
-        "lastRunStatus": "ok",
-        "lastStatus": "ok",
-        "lastDurationMs": 1824,
-        "lastDeliveryStatus": "not-delivered",
-        "consecutiveErrors": 0,
-        "lastDelivered": false,
-        "runningAtMs": 1774008213111
+        "lastRunAtMs": 1774009684410,
+        "lastRunStatus": "error",
+        "lastStatus": "error",
+        "lastDurationMs": 67041,
+        "lastDeliveryStatus": "unknown",
+        "consecutiveErrors": 1,
+        "lastError": "Channel is required (no configured channels detected). Set delivery.channel explicitly or use a main session with a previous channel."
       }
     }
   ]

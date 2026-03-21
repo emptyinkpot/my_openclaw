@@ -1,0 +1,364 @@
+/**
+ * 审核服务
+ * 负责章节审核状态检查、自动修复
+ */
+
+import { getDatabaseManager } from '../data-scan-storage/database';
+import { logger } from '../../utils/logger';
+
+export type AuditStatus = 'pending' | 'passed' | 'failed';
+export type SuggestedAction = 'none' | 'autofix' | 'manual';
+
+export interface AuditIssue {
+  type: 'content' | 'format' | 'length' | 'sensitive' | 'other';
+  message: string;
+  severity: 'warning' | 'error';
+  position?: { start: number; end: number };
+}
+
+export interface AuditResult {
+  status: AuditStatus;
+  issues: AuditIssue[];
+  score: number;
+  suggestedAction: SuggestedAction;
+  canAutoFix: boolean;
+}
+
+export interface ChapterAuditStatus {
+  workId: number;
+  chapterNumber: number;
+  exists: boolean;
+  status: string;
+  auditStatus: AuditStatus | null;
+  auditIssues: AuditIssue[];
+  suggestedAction: SuggestedAction;
+  canPublish: boolean;
+}
+
+export interface AuditConfig {
+  minWordCount: number;
+  maxWordCount: number;
+  checkSensitiveWords: boolean;
+  checkFormat: boolean;
+  sensitiveWords: string[];
+}
+
+const DEFAULT_AUDIT_CONFIG: AuditConfig = {
+  minWordCount: 1000,
+  maxWordCount: 20000,
+  checkSensitiveWords: true,
+  checkFormat: true,
+  sensitiveWords: ['政治', '敏感词'],
+};
+
+export class AuditService {
+  private db = getDatabaseManager();
+  private config: AuditConfig;
+
+  constructor(config?: Partial<AuditConfig>) {
+    this.config = { ...DEFAULT_AUDIT_CONFIG, ...config };
+  }
+
+  async initializeTables(): Promise<void> {
+    try {
+      const columns = await this.db.query("PRAGMA table_info(chapters)");
+      const columnNames = columns.map((c: any) => c.name);
+      
+      if (!columnNames.includes('audit_status')) {
+        await this.db.execute(`ALTER TABLE chapters ADD COLUMN audit_status TEXT DEFAULT 'pending'`);
+        logger.info('已添加 audit_status 列');
+      }
+      
+      if (!columnNames.includes('audit_issues')) {
+        await this.db.execute(`ALTER TABLE chapters ADD COLUMN audit_issues TEXT DEFAULT '[]'`);
+      }
+      
+      if (!columnNames.includes('audit_score')) {
+        await this.db.execute(`ALTER TABLE chapters ADD COLUMN audit_score INTEGER DEFAULT 0`);
+      }
+      
+      if (!columnNames.includes('suggested_action')) {
+        await this.db.execute(`ALTER TABLE chapters ADD COLUMN suggested_action TEXT DEFAULT 'none'`);
+      }
+      
+      if (!columnNames.includes('audited_at')) {
+        await this.db.execute(`ALTER TABLE chapters ADD COLUMN audited_at TEXT`);
+      }
+      
+      logger.info('审核表结构初始化完成');
+    } catch (error: any) {
+      logger.warn('审核表结构初始化警告:', error.message);
+    }
+  }
+
+  async getChapterAuditStatus(workId: number, chapterNumber: number): Promise<ChapterAuditStatus> {
+    const row = await this.db.queryOne(`
+      SELECT status, audit_status, audit_issues, suggested_action
+      FROM chapters WHERE work_id = ? AND chapter_number = ?
+    `, [workId, chapterNumber]);
+
+    if (!row) {
+      return {
+        workId, chapterNumber, exists: false, status: '',
+        auditStatus: null, auditIssues: [], suggestedAction: 'none', canPublish: false,
+      };
+    }
+
+    const auditStatus = row.audit_status as AuditStatus || 'pending';
+    const auditIssues = this.parseAuditIssues(row.audit_issues);
+    const suggestedAction = row.suggested_action as SuggestedAction || 'none';
+
+    return {
+      workId, chapterNumber, exists: true, status: row.status,
+      auditStatus, auditIssues, suggestedAction,
+      canPublish: row.status === 'polished' && auditStatus === 'passed',
+    };
+  }
+
+  async auditChapter(workId: number, chapterNumber: number): Promise<AuditResult> {
+    logger.info(`开始审核: workId=${workId}, chapter=${chapterNumber}`);
+
+    const chapter = await this.db.queryOne(`
+      SELECT content, title FROM chapters WHERE work_id = ? AND chapter_number = ?
+    `, [workId, chapterNumber]);
+
+    if (!chapter || !chapter.content) {
+      const result: AuditResult = {
+        status: 'failed',
+        issues: [{ type: 'content', message: '章节不存在或内容为空', severity: 'error' }],
+        score: 0, suggestedAction: 'manual', canAutoFix: false,
+      };
+      await this.saveAuditResult(workId, chapterNumber, result);
+      return result;
+    }
+
+    const issues: AuditIssue[] = [];
+    let score = 100;
+
+    // 字数检查
+    const wordCount = this.countWords(chapter.content);
+    if (wordCount < this.config.minWordCount) {
+      issues.push({
+        type: 'length',
+        message: `字数不足: ${wordCount} < ${this.config.minWordCount}`,
+        severity: 'error',
+      });
+      score -= 30;
+    } else if (wordCount > this.config.maxWordCount) {
+      issues.push({
+        type: 'length',
+        message: `字数超限: ${wordCount} > ${this.config.maxWordCount}`,
+        severity: 'warning',
+      });
+      score -= 10;
+    }
+
+    // 格式检查
+    if (this.config.checkFormat) {
+      const formatIssues = this.checkFormat(chapter.content);
+      issues.push(...formatIssues);
+      score -= formatIssues.length * 5;
+    }
+
+    // 敏感词检查
+    if (this.config.checkSensitiveWords) {
+      const sensitiveIssues = this.checkSensitiveWords(chapter.content);
+      issues.push(...sensitiveIssues);
+      score -= sensitiveIssues.length * 20;
+    }
+
+    const hasErrors = issues.some(i => i.severity === 'error');
+    const status: AuditStatus = hasErrors ? 'failed' : 'passed';
+    const canAutoFix = issues.some(i => i.type === 'format' || i.type === 'length');
+    const suggestedAction: SuggestedAction = 
+      status === 'passed' ? 'none' : canAutoFix ? 'autofix' : 'manual';
+
+    const result: AuditResult = {
+      status, issues, score: Math.max(0, score), suggestedAction, canAutoFix,
+    };
+
+    await this.saveAuditResult(workId, chapterNumber, result);
+    logger.info(`审核完成: status=${status}, score=${score}, issues=${issues.length}`);
+
+    return result;
+  }
+
+  async getAuditStats(workId?: number): Promise<{
+    total: number; pending: number; passed: number; failed: number; autoFixable: number;
+  }> {
+    let whereClause = 'WHERE content IS NOT NULL';
+    const params: any[] = [];
+
+    if (workId) {
+      whereClause += ' AND work_id = ?';
+      params.push(workId);
+    }
+
+    const stats = await this.db.queryOne(`
+      SELECT 
+        COUNT(*) as total,
+        SUM(CASE WHEN audit_status IS NULL OR audit_status = 'pending' THEN 1 ELSE 0 END) as pending,
+        SUM(CASE WHEN audit_status = 'passed' THEN 1 ELSE 0 END) as passed,
+        SUM(CASE WHEN audit_status = 'failed' THEN 1 ELSE 0 END) as failed,
+        SUM(CASE WHEN audit_status = 'failed' AND suggested_action = 'autofix' THEN 1 ELSE 0 END) as auto_fixable
+      FROM chapters ${whereClause}
+    `, params);
+
+    return {
+      total: stats?.total || 0,
+      pending: stats?.pending || 0,
+      passed: stats?.passed || 0,
+      failed: stats?.failed || 0,
+      autoFixable: stats?.auto_fixable || 0,
+    };
+  }
+
+  /**
+   * 获取待审核章节列表
+   */
+  async getPendingAuditChapters(workId?: number): Promise<ChapterAuditStatus[]> {
+    let sql = `
+      SELECT work_id, chapter_number, status, audit_status, audit_issues, suggested_action
+      FROM chapters 
+      WHERE status = 'polished' AND (audit_status IS NULL OR audit_status = 'pending')
+    `;
+    const params: any[] = [];
+
+    if (workId) {
+      sql += ' AND work_id = ?';
+      params.push(workId);
+    }
+
+    sql += ' ORDER BY work_id, chapter_number';
+
+    const rows = await this.db.query(sql, params);
+    
+    return rows.map((row: any) => ({
+      workId: row.work_id, chapterNumber: row.chapter_number, exists: true,
+      status: row.status, auditStatus: row.audit_status || 'pending',
+      auditIssues: this.parseAuditIssues(row.audit_issues),
+      suggestedAction: row.suggested_action || 'none', canPublish: false,
+    }));
+  }
+
+  /**
+   * 获取审核失败的章节
+   */
+  async getFailedAuditChapters(workId?: number): Promise<ChapterAuditStatus[]> {
+    let sql = `
+      SELECT work_id, chapter_number, status, audit_status, audit_issues, suggested_action
+      FROM chapters WHERE audit_status = 'failed'
+    `;
+    const params: any[] = [];
+
+    if (workId) {
+      sql += ' AND work_id = ?';
+      params.push(workId);
+    }
+
+    sql += " AND suggested_action = 'autofix' ORDER BY work_id, chapter_number";
+
+    const rows = await this.db.query(sql, params);
+    
+    return rows.map((row: any) => ({
+      workId: row.work_id, chapterNumber: row.chapter_number, exists: true,
+      status: row.status, auditStatus: row.audit_status,
+      auditIssues: this.parseAuditIssues(row.audit_issues),
+      suggestedAction: row.suggested_action, canPublish: false,
+    }));
+  }
+
+  /**
+   * 批量审核章节
+   */
+  async auditChapters(
+    workId?: number,
+    options?: { chapterRange?: [number, number]; onlyPending?: boolean }
+  ): Promise<{ total: number; passed: number; failed: number; results: AuditResult[] }> {
+    let sql = `SELECT work_id, chapter_number FROM chapters WHERE content IS NOT NULL AND LENGTH(content) > 0`;
+    const params: any[] = [];
+
+    if (workId) {
+      sql += ' AND work_id = ?';
+      params.push(workId);
+    }
+
+    if (options?.chapterRange) {
+      sql += ' AND chapter_number BETWEEN ? AND ?';
+      params.push(options.chapterRange[0], options.chapterRange[1]);
+    }
+
+    if (options?.onlyPending) {
+      sql += " AND (audit_status IS NULL OR audit_status = 'pending')";
+    }
+
+    const chapters = await this.db.query(sql, params);
+    const results: AuditResult[] = [];
+    let passed = 0;
+    let failed = 0;
+
+    for (const chapter of chapters) {
+      const result = await this.auditChapter(chapter.work_id, chapter.chapter_number);
+      results.push(result);
+      if (result.status === 'passed') passed++;
+      else failed++;
+    }
+
+    return { total: chapters.length, passed, failed, results };
+  }
+
+  /**
+   * 重置审核状态
+   */
+  async resetAuditStatus(workId: number, chapterNumber: number): Promise<void> {
+    await this.db.execute(`
+      UPDATE chapters 
+      SET audit_status = 'pending', audit_issues = '[]', audit_score = 0,
+        suggested_action = 'none', audited_at = NULL
+      WHERE work_id = ? AND chapter_number = ?
+    `, [workId, chapterNumber]);
+    
+    logger.info(`已重置审核状态: workId=${workId}, chapter=${chapterNumber}`);
+  }
+
+  private async saveAuditResult(workId: number, chapterNumber: number, result: AuditResult): Promise<void> {
+    await this.db.execute(`
+      UPDATE chapters 
+      SET audit_status = ?, audit_issues = ?, audit_score = ?, suggested_action = ?, audited_at = ?
+      WHERE work_id = ? AND chapter_number = ?
+    `, [
+      result.status, JSON.stringify(result.issues), result.score, result.suggestedAction,
+      new Date().toISOString(), workId, chapterNumber,
+    ]);
+  }
+
+  private parseAuditIssues(issuesJson: string | null): AuditIssue[] {
+    if (!issuesJson) return [];
+    try { return JSON.parse(issuesJson); } catch { return []; }
+  }
+
+  private countWords(text: string): number {
+    const chineseChars = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
+    const englishWords = (text.match(/[a-zA-Z]+/g) || []).length;
+    return chineseChars + englishWords;
+  }
+
+  private checkFormat(content: string): AuditIssue[] {
+    const issues: AuditIssue[] = [];
+    if (/\n{4,}/.test(content)) {
+      issues.push({ type: 'format', message: '存在过多连续空行', severity: 'warning' });
+    }
+    return issues;
+  }
+
+  private checkSensitiveWords(content: string): AuditIssue[] {
+    const issues: AuditIssue[] = [];
+    const lowerContent = content.toLowerCase();
+    for (const word of this.config.sensitiveWords) {
+      if (lowerContent.includes(word.toLowerCase())) {
+        issues.push({ type: 'sensitive', message: `包含敏感词: ${word}`, severity: 'error' });
+      }
+    }
+    return issues;
+  }
+}

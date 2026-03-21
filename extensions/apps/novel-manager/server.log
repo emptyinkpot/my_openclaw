@@ -1,0 +1,13 @@
+[Server] 小说管理 API 服务已启动: http://localhost:3001
+[Server] API 前缀: /novel/api
+[API] Pipeline start error: TypeError: pipeline.execute is not a function
+    at /workspace/projects/extensions/apps/novel-manager/dist/server.js:38:35
+    at Layer.handle [as handle_request] (/workspace/projects/extensions/apps/novel-manager/node_modules/express/lib/router/layer.js:95:5)
+    at next (/workspace/projects/extensions/apps/novel-manager/node_modules/express/lib/router/route.js:149:13)
+    at Route.dispatch (/workspace/projects/extensions/apps/novel-manager/node_modules/express/lib/router/route.js:119:3)
+    at Layer.handle [as handle_request] (/workspace/projects/extensions/apps/novel-manager/node_modules/express/lib/router/layer.js:95:5)
+    at /workspace/projects/extensions/apps/novel-manager/node_modules/express/lib/router/index.js:284:15
+    at router.process_params (/workspace/projects/extensions/apps/novel-manager/node_modules/express/lib/router/index.js:346:12)
+    at next (/workspace/projects/extensions/apps/novel-manager/node_modules/express/lib/router/index.js:280:10)
+    at serveStatic (/workspace/projects/extensions/apps/novel-manager/node_modules/serve-static/index.js:75:16)
+    at Layer.handle [as handle_request] (/workspace/projects/extensions/apps/novel-manager/node_modules/express/lib/router/layer.js:95:5)

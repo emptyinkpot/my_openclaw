@@ -10,7 +10,7 @@ sleep 2
 
 # 启动小说管理 API 服务
 echo "Starting Novel Manager API..."
-cd /workspace/projects/extensions/novel-manager
+cd /workspace/projects/extensions/apps/novel-manager
 NODE_ENV=production NOVEL_API_PORT=3001 nohup node dist/server.js > /tmp/novel-api.log 2>&1 &
 echo "Novel API PID: $!"
 cd /workspace/projects

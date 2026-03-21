@@ -426,14 +426,13 @@
     ],
     "load": {
       "paths": [
-        "/workspace/projects/extensions/novel-manager",
-        "/workspace/projects/extensions/experience-manager",
-        "/workspace/projects/extensions/memory-lancedb-pro"
+        "/workspace/projects/extensions/apps/novel-manager",
+        "/workspace/projects/extensions/apps/experience-manager",
+        "/workspace/projects/extensions/apps/memory-lancedb-pro",
+        "/workspace/projects/extensions/apps/feishu-openclaw-plugin"
       ]
     },
-    "slots": {
-      "memory": "memory-lancedb-pro"
-    },
+
     "entries": {
       "feishu": {
         "enabled": false
@@ -448,7 +447,7 @@
         "enabled": true
       },
       "memory-lancedb-pro": {
-        "enabled": true,
+        "enabled": false,
         "config": {
           "embedding": {
             "provider": "openai-compatible",
@@ -463,9 +462,7 @@
           },
           "autoCapture": true,
           "autoRecall": true,
-          "smartExtraction": true,
-          "extractMinMessages": 2,
-          "extractMaxChars": 8000,
+          "smartExtraction": false,
           "captureAssistant": false,
           "dbPath": "/workspace/projects/data/memory-lancedb",
           "retrieval": {
@@ -473,11 +470,6 @@
             "vectorWeight": 0.7,
             "bm25Weight": 0.3,
             "minScore": 0.3,
-            "rerank": "cross-encoder",
-            "rerankApiKey": "${COZE_WORKLOAD_IDENTITY_API_KEY}",
-            "rerankModel": "jina-reranker-v2-base-multilingual",
-            "rerankEndpoint": "https://api.jina.ai/v1/rerank",
-            "rerankProvider": "jina",
             "candidatePoolSize": 12,
             "recencyHalfLifeDays": 14,
             "recencyWeight": 0.1,
@@ -516,7 +508,7 @@
       "feishu-openclaw-plugin": {
         "source": "npm",
         "spec": "@larksuiteoapi/feishu-openclaw-plugin",
-        "installPath": "/workspace/projects/extensions/feishu-openclaw-plugin",
+        "installPath": "/workspace/projects/extensions/apps/feishu-openclaw-plugin",
         "version": "2026.3.7-beta.0",
         "resolvedName": "@larksuiteoapi/feishu-openclaw-plugin",
         "resolvedVersion": "2026.3.7-beta.0",
