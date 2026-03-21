@@ -1,3 +1,2 @@
-2026/03/21-12:36:00.085 507c5 Reusing MANIFEST /workspace/projects/browser/fanqie-account-2/Default/Local Storage/leveldb/MANIFEST-000001
-2026/03/21-12:36:00.100 507c5 Recovering log #7
-2026/03/21-12:36:00.101 507c5 Reusing old log /workspace/projects/browser/fanqie-account-2/Default/Local Storage/leveldb/000007.log 
+2026/03/21-12:43:06.037 512c2 Creating DB /workspace/projects/browser/fanqie-account-2/Default/Local Storage/leveldb since it was missing.
+2026/03/21-12:43:06.047 512c2 Reusing MANIFEST /workspace/projects/browser/fanqie-account-2/Default/Local Storage/leveldb/MANIFEST-000001
