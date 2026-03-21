@@ -135,7 +135,96 @@ export class AuditService {
     const issues: AuditIssue[] = [];
     let score = 100;
 
-    // 字数检查
+    // 审稿规则1：章节必须有副标题（即"第x章 副标题"的形式）
+    if (chapter.title) {
+      const subtitlePattern = /^第[0-9]+章\s+.+$/;
+      if (!subtitlePattern.test(chapter.title)) {
+        issues.push({
+          type: 'format',
+          message: '章节标题格式错误，必须是"第x章 副标题"的形式',
+          severity: 'error',
+        });
+        score -= 20;
+      }
+    } else {
+      issues.push({
+        type: 'content',
+        message: '章节标题不能为空',
+        severity: 'error',
+      });
+      score -= 20;
+    }
+
+    // 审稿规则2：正文中不能有标题
+    const titlePattern = /^#{1,6}\s+.+$/gm;
+    const titleMatches = chapter.content.match(titlePattern);
+    if (titleMatches && titleMatches.length > 0) {
+      issues.push({
+        type: 'format',
+        message: `正文中发现 ${titleMatches.length} 个标题，不允许有标题`,
+        severity: 'error',
+      });
+      score -= 15;
+    }
+
+    // 审稿规则3：正文中不能有Markdown语法
+    const markdownPatterns = [
+      /\*\*.+?\*\*/g,  // 粗体
+      /_.+?_/g,        // 斜体
+      /\[.+?\]\(.+?\)/g,  // 链接
+      /`{1,3}.+?`{1,3}/g,  // 代码
+    ];
+    let markdownCount = 0;
+    markdownPatterns.forEach(pattern => {
+      const matches = chapter.content.match(pattern);
+      if (matches) markdownCount += matches.length;
+    });
+    if (markdownCount > 0) {
+      issues.push({
+        type: 'format',
+        message: `正文中发现 ${markdownCount} 处Markdown语法，不允许使用Markdown`,
+        severity: 'error',
+      });
+      score -= 15;
+    }
+
+    // 审稿规则4：正文中使用日文半角符号
+    const fullWidthPattern = /[、。，；：！？「」『』【】〔〕〖〗〘〙〚〛]/g;
+    const fullWidthMatches = chapter.content.match(fullWidthPattern);
+    if (fullWidthMatches && fullWidthMatches.length > 0) {
+      issues.push({
+        type: 'format',
+        message: `正文中发现 ${fullWidthMatches.length} 个全角符号，必须使用日文半角符号`,
+        severity: 'warning',
+      });
+      score -= 10;
+    }
+
+    // 审稿规则5：正文中不允许有无意义鼓励字母数字单词，不能有垃圾字符
+    const garbagePattern = /[a-zA-Z]{10,}/g;
+    const garbageMatches = chapter.content.match(garbagePattern);
+    if (garbageMatches && garbageMatches.length > 0) {
+      issues.push({
+        type: 'content',
+        message: `正文中发现 ${garbageMatches.length} 个过长字母数字单词，可能是无意义内容`,
+        severity: 'warning',
+      });
+      score -= 10;
+    }
+
+    // 检查垃圾字符（控制字符等）
+    const controlCharPattern = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g;
+    const controlCharMatches = chapter.content.match(controlCharPattern);
+    if (controlCharMatches && controlCharMatches.length > 0) {
+      issues.push({
+        type: 'content',
+        message: `正文中发现 ${controlCharMatches.length} 个控制字符或垃圾字符`,
+        severity: 'error',
+      });
+      score -= 20;
+    }
+
+    // 原有字数检查
     const wordCount = this.countWords(chapter.content);
     if (wordCount < this.config.minWordCount) {
       issues.push({
@@ -143,7 +232,7 @@ export class AuditService {
         message: `字数不足: ${wordCount} < ${this.config.minWordCount}`,
         severity: 'error',
       });
-      score -= 30;
+      score -= 20;
     } else if (wordCount > this.config.maxWordCount) {
       issues.push({
         type: 'length',
@@ -151,20 +240,6 @@ export class AuditService {
         severity: 'warning',
       });
       score -= 10;
-    }
-
-    // 格式检查
-    if (this.config.checkFormat) {
-      const formatIssues = this.checkFormat(chapter.content);
-      issues.push(...formatIssues);
-      score -= formatIssues.length * 5;
-    }
-
-    // 敏感词检查
-    if (this.config.checkSensitiveWords) {
-      const sensitiveIssues = this.checkSensitiveWords(chapter.content);
-      issues.push(...sensitiveIssues);
-      score -= sensitiveIssues.length * 20;
     }
 
     const hasErrors = issues.some(i => i.severity === 'error');

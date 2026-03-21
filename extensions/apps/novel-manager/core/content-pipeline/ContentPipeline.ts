@@ -1,30 +1,24 @@
 /**
- * 内容处理流水线 - 完整流程版本
- * 协调检测 → 润色 → 审核 → 发布的完整流程
+ * 审稿模块 - 章节审核调度
+ * 协调待审核章节的审核流程
  * 
- * 这是核心编排层，统筹整个内容发布流水线
- * 简化流程已移到 FanqieSimplePipeline.ts
+ * 这是核心编排层，统筹整个审稿流程
  */
 
 import { StateService } from './StateService';
 import { TaskMonitor } from './TaskMonitor';
-import { PolishFeatureDetector, PolishFeatures } from './PolishFeatureDetector';
-import { ContentValidator, ValidationResult } from './ContentValidator';
 import { AuditService, AuditResult } from './AuditService';
-import { FanqiePublisher, FanqieAccount, ChapterToPublish } from './FanqiePublisher';
 import { getChapterRepository, ChapterData } from './ChapterRepository';
 import { logger } from '../../utils/logger';
 import { getConfig } from '../config';
 import { delay } from '../../utils/helpers';
+import { getDatabaseManager } from '../data-scan-storage/database';
 
 // 流水线步骤定义
 export type PipelineStep = 
   | 'init'       // 初始化
-  | 'scan'       // 扫描作品/章节
+  | 'scan'       // 扫描待审核章节
   | 'audit'      // 审核
-  | 'detect'     // 检测
-  | 'polish'     // 润色
-  | 'publish'    // 发布
   | 'done';      // 完成
 
 // 流水线进度事件
@@ -58,9 +52,6 @@ const STEP_LABELS: Record<PipelineStep, string> = {
   init: '初始化',
   scan: '扫描',
   audit: '审核',
-  detect: '检测',
-  polish: '润色',
-  publish: '发布',
   done: '完成',
 };
 
@@ -86,23 +77,23 @@ export interface TaskResult {
 export interface PipelineOptions {
   workId?: number;
   chapterRange?: [number, number];
-  platforms?: string[];
   dryRun?: boolean;
-  headless?: boolean;
-  skipAudit?: boolean;  // 跳过审核
   maxConcurrent?: number;
   onProgress?: (event: PipelineProgressEvent) => void;
 }
 
+// 作品状态定义
+export type WorkStatus = 'outline' | 'pending' | 'audited' | 'published';
+export type ChapterStatus = 'outline' | 'pending' | 'audited' | 'published';
+
 /**
- * 内容处理流水线 - 完整流程
+ * 审稿模块 - 审核调度
  */
 export class ContentPipeline {
   private state: StateService;
   private monitor: TaskMonitor;
-  private detector: PolishFeatureDetector;
   private auditService: AuditService;
-  private fanqiePublisher: FanqiePublisher;
+  private db = getDatabaseManager();
   private running: boolean = false;
   private abortController: AbortController | null = null;
   private progressCallback?: (event: PipelineProgressEvent) => void;
@@ -112,9 +103,7 @@ export class ContentPipeline {
   constructor() {
     this.state = new StateService();
     this.monitor = new TaskMonitor();
-    this.detector = new PolishFeatureDetector();
     this.auditService = new AuditService();
-    this.fanqiePublisher = new FanqiePublisher();
   }
   
   /**
@@ -159,6 +148,10 @@ export class ContentPipeline {
     return this.run(options);
   }
   
+  /**
+   * 审稿调度主函数
+   * 审核所有待审核章节，审核通过后状态变为 audited
+   */
   async run(options: PipelineOptions = {}): Promise<TaskResult[]> {
     if (!this.running) {
       await this.start();
@@ -168,43 +161,50 @@ export class ContentPipeline {
     const startTime = Date.now();
     
     try {
-      const chapters = await this.getPendingChapters(options);
-      logger.info(`找到 ${chapters.length} 个待处理章节`);
+      const chapters = await this.getPendingAuditChapters(options);
+      logger.info(`找到 ${chapters.length} 个待审核章节`);
       
       for (let i = 0; i < chapters.length; i++) {
         if (this.abortController?.signal.aborted) break;
         
         const chapter = chapters[i];
-        this.emitProgress('running', 'publish', i + 1, chapters.length, 
-          `处理 ${chapter.workTitle} 第${chapter.chapterNumber}章`);
+        this.emitProgress('running', 'audit', i + 1, chapters.length, 
+          `审核 ${chapter.workTitle || '作品'} 第${chapter.chapterNumber}章`);
         
-        // 跳过审核直接发布
-        if (options.skipAudit || chapter.auditStatus === 'passed') {
-          for (const platform of (options.platforms || ['fanqie'])) {
-            const result = await this.publishChapter(chapter, platform, options);
-            results.push(result);
-          }
+        // 执行审核
+        const auditResult = await this.runAuditTask(chapter);
+        results.push(auditResult);
+        
+        // 如果审核通过，更新章节状态为 audited
+        if (auditResult.success) {
+          await this.updateChapterStatus(chapter.workId, chapter.chapterNumber, 'audited');
+          this.progressResults.push({
+            success: true,
+            workTitle: chapter.workTitle || '作品',
+            chapterNumber: chapter.chapterNumber,
+            chapterTitle: chapter.chapterTitle || `第${chapter.chapterNumber}章`,
+            message: '审核通过，状态已更新为 audited',
+            duration: auditResult.duration,
+          });
         } else {
-          // 审核后发布
-          const auditResult = await this.runAuditTask(chapter);
-          if (auditResult.success) {
-            for (const platform of (options.platforms || ['fanqie'])) {
-              const result = await this.publishChapter(chapter, platform, options);
-              results.push(result);
-            }
-          } else {
-            results.push(auditResult);
-          }
+          this.progressResults.push({
+            success: false,
+            workTitle: chapter.workTitle || '作品',
+            chapterNumber: chapter.chapterNumber,
+            chapterTitle: chapter.chapterTitle || `第${chapter.chapterNumber}章`,
+            message: auditResult.error || '审核失败',
+            duration: auditResult.duration,
+          });
         }
         
         this.state.setProcessedIndex(i + 1);
-        if (i < chapters.length - 1) await delay(2000);
+        if (i < chapters.length - 1) await delay(1000);
       }
       
-      logger.info(`流水线完成，共处理 ${chapters.length} 个章节，耗时 ${Date.now() - startTime}ms`);
+      logger.info(`审稿完成，共审核 ${chapters.length} 个章节，耗时 ${Date.now() - startTime}ms`);
       
     } catch (error: any) {
-      logger.error('流水线失败:', error);
+      logger.error('审稿失败:', error);
       throw error;
     }
     
@@ -212,57 +212,44 @@ export class ContentPipeline {
   }
   
   /**
-   * 发布单个章节
+   * 获取待审核章节
    */
-  private async publishChapter(chapter: any, platform: string, options: PipelineOptions): Promise<TaskResult> {
-    const startTime = Date.now();
-    
-    try {
-      if (platform === 'fanqie') {
-        const config = getConfig();
-        const account = config.scheduler.fanqieAccounts[0];
-        
-        const chapterData: ChapterToPublish = {
-          workId: chapter.workId,
-          workTitle: chapter.workTitle,
-          chapterNumber: chapter.chapterNumber,
-          chapterTitle: chapter.chapterTitle,
-          content: chapter.content,
-          wordCount: chapter.content?.length || 0,
-        };
-        
-        const result = await this.fanqiePublisher.publishChapter(chapterData, account, {
-          headless: options.headless ?? true,
-          dryRun: options.dryRun,
-        });
-        
-        return {
-          success: result.success,
-          task: chapter,
-          duration: Date.now() - startTime,
-          error: result.error,
-        };
-      }
-      
-      return { success: false, task: chapter, duration: 0, error: `平台 ${platform} 未实现` };
-      
-    } catch (error: any) {
-      return { success: false, task: chapter, duration: Date.now() - startTime, error: error.message };
+  private async getPendingAuditChapters(options: PipelineOptions): Promise<any[]> {
+    let sql = `
+      SELECT c.id, c.work_id, c.chapter_number, c.title, c.content, w.title as work_title
+      FROM chapters c
+      LEFT JOIN works w ON c.work_id = w.id
+      WHERE c.status = 'pending'
+    `;
+    const params: any[] = [];
+
+    if (options.workId) {
+      sql += ' AND c.work_id = ?';
+      params.push(options.workId);
     }
+
+    if (options.chapterRange) {
+      sql += ' AND c.chapter_number BETWEEN ? AND ?';
+      params.push(options.chapterRange[0], options.chapterRange[1]);
+    }
+
+    sql += ' ORDER BY c.work_id, c.chapter_number';
+
+    const rows = await this.db.query(sql, params);
+    
+    return rows.map((row: any) => ({
+      id: row.id,
+      workId: row.work_id,
+      workTitle: row.work_title,
+      chapterNumber: row.chapter_number,
+      chapterTitle: row.title,
+      content: row.content,
+    }));
   }
   
   /**
-   * 获取待处理章节
+   * 执行审核任务
    */
-  private async getPendingChapters(options: PipelineOptions): Promise<ChapterData[]> {
-    const repo = getChapterRepository();
-    return await repo.getPendingProcess({
-      workId: options.workId,
-      chapterRange: options.chapterRange,
-      limit: 100,
-    });
-  }
-  
   private async runAuditTask(chapter: any): Promise<TaskResult> {
     const startTime = Date.now();
     
@@ -277,6 +264,18 @@ export class ContentPipeline {
     } catch (error: any) {
       return { success: false, task: chapter, duration: Date.now() - startTime, error: error.message };
     }
+  }
+  
+  /**
+   * 更新章节状态
+   */
+  private async updateChapterStatus(workId: number, chapterNumber: number, status: ChapterStatus): Promise<void> {
+    await this.db.execute(`
+      UPDATE chapters SET status = ?, updated_at = NOW()
+      WHERE work_id = ? AND chapter_number = ?
+    `, [status, workId, chapterNumber]);
+    
+    logger.info(`已更新章节状态: workId=${workId}, chapter=${chapterNumber}, status=${status}`);
   }
   
   async start(): Promise<void> {
