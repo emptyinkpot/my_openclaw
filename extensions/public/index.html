@@ -2359,55 +2359,12 @@
       // 显示对应的子页面
       document.getElementById('novelDataSubPage').style.display = subtab === 'novel-data' ? 'flex' : 'none';
       document.getElementById('mysqlFieldsSubPage').style.display = subtab === 'mysql-fields' ? 'block' : 'none';
-      document.getElementById('resourceLibrarySubPage').style.display = subtab === 'resource-library' ? 'block' : 'none';
+      document.getElementById('resourceLibrarySubPage').style.display = subtab === 'resource-library' ? 'flex' : 'none';
       
       // 如果切换到 MySQL 字段页面，实时从数据库读取
       if (subtab === 'mysql-fields') {
         await loadDatabaseSchema();
       }
-      
-      // 如果切换到资源库页面，加载资源
-      if (subtab === 'resource-library') {
-        loadResourceLibrarySimple();
-      }
-    }
-    
-    }
-    
-    // 简单版资源库加载
-    function loadResourceLibrarySimple() {
-      const container = document.getElementById('resourceLibraryContent');
-      if (!container) return;
-      
-      container.innerHTML = `
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
-          <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
-            <div style="font-size: 24px; margin-bottom: 8px;">📚</div>
-            <div style="font-size: 16px; font-weight: 600; margin-bottom: 4px;">词汇库</div>
-            <div style="font-size: 11px; color: var(--text-muted);">908 条词汇</div>
-          </div>
-          <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
-            <div style="font-size: 24px; margin-bottom: 8px;">📖</div>
-            <div style="font-size: 16px; font-weight: 600; margin-bottom: 4px;">文献库</div>
-            <div style="font-size: 11px; color: var(--text-muted);">55 条文献</div>
-          </div>
-          <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
-            <div style="font-size: 24px; margin-bottom: 8px;">🚫</div>
-            <div style="font-size: 16px; font-weight: 600; margin-bottom: 4px;">禁用词</div>
-            <div style="font-size: 11px; color: var(--text-muted);">162 条禁用词</div>
-          </div>
-        </div>
-        <div style="margin-top: 20px; padding: 16px; background: var(--bg-tertiary); border-radius: 8px;">
-          <div style="font-size: 12px; color: var(--text-secondary);">
-            <strong>polish-resources 数据已准备就绪：</strong>
-            <ul style="margin-top: 8px; padding-left: 20px;">
-              <li>词汇：908 条（包含"宏大叙事"等分类）</li>
-              <li>文献：55 条（包含历史文献、文学作品等）</li>
-              <li>禁用词：162 条（包含替代建议）</li>
-            </ul>
-          </div>
-        </div>
-      `;
     }
     
     // 实时从数据库加载表结构
