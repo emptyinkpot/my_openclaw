@@ -20,7 +20,7 @@ export class MarkdownCleanStep extends BaseStep {
   readonly phase = 'postprocess' as const;
   readonly description = '清理Markdown格式标记，规范化文本格式';
   readonly fixed = true;
-  readonly dependencies: string[] = [];
+  readonly dependencies = ['polish'];
   
   async execute(context: StepContext): Promise<StepResult> {
     const { text, reportProgress } = context;

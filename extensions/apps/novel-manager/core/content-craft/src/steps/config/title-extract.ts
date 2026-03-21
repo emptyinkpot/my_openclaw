@@ -13,7 +13,7 @@ export class TitleExtractStep extends BaseStep {
   readonly phase = 'config' as const;
   readonly description = '提取或生成文章标题';
   readonly fixed = false;
-  readonly dependencies: string[] = [];
+  readonly dependencies = ['detect'];
   
   async execute(context: StepContext): Promise<StepResult> {
     const { text, settings } = context;
