@@ -531,11 +531,15 @@ async function handleNovelPage(req: IncomingMessage, res: ServerResponse): Promi
     '/novel/': 'index.html',
     '/cache.html': 'cache.html',
     '/project-structure.html': 'project-structure.html',
+    // 新拆分的独立页面
+    '/logs.html': 'logs.html',
+    '/cache-manage.html': 'cache-manage.html',
     // 静态资源文件
     '/settings-modal.html': 'settings-modal.html',
     '/nav-bar.html': 'nav-bar.html',
     '/nav-bar.js': 'nav-bar.js',
-    '/top-bar.html': 'top-bar.html'
+    '/top-bar.html': 'top-bar.html',
+    '/common-head.html': 'common-head.html'
   };
 
 
