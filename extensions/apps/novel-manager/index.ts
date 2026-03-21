@@ -641,9 +641,7 @@ async function handleNovelPage(req: IncomingMessage, res: ServerResponse): Promi
     // 静态资源文件
     '/settings-modal.html': 'settings-modal.html',
     '/nav-bar.html': 'nav-bar.html',
-    '/nav-bar.js': 'nav-bar.js',
-    '/top-bar.html': 'top-bar.html',
-    '/common-head.html': 'common-head.html'
+    '/nav-bar.js': 'nav-bar.js'
   };
 
 
