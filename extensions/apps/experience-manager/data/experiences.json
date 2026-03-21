@@ -1,6 +1,43 @@
 {
   "records": [
     {
+      "id": "exp_1774138800000_nav_publish_integration",
+      "timestamp": 1774138800000,
+      "type": "feature_dev",
+      "title": "自动发布功能集成到番茄扫描页面与导航栏优化",
+      "description": "将独立的自动发布页面从一级导航栏移除，集成到番茄扫描页面的标签页系统中；同时添加自动化入口到导航栏，并修复了路由配置问题。",
+      "userQuery": "将自动发布功能从一级导航栏移除，集成到小说管理的番茄扫描页面中；页面加载失败，你是不是又犯了没有注册这个路由只修改了 novel-manager 插件的 pageMap，但是没有修改 plugin 里的 routes 数组的错误；将这个积累到经验模块里",
+      "solution": "## 完成的工作\n\n### 1. 移除导航栏中的自动发布入口\n- 修改 `extensions/public/nav-bar.html`，删除 `<a href=\"/publish.html\">🚀 自动发布</a>` 链接\n\n### 2. 在番茄扫描页面添加标签页系统\n- 修改 `extensions/public/index.html`，在番茄扫描页面添加标签页导航\n- 两个标签页：\"🍅 番茄扫描\" 和 \"🚀 自动发布\"\n- 将发布功能的 UI 集成到\"自动发布\"标签页中：发布配置、章节列表、发布控制、进度显示、日志区域\n\n### 3. 添加标签页切换和发布功能 JavaScript\n- 实现 `switchFanqieTab(tab)` 标签页切换函数\n- 实现发布功能：`loadPublishWorks()`、`onPublishWorkChange()`、`startPublish()`、`stopPublish()`、`updatePublishProgress()`、`addPublishLog()`、`toggleSelectAllChapters()`\n- 实现 `initFanqiePage()` 初始化函数\n- 在 `init()` 函数中调用 `initFanqiePage()`\n\n### 4. 导航栏添加自动化入口\n- 在 `extensions/public/nav-bar.html` 中添加 `<a href=\"/automation\">🤖 自动化</a>` 链接\n\n### 5. 修复 novel-manager 插件路由配置（并回滚）\n- 最初错误地在 novel-manager 插件中添加了 `/automation.html` 路由\n- 发现有独立的 automation-hub 插件负责自动化功能\n- 从 novel-manager 插件中移除 `/automation.html` 相关配置\n\n### 6. 正确配置导航链接到 automation-hub 插件\n- 将导航栏链接从 `/automation.html` 改为 `/automation`\n- 给 automation-hub 插件添加导航栏注入功能\n- 给 automation-hub 插件添加导航栏高亮功能\n- 给 automation-hub 插件添加动态导航栏高度调整脚本",
+      "experienceApplied": [
+        "页面功能集成",
+        "标签页系统设计",
+        "导航栏统一管理",
+        "插件路由配置",
+        "多插件协作"
+      ],
+      "experienceGained": [
+        "将独立页面功能集成到现有页面的标签页系统中，简化导航结构",
+        "OpenClaw 插件路由注册必须同时修改 pageMap 和 routes 数组，缺一不可",
+        "先检查是否已有独立插件负责某功能，不要随意在其他插件中添加",
+        "automation-hub 插件负责处理自动化功能，路由是 /automation 不是 /automation.html",
+        "给插件添加导航栏注入功能时，要同时处理高亮显示和动态高度调整",
+        "修改 TypeScript 插件代码后，要确认功能是否正常工作",
+        "导航栏统一架构：通过 nav-bar.html 注入，所有页面共享同一套导航"
+      ],
+      "tags": [
+        "OpenClaw",
+        "导航栏",
+        "标签页",
+        "功能集成",
+        "路由配置",
+        "插件开发",
+        "automation-hub",
+        "novel-manager"
+      ],
+      "difficulty": 4,
+      "xpGained": 200
+    },
+    {
       "id": "exp_1774136462221_wea3v4szp",
       "timestamp": 1774136462221,
       "type": "bug_fix",
