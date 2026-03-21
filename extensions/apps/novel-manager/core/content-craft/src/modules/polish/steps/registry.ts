@@ -10,6 +10,24 @@ import type { BaseStep, Step } from './base';
 import type { ProcessPhase, PolishStepConfig } from '../types';
 import { BannedWordsStep } from './process/banned-words';
 
+// 其他步骤占位类（后续逐步实现）
+class PlaceholderStep extends BaseStep {
+  constructor(
+    readonly id: string, 
+    readonly name: string, 
+    readonly phase: ProcessPhase,
+    readonly description: string,
+    readonly dependencies: string[] = []
+  ) {
+    super();
+  }
+  
+  async execute(context: any): Promise<any> {
+    // 占位实现，返回原文本
+    return this.createSuccessResult(context.text, false, [], `${this.name} 步骤待实现`);
+  }
+}
+
 /**
  * 步骤注册表
  * 
@@ -43,6 +61,28 @@ export class StepRegistry {
     
     // 注册我们需要的步骤
     this.register(new BannedWordsStep());
+    
+    // 注册其他占位步骤
+    // config 阶段
+    this.register(new PlaceholderStep('quote-protect', '引用保护', 'config', '保护引号、书名号等内容不被修改', []));
+    this.register(new PlaceholderStep('title-extract', '标题提取', 'config', '从文本中提取标题', ['quote-protect']));
+    this.register(new PlaceholderStep('detect', 'AI检测', 'config', 'AI内容检测', []));
+    
+    // process 阶段
+    this.register(new PlaceholderStep('polish', '智能润色', 'process', '调用LLM进行智能润色', ['quote-protect']));
+    this.register(new PlaceholderStep('style-forge', '风格塑造', 'process', '调整文本风格', ['polish']));
+    this.register(new PlaceholderStep('meme-fuse', '梗融合', 'process', '融入网络梗', []));
+    this.register(new PlaceholderStep('sentence-patterns', '句式优化', 'process', '优化句式结构', []));
+    
+    // postprocess 阶段
+    this.register(new PlaceholderStep('markdown-clean', 'Markdown清理', 'postprocess', '清理Markdown格式', []));
+    
+    // review 阶段
+    this.register(new PlaceholderStep('breath-segment', '呼吸分段', 'review', '优化分段，提升阅读体验', []));
+    this.register(new PlaceholderStep('semantic', '语义检查', 'review', '检查语义连贯性', []));
+    this.register(new PlaceholderStep('word-usage', '用词检查', 'review', '检查用词准确性', []));
+    this.register(new PlaceholderStep('smart-fix', '智能修复', 'review', '智能修复问题', ['semantic', 'word-usage']));
+    this.register(new PlaceholderStep('final', '最终审稿', 'review', '最终审稿检查', ['smart-fix']));
     
     this.initialized = true;
   }
