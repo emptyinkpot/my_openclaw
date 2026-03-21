@@ -17,14 +17,94 @@ try {
 
 let htmlCache: string | null = null;
 
+// 获取导航栏HTML
+function getNavBarHtml(): string {
+  const navBarPath = path.join(__dirname, '..', '..', 'public', 'nav-bar.html');
+  try {
+    return fs.readFileSync(navBarPath, 'utf-8');
+  } catch (e) {
+    console.error('[automation-hub] 无法读取导航栏文件:', navBarPath);
+    return '<div class="nav-bar">导航栏加载失败</div>';
+  }
+}
+
+// 注入导航栏到页面HTML中
+function injectNavBar(html: string): string {
+  let navBarHtml = getNavBarHtml();
+  
+  // 给自动化链接添加 "on" 类
+  navBarHtml = navBarHtml.replace('href="/automation"', 'href="/automation" class="on"');
+  
+  // 添加动态设置导航栏高度的脚本
+  const dynamicHeightScript = `
+<script>
+// 动态设置导航栏高度
+(function() {
+  function setNavHeight() {
+    const navBar = document.querySelector('.nav-bar');
+    if (navBar) {
+      const height = navBar.offsetHeight;
+      document.documentElement.style.setProperty('--nav-height', height + 'px');
+      
+      // 给 body 添加 padding-top
+      document.body.style.paddingTop = 'var(--nav-height)';
+    }
+  }
+  
+  // 使用 MutationObserver 监听导航栏加载
+  const observer = new MutationObserver(function() {
+    const navBar = document.querySelector('.nav-bar');
+    if (navBar) {
+      observer.disconnect();
+      setNavHeight();
+    }
+  });
+  
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+  
+  // 立即尝试执行
+  setNavHeight();
+  
+  // DOMContentLoaded 时再次执行
+  document.addEventListener('DOMContentLoaded', setNavHeight);
+  
+  // load 时再次执行
+  window.addEventListener('load', setNavHeight);
+  
+  // 监听窗口大小变化
+  window.addEventListener('resize', setNavHeight);
+})();
+</script>
+`;
+  
+  navBarHtml = navBarHtml + dynamicHeightScript;
+  
+  // 尝试替换页面中的 <div class="nav-bar"> 部分
+  const navBarRegex = /<div[^>]*class="[^"]*nav-bar[^"]*"[^>]*>[\s\S]*?<\/div>/;
+  
+  if (navBarRegex.test(html)) {
+    return html.replace(navBarRegex, navBarHtml);
+  }
+  
+  // 如果没有找到，尝试在 <body> 标签后注入
+  if (html.includes('<body>')) {
+    return html.replace('<body>', '<body>' + navBarHtml);
+  }
+  
+  return html;
+}
+
 // 获取自动化中心界面HTML
 function getAutomationHtml(): string {
   if (htmlCache) return htmlCache;
   
   const htmlPath = path.join(__dirname, 'public', 'index.html');
   try {
-    htmlCache = fs.readFileSync(htmlPath, 'utf-8');
-    return htmlCache;
+    let html = fs.readFileSync(htmlPath, 'utf-8');
+    // 注入导航栏
+    html = injectNavBar(html);
+    htmlCache = html;
+    return html;
   } catch (e) {
     console.error('[automation-hub] 无法读取HTML文件:', htmlPath);
     return '<html><body><h1>自动化中心加载失败</h1></body></html>';

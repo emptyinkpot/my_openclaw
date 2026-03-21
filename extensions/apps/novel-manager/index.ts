@@ -223,8 +223,7 @@ function injectNavBar(html: string, currentPage: string): string {
     'cache-manage.html': '/cache-manage.html',
     'publish.html': '/publish.html',
     'experience.html': '/experience.html',
-    'feishu.html': '/feishu.html',
-    'automation.html': '/automation.html'
+    'feishu.html': '/feishu.html'
   };
   
   const currentLink = pageToLinkMap[currentPage];
@@ -640,7 +639,6 @@ async function handleNovelPage(req: IncomingMessage, res: ServerResponse): Promi
     '/cache-manage.html': 'cache-manage.html',
     '/publish.html': 'publish.html',
     '/feishu.html': 'feishu.html',
-    '/automation.html': 'automation.html',
     // 静态资源文件
     '/settings-modal.html': 'settings-modal.html',
     '/nav-bar.html': 'nav-bar.html',
@@ -1872,8 +1870,7 @@ const plugin = {
       { path: '/project-structure.html', match: 'exact' as const },
       { path: '/logs.html', match: 'exact' as const },
       { path: '/cache-manage.html', match: 'exact' as const },
-      { path: '/publish.html', match: 'exact' as const },
-      { path: '/automation.html', match: 'exact' as const }
+      { path: '/publish.html', match: 'exact' as const }
     ];
     
     // 注册页面路由 - 不需要认证
