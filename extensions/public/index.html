@@ -2453,36 +2453,26 @@
     // 加载资源库
     async function loadResourceLibrary() {
       try {
-        // 先尝试初始化数据库（如果没有数据的话）
-        try {
-          console.log('[loadResourceLibrary] 尝试初始化主库...');
-          const initResponse = await fetch('/api/main-library/init');
-          const initResult = await initResponse.json();
-          console.log('[loadResourceLibrary] 初始化结果:', initResult);
-        } catch (e) {
-          console.warn('[loadResourceLibrary] 初始化跳过或失败:', e);
-        }
+        console.log('[loadResourceLibrary] 开始从 MySQL 加载资源...');
         
         // 加载词汇
-        console.log('[loadResourceLibrary] 开始加载词汇...');
-        const vocabResponse = await fetch('/api/main-library');
-        const vocabData = await vocabResponse.json();
+        console.log('[loadResourceLibrary] 加载词汇...');
+        const vocabData = await api('/main-library');
         console.log('[loadResourceLibrary] 词汇 API 返回:', vocabData);
         if (vocabData.success && vocabData.items) {
           resourceData.vocabulary = vocabData.items;
           document.getElementById('vocabCount').textContent = resourceData.vocabulary.length;
           console.log('[loadResourceLibrary] 词汇加载成功，数量:', resourceData.vocabulary.length);
-        } else {
-          console.warn('[loadResourceLibrary] 词汇加载失败，返回数据:', vocabData);
         }
         
         // 加载文献
         try {
-          const litResponse = await fetch('/api/literature');
-          const litData = await litResponse.json();
+          console.log('[loadResourceLibrary] 加载文献...');
+          const litData = await api('/literature');
           if (litData.success && litData.items) {
             resourceData.literature = litData.items;
             document.getElementById('litCount').textContent = resourceData.literature.length;
+            console.log('[loadResourceLibrary] 文献加载成功，数量:', resourceData.literature.length);
           }
         } catch (e) {
           console.error('[loadResourceLibrary] 文献加载失败:', e);
@@ -2490,11 +2480,12 @@
         
         // 加载禁用词
         try {
-          const bannedResponse = await fetch('/api/banned-words');
-          const bannedData = await bannedResponse.json();
+          console.log('[loadResourceLibrary] 加载禁用词...');
+          const bannedData = await api('/banned-words');
           if (bannedData.success && bannedData.items) {
             resourceData.bannedWords = bannedData.items;
             document.getElementById('bannedCount').textContent = resourceData.bannedWords.length;
+            console.log('[loadResourceLibrary] 禁用词加载成功，数量:', resourceData.bannedWords.length);
           }
         } catch (e) {
           console.error('[loadResourceLibrary] 禁用词加载失败:', e);

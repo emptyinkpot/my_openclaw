@@ -350,6 +350,75 @@ app.get(`${API_PREFIX}/logs`, async (req: Request, res: Response) => {
   }
 });
 
+// ========== 资源库 API ==========
+// 获取词汇
+app.get(`${API_PREFIX}/main-library`, async (req: Request, res: Response) => {
+  try {
+    const db = getDatabaseManager();
+    const items = await db.query('SELECT * FROM vocabulary ORDER BY created_at ASC');
+    
+    const formattedItems = items.map((item: any) => ({
+      id: `vocab-${item.id}`,
+      content: item.content,
+      type: item.type,
+      category: item.category,
+      createdAt: new Date(item.created_at).getTime(),
+    }));
+    
+    res.json({ success: true, items: formattedItems });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 获取文献
+app.get(`${API_PREFIX}/literature`, async (req: Request, res: Response) => {
+  try {
+    const db = getDatabaseManager();
+    const items = await db.query('SELECT * FROM literature ORDER BY priority DESC, created_at DESC');
+    
+    const formattedItems = items.map((item: any) => ({
+      id: `lit-${item.id}`,
+      type: 'content',
+      title: item.title,
+      content: item.content || undefined,
+      author: item.author || undefined,
+      tags: item.tags ? JSON.parse(item.tags) : undefined,
+      priority: item.priority || 0,
+      note: item.note || undefined,
+      createdAt: new Date(item.created_at).getTime(),
+      updatedAt: item.updated_at ? new Date(item.updated_at).getTime() : undefined,
+    }));
+    
+    res.json({ success: true, items: formattedItems });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 获取禁用词
+app.get(`${API_PREFIX}/banned-words`, async (req: Request, res: Response) => {
+  try {
+    const db = getDatabaseManager();
+    const items = await db.query('SELECT * FROM banned_words ORDER BY created_at ASC');
+    
+    const formattedItems = items.map((item: any) => ({
+      id: `banned-${item.id}`,
+      content: item.content,
+      type: item.type,
+      category: item.category,
+      reason: item.reason || '',
+      alternative: item.alternative || undefined,
+      createdAt: new Date(item.created_at).getTime(),
+      updatedAt: item.updated_at ? new Date(item.updated_at).getTime() : undefined,
+    }));
+    
+    res.json({ success: true, items: formattedItems });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // 保存缓存文件
 app.put(`${API_PREFIX}/cache/files/:name`, async (req: Request, res: Response) => {
   try {
