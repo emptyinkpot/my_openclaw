@@ -610,14 +610,13 @@
               <h2 style="font-size: 18px; font-weight: 600; margin-bottom: 20px;">📦 资源库</h2>
               
               <div style="margin-bottom: 16px; display: flex; gap: 8px; align-items: center;">
-                <button class="btn primary" onclick="alert('上传功能开发中...')">📤 上传 Polish Resources</button>
-                <button class="btn" onclick="alert('刷新功能开发中...')">🔄 刷新</button>
+                <button class="btn primary" onclick="loadResourceFromCloud()">🔄 从云库加载</button>
               </div>
               
-              <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
+              <div id="resourceCloudContent" style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
                 <div style="text-align: center; padding: 40px; color: var(--text-muted);">
                   <div style="font-size: 48px; margin-bottom: 16px;">📦</div>
-                  <div style="font-size: 14px;">资源库功能开发中...</div>
+                  <div style="font-size: 14px;">点击上方按钮从云库加载数据</div>
                 </div>
               </div>
             </div>
@@ -2372,6 +2371,59 @@
       // 如果切换到 MySQL 字段页面，实时从数据库读取
       if (subtab === 'mysql-fields') {
         await loadDatabaseSchema();
+      }
+    }
+    
+    // 从云库加载资源
+    async function loadResourceFromCloud() {
+      const container = document.getElementById('resourceCloudContent');
+      if (!container) return;
+      
+      container.innerHTML = `
+        <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+          <div style="font-size: 32px; margin-bottom: 12px;">⏳</div>
+          <div style="font-size: 14px;">正在从云库加载数据...</div>
+        </div>
+      `;
+      
+      try {
+        // 尝试加载词汇
+        const vocabResponse = await fetch('/api/main-library');
+        const vocabData = await vocabResponse.json();
+        
+        let html = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px;">';
+        
+        if (vocabData.success && vocabData.data?.items && vocabData.data.items.length > 0) {
+          const items = vocabData.data.items.slice(0, 20);
+          html += items.map((item) => `
+            <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px;">
+              <div style="font-size: 14px; font-weight: 600; margin-bottom: 6px;">${item.content || '无内容'}</div>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <span style="padding: 2px 8px; background: var(--bg-tertiary); border-radius: 10px; font-size: 10px;">${item.category || '通用'}</span>
+              </div>
+            </div>
+          `).join('');
+          html += `</div><div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); text-align: center; font-size: 11px; color: var(--text-muted);">显示前 20 条，共 ${vocabData.data.items.length} 条词汇</div>`;
+        } else {
+          html += `
+            <div style="text-align: center; padding: 60px; color: var(--text-muted); grid-column: 1 / -1;">
+              <div style="font-size: 48px; margin-bottom: 16px;">📦</div>
+              <div style="font-size: 14px;">云库中暂无数据</div>
+            </div>
+          `;
+        }
+        
+        container.innerHTML = html;
+        showToast('✅ 数据加载成功', 'success');
+      } catch (err) {
+        console.error('[loadResourceFromCloud] 加载失败:', err);
+        container.innerHTML = `
+          <div style="text-align: center; padding: 60px; color: var(--danger);">
+            <div style="font-size: 48px; margin-bottom: 16px;">❌</div>
+            <div style="font-size: 14px;">加载失败: ${err.message}</div>
+          </div>
+        `;
+        showToast('❌ 加载失败', 'error');
       }
     }
     
