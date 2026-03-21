@@ -31,17 +31,17 @@ import {
   Download, Upload, Package, AlertTriangle, Zap, PenTool
 } from "lucide-react";
 
-import { ResourceManager } from "@/components/resource-manager";
-import { MainLibraryManager } from "@/components/main-library-manager";
-import { LiteratureManager } from "@/components/literature-manager";
-import { BannedWordsManager } from "@/components/banned-words-manager";
-import { SentencePatternsManager } from "@/components/sentence-patterns-manager";
-import { PolishConfig } from "@/components/polish-config";
-import { PresetResources } from "@/components/preset-resources";
-import { AIDetectorPanel } from "@/components/ai-detector-panel";
-import { RealtimeAIDetector } from "@/components/realtime-ai-detector";
-import { DetectionHistoryPanel } from "@/components/detection-history-panel";
-import { ModelTrainingPanel } from "@/components/model-training-panel";
+import { ResourceManager } from "@/components/article-polisher/resource-manager";
+import { MainLibraryManager } from "@/components/article-polisher/main-library-manager";
+import { LiteratureManager } from "@/components/article-polisher/literature-manager";
+import { BannedWordsManager } from "@/components/article-polisher/banned-words-manager";
+import { SentencePatternsManager } from "@/components/article-polisher/sentence-patterns-manager";
+import { PolishConfig } from "@/components/article-polisher/polish-config";
+import { PresetResources } from "@/components/article-polisher/preset-resources";
+import { AIDetectorPanel } from "@/components/article-polisher/ai-detector-panel";
+import { RealtimeAIDetector } from "@/components/article-polisher/realtime-ai-detector";
+import { DetectionHistoryPanel } from "@/components/article-polisher/detection-history-panel";
+import { ModelTrainingPanel } from "@/components/article-polisher/model-training-panel";
 import { useStreamRequest, useWordCount } from "@/hooks";
 import type { Analysis, HistoricalNarrativeSettings, ResourceItem, LiteratureResource, FullExportData, BannedWordItem, SentencePatternItem } from "@/types";
 import { EXPORT_VERSION } from "@/types";
@@ -52,8 +52,8 @@ import {
   migrateLegacySteps,
   migrateLegacyStepOrder,
 } from "@/constants";
-import { TemplateStorage } from "@/components/template-storage";
-import { UnifiedGenerator } from "@/components/unified-generator";
+import { TemplateStorage } from "@/components/article-generator/template-storage";
+import { UnifiedGenerator } from "@/components/article-generator/unified-generator";
 
 // ============================================================================
 // 进度组件 - 使用线性进度条
