@@ -796,110 +796,7 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
       return true;
     }
 
-    // ====== 文本生成API ======
-    // 生成文本
-    if (path === '/api/novel/generation/generate' && method === 'POST') {
-      try {
-        const body = await parseBody(req);
-        const { 
-          chapterOutline, 
-          characters, 
-          background, 
-          relatedChapters = [],
-          settings,
-          outline,
-          volumeOutline
-        } = body;
-        
-        if (!chapterOutline || !characters || !background) {
-          jsonRes(res, { success: false, error: '缺少必要参数：chapterOutline, characters, background' }, 400);
-          return true;
-        }
-
-        console.log('[GenerationAPI] 开始生成文本，章节:', chapterOutline.chapterNumber);
-
-        const generator = new GenerationPipeline();
-        const result = await generator.generate({
-          chapterOutline,
-          characters,
-          background,
-          relatedChapters,
-          settings: settings || {
-            style: 'literary',
-            temperature: 0.7,
-            maxLength: 10000,
-            autoPolish: true
-          },
-          outline,
-          volumeOutline
-        }, (progress) => {
-          console.log(`[GenerationAPI] [进度] ${progress.phase}: ${progress.message} (${progress.progress}%)`);
-        });
-        
-        jsonRes(res, { 
-          success: true, 
-          data: result 
-        });
-      } catch (error) {
-        console.error('[GenerationAPI] 生成失败:', error);
-        jsonRes(res, { success: false, error: error instanceof Error ? error.message : '生成失败' }, 500);
-      }
-      return true;
-    }
-
-    // 仅生成文本（不润色）
-    if (path === '/api/novel/generation/generate-raw' && method === 'POST') {
-      try {
-        const body = await parseBody(req);
-        const { 
-          chapterOutline, 
-          characters, 
-          background, 
-          relatedChapters = [],
-          settings,
-          outline,
-          volumeOutline
-        } = body;
-        
-        if (!chapterOutline || !characters || !background) {
-          jsonRes(res, { success: false, error: '缺少必要参数：chapterOutline, characters, background' }, 400);
-          return true;
-        }
-
-        console.log('[GenerationAPI] 开始生成原始文本，章节:', chapterOutline.chapterNumber);
-
-        const generator = new GenerationPipeline();
-        const result = await generator.generate({
-          chapterOutline,
-          characters,
-          background,
-          relatedChapters,
-          settings: {
-            ...(settings || {
-              style: 'literary',
-              temperature: 0.7,
-              maxLength: 10000,
-              autoPolish: false
-            }),
-            autoPolish: false
-          },
-          outline,
-          volumeOutline
-        }, (progress) => {
-          console.log(`[GenerationAPI] [进度] ${progress.phase}: ${progress.message} (${progress.progress}%)`);
-        });
-        
-        jsonRes(res, { 
-          success: true, 
-          data: result 
-        });
-      } catch (error) {
-        console.error('[GenerationAPI] 生成失败:', error);
-        jsonRes(res, { success: false, error: error instanceof Error ? error.message : '生成失败' }, 500);
-      }
-      return true;
-    }
-
+    // ====== 文本生成API（仅保留核心端点） ======
     // 从数据库生成文本（完整流程：生成 + 润色）
     if (path === '/api/novel/generation/generate-from-db' && method === 'POST') {
       try {
@@ -920,44 +817,7 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
           relatedChapterCount,
           settings
         }, (progress) => {
-          console.log(`[GenerationAPI] [进度] ${progress.phase}: ${progress.message} (${progress.progress}%)`);
-        });
-        
-        jsonRes(res, { 
-          success: true, 
-          data: result 
-        });
-      } catch (error) {
-        console.error('[GenerationAPI] 从数据库生成失败:', error);
-        jsonRes(res, { success: false, error: error instanceof Error ? error.message : '生成失败' }, 500);
-      }
-      return true;
-    }
-
-    // 从数据库仅生成文本（不润色）
-    if (path === '/api/novel/generation/generate-raw-from-db' && method === 'POST') {
-      try {
-        const body = await parseBody(req);
-        const { workId, chapterNumber, relatedChapterCount = 2, settings } = body;
-        
-        if (!workId || !chapterNumber) {
-          jsonRes(res, { success: false, error: '缺少必要参数：workId, chapterNumber' }, 400);
-          return true;
-        }
-
-        console.log('[GenerationAPI] 从数据库生成原始文本，workId:', workId, 'chapter:', chapterNumber);
-
-        const generator = new GenerationPipeline();
-        const result = await generator.generateFromDatabase({
-          workId,
-          chapterNumber,
-          relatedChapterCount,
-          settings: {
-            ...(settings || {}),
-            autoPolish: false
-          }
-        }, (progress) => {
-          console.log(`[GenerationAPI] [进度] ${progress.phase}: ${progress.message} (${progress.progress}%)`);
+          console.log(`[GenerationAPI] [进度] ${progress.phase || 'generating'}: ${progress.message} (${progress.progress}%)`);
         });
         
         jsonRes(res, { 
