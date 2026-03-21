@@ -100,6 +100,74 @@ export class NovelService {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `).catch(() => {});
       
+      // 修改 works 表 status 字段
+      try {
+        await this.db.execute(`
+          ALTER TABLE works MODIFY COLUMN status VARCHAR(50) DEFAULT 'outline' COMMENT '作品状态（outline/pending/audited/published）'
+        `);
+        console.log('[NovelService] works.status 字段已更新');
+      } catch (e) {
+        console.log('[NovelService] works.status 更新跳过（可能已更新）');
+      }
+      
+      // 修改 chapters 表 status 字段
+      try {
+        await this.db.execute(`
+          ALTER TABLE chapters MODIFY COLUMN status VARCHAR(50) DEFAULT 'pending' COMMENT '章节状态（outline/pending/audited/published）'
+        `);
+        console.log('[NovelService] chapters.status 字段已更新');
+      } catch (e) {
+        console.log('[NovelService] chapters.status 更新跳过（可能已更新）');
+      }
+      
+      // 添加 audit_status 字段（如果不存在）
+      try {
+        const [colCheck] = await this.db.query(`
+          SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'chapters' AND COLUMN_NAME = 'audit_status'
+        `);
+        if (colCheck[0].cnt === 0) {
+          await this.db.execute(`
+            ALTER TABLE chapters ADD COLUMN audit_status VARCHAR(50) DEFAULT 'pending' COMMENT '审核状态（pending/reviewing/passed/failed）' AFTER status
+          `);
+          console.log('[NovelService] audit_status 字段已添加');
+        }
+      } catch (e) {
+        console.log('[NovelService] audit_status 添加跳过');
+      }
+      
+      // 添加 audit_issues 字段（如果不存在）
+      try {
+        const [colCheck] = await this.db.query(`
+          SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'chapters' AND COLUMN_NAME = 'audit_issues'
+        `);
+        if (colCheck[0].cnt === 0) {
+          await this.db.execute(`
+            ALTER TABLE chapters ADD COLUMN audit_issues JSON COMMENT '审核问题列表' AFTER audit_status
+          `);
+          console.log('[NovelService] audit_issues 字段已添加');
+        }
+      } catch (e) {
+        console.log('[NovelService] audit_issues 添加跳过');
+      }
+      
+      // 添加 suggested_action 字段（如果不存在）
+      try {
+        const [colCheck] = await this.db.query(`
+          SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'chapters' AND COLUMN_NAME = 'suggested_action'
+        `);
+        if (colCheck[0].cnt === 0) {
+          await this.db.execute(`
+            ALTER TABLE chapters ADD COLUMN suggested_action VARCHAR(50) DEFAULT 'none' COMMENT '建议操作（auto_fix/manual/none）' AFTER audit_issues
+          `);
+          console.log('[NovelService] suggested_action 字段已添加');
+        }
+      } catch (e) {
+        console.log('[NovelService] suggested_action 添加跳过');
+      }
+      
       this.initialized = true;
     } catch (e) {
       console.error('[NovelService] 初始化表失败:', e);
