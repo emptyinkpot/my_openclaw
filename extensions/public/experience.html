@@ -681,7 +681,14 @@
   </style>
 </head>
 <body>
-<div class="nav-bar"><a href="javascript:void(0)" onclick="location.href='/novel/'" style="padding: 4px 10px; border-radius: 4px; color: #8b949e; text-decoration: none;">⚙️ 设置</a><a href="/novel/">📚 小说管理</a><a href="/auto.html">⚙️ 自动化</a><a href="/experience.html" class="on">🧠 经验</a><a href="/cache.html">💾 缓存</a><a href="/">🎯 原生界面</a></div>
+<div class="nav-bar">
+  <a href="javascript:void(0)" onclick="var modal = document.getElementById('settingsModal'); if (modal) modal.classList.add('show'); else alert('请在小说管理页面使用设置功能');">⚙️ 设置</a>
+  <a href="/novel/">📚 小说管理</a>
+  <a href="/auto.html">⚙️ 自动化</a>
+  <a href="/experience.html" class="on">🧠 经验</a>
+  <a href="/cache.html">💾 缓存</a>
+  <a href="/">🎯 原生界面</a>
+</div>
   <!-- 头部 -->
   <div class="header">
     <div class="header-top">

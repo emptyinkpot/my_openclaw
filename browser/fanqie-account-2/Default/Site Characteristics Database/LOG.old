@@ -1,1 +1,6 @@
-2026/03/21-12:43:06.006 512a3 Reusing MANIFEST /workspace/projects/browser/fanqie-account-2/Default/Site Characteristics Database/MANIFEST-000001
+2026/03/21-12:58:50.099 52103 Log #6: 7 ops saved to Table #7 OK
+2026/03/21-12:58:50.099 52103 Archiving /workspace/projects/browser/fanqie-account-2/Default/Site Characteristics Database/000006.log: OK
+2026/03/21-12:58:50.099 52103 Table #4: 98 entries OK
+2026/03/21-12:58:50.099 52103 Table #7: 7 entries OK
+2026/03/21-12:58:50.101 52103 Archiving /workspace/projects/browser/fanqie-account-2/Default/Site Characteristics Database/MANIFEST-000001: OK
+2026/03/21-12:58:50.104 52103 **** Repaired leveldb /workspace/projects/browser/fanqie-account-2/Default/Site Characteristics Database; recovered 2 files; 1435 bytes. Some data may have been lost. ****

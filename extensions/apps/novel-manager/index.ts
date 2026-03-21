@@ -110,10 +110,10 @@ async function handleNovelPage(req: IncomingMessage, res: ServerResponse): Promi
     '/novel/': 'index.html',
     '/auto.html': 'auto.html',
     '/experience.html': 'experience.html',
-    '/cache.html': 'cache.html',
-    '/nav-bar.html': 'nav-bar.html',
-    '/nav-bar.js': 'nav-bar.js'
+    '/cache.html': 'cache.html'
   };
+
+
 
   const pageFile = pageMap[urlPath];
   if (pageFile) {
