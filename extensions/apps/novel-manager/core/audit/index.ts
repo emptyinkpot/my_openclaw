@@ -15,7 +15,7 @@ import {
   ChapterData,
 } from './types';
 import { getPendingAuditChapters, updateChapterStatus, getWork } from './repository';
-import { auditChapter } from './service';
+import { auditChapter, autoFixChapter } from './service';
 
 // 导出所有类型供外部使用
 export * from './types';
@@ -85,20 +85,32 @@ export async function runAuditPipeline(options: AuditOptions = {}): Promise<Audi
       // 执行审核
       try {
         const auditResult = await auditChapter(chapter.workId, chapter.chapterNumber);
-        const duration = Date.now() - chapterStartTime;
+        let duration = Date.now() - chapterStartTime;
+        
+        let message = '';
+        let fixed = false;
+        
+        // 如果开启了自动修复，并且可以自动修复
+        if (options.autoFix && auditResult.canAutoFix) {
+          logger.info(`自动修复章节: workId=${chapter.workId}, chapter=${chapter.chapterNumber}`);
+          const fixSuccess = await autoFixChapter(chapter.workId, chapter.chapterNumber);
+          fixed = fixSuccess;
+          message = fixed ? '审核失败，但已自动修复' : '审核失败，自动修复失败';
+          duration = Date.now() - chapterStartTime;
+        }
         
         const taskResult: AuditTaskResult = {
-          success: auditResult.status === 'passed',
+          success: auditResult.status === 'passed' || fixed,
           chapter,
           duration,
-          error: auditResult.status !== 'passed' 
+          error: (!(auditResult.status === 'passed') && !fixed) 
             ? auditResult.issues.map(i => i.message).join('; ') 
             : undefined,
         };
         
         results.push(taskResult);
         
-        // 如果审核通过，更新章节状态为 audited
+        // 如果审核通过或已自动修复，更新章节状态为 audited
         if (taskResult.success) {
           await updateChapterStatus(chapter.workId, chapter.chapterNumber, 'audited');
           progressResults.push({
@@ -106,7 +118,7 @@ export async function runAuditPipeline(options: AuditOptions = {}): Promise<Audi
             workTitle,
             chapterNumber: chapter.chapterNumber,
             chapterTitle: chapter.title || `第${chapter.chapterNumber}章`,
-            message: '审核通过，状态已更新为 audited',
+            message: fixed ? '审核失败，但已自动修复，状态已更新为 audited' : '审核通过，状态已更新为 audited',
             duration,
           });
         } else {
@@ -115,7 +127,7 @@ export async function runAuditPipeline(options: AuditOptions = {}): Promise<Audi
             workTitle,
             chapterNumber: chapter.chapterNumber,
             chapterTitle: chapter.title || `第${chapter.chapterNumber}章`,
-            message: taskResult.error || '审核失败',
+            message: message || taskResult.error || '审核失败',
             duration,
           });
         }
@@ -188,3 +200,4 @@ export async function runAuditPipeline(options: AuditOptions = {}): Promise<Audi
 export default {
   run: runAuditPipeline,
 };
+

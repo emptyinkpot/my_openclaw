@@ -85,6 +85,7 @@ export interface AuditOptions {
   workId?: number;
   chapterRange?: [number, number];
   dryRun?: boolean;
+  autoFix?: boolean; // 是否自动修复可修复的问题
   onProgress?: (event: AuditProgressEvent) => void;
 }
 

@@ -13,7 +13,7 @@ import {
   SuggestedAction,
 } from './types';
 import { runAllAuditRules, autoFixFullWidthSymbols } from './rules';
-import { getChapter, saveAuditResult } from './repository';
+import { getChapter, saveAuditResult, updateChapterContent } from './repository';
 
 /**
  * 审核章节
@@ -84,8 +84,9 @@ export async function autoFixChapter(workId: number, chapterNumber: number): Pro
     return true;
   }
 
-  // TODO: 更新章节内容（需要实现 updateChapterContent 函数）
-  logger.info('自动修复完成（内容更新功能待实现）');
+  // 更新章节内容到数据库
+  await updateChapterContent(workId, chapterNumber, fixedContent);
+  logger.info(`自动修复完成: workId=${workId}, chapter=${chapterNumber}, 内容已更新`);
   
   return true;
 }

@@ -148,3 +148,20 @@ export async function getAuditResult(workId: number, chapterNumber: number): Pro
     suggestedAction: (row.suggested_action as SuggestedAction) || 'none',
   };
 }
+
+/**
+ * 更新章节内容
+ */
+export async function updateChapterContent(
+  workId: number,
+  chapterNumber: number,
+  content: string
+): Promise<void> {
+  await db.execute(`
+    UPDATE chapters 
+    SET content = ?, word_count = ?, updated_at = NOW()
+    WHERE work_id = ? AND chapter_number = ?
+  `, [content, content.length, workId, chapterNumber]);
+  
+  logger.info(`已更新章节内容: workId=${workId}, chapter=${chapterNumber}`);
+}
