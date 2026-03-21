@@ -30,7 +30,7 @@ function getNovelService(): NovelService {
 function getNovelHtml(): string {
   if (htmlCache) return htmlCache;
   
-  const htmlPath = path.join(__dirname, '..', '..', 'public', 'index.html');
+  const htmlPath = path.join(__dirname, 'ui', 'index.html');
   try {
     htmlCache = fs.readFileSync(htmlPath, 'utf-8');
     return htmlCache;
@@ -89,7 +89,7 @@ function getPageHtml(pageName: string): string {
     }
   }
   
-  const htmlPath = path.join(__dirname, '..', '..', 'public', pageName);
+  const htmlPath = path.join(__dirname, 'ui', pageName);
   try {
     return fs.readFileSync(htmlPath, 'utf-8');
   } catch (e) {
