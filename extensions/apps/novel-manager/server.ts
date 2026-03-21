@@ -362,7 +362,7 @@ app.put(`${API_PREFIX}/cache/files/:name`, async (req: Request, res: Response) =
 
 // 静态文件服务（开发模式）
 if (process.env.NODE_ENV !== 'production') {
-  app.use('/novel', express.static(path.join(__dirname, 'public')));
+  app.use('/novel', express.static(path.join(__dirname, 'ui')));
 }
 
 // 启动服务
