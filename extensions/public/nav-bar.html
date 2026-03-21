@@ -92,7 +92,7 @@ function openGlobalSettingsModal() {
   }
   
   // 如果没有，尝试加载
-  fetch('/novel/settings-modal.html')
+  fetch('/settings-modal.html')
     .then(response => response.text())
     .then(html => {
       // 插入到页面
@@ -129,7 +129,7 @@ window.addEventListener('load', function() {
   if (!hasPreloaded && window.location.pathname.startsWith('/novel/')) {
     // 在小说管理页面预加载
     hasPreloaded = true;
-    fetch('/novel/settings-modal.html').catch(() => {});
+    fetch('/settings-modal.html').catch(() => {});
   }
 });
 </script>
