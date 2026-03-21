@@ -1,13 +1,19 @@
 /**
- * 润色模块导出
+ * content-craft 模块入口
  * 
- * @module modules/polish
+ * 包含文本润色和文本生成功能
+ * 
+ * @module content-craft
  */
 
+// ==========================================
 // 配置管理器
+// ==========================================
 export { ConfigManager, configManager } from './config-manager';
 
-// 类型
+// ==========================================
+// 润色模块
+// ==========================================
 export type {
   // 基础类型
   ProcessPhase,
@@ -36,8 +42,28 @@ export type {
   PromptBuildOptions,
 } from './types';
 
-// 流水线
 export { PolishPipeline } from './pipeline';
-
-// 步骤
 export * from './steps';
+
+// ==========================================
+// 生成模块
+// ==========================================
+export type {
+  // 基础类型
+  Character,
+  StoryBackground,
+  Outline,
+  VolumeOutline,
+  ChapterOutline,
+  RelatedChapter,
+  // 输入输出
+  GenerationInput,
+  GenerationOutput,
+  GenerationSettings,
+  GenerationProgress,
+  GenerationPhase,
+  GenerationReport,
+  PolishReport,
+} from './generation-types';
+
+export { GenerationPipeline } from './generation-pipeline';

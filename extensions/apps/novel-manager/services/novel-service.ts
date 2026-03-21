@@ -928,10 +928,10 @@ export class NovelService {
             workId, 
             headless: true,  // 无头模式，不卡住
             dryRun,    // 是否模拟发布
-            onProgress: (event) => {
+            onProgress: (event: any) => {
               console.log(`[NovelService] [进度] ${event.stepLabel}: ${event.task} (${event.percent}%)`);
               // 转发进度到 SSE
-              broadcastProgress(progressId, event);
+              broadcastProgress(progressId, event as any);
             }
           });
           

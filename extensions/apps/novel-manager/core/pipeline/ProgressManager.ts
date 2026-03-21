@@ -3,7 +3,7 @@
  * 管理 SSE 进度订阅和广播
  */
 
-import { PipelineProgressEvent } from '../ContentPipeline';
+import { PipelineProgressEvent } from '../content-pipeline/ContentPipeline';
 
 // 活跃的 SSE 客户端
 const clients = new Map<string, Set<{ write: (data: string) => void }>>();
