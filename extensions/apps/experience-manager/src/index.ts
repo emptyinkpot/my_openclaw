@@ -18,6 +18,7 @@
 
 import { createApp, start } from './app';
 import { ExperienceRepository, experienceRepo } from './core/ExperienceRepository';
+import { NoteRepository, noteRepo } from './core/NoteRepository';
 import { memorySync, syncExperienceToMemory, searchRelatedExperiences } from './core/MemorySync';
 
 // 版本信息
@@ -25,12 +26,17 @@ export const version = '1.0.0';
 
 // 导出核心功能
 export { ExperienceRepository, experienceRepo };
+export { NoteRepository, noteRepo };
 export { memorySync, syncExperienceToMemory, searchRelatedExperiences };
 export type { 
   ExperienceRecord, 
   ExperienceStats, 
   ExperienceData 
 } from './core/ExperienceRepository';
+export type {
+  NoteRecord,
+  NoteData
+} from './core/NoteRepository';
 
 // 导出应用创建函数
 export { createApp, start };

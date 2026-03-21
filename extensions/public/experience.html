@@ -1279,12 +1279,6 @@
     // 加载笔记
     async function loadNotes() {
       try {
-        // 笔记功能当前不可用，静默失败
-        noteData = [];
-        renderNoteList();
-        return;
-        
-        /* 待后续实现笔记 API 后启用
         const [notesRes, categoriesRes] = await Promise.all([
           api('/notes'),
           api('/notes/categories')
@@ -1298,9 +1292,8 @@
         if (categoriesRes.success) {
           renderNoteCategories(categoriesRes.data);
         }
-        */
       } catch (err) {
-        console.error('加载笔记失败（可选功能）:', err);
+        console.error('加载笔记失败:', err);
         // 笔记功能不可用，设置为空数组
         noteData = [];
         renderNoteList();

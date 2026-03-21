@@ -5,9 +5,13 @@
 
 import { Router, Request, Response } from 'express';
 import { ExperienceRepository, experienceRepo } from '../core/ExperienceRepository';
+import { NoteRepository, noteRepo } from '../core/NoteRepository';
 
 // 创建路由函数，支持传入自定义 repository（用于测试）
-export function createExperienceRouter(repo: ExperienceRepository = experienceRepo): Router {
+export function createExperienceRouter(
+  expRepo: ExperienceRepository = experienceRepo,
+  notesRepo: NoteRepository = noteRepo
+): Router {
   const router: Router = Router();
 
   /**
@@ -16,7 +20,7 @@ export function createExperienceRouter(repo: ExperienceRepository = experienceRe
    */
   router.get('/stats', (_req, res) => {
     try {
-      const stats = repo.getStats();
+      const stats = expRepo.getStats();
       res.json({ success: true, data: stats });
     } catch (error: any) {
       res.status(500).json({ success: false, error: error.message });
@@ -29,7 +33,7 @@ export function createExperienceRouter(repo: ExperienceRepository = experienceRe
    */
   router.get('/records', (_req, res) => {
     try {
-      const records = repo.getAll();
+      const records = expRepo.getAll();
       res.json({ success: true, data: records });
     } catch (error: any) {
       res.status(500).json({ success: false, error: error.message });
@@ -42,7 +46,7 @@ export function createExperienceRouter(repo: ExperienceRepository = experienceRe
    */
   router.post('/records', (req, res) => {
     try {
-      const record = repo.create(req.body);
+      const record = expRepo.create(req.body);
       res.json({ success: true, data: record });
     } catch (error: any) {
       res.status(400).json({ success: false, error: error.message });
@@ -55,7 +59,7 @@ export function createExperienceRouter(repo: ExperienceRepository = experienceRe
    */
   router.get('/records/:id', (req, res) => {
     try {
-      const record = repo.getById(req.params.id);
+      const record = expRepo.getById(req.params.id);
       if (!record) {
         return res.status(404).json({ success: false, error: '记录不存在' });
       }
@@ -72,7 +76,7 @@ export function createExperienceRouter(repo: ExperienceRepository = experienceRe
   router.get('/search', (req, res) => {
     try {
       const keyword = req.query.q as string || '';
-      const records = keyword ? repo.search(keyword) : repo.getAll();
+      const records = keyword ? expRepo.search(keyword) : expRepo.getAll();
       res.json({ success: true, data: records });
     } catch (error: any) {
       res.status(500).json({ success: false, error: error.message });
@@ -85,7 +89,7 @@ export function createExperienceRouter(repo: ExperienceRepository = experienceRe
    */
   router.get('/tag/:tag', (req, res) => {
     try {
-      const records = repo.getByTag(decodeURIComponent(req.params.tag));
+      const records = expRepo.getByTag(decodeURIComponent(req.params.tag));
       res.json({ success: true, data: records });
     } catch (error: any) {
       res.status(500).json({ success: false, error: error.message });
@@ -98,7 +102,7 @@ export function createExperienceRouter(repo: ExperienceRepository = experienceRe
    */
   router.put('/records/:id', (req, res) => {
     try {
-      const record = repo.update(req.params.id, req.body);
+      const record = expRepo.update(req.params.id, req.body);
       if (!record) {
         return res.status(404).json({ success: false, error: '记录不存在' });
       }
@@ -114,9 +118,98 @@ export function createExperienceRouter(repo: ExperienceRepository = experienceRe
    */
   router.delete('/records/:id', (req, res) => {
     try {
-      const success = repo.delete(req.params.id);
+      const success = expRepo.delete(req.params.id);
       if (!success) {
         return res.status(404).json({ success: false, error: '记录不存在' });
+      }
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // ========== 笔记相关 API ==========
+
+  /**
+   * GET /experience/notes
+   * 获取所有笔记
+   */
+  router.get('/notes', (_req, res) => {
+    try {
+      const notes = notesRepo.getAll();
+      res.json({ success: true, data: notes });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  /**
+   * GET /experience/notes/categories
+   * 获取笔记分类
+   */
+  router.get('/notes/categories', (_req, res) => {
+    try {
+      const categories = notesRepo.getCategories();
+      res.json({ success: true, data: categories });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  /**
+   * POST /experience/notes
+   * 创建新笔记
+   */
+  router.post('/notes', (req, res) => {
+    try {
+      const note = notesRepo.create(req.body);
+      res.json({ success: true, data: note });
+    } catch (error: any) {
+      res.status(400).json({ success: false, error: error.message });
+    }
+  });
+
+  /**
+   * GET /experience/notes/:id
+   * 获取单条笔记
+   */
+  router.get('/notes/:id', (req, res) => {
+    try {
+      const note = notesRepo.getById(req.params.id);
+      if (!note) {
+        return res.status(404).json({ success: false, error: '笔记不存在' });
+      }
+      res.json({ success: true, data: note });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  /**
+   * PUT /experience/notes/:id
+   * 更新笔记
+   */
+  router.put('/notes/:id', (req, res) => {
+    try {
+      const note = notesRepo.update(req.params.id, req.body);
+      if (!note) {
+        return res.status(404).json({ success: false, error: '笔记不存在' });
+      }
+      res.json({ success: true, data: note });
+    } catch (error: any) {
+      res.status(400).json({ success: false, error: error.message });
+    }
+  });
+
+  /**
+   * DELETE /experience/notes/:id
+   * 删除笔记
+   */
+  router.delete('/notes/:id', (req, res) => {
+    try {
+      const success = notesRepo.delete(req.params.id);
+      if (!success) {
+        return res.status(404).json({ success: false, error: '笔记不存在' });
       }
       res.json({ success: true });
     } catch (error: any) {

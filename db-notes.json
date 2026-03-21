@@ -1,0 +1,413 @@
+[
+  {
+    "id": 28,
+    "title": "导航栏统一管理需求",
+    "content": "# 导航栏统一管理需求\n\n用户询问：这几个的导航栏能不能独立出来，统一管理？",
+    "tags": [
+      "OpenClaw",
+      "导航栏",
+      "统一管理",
+      "独立",
+      "前端"
+    ],
+    "category": "dev",
+    "createdAt": "2026-03-20T13:37:34.000Z",
+    "updatedAt": "2026-03-20T13:37:34.000Z"
+  },
+  {
+    "id": 27,
+    "title": "每个页面是否有导航栏问题",
+    "content": "# 每个页面是否有导航栏问题\n\n用户询问：每个页面上都有一个导航栏吗？",
+    "tags": [
+      "OpenClaw",
+      "导航栏",
+      "HTML",
+      "检查"
+    ],
+    "category": "dev",
+    "createdAt": "2026-03-20T13:36:16.000Z",
+    "updatedAt": "2026-03-20T13:36:16.000Z"
+  },
+  {
+    "id": 26,
+    "title": "HTML文件合并问题解释",
+    "content": "# HTML文件合并问题解释\n\n用户询问：\nFile:[extensions/public/feishu.html]\nFile:[extensions/public/cache.html]\nFile:[extensions/public/auto.html]\nFile:[extensions/public/index.html]\nFile:[extensions/public/experience.html]\n这几个能合并吗？\n\n---\n\n## 📁 每个文件的功能\n\n| 文件 | 功能 |\n|------|------|\n| index.html | 主页面 - 小说数据中心 |\n| experience.html | 经验积累中心 |\n| auto.html | 自动脚本管理 |\n| cache.html | 缓存管理 |\n| feishu.html | 飞书管理 |\n\n---\n\n## 🔍 能合并吗？\n\n### 答案：可以，但不建议！\n\n---\n\n## 💡 为什么不建议合并？\n\n### 原因 1：每个页面功能完全不同\n- index.html - 管理小说数据\n- experience.html - 管理经验积累\n- auto.html - 管理自动脚本\n- cache.html - 管理缓存\n- feishu.html - 管理飞书\n\n每个页面功能完全独立，合并在一起会很乱！\n\n---\n\n### 原因 2：当前已经有导航栏了！\n\n看代码里都有导航栏：\n```html\n<div class=\"nav-bar\">\n  <span>🧠 经验积累中心</span>\n  <a href=\"index.html\" class=\"on\">首页</a>\n  <a href=\"experience.html\">经验</a>\n  <a href=\"auto.html\">自动</a>\n  <a href=\"cache.html\">缓存</a>\n  <a href=\"feishu.html\">飞书</a>\n</div>\n```\n\n已经可以通过导航栏在这几个页面之间切换了！\n\n---\n\n### 原因 3：单页应用（SPA）更复杂\n\n如果要合并成一个页面，需要：\n- 用 JavaScript 控制显示/隐藏\n- 或者用前端框架（React/Vue）\n- 会增加复杂度\n\n---\n\n## 🤔 你是想做什么？\n\n| 需求 | 建议 |\n|------|------|\n| 想要统一导航栏 | ✅ 已经有了！不需要合并 |\n| 想要单页应用 | ⚠️ 可以，但更复杂 |\n| 想要减少文件数 | 🤔 为什么要减少？当前 5 个文件不多 |\n\n---\n\n## 📝 总结\n\n| 问题 | 答案 |\n|------|------|\n| 能合并吗？ | ✅ 技术上可以 |\n| 建议合并吗？ | ❌ 不建议 |\n| 为什么？ | 功能独立、已有导航栏、合并会更复杂 |",
+    "tags": [
+      "OpenClaw",
+      "HTML",
+      "合并",
+      "前端",
+      "解释"
+    ],
+    "category": "dev",
+    "createdAt": "2026-03-20T13:35:16.000Z",
+    "updatedAt": "2026-03-20T13:35:50.000Z"
+  },
+  {
+    "id": 25,
+    "title": "extensions/public 文件夹顶部栏对比",
+    "content": "# extensions/public 文件夹顶部栏对比\n\n用户说：`File:[extensions/public]` 前端都在这里，有几个顶部栏\n\n---\n\n## 📂 文件夹内容\n\nextensions/public 文件夹里有几个 HTML 文件：\n\n```\nextensions/public/\n├── index.html          # 主页面\n├── experience.html     # 经验积累中心\n├── auto.html           # 自动脚本\n├── cache.html          # 缓存管理\n└── feishu.html         # 飞书管理\n```\n\n---\n\n## 🔍 顶部栏对比\n\n### 文件 1：experience.html（经验积累中心）\n```css\n/* 导航栏 */\n.nav-bar {\n  height: 32px;           /* 高度 32px */\n  background: #24292f;\n}\n\n/* 还有一个紫色渐变的 header */\n.header {\n  height: 52px;\n  background: linear-gradient(135deg, #8250df 0%, #bf3989 100%);\n  margin-top: 32px;       /* 在 nav-bar 下面 */\n}\n```\n\n**特点：**\n- ✅ 导航栏高度：32px\n- ✅ 有一个紫色渐变的 header 区域\n- ✅ 整体顶部有两层：nav-bar + header\n\n---\n\n### 文件 2：index.html（主页面）\n```css\n/* 导航栏 */\n.nav-bar {\n  height: 40px;           /* 高度 40px */\n  background: #24292f;\n}\n\n/* 还有一个 top-bar */\n.top-bar {\n  height: 36px;\n  background: var(--bg-secondary);\n  margin-top: 40px;       /* 在 nav-bar 下面 */\n}\n```\n\n**特点：**\n- ✅ 导航栏高度：40px\n- ✅ 有一个 top-bar 区域\n- ✅ 整体顶部有两层：nav-bar + top-bar\n\n---\n\n## 📊 对比总结\n\n| 文件 | 导航栏高度 | 第二层 | 第二层样式 |\n|------|-----------|--------|-----------|\n| experience.html | 32px | header | 紫色渐变 |\n| index.html | 40px | top-bar | 白色背景 |\n\n---\n\n## 🤔 所以不一样的地方\n\n- experience.html 的顶部是：深色导航栏（32px）+ 紫色渐变 header（52px）\n- index.html 的顶部是：深色导航栏（40px）+ 白色 top-bar（36px）",
+    "tags": [
+      "OpenClaw",
+      "前端",
+      "extensions/public",
+      "顶部栏",
+      "对比"
+    ],
+    "category": "dev",
+    "createdAt": "2026-03-20T13:33:51.000Z",
+    "updatedAt": "2026-03-20T13:34:40.000Z"
+  },
+  {
+    "id": 24,
+    "title": "前端UI和顶部导航栏问题解释",
+    "content": "# 前端UI和顶部导航栏问题解释\n\n用户询问：\n1. 所有的前端UI在哪啊？\n2. 怎么经验的顶部导航栏和其他的不一样？\n\n---\n\n## 1️⃣ 所有的前端 UI 在哪啊？\n\nOpenClaw 的 Control UI（管理后台）不在你的项目目录里，而是在 OpenClaw 的系统安装目录里！\n\n看你的 openclaw.json 配置：\n```json\n\"gateway\": {\n  \"controlUi\": {\n    \"root\": \"/usr/lib/node_modules/openclaw/dist/control-ui\"\n  }\n}\n```\n\n**位置：**\n```\n/usr/lib/node_modules/openclaw/dist/control-ui/\n```\n\n---\n\n## 2️⃣ 怎么经验的顶部导航栏和其他的不一样？\n\n你说的\"经验的顶部导航栏\"，可能是指：\n\n### 可能的情况：\n\n**情况 A：你看到的是不同的 UI**\n- OpenClaw 的 Control UI 是统一的\n- 但可能你看到的是：\n  - Control UI（管理后台）\n  - 或者是某个插件的 UI（比如 novel-manager、experience-manager）\n\n**情况 B：插件自己的 UI**\n- 你的项目里有 novel-manager、experience-manager 这些插件\n- 这些插件可能有自己的 UI 界面\n- 它们的导航栏可能和 Control UI 不一样\n\n---\n\n## 📂 你的项目里的 UI 相关文件夹\n\n看你的项目目录：\n```\n/workspace/projects/\n├── extensions/apps/\n│   ├── novel-manager/          # 小说管理插件（可能有自己的 UI）\n│   ├── experience-manager/     # 经验管理插件（可能有自己的 UI）\n│   ├── memory-lancedb-pro/\n│   └── feishu-openclaw-plugin/\n```\n\n---\n\n## 🤔 需要更多信息\n\n1. 你说的\"经验的顶部导航栏\"是指哪个界面？\n   - Control UI（管理后台）？\n   - 还是某个插件的界面？\n\n2. 你能截图或者描述一下吗？\n   - 或者告诉我你在哪个 URL 看到的？",
+    "tags": [
+      "OpenClaw",
+      "前端UI",
+      "导航栏",
+      "Control UI",
+      "解释"
+    ],
+    "category": "dev",
+    "createdAt": "2026-03-20T13:32:36.000Z",
+    "updatedAt": "2026-03-20T13:33:29.000Z"
+  },
+  {
+    "id": 23,
+    "title": "修复完成：暂时禁用 memory-lancedb-pro 插件",
+    "content": "# 修复完成：暂时禁用 memory-lancedb-pro 插件\n\n用户选择：让系统变快，以后需要时再修复 - 暂时禁用 memory-lancedb-pro 插件\n\n---\n\n## ✅ 完成的修复\n\n1. ✅ 禁用了 rerank（重排序）功能\n2. ✅ 禁用了 smartExtraction（智能提取）功能\n3. ✅ 禁用了 memory-lancedb-pro 插件\n4. ✅ 移除了 slots.memory 配置\n5. ✅ 多次重启了 Gateway\n\n---\n\n## 📋 修改的配置\n\n### openclaw.json 修改：\n1. 移除了 slots.memory 配置\n2. 将 plugins.entries.memory-lancedb-pro.enabled 设置为 false\n\n---\n\n## 🎉 结果\n\n- ✅ memory-lancedb-pro 插件已禁用\n- ✅ 系统应该变快了\n- ✅ 以后需要时可以重新启用\n\n---\n\n## 📝 备注\n\n- 当前有一个配置警告：memory-lancedb-pro 被禁用了但配置还在，这个没关系\n- 以后需要时，可以把 plugins.entries.memory-lancedb-pro.enabled 设置为 true，并恢复 slots.memory 配置",
+    "tags": [
+      "OpenClaw",
+      "修复",
+      "禁用",
+      "memory-lancedb-pro",
+      "完成"
+    ],
+    "category": "dev",
+    "createdAt": "2026-03-20T13:29:27.000Z",
+    "updatedAt": "2026-03-20T13:30:46.000Z"
+  },
+  {
+    "id": 22,
+    "title": "用户选择：进一步修复 embedding 问题",
+    "content": "# 用户选择：进一步修复 embedding 问题\n\n用户选择：B - 尝试进一步修复，继续尝试修复 embedding 问题",
+    "tags": [
+      "OpenClaw",
+      "修复",
+      "memory-lancedb-pro",
+      "embedding"
+    ],
+    "category": "dev",
+    "createdAt": "2026-03-20T13:26:03.000Z",
+    "updatedAt": "2026-03-20T13:26:03.000Z"
+  },
+  {
+    "id": 21,
+    "title": "用户选择：尝试修复，保留记忆功能",
+    "content": "# 用户选择：尝试修复，保留记忆功能\n\n用户选择：尝试修复 memory-lancedb-pro 插件，保留记忆功能",
+    "tags": [
+      "OpenClaw",
+      "修复",
+      "memory-lancedb-pro",
+      "保留记忆功能"
+    ],
+    "category": "dev",
+    "createdAt": "2026-03-20T13:24:13.000Z",
+    "updatedAt": "2026-03-20T13:24:13.000Z"
+  },
+  {
+    "id": 20,
+    "title": "修复方案讲解",
+    "content": "# 修复方案讲解\n\n用户要求：修复 memory-lancedb-pro 插件错误和 operator.read 权限问题，并且先讲一讲修复方案",
+    "tags": [
+      "OpenClaw",
+      "修复",
+      "memory-lancedb-pro",
+      "权限",
+      "修复方案"
+    ],
+    "category": "dev",
+    "createdAt": "2026-03-20T13:23:19.000Z",
+    "updatedAt": "2026-03-20T13:23:19.000Z"
+  },
+  {
+    "id": 19,
+    "title": "预览响应慢和崩溃问题排查结果",
+    "content": "# 预览响应慢和崩溃问题排查结果\n\n用户反馈：预览响应的很慢还总是崩溃\n\n---\n\n## 🔍 发现的问题\n\n### 问题 1：Gateway 连接问题\n```\nGateway: unreachable (missing scope: operator.read)\n```\n\n### 问题 2：memory-lancedb-pro 插件错误\n从日志看到：\n```\nmemory-lancedb-pro: embedding test failed\nmemory-lancedb-pro: retrieval test failed\n```\n\n### 问题 3：之前有崩溃\n从日志看到：\n```\nsignal SIGTERM received\nreceived SIGTERM; shutting down\n```\n\n---\n\n## ✅ 已完成的修复\n\n### 已执行：重启 Gateway\n```bash\n./scripts/restart.sh\n```\n\n结果：Gateway 现在可以访问了！\n\n---\n\n## 💡 修复建议（按顺序尝试）\n\n### 建议 1：先试试现在预览会不会快一点？\n\n刚才已经重启了 Gateway，可以试试现在预览会不会快一点？\n\n### 建议 2：如果还是慢，我们可以：\n\n1. 暂时禁用 memory-lancedb-pro 插件（如果不需要记忆功能）\n2. 或者修复 memory-lancedb-pro 的配置\n3. 检查 operator 权限\n\n---\n\n## 📝 总结\n\n| 问题 | 状态 |\n|------|------|\n| Gateway 连接问题 | ✅ 已通过重启修复 |\n| memory-lancedb-pro 插件错误 | ⚠️ 需要进一步排查 |\n| 缺少 operator.read 权限 | ⚠️ 会影响状态查询 |",
+    "tags": [
+      "OpenClaw",
+      "预览",
+      "响应慢",
+      "崩溃",
+      "问题排查",
+      "修复"
+    ],
+    "category": "dev",
+    "createdAt": "2026-03-20T13:21:35.000Z",
+    "updatedAt": "2026-03-20T13:22:48.000Z"
+  },
+  {
+    "id": 18,
+    "title": "Telegram 和个人微信配置开始",
+    "content": "# Telegram 和个人微信配置开始\n\n用户请求：先试试 Telegram 个人微信",
+    "tags": [
+      "OpenClaw",
+      "Telegram",
+      "微信",
+      "个人微信",
+      "配置"
+    ],
+    "category": "dev",
+    "createdAt": "2026-03-20T13:19:56.000Z",
+    "updatedAt": "2026-03-20T13:19:56.000Z"
+  },
+  {
+    "id": 17,
+    "title": "微信和Telegram渠道添加说明",
+    "content": "# 微信和Telegram渠道添加说明\n\n用户请求：\n1. 安装微信插件\n2. 安装Telegram插件\n3. 加入到 extensions/apps 文件夹里\n\n---\n\n## 回答\n\n### ❌ 不需要手动把插件放到 extensions/apps 里！\n\nOpenClaw 的 Channels（渠道）功能是内置的，不需要手动安装插件到 extensions/apps 文件夹！\n\n---\n\n### ✅ OpenClaw 支持的渠道\n\n从文档和帮助信息看，OpenClaw 支持：\n\n| 渠道 | 支持情况 |\n|------|---------|\n| ✅ Telegram | 完全支持 |\n| ✅ WhatsApp | 完全支持 |\n| ✅ Discord | 完全支持 |\n| ✅ 飞书（Feishu） | 你已经在用了！ |\n| ✅ 钉钉（DingTalk） | 支持 |\n| ✅ 企业微信（WeCom） | 支持 |\n| ✅ Slack | 支持 |\n| ⚠️ 微信（WeChat） | 需要确认 |\n\n---\n\n### 🎯 如何添加 Telegram 渠道？\n\n#### 方法一：使用命令行（推荐）\n```bash\nopenclaw channels add --channel telegram --token <你的-telegram-bot-token>\n```\n\n#### 方法二：登录方式（如果支持）\n```bash\nopenclaw channels login --channel telegram\n```\n\n---\n\n### 🎯 如何添加 WhatsApp 渠道？\n\n#### 方法一：登录方式（推荐）\n```bash\nopenclaw channels login --channel whatsapp\n```\n\n这会打开 WhatsApp Web，扫码登录！\n\n---\n\n### 📁 现有的 extensions/apps 文件夹\n\n你现有的 extensions/apps/ 文件夹里是：\n\n```\nextensions/apps/\n├── ai-model-hub/\n├── experience-manager/\n├── feishu-openclaw-plugin/  # 飞书插件\n├── memory-lancedb-pro/\n├── novel-manager/\n└── projects/\n```\n\n这些是**插件（Plugins）**，不是渠道（Channels）！\n\n---\n\n### 🔍 关于微信（WeChat）\n\n微信的支持需要确认一下：\n- OpenClaw 可能通过企业微信（WeCom）支持\n- 或者需要其他方式\n\n你说的\"微信\"是指：\n1. 个人微信？\n2. 企业微信（WeCom）？\n\n---\n\n### 📝 总结\n\n| 问题 | 答案 |\n|------|------|\n| 需要手动放到 extensions/apps 吗？ | ❌ 不需要！ |\n| Telegram 支持吗？ | ✅ 完全支持！ |\n| WhatsApp 支持吗？ | ✅ 完全支持！ |\n| 微信支持吗？ | ⚠️ 需要确认是个人微信还是企业微信 |\n| 怎么添加？ | 🎯 使用 openclaw channels 命令！ |\n\n---\n\n### 💡 建议\n\n1. 先试试 Telegram - 最简单！\n2. 再试试 WhatsApp - 也很简单！\n3. 微信 - 告诉我是个人微信还是企业微信，我再帮你！",
+    "tags": [
+      "OpenClaw",
+      "Telegram",
+      "WhatsApp",
+      "微信",
+      "Channels",
+      "渠道"
+    ],
+    "category": "dev",
+    "createdAt": "2026-03-20T13:17:35.000Z",
+    "updatedAt": "2026-03-20T13:19:08.000Z"
+  },
+  {
+    "id": 16,
+    "title": "自动化实现方式问题",
+    "content": "# 自动化实现方式问题\n\n用户询问：所以现在我想要搞自动化是不是只能手写脚本一点一点写？\n\n---\n\n## 回答\n\n### ❌ 不是只能手写脚本！\n\nOpenClaw 提供了多种自动化方式，从完全不需要写代码到手写脚本都有！\n\n---\n\n### 🎯 自动化方式清单（从简单到复杂）\n\n#### 1️⃣ 方式一：直接让 AI 帮你做（最简单！）\n**不需要写任何代码！**\n\n直接和 OpenClaw 对话，让它帮你完成任务！\n\n**示例：**\n```\n帮我：\n1. 检查一下小说更新情况\n2. 生成周报\n3. 备份重要文件\n```\n\n---\n\n#### 2️⃣ 方式二：使用内置 Skills\n**不需要写代码！**\n\n你已经安装了：\n- ✅ novel-status - 小说状态监控\n- ✅ bilibili-monitor - B站监控\n\n还有 30+ 个技能可以安装使用！\n\n---\n\n#### 3️⃣ 方式三：使用 Hooks（你已经在用了！）\n**不需要写太多代码！**\n\n你已经有 8 个内置 hooks 在自动运行了：\n- ✅ self-heal - 自我修复\n- ✅ code-guard - 代码守卫\n- ✅ storage-protect - 存储保护\n- ✅ 等等...\n\n---\n\n#### 4️⃣ 方式四：写简单的自动脚本\n**写少量代码！**\n\n你项目里已经有 auto-scripts/ 文件夹了！\n\n看看你的项目：\n```\n/workspace/projects/auto-scripts/\n```\n\n可以写一些简单的脚本，让 OpenClaw 帮你定期运行！\n\n---\n\n#### 5️⃣ 方式五：写自定义 Hooks\n**写中等程度的代码！**\n\n在 hooks-pack/ 里添加自己的 hook！\n\n每个 hook 就是一个文件夹，包含：\n- index.js - 代码\n- HOOK.md - 说明\n\n---\n\n#### 6️⃣ 方式六：写自定义 Skills\n**写中等程度的代码！**\n\n创建自己的 skill 包！\n\n---\n\n#### 7️⃣ 方式七：写自定义 Plugins\n**写较多代码！**\n\n创建自己的插件！你已经有几个插件了：\n- novel-manager\n- experience-manager\n- memory-lancedb-pro\n\n---\n\n#### 8️⃣ 方式八：手写完整脚本\n**写大量代码！**\n\n完全手写脚本，但这是最后才需要的！\n\n---\n\n### 📊 自动化方式对比\n\n| 方式 | 需要写代码吗？ | 难度 | 推荐度 |\n|------|--------------|------|--------|\n| 1. 直接让 AI 帮你做 | ❌ 不需要 | ⭐ 最简单 | ⭐⭐⭐⭐⭐ |\n| 2. 使用内置 Skills | ❌ 不需要 | ⭐ 简单 | ⭐⭐⭐⭐⭐ |\n| 3. 使用 Hooks（已有） | ❌ 不需要 | ⭐ 简单 | ⭐⭐⭐⭐⭐ |\n| 4. 写简单自动脚本 | ⚠️ 少量 | ⭐⭐ 中等 | ⭐⭐⭐⭐ |\n| 5. 写自定义 Hooks | ⚠️ 中等 | ⭐⭐⭐ 较难 | ⭐⭐⭐ |\n| 6. 写自定义 Skills | ⚠️ 中等 | ⭐⭐⭐ 较难 | ⭐⭐⭐ |\n| 7. 写自定义 Plugins | ✅ 较多 | ⭐⭐⭐⭐ 难 | ⭐⭐ |\n| 8. 手写完整脚本 | ✅ 大量 | ⭐⭐⭐⭐⭐ 最难 | ⭐ |\n\n---\n\n### 💡 建议\n\n**从简单的开始！**\n\n1. 先试试直接让 AI 帮你做\n2. 再试试使用内置 Skills\n3. 最后才考虑写代码",
+    "tags": [
+      "OpenClaw",
+      "自动化",
+      "脚本",
+      "自动脚本",
+      "无代码"
+    ],
+    "category": "dev",
+    "createdAt": "2026-03-20T13:15:54.000Z",
+    "updatedAt": "2026-03-20T13:15:54.000Z"
+  },
+  {
+    "id": 15,
+    "title": "Hooks 统一管理完整解释",
+    "content": "# Hooks 统一管理完整解释\n\n用户询问：hooks 好像都散乱分布，能不能统一管理？\n\n---\n\n## 回答\n\n### 1️⃣ 当前 hooks 的分布情况\n\n其实你的 hooks **已经是统一管理**的了！让我给你展示一下：\n\n---\n\n#### 📂 文件夹结构\n\n```\n/workspace/projects/\n├── hooks-pack/                    # 👈 这就是统一的 hooks 文件夹！\n│   ├── code-guard/               # 代码守卫 hook\n│   ├── knowledge-check/          # 知识检查 hook\n│   ├── message-received-check-state/  # 消息检查 hook\n│   ├── pre-write-check/          # 写前检查 hook\n│   ├── self-heal/                # 自我修复 hook\n│   ├── sender-trigger/           # 发送触发器 hook\n│   ├── storage-protect/          # 存储保护 hook\n│   ├── task-logger/              # 任务日志 hook\n│   ├── verification-tracker/     # 验证追踪 hook\n│   ├── lib/                      # 公共库\n│   └── package.json              # hooks-pack 配置\n│\n├── openclaw.json                 # 配置文件\n```\n\n---\n\n#### ⚙️ 配置文件里的设置\n\n看你的 openclaw.json 配置：\n\n```json\n\"hooks\": {\n  \"internal\": {\n    \"enabled\": true,\n    \"entries\": {\n      \"message-received-check-state\": { \"enabled\": true },\n      \"task-logger\": { \"enabled\": true },\n      \"storage-protect\": { \"enabled\": true },\n      \"code-guard\": { \"enabled\": true },\n      \"self-heal\": { \"enabled\": true },\n      \"knowledge-check\": { \"enabled\": true },\n      \"pre-write-check\": { \"enabled\": true },\n      \"sender-trigger\": { \"enabled\": true }\n    },\n    \"load\": {\n      \"extraDirs\": [\n        \"/workspace/projects/hooks-pack\"  // 👈 加载这个文件夹！\n      ]\n    },\n    \"installs\": {\n      \"workspace-hooks-pack\": {\n        \"source\": \"path\",\n        \"sourcePath\": \"/workspace/projects/hooks-pack\",\n        \"installPath\": \"/workspace/projects/hooks-pack\"\n      }\n    }\n  }\n}\n```\n\n---\n\n### 2️⃣ 所以，你的 hooks 已经是统一管理的了！\n\n| 方面 | 现状 |\n|------|------|\n| 📂 文件夹位置 | ✅ 统一在 hooks-pack/ 文件夹里 |\n| ⚙️ 配置位置 | ✅ 统一在 openclaw.json 里配置 |\n| 🎛️ 启用/禁用 | ✅ 可以在配置里统一控制 |\n| 📦 安装管理 | ✅ 通过 installs 统一管理 |\n\n---\n\n### 3️⃣ 每个 hook 文件夹的内容\n\n每个 hook 文件夹里都有：\n\n```\nhooks-pack/code-guard/\n├── HOOK.md          # hook 的说明文档\n└── index.js         # hook 的代码\n```\n\n---\n\n### 4️⃣ 如何管理 hooks？\n\n#### ✅ 查看所有 hooks\n```bash\nls -la /workspace/projects/hooks-pack/\n```\n\n#### ✅ 启用/禁用某个 hook\n在 openclaw.json 里修改：\n```json\n\"hooks\": {\n  \"internal\": {\n    \"entries\": {\n      \"code-guard\": { \"enabled\": false }  // 禁用\n    }\n  }\n}\n```\n\n#### ✅ 添加新的 hook\n1. 在 hooks-pack/ 里创建新文件夹\n2. 编写 index.js 和 HOOK.md\n3. 在 openclaw.json 里配置启用\n\n---\n\n### 5️⃣ 总结\n\n| 问题 | 答案 |\n|------|------|\n| hooks 散乱分布吗？ | ❌ 不！已经统一在 hooks-pack/ 文件夹里了！ |\n| 能统一管理吗？ | ✅ 当然！已经是统一管理的了！ |\n| 在哪里管理？ | 📂 hooks-pack/ 文件夹 + ⚙️ openclaw.json 配置 |\n\n---\n\n### 6️⃣ 你可能觉得\"散乱\"的原因？\n\n可能是因为：\n1. 每个 hook 有自己的独立文件夹\n2. 配置文件里也有对应的配置\n3. 但这其实是**有组织的统一管理**，不是散乱！",
+    "tags": [
+      "OpenClaw",
+      "Hooks",
+      "统一管理",
+      "hooks-pack",
+      "管理"
+    ],
+    "category": "dev",
+    "createdAt": "2026-03-20T13:13:44.000Z",
+    "updatedAt": "2026-03-20T13:14:52.000Z"
+  },
+  {
+    "id": 14,
+    "title": "identity 文件夹完整解释",
+    "content": "# identity 文件夹完整解释\n\n用户询问：\n1. `File:[identity]` 这个文件夹是自带的还是我创建的？\n2. 里面的内容是什么？\n3. 可以删除吗？\n\n---\n\n## 回答\n\n### 1️⃣ 是自带的还是你创建的？\n\n✅ **是 OpenClaw 自带的！** 不是你创建的！\n\n这是 OpenClaw 系统自动创建的文件夹，用于存储设备身份信息！\n\n---\n\n### 2️⃣ 里面的内容是什么？\n\n文件夹位置：`/workspace/projects/identity/`\n\n里面有两个文件：\n\n#### 📄 文件 1：device.json\n```json\n{\n  \"version\": 1,\n  \"deviceId\": \"25ac90a5cde70c90ae78c67f82877c6fc586598ea2dbe3107167d1956853b1cb\",\n  \"publicKeyPem\": \"-----BEGIN PUBLIC KEY-----\\n...\",\n  \"privateKeyPem\": \"-----BEGIN PRIVATE KEY-----\\n...\",\n  \"createdAtMs\": 1772270032149\n}\n```\n\n**内容说明：**\n- deviceId - 设备唯一标识\n- publicKeyPem - 公钥（用于加密）\n- privateKeyPem - 私钥（用于解密）\n- createdAtMs - 创建时间\n\n---\n\n#### 📄 文件 2：device-auth.json\n```json\n{\n  \"version\": 1,\n  \"deviceId\": \"25ac90a5cde70c90ae78c67f82877c6fc586598ea2dbe3107167d1956853b1cb\",\n  \"tokens\": {\n    \"operator\": {\n      \"token\": \"8ld9RvOzX2M-PMATPaglJwBNeTF6l_z0xA5RKCIW8DQ\",\n      \"role\": \"operator\",\n      \"scopes\": [\n        \"operator.admin\",\n        \"operator.approvals\",\n        \"operator.pairing\",\n        \"operator.read\",\n        \"operator.write\"\n      ],\n      \"updatedAtMs\": 1774009599102\n    }\n  }\n}\n```\n\n**内容说明：**\n- deviceId - 设备唯一标识（和上面一样）\n- tokens - 认证令牌\n  - operator - 操作员令牌\n  - token - 具体的令牌值\n  - role - 角色（operator）\n  - scopes - 权限范围\n\n---\n\n### 3️⃣ 可以删除吗？\n\n❌ **不可以删除！绝对不要删除！**\n\n#### 为什么不能删除？\n\n因为这个文件夹存储了：\n1. ✅ 你的设备身份标识\n2. ✅ 加密密钥（公钥和私钥）\n3. ✅ 认证令牌（用于访问 OpenClaw）\n\n#### 如果删除了会怎样？\n\n如果删除了这个文件夹：\n1. ❌ OpenClaw 会失去身份标识\n2. ❌ 需要重新进行设备认证\n3. ❌ 可能需要重新配置\n4. ❌ 会导致连接中断\n\n---\n\n### 4️⃣ 总结\n\n| 问题 | 答案 |\n|------|------|\n| 是自带的还是你创建的？ | ✅ OpenClaw 自带的 |\n| 里面的内容是什么？ | 📄 设备身份信息、密钥、认证令牌 |\n| 可以删除吗？ | ❌ 绝对不可以删除！ |\n\n---\n\n### 5️⃣ 你为什么会看到 File:[identity]？\n\n你之前看到的 File:[identity] 应该是：\n- 某个文档里的占位符\n- 或者某个界面上的标签\n- 实际对应的就是这个 identity 文件夹！",
+    "tags": [
+      "OpenClaw",
+      "identity",
+      "文件夹",
+      "自带",
+      "设备身份",
+      "密钥",
+      "认证令牌"
+    ],
+    "category": "dev",
+    "createdAt": "2026-03-20T13:12:13.000Z",
+    "updatedAt": "2026-03-20T13:13:07.000Z"
+  },
+  {
+    "id": 13,
+    "title": "File:[identity] 文件夹问题",
+    "content": "# File:[identity] 文件夹问题\n\n用户询问：`File:[identity]` 这是原生文件夹吗？\n\n---\n\n## 回答\n\n### ❌ 不是原生文件夹！\n\n`File:[identity]` 不是真实的文件夹名称！\n\n---\n\n### 🔤 这是一个占位符\n\n`File:[identity]` 看起来像是一个占位符或者模板变量！\n\n这种格式通常表示：\n- `File:` - 前缀，表示这是文件相关的\n- `[identity]` - 方括号里的内容会被替换成实际的值\n\n---\n\n### 📝 可能出现的场景\n\n这种占位符通常出现在：\n\n#### 1. 配置文件示例中\n```json\n{\n  \"path\": \"File:[identity]/config.json\"\n}\n```\n\n#### 2. 文档中\n```\n配置文件位置：File:[identity]/settings.yaml\n```\n\n#### 3. 插件或技能的配置模板中\n```\n数据存储：File:[identity]/data/\n```\n\n---\n\n### 🔍 举个例子\n\n如果 `[identity]` 被替换成 `my-profile`，那么：\n\n```\nFile:[identity]/config.json\n```\n\n就变成了：\n\n```\nFile:my-profile/config.json\n```\n\n或者更常见的是直接变成：\n\n```\nmy-profile/config.json\n```\n\n---\n\n### 🤔 你在哪里看到的？\n\n如果你告诉我你是在哪里看到 `File:[identity]` 的，我可以给你更准确的解释！\n\n可能的地方：\n- openclaw.json 配置文件里？\n- 某个插件的配置里？\n- 文档里？\n- Control UI 界面里？\n\n---\n\n### ✅ 总结\n\n| 问题 | 答案 |\n|------|------|\n| `File:[identity]` 是原生文件夹吗？ | ❌ 不是 |\n| 这是什么？ | 📝 占位符 / 模板变量 |\n| `[identity]` 会怎样？ | 🔄 会被替换成实际的值 |",
+    "tags": [
+      "OpenClaw",
+      "File:[identity]",
+      "文件夹",
+      "原生文件夹"
+    ],
+    "category": "dev",
+    "createdAt": "2026-03-20T13:11:06.000Z",
+    "updatedAt": "2026-03-20T13:11:31.000Z"
+  },
+  {
+    "id": 12,
+    "title": "OpenClaw Browser 功能 - 文件夹位置",
+    "content": "# OpenClaw Browser 功能 - 文件夹位置\n\n用户询问：Browser（浏览器）相关的功能在哪个文件夹里？\n\n## 问题内容\n\n用户想知道 Browser（浏览器）相关的功能在哪个文件夹里：\n\n🌐 八、Browser（浏览器）- 自动司机\n15. 浏览器自动化\n✅ Chrome / Chromium 支持\n✅ 无头模式（Headless）\n✅ 有头模式（Headful）- 你的配置是有头模式\n✅ 用户配置文件管理\n✅ 截图功能\n✅ 页面操作（点击、输入、滚动）\n✅ 浏览器扩展支持\n✅ 代理支持\n16. 浏览器配置（你的配置）\n✅ 可执行文件路径：/opt/google/chrome/chrome\n✅ 窗口大小：1920x1080\n✅ 默认用户配置：openclaw\n✅ 无沙箱模式：noSandbox: true\n✅ 颜色标识：#00AA00\n\n---\n\n## 回答\n\n### 1. OpenClaw 系统安装位置\n\nOpenClaw 本身是通过 npm 安装的，所以它的代码在系统目录里：\n\n```\n/usr/lib/node_modules/openclaw/\n```\n\n这是 OpenClaw 的核心安装目录！\n\n---\n\n### 2. Browser 功能的代码位置\n\nBrowser 相关的代码就在 OpenClaw 的安装目录里：\n\n```\n/usr/lib/node_modules/openclaw/\n├── dist/                    # 编译后的代码\n│   ├── browser/            # 浏览器相关的代码 👈\n│   ├── plugins/\n│   ├── skills/\n│   └── ...\n└── ...\n```\n\n具体位置是：\n```\n/usr/lib/node_modules/openclaw/dist/browser/\n```\n\n---\n\n### 3. 用户的浏览器配置文件位置\n\n而你的浏览器用户配置文件（User Profile）在你的用户目录里：\n\n```\n/root/.config/openclaw/browser/\n```\n\n这是 OpenClaw 存储浏览器配置文件的地方！\n\n---\n\n### 4. 你的配置里的路径\n\n看你的 openclaw.json 配置：\n\n```json\n\"browser\": {\n  \"executablePath\": \"/opt/google/chrome/chrome\",\n  \"headless\": false,\n  \"defaultProfile\": \"openclaw\",\n  \"profiles\": {\n    \"openclaw\": {\n      \"userDataDir\": \"/root/.config/openclaw/browser/openclaw\"\n    }\n  }\n}\n```\n\n这里有几个重要的路径：\n\n| 配置项 | 路径 | 说明 |\n|--------|------|------|\n| executablePath | /opt/google/chrome/chrome | Chrome 浏览器的可执行文件 |\n| userDataDir | /root/.config/openclaw/browser/openclaw | 你的浏览器配置文件目录 |\n\n---\n\n### 5. 完整的文件夹结构\n\n```\n/opt/google/chrome/          # Chrome 浏览器安装目录\n└── chrome                   # Chrome 可执行文件\n\n/usr/lib/node_modules/openclaw/  # OpenClaw 安装目录\n└── dist/browser/            # Browser 功能的代码\n\n/root/.config/openclaw/      # OpenClaw 用户配置目录\n└── browser/                  # 浏览器配置目录\n    └── openclaw/             # 你的浏览器用户配置文件（defaultProfile）\n```\n\n---\n\n### 6. 总结\n\n| 内容 | 位置 |\n|------|------|\n| OpenClaw 核心代码 | /usr/lib/node_modules/openclaw/ |\n| Browser 功能代码 | /usr/lib/node_modules/openclaw/dist/browser/ |\n| Chrome 浏览器 | /opt/google/chrome/chrome |\n| 你的浏览器配置 | /root/.config/openclaw/browser/openclaw/ |",
+    "tags": [
+      "OpenClaw",
+      "Browser",
+      "文件夹位置",
+      "功能位置"
+    ],
+    "category": "dev",
+    "createdAt": "2026-03-20T13:09:37.000Z",
+    "updatedAt": "2026-03-20T13:10:08.000Z"
+  },
+  {
+    "id": 11,
+    "title": "OpenClaw 完整功能清单 - 除插件外的所有功能",
+    "content": "# OpenClaw 完整功能清单（除插件外）\n\n完整列举 OpenClaw 除了插件之外的 13 大类、100+ 个功能！\n\n## 一、核心功能 - Gateway（网关）\n- HTTP 服务器（默认端口 5000）\n- WebSocket 支持（实时通信）\n- 路由管理（分发请求到不同插件）\n- 认证授权（Token 认证）\n- 跨域处理（CORS）\n- 静态文件服务（Control UI）\n- 健康检查端点\n- 日志记录\n\n## 二、Agents（智能助理）\n- 多 Agent 管理\n- 对话上下文记忆\n- 工具调用（Function Calling）\n- 多模态支持（文本 + 图片）\n- 子 Agent（Subagents）- 助理的助手\n- 工作区管理（Workspace）\n- 会话压缩（Compaction）\n- 最大并发任务数控制\n- 模型切换（主模型、图片模型）\n- 会话历史保存、回溯、总结、导出/导入\n\n## 三、Models（模型）\n- 多提供商支持（Coze、OpenAI、Anthropic 等）\n- 模型切换（自动 / 手动选择）\n- 费用统计和追踪\n- 模型配置（Context Window、Max Tokens）\n- 推理模型支持（Reasoning）\n- 图片模型支持（Image Input）\n- 缓存机制（减少费用）\n- 模型状态监控\n\n当前可用的模型（你的配置）：\n- coze/auto - 自动选择\n- coze/kimi-k2-5-260127 - Kimi K2.5\n- coze/glm-4-7-251222 - GLM 4.7\n- coze/deepseek-v3-2-251201 - DeepSeek 3.2\n- coze/doubao-seed-1-8-251228 - 豆包 1.8\n- coze/doubao-seed-2-0-pro-260215 - 豆包 2.0 Pro（带推理）\n- coze/doubao-seed-2-0-lite-260215 - 豆包 2.0 Lite\n- coze/doubao-seed-2-0-mini-260215 - 豆包 2.0 Mini\n\n## 四、Channels（渠道）\n- 飞书（Feishu）- 你的配置已启用\n- 钉钉（DingTalk）\n- 企业微信（WeCom）\n- Slack\n- Discord\n- Telegram\n- Web（网页端）\n- CLI（命令行）\n\n飞书渠道功能（你的配置）：\n- WebSocket 长连接模式\n- 事件订阅\n- 白名单机制（allowFrom）\n- 群聊策略（groupPolicy）\n- @提及要求（requireMention）\n- 私聊策略（dmPolicy）\n\n## 五、Skills（技能）\n- 内置技能（Built-in Skills）\n- 社区技能（Community Skills）\n- 技能安装/卸载\n- 技能版本管理\n- 技能配置\n- 技能权限控制\n\n当前启用的技能（你的配置）：\n- novel-status - 小说状态\n- bilibili-monitor - B站监控\n\n可用但未启用的技能（30+个）：\n- 1Password、Apple Notes、Apple Reminders、Bear Notes\n- Bird、BlogWatcher、BluCLI、BlueBubbles\n- CamSnap、ClawHub、EightCTL\n- Gemini、GifGrep、GOG、GoPlaces\n- Local-Places、Nano-Banana-Pro、Nano-PDF\n- Notion、Obsidian\n- OpenAI-Image-Gen、OpenAI-Whisper、OpenAI-Whisper-API\n- Slack、Songsee、SonosCLI、Spotify-Player\n- Things-Mac、WaCLI\n\n## 六、Hooks（钩子）\n- 内部钩子（Internal Hooks）- 你的配置已启用\n- 外部钩子（External Hooks）\n- 钩子注册/注销\n- 钩子执行顺序\n- 钩子错误处理\n- 钩子事件触发\n\n当前启用的内部钩子（你的配置）：\n- message-received-check-state - 收到消息检查状态\n- task-logger - 任务日志记录\n- storage-protect - 存储保护（防止误删）\n- code-guard - 代码守卫（防止写坏代码）\n- self-heal - 自我修复（小问题自动修好）\n- knowledge-check - 知识检查\n- pre-write-check - 写前检查\n- sender-trigger - 发送触发器\n\n## 七、Tools（工具）\n- 文件读取/写入\n- 命令执行\n- 网页搜索（可配置）\n- 网页抓取（可配置）\n- 图片生成\n- 语音识别（Whisper）\n- 语音合成（TTS）\n- 工具权限控制\n- 工具参数验证\n- 工具结果格式化\n- 工具调用日志\n\n## 八、Browser（浏览器）\n- Chrome / Chromium 支持\n- 无头模式（Headless）\n- 有头模式（Headful）- 你的配置是有头模式\n- 用户配置文件管理\n- 截图功能\n- 页面操作（点击、输入、滚动）\n- 浏览器扩展支持\n- 代理支持\n\n浏览器配置（你的配置）：\n- 可执行文件路径：/opt/google/chrome/chrome\n- 窗口大小：1920x1080\n- 默认用户配置：openclaw\n- 无沙箱模式：noSandbox: true\n- 颜色标识：#00AA00\n\n## 九、Control UI（管理后台）\n- 仪表板（Dashboard）\n- 对话管理\n- 模型配置\n- 插件管理\n- 技能管理\n- 渠道配置\n- 日志查看\n- 健康状态监控\n- 设置页面\n\n管理后台配置（你的配置）：\n- 已启用：enabled: true\n- 根目录：/usr/lib/node_modules/openclaw/dist/control-ui\n- 允许的来源：localhost:5000、dev.coze.site 等\n- 设备认证已禁用（开发模式）\n\n## 十、安全与认证\n- Token 认证（你的配置是 Token 模式）\n- 设备认证（Device Auth）\n- 受信任代理（Trusted Proxies）\n- CORS 配置\n- 权限控制\n- 审计日志\n\n## 十一、监控与诊断\n- 健康检查端点\n- 状态查询（openclaw status）\n- 诊断工具（openclaw doctor）\n- 网关探测（openclaw gateway probe）\n- 模型状态（openclaw models status）\n- 渠道状态（openclaw channels status）\n\n## 十二、配置与管理\n- 配置文件（openclaw.json）\n- 配置验证（openclaw config validate）\n- 配置查询（openclaw config get）\n- 配置修改（openclaw config set）\n- 配置备份（自动生成 .bak 文件）\n\n命令行工具（CLI）：\n- openclaw --version - 查看版本\n- openclaw status - 查看状态\n- openclaw doctor - 诊断检查\n- openclaw gateway - 网关管理\n- openclaw models - 模型管理\n- openclaw channels - 渠道管理\n- openclaw plugins - 插件管理\n- openclaw skills - 技能管理\n- openclaw config - 配置管理\n- openclaw dashboard - 打开仪表板\n\n## 十三、其他功能\n- Tailscale（虚拟专网）- 你的配置已关闭\n- 节点管理（Nodes）- Browser 节点已关闭\n- 消息功能 - 消息确认反应范围、消息存储、消息搜索\n\n## 总结\n\nOpenClaw 除了插件之外，还有 **13 大类、100+ 个功能**！\n\n| 类别 | 功能数量 |\n|------|---------|\n| 1. Gateway（网关） | 8+ |\n| 2. Agents（助理） | 10+ |\n| 3. Models（模型） | 8+ |\n| 4. Channels（渠道） | 10+ |\n| 5. Skills（技能） | 30+ |\n| 6. Hooks（钩子） | 8+ |\n| 7. Tools（工具） | 10+ |\n| 8. Browser（浏览器） | 10+ |\n| 9. Control UI（后台） | 10+ |\n| 10. 安全与认证 | 5+ |\n| 11. 监控与诊断 | 6+ |\n| 12. 配置与管理 | 8+ |\n| 13. 其他功能 | 5+ |",
+    "tags": [
+      "OpenClaw",
+      "功能清单",
+      "完整介绍",
+      "新手教程"
+    ],
+    "category": "dev",
+    "createdAt": "2026-03-20T13:08:05.000Z",
+    "updatedAt": "2026-03-20T13:08:05.000Z"
+  },
+  {
+    "id": 10,
+    "title": "OpenClaw 完整流程详解 - 从访问到显示",
+    "content": "# OpenClaw 完整流程详解\n\n用\"参观公司\"的比喻，完整讲解从访问到显示的全过程！\n\n## 第一步：你来到公司大门\n- 浏览器输入：http://localhost:5000\n- 你来到\"localhost 大街 5000 号\"\n- 大门是 Gateway（网关），门牌号 5000\n\n## 第二步：Gateway（大门保安）检查\n- Gateway 看 openclaw.json 配置\n- 发现管理后台开门，位置在 /usr/lib/node_modules/openclaw/dist/control-ui\n\n## 第三步：插件注册流程（启动时完成）\n\n### 3.1 OpenClaw 扫描插件目录\n- 看 openclaw.json 里的 plugins.load.paths\n- 按地址找外包团队：extensions/apps/novel-manager 等\n\n### 3.2 找到插件目录，读取营业执照\n- 读取 openclaw.plugin.json\n- 知道这是\"小说数据管理\"团队\n\n### 3.3 加载插件入口文件 index.ts\n- 找到外包联系人 index.ts\n- 联系人登记负责的区域：\n  - / → 公司首页\n  - /novel → 小说管理页\n  - /auto.html → 自动化页\n  - /experience.html → 经验页\n  - /api/novel/* → 所有小说 API\n\n### 3.4 完成路由注册\n- OpenClaw 把这些记录在\"路由表\"里\n\n## 第四步：访问页面的完整流程\n\n### 场景 1：访问 http://localhost:5000/novel/\n1. 浏览器 → Gateway\n2. Gateway 查路由表：/novel → novel-manager\n3. Gateway 调用 handleNovelPage\n4. handleNovelPage 看 pageMap：/novel → index.html\n5. getPageHtml 读取 extensions/public/index.html\n6. 返回 HTML（里面有导航栏！）\n7. 你看到：小说管理界面！\n\n### 场景 2：点击导航栏的\"经验\"\n1. 你点击：<a href=\"/experience.html\">\n2. 浏览器 → /experience.html\n3. Gateway 查路由表 → novel-manager\n4. handleNovelPage 看 pageMap → experience.html\n5. getPageHtml 读取 extensions/public/experience.html\n6. 返回 HTML（也有导航栏！）\n7. 你看到：经验积累中心！\n\n### 场景 3：前端调用后端 API\n1. 前端：fetch(/api/novel/notes)\n2. 浏览器 → /api/novel/notes\n3. Gateway 查路由表 → novel-manager\n4. Gateway 调用 handleNovelApi\n5. handleNovelApi 处理，调用 NovelService\n6. 返回 JSON 数据\n7. 前端显示笔记列表！\n\n## 关键要点\n1. Gateway 是大门 - 所有请求先到 Gateway\n2. 插件注册路由 - 启动时就告诉 Gateway 管哪些 URL\n3. 路由表匹配 - Gateway 查路由表找插件\n4. 前端页面在 extensions/public/ - 有导航栏的 HTML 都在这\n5. 前后端通过 API 通信 - 前端 fetch，后端返回 JSON\n\n## 需要的文件\n- openclaw.json - 公司总章程\n- extensions/apps/novel-manager/openclaw.plugin.json - 插件执照\n- extensions/apps/novel-manager/index.ts - 插件入口，注册路由\n- extensions/public/*.html - 前端页面\n- extensions/apps/novel-manager/services/*.ts - 后端业务逻辑",
+    "tags": [
+      "OpenClaw",
+      "完整流程",
+      "前端后端",
+      "路由原理"
+    ],
+    "category": "dev",
+    "createdAt": "2026-03-20T13:05:41.000Z",
+    "updatedAt": "2026-03-20T13:05:41.000Z"
+  },
+  {
+    "id": 9,
+    "title": "OpenClaw 配置文件通俗讲解 - openclaw.json 完全指南",
+    "content": "# OpenClaw 配置文件通俗讲解\n\n想象你在开一家公司，openclaw.json 就是公司的\"公司章程\"和\"员工手册\"！\n\n## 12 个配置部分详解\n\n### 1. meta/wizard - 公司档案\n- meta - 记录最后一次修改时间\n- wizard - 记录入职向导的使用情况\n\n### 2. browser - 自动司机\n给自动操作浏览器的机器人配置：\n- enabled - 允许使用浏览器机器人\n- executablePath - 浏览器位置\n- headless - 是否隐身模式\n- defaultProfile - 用哪个账号\n- extraArgs - 启动参数（窗口大小等）\n\n### 3. models - AI 顾问团\n- providers - AI 服务提供商（Coze）\n- baseUrl - AI 服务地址\n- apiKey - 访问密码\n- models - 可用的 AI 模型列表：\n  - auto - 自动选择\n  - kimi/glm/deepseek - 不同品牌\n  - doubao-seed - 豆包（Pro/Lite/Mini）\n  - contextWindow - 记忆力（最多 26 万字）\n  - maxTokens - 一次最多说多少字\n  - reasoning - 会不会思考\n  - cost - 费用（这里免费）\n\n### 4. agents - 首席助理\n- model.primary - 默认用哪个 AI\n- imageModel.primary - 看图用哪个模型\n- workspace - 办公室位置\n- maxConcurrent - 最多同时处理几个任务\n- subagents.maxConcurrent - 助手的助手最多处理几个\n\n### 5. tools - 工具包\n- web.search - 能不能上网搜索（关了）\n- web.fetch - 能不能抓网页（关了）\n\n### 6. messages - 聊天规矩\n- ackReactionScope - 什么时候发已收到表情\n\n### 7. commands - 快捷操作\n- native - 原生界面模式\n- restart - 允许重启\n- ownerDisplay - 显示原始内容\n\n### 8. hooks - 内部监督员\n- enabled - 外部钩子开关\n- internal.enabled - 内部监督员工作中\n- entries - 各种监督员：\n  - message-received-check-state - 收到消息检查\n  - task-logger - 任务日志\n  - storage-protect - 存储保护\n  - code-guard - 代码守卫\n  - self-heal - 自我修复\n  - knowledge-check - 知识检查\n  - pre-write-check - 写前检查\n  - sender-trigger - 发送触发器\n\n### 9. channels - 前台接待\n- feishu - 飞书窗口\n- enabled - 开门营业\n- appId/appSecret - 工牌密码\n- connectionMode - 连接方式（WebSocket）\n- allowFrom - 只接待谁\n- requireMention - 群里必须@才理你\n\n### 10. gateway - 大门保安\n- port - 门牌号（5000）\n- controlUi.enabled - 管理后台开门\n- allowedOrigins - 允许哪些网站访问\n- auth.mode - 进门方式（token）\n- auth.token - 门禁密码（保密！）\n- trustedProxies - 信任的快递员\n- nodes.browser.mode - 浏览器节点开关\n\n### 11. skills - 特殊技能部门\n- novel-status - 小说状态（开了）\n- bilibili-monitor - B站监控（开了）\n- 其他技能（都关了）\n\n### 12. plugins - 外包合作方\n- allow - 允许哪些外包\n- load.paths - 外包地址（刚更新到 apps/ 目录！）\n  - novel-manager - 小说管理\n  - experience-manager - 经验积累\n  - memory-lancedb-pro - 记忆数据库\n  - feishu-openclaw-plugin - 飞书插件（刚添加的！）\n- slots.memory - 记忆插槽用哪个\n- entries - 每个外包的配置\n  - memory-lancedb-pro 配置最多：\n    - embedding - 文字转向量\n    - llm - AI 理解内容\n    - dbPath - 数据库位置\n    - autoCapture - 自动记录聊天\n    - retrieval - 搜索方式（混合搜索）\n- installs - 已安装的外包\n\n## 总结\nopenclaw.json 就像一家完整公司的运营手册，12个部分各司其职！",
+    "tags": [
+      "OpenClaw",
+      "配置文件",
+      "新手教程",
+      "系统架构"
+    ],
+    "category": "dev",
+    "createdAt": "2026-03-20T13:03:43.000Z",
+    "updatedAt": "2026-03-20T13:03:43.000Z"
+  },
+  {
+    "id": 8,
+    "title": "插件架构设计 - 合并 vs 分开的决策指南",
+    "content": "## 两个插件的功能定位\n\n### novel-manager（小说管理插件）\n- 作品管理（增删改查）\n- 番茄小说扫描和发布\n- 缓存管理\n- 自动化流水线\n- 飞书集成\n- 技术特点：重型（MySQL + Playwright）\n\n### experience-manager（经验积累插件）\n- 记录解决问题的经验\n- 经验统计和分析\n- 内存同步\n- 技术特点：轻量级（JSON 文件）\n\n## 合并的优缺点\n\n### 合并的优点\n1. 统一入口 - 一个插件管所有\n2. 共享资源 - 共享数据库连接、工具函数\n3. 统一配置 - 只维护一个插件配置\n\n### 合并的缺点\n1. 职责混乱 - 两个完全不同的业务领域\n2. 耦合度高 - 修改一个影响另一个\n3. 难以独立升级 - 必须一起更新\n4. 插件变得庞大 - 难以维护\n5. 违反单一职责原则\n\n## 分开的优缺点\n\n### 分开的优点\n1. 职责清晰 - 每个插件只做自己的事\n2. 低耦合 - 互不影响\n3. 可独立发布 - 单独更新、启用/禁用\n4. 可复用 - 经验积累插件可在其他项目复用\n5. 符合 OpenClaw 设计理念\n6. 便于测试\n\n### 分开的缺点\n1. 共享资源麻烦\n2. 配置分散\n3. 可能路由冲突\n\n## 关键判断标准\n\n| 问题 | 是 | 否 |\n|------|----|----|\n| 两个功能会被不同的人使用吗？ | 分开 | 合并 |\n| 想单独启用/禁用某个功能吗？ | 分开 | 合并 |\n| 业务领域逻辑上独立吗？ | 分开 | 合并 |\n| 未来可能移到其他项目吗？ | 分开 | 合并 |\n| 共享很多代码吗？ | 合并 | 分开 |\n\n## 最终建议\n\n**保持分开！**\n\n理由：\n1. 业务领域完全不同\n2. 技术栈差异大\n3. 符合插件化架构理念\n4. 未来可扩展性好\n\n## 总结对比\n\n| 维度 | 分开 | 合并 |\n|------|------|------|\n| 维护成本 | 低 | 高 |\n| 可扩展性 | 好 | 一般 |\n| 职责清晰 | 清晰 | 混乱 |\n| 复用性 | 高 | 低 |",
+    "tags": [
+      "架构设计",
+      "插件",
+      "最佳实践",
+      "决策指南"
+    ],
+    "category": "design",
+    "createdAt": "2026-03-20T12:53:59.000Z",
+    "updatedAt": "2026-03-20T12:53:59.000Z"
+  },
+  {
+    "id": 7,
+    "title": "OpenClaw 插件系统完全指南",
+    "content": "## 什么是 OpenClaw 插件\nOpenClaw 插件是扩展 OpenClaw 功能的模块化组件，每个插件独立运行，通过注册机制与 OpenClaw 主程序交互。\n\n## OpenClaw 插件注册步骤（3步）\n\n1. 准备插件目录结构\n2. 编写 openclaw.plugin.json\n3. 编写入口文件 index.ts\n\n## 为什么要注册插件\n\n1. 标识身份 - 告诉 OpenClaw 这是个插件\n2. 注册 HTTP 路由 - 提供页面和 API 访问\n3. 生命周期管理 - register() 初始化，activate() 启动\n\n## 插件文件关联关系\n\n- openclaw.plugin.json - 插件元数据（营业执照）\n- index.ts - 插件入口（店长）\n- src/, services/ - 功能实现（员工）\n- public/ - 静态资源（菜单）\n\n## 重要原则\n\n- 插件入口文件（index.ts）不能移动\n- 每个插件应该有独立的目录\n- 插件之间应该低耦合\n- 静态资源可以统一管理",
+    "tags": [
+      "OpenClaw",
+      "插件系统",
+      "架构设计",
+      "开发指南"
+    ],
+    "category": "dev",
+    "createdAt": "2026-03-20T12:53:40.000Z",
+    "updatedAt": "2026-03-20T12:53:40.000Z"
+  },
+  {
+    "id": 6,
+    "title": "文件移动和路径更新 - HTML 文件统一管理",
+    "content": "## 任务概述\n将分散在各个插件目录下的 HTML 文件统一移动到 extensions/public/ 目录下，便于统一管理。\n\n## 移动的文件\n- index.html - 小说管理主页\n- auto.html - 自动化页面\n- experience.html - 经验积累中心\n- cache.html - 缓存管理页面\n- feishu.html - 飞书集成页面\n\n## 源路径和目标路径\n- 源路径: extensions/novel-manager/public/\n- 目标路径: extensions/public/\n\n## 修改的文件\n- extensions/novel-manager/index.ts\n  - getNovelHtml() 函数：从 path.join(__dirname, \"public\", \"index.html\") 改为 path.join(__dirname, \"../public\", \"index.html\")\n  - getPageHtml() 函数：从 path.join(__dirname, \"public\", pageName) 改为 path.join(__dirname, \"../public\", pageName)\n\n## 注意事项\n1. HTML 文件中的链接都是绝对路径（如 /experience.html），无需修改\n2. novel-manager/index.ts 和 experience-manager/index.ts 是 OpenClaw 插件入口文件，不能移动\n3. OpenClaw 插件需要独立的目录结构和 openclaw.plugin.json 配置\n4. extensions/public 目录专门用于存放静态 HTML 文件\n\n## 验证\n- 检查所有 HTML 文件链接是否正常工作\n- 验证插件功能是否正常\n- 确认 OpenClaw 能正常加载插件",
+    "tags": [
+      "文件管理",
+      "路径更新",
+      "静态资源",
+      "重构"
+    ],
+    "category": "dev",
+    "createdAt": "2026-03-20T12:53:12.000Z",
+    "updatedAt": "2026-03-20T12:53:12.000Z"
+  },
+  {
+    "id": 5,
+    "title": "经验积累中心功能增强 - 笔记合并和详情查看",
+    "content": "## 功能概述\n\n在经验积累中心的笔记功能中添加了两个新功能：\n\n### 1. 笔记合并功能\n- 在笔记卡片上添加了复选框，支持多选笔记\n- 添加了\"合并选中笔记\"按钮（仅在选中2条或以上笔记时显示）\n- 合并时会自动：\n  - 生成合并后的标题（原标题用 + 连接）\n  - 合并所有笔记内容（用分隔线分隔）\n  - 合并所有标签（去重）\n  - 继承第一个笔记的分类\n- 支持在保存前编辑合并后的标题、内容、分类和标签\n\n### 2. 笔记详情功能\n- 点击笔记的标题、图标或内容区域会打开详情弹窗\n- 详情弹窗显示：\n  - 完整标题\n  - 分类和更新时间\n  - 所有标签\n  - 完整内容（支持换行和格式化）\n\n## 修改文件\n- `extensions/novel-manager/public/experience.html`\n\n## UI 改进\n- 笔记卡片选中时有蓝色边框和渐变背景高亮\n- 合并按钮在选中足够笔记时自动显示\n- 详情弹窗支持更大的宽度（680px）来显示完整内容",
+    "tags": [
+      "前端",
+      "功能增强",
+      "经验积累",
+      "笔记功能"
+    ],
+    "category": "dev",
+    "createdAt": "2026-03-20T12:52:59.000Z",
+    "updatedAt": "2026-03-20T12:52:59.000Z"
+  },
+  {
+    "id": 4,
+    "title": "OpenClaw 原生界面与目录结构",
+    "content": "# OpenClaw 原生界面与目录结构\n\n## 📍 两个重要目录\n\n### 1. 项目根目录\n```\n/workspace/projects/\n```\n- 这是你的项目文件目录\n- 包含：extensions/、openclaw.json、workspace/ 等\n- 你可以在这里修改你的插件和项目文件\n\n### 2. OpenClaw 系统目录\n```\n/usr/lib/node_modules/openclaw/\n```\n- 这是 OpenClaw 安装的系统目录\n- 包含：control-ui/、core/、cli/ 等\n- 这是系统目录，修改后可能会在 OpenClaw 更新时被覆盖\n\n## 🎨 原生界面位置\n\n### control-ui 目录\n```\n/usr/lib/node_modules/openclaw/dist/control-ui/\n```\n- 这是 OpenClaw 原生 Control UI 的目录\n- 包含：index.html、auto.html、experience.html、feishu.html 等\n- 这里的文件是 OpenClaw 原生界面的文件\n\n## ⚠️ 修改原生界面的注意事项\n\n### 方式 1：直接修改系统目录（不推荐）\n- 可以直接修改 `/usr/lib/node_modules/openclaw/dist/control-ui/` 下的文件\n- ❌ 问题：OpenClaw 更新时，这些文件会被覆盖\n- ✅ 优点：快速直接\n\n### 方式 2：通过插件覆盖（推荐）\n- 在 `extensions/novel-manager/index.ts` 里修改 `getPageHtml` 函数\n- 让它返回你自定义的 HTML，而不是系统的\n- ✅ 优点：不会被 OpenClaw 更新覆盖，更规范\n\n## 📝 如何判断你之前修改过原生界面\n\n看 `/usr/lib/node_modules/openclaw/dist/control-ui/` 目录下有没有 `.bak` 备份文件：\n- `auto.html.bak`、`auto.html.bak2` ...\n- `cache.html.bak`、`cache.html.bak2` ...\n- `experience.html.bak`、`experience.html.bak2` ...\n- 如果有，说明你之前确实修改过原生界面！\n\n---\n**最后更新**：2026-03-20",
+    "tags": [
+      "OpenClaw",
+      "原生界面",
+      "目录结构",
+      "control-ui"
+    ],
+    "category": "dev",
+    "createdAt": "2026-03-20T12:36:01.000Z",
+    "updatedAt": "2026-03-20T12:36:01.000Z"
+  },
+  {
+    "id": 3,
+    "title": "OpenClaw 项目开发与架构总结",
+    "content": "# OpenClaw 项目开发与架构总结\n\n## 📁 项目结构\n\n### 核心目录与文件\n```\n项目根目录/\n├── openclaw.json              # OpenClaw 主配置（不能删）\n├── package.json               # 根项目配置\n├── pnpm-workspace.yaml        # pnpm 工作区配置\n├── pnpm-lock.yaml            # 根锁文件（不能删）\n├── tsconfig.base.json         # TypeScript 基础配置\n├── extensions/                # OpenClaw 插件目录\n│   ├── novel-manager/         # 小说管理器插件\n│   │   ├── index.ts          # 插件入口（主要在用）\n│   │   ├── tsconfig.json      # 子项目 TypeScript 配置\n│   │   ├── services/          # 业务逻辑层\n│   │   ├── core/              # 核心逻辑层\n│   │   └── public/            # 前端页面\n│   └── feishu-openclaw-plugin/ # 飞书插件\n│       └── data/             # 飞书配置文件（feishu.json 等）\n├── workspace/                # 运行时数据（不提交 Git）\n└── scripts/                  # 启动/重启/停止脚本（不能删）\n```\n\n## 🚫 绝对不能删的文件\n\n| 文件/目录 | 说明 |\n|----------|------|\n| `.git/` | Git 仓库（删了就没版本历史） |\n| `.coze` | 沙箱环境配置 |\n| `openclaw.json` | OpenClaw 主配置 |\n| `package.json` | 根项目配置 |\n| `pnpm-lock.yaml` | pnpm 根锁文件 |\n| `pnpm-workspace.yaml` | pnpm 工作区配置 |\n| `tsconfig.base.json` | TypeScript 基础配置 |\n| `lib/` | OpenClaw 核心库 |\n| `hooks-pack/` | OpenClaw Hooks 包 |\n| `node_modules/` | Node.js 依赖（删了要重新安装） |\n| `scripts/` | 项目启动脚本 |\n\n## 📝 TypeScript vs JavaScript\n\n### 核心区别\n| 特性 | JavaScript (JS) | TypeScript (TS) |\n|------|------------------|------------------|\n| 类型系统 | ❌ 弱类型，没有类型检查 | ✅ 强类型，有类型检查 |\n| 发现错误时机 | ❌ 运行时才发现 | ✅ 写代码/编译时就发现 |\n| 学习难度 | ✅ 简单，易学 | ⚠️ 稍微难一点（要学类型） |\n| 大型项目 | ❌ 容易乱 | ✅ 好维护 |\n\n### TS = JS + 类型系统\n- 所有 JS 代码都是合法的 TS 代码\n- TS 最终要编译成 JS 才能运行\n\n## 🔧 tsconfig.json 作用\n\n告诉 TypeScript 编译器怎么编译代码：\n- `target`：编译成什么版本的 JS\n- `outDir`：编译后放到哪个目录\n- `include`：要编译哪些文件\n- `exclude`：不要编译哪些文件\n- `strict`：是否开启严格模式\n\n## 🎯 novel-manager 插件架构\n\n### 两个入口文件\n| 文件 | 作用 | 是否在用 |\n|------|------|---------|\n| `index.ts` | OpenClaw 插件入口 | ✅ 主要在用 |\n| `server.ts` | 独立 Express 服务器 | ⚠️ 已删除（备用） |\n\n### 分层架构\n```\nindex.ts (路由层) → 接收请求，分发路由\n    ↓\nnovel-service.ts (服务层) → 业务逻辑\n    ↓\nContentPipeline.ts (核心层) → 核心功能\n```\n\n## 📦 配置文件管理\n\n### feishu.json 位置\n- 原来位置：项目根目录\n- 新位置：`extensions/feishu-openclaw-plugin/data/`\n- 更规范，插件配置放在插件目录下\n\n## 💡 开发建议\n\n1. **先想清楚再动手**：需求 → 数据结构 → 接口\n2. **分层次开发**：数据库 → 后端 → 前端\n3. **小步快跑**：一个功能一个功能做，每做完就测试\n4. **保持代码规范**：命名有意义，函数不要太长\n5. **使用 TypeScript**：大型项目更安全，更好维护\n\n---\n**最后更新**：2026-03-20",
+    "tags": [
+      "OpenClaw",
+      "TypeScript",
+      "项目结构",
+      "架构",
+      "开发指南"
+    ],
+    "category": "dev",
+    "createdAt": "2026-03-20T12:29:14.000Z",
+    "updatedAt": "2026-03-20T12:29:14.000Z"
+  },
+  {
+    "id": 2,
+    "title": "OpenClaw 项目核心文件清单（不要随意删改）",
+    "content": "# 🏗️ OpenClaw 项目底层核心文件（不能随意修改删除）\n\n## 1️⃣ OpenClaw 核心配置文件\n\n| 文件/目录 | 作用 | 是否可删改 |\n|----------|------|-----------|\n| `openclaw.json` | OpenClaw 主配置文件 | ❌ **绝对不能删**，改之前要备份 |\n| `.coze` | 沙箱环境配置 | ❌ **不能删改** |\n| `agents/` | Agent 配置 | ⚠️ 谨慎修改 |\n| `hooks-pack/` | OpenClaw Hooks 包 | ❌ **不能删** |\n| `lib/` | OpenClaw 核心库 | ❌ **绝对不能删** |\n| `node_modules/` | Node.js 依赖 | ❌ **不能删**（删了要重新 `pnpm install`） |\n\n## 2️⃣ 项目构建和依赖文件\n\n| 文件/目录 | 作用 | 是否可删改 |\n|----------|------|-----------|\n| `package.json` | 根项目配置 | ⚠️ 谨慎修改（依赖配置） |\n| `pnpm-lock.yaml` | 根锁文件 | ❌ **不能删**，提交 Git |\n| `pnpm-workspace.yaml` | pnpm 工作区配置 | ❌ **不能删** |\n| `tsconfig.base.json` | TypeScript 基础配置 | ⚠️ 谨慎修改 |\n\n## 3️⃣ 版本控制文件\n\n| 文件/目录 | 作用 | 是否可删改 |\n|----------|------|-----------|\n| `.git/` | Git 仓库 | ❌ **绝对不能删**（删了就没版本历史了） |\n\n## 4️⃣ 脚本目录\n\n| 文件/目录 | 作用 | 是否可删改 |\n|----------|------|-----------|\n| `scripts/` | 项目启动/重启/停止脚本 | ❌ **不能删**（这些是你之前用的 `./scripts/start.sh` 等） |\n\n# 📦 数据和运行时目录（可以清理但不能删）\n\n| 目录 | 作用 | 是否可删改 |\n|------|------|-----------|\n| `workspace/` | 运行时数据（截图、缓存） | ✅ 可以清理内容，但不要删目录 |\n| `logs/` | 日志文件 | ✅ 可以清理 |\n| `storage/` | 数据存储 | ⚠️ 谨慎清理（可能有重要数据） |\n| `backups/` | 备份文件 | ✅ 可以清理旧备份 |\n\n# 🎨 插件和扩展（可以按需修改）\n\n| 目录 | 作用 | 是否可删改 |\n|------|------|-----------|\n| `extensions/` | OpenClaw 插件 | ✅ 可以修改你自己的插件（如 `novel-manager`） |\n| `packages/` | 共享包 | ⚠️ 取决于具体包 |\n| `auto-scripts/` | 自动脚本 | ✅ 可以修改 |\n| `utils/` | 工具脚本 | ✅ 可以修改 |\n\n# ⚠️ 临时和测试文件（可以删除）\n\n| 文件 | 说明 |\n|------|------|\n| `test-*.js` / `test-*.ts` | 测试文件 |\n| `run-*.js` / `run-*.ts` | 临时运行脚本 |\n| `check-work-7.js` | 临时检查脚本 |\n| `openclaw.json.bak*` | 配置备份（如果确认没问题可以删旧的） |\n\n# 📋 总结：绝对不能动的文件\n\n```\n❌ 绝对不能删除：\n├── .git/\n├── .coze\n├── openclaw.json\n├── package.json\n├── pnpm-lock.yaml\n├── pnpm-workspace.yaml\n├── tsconfig.base.json\n├── lib/\n├── hooks-pack/\n├── node_modules/\n└── scripts/\n\n⚠️ 谨慎修改：\n├── agents/\n├── packages/\n└── extensions/ 里的非自己开发的插件\n\n✅ 可以清理：\n├── workspace/ （内容，不要删目录）\n├── logs/\n├── backups/\n└── 临时测试文件\n```",
+    "tags": [
+      "OpenClaw",
+      "项目结构",
+      "核心文件",
+      "文件管理"
+    ],
+    "category": "dev",
+    "createdAt": "2026-03-20T12:09:30.000Z",
+    "updatedAt": "2026-03-20T12:09:30.000Z"
+  },
+  {
+    "id": 1,
+    "title": "项目开发指南：技术栈、架构与流程",
+    "content": "# 📚 项目技术栈与架构\n\n## 1️⃣ 核心技术栈\n\n| 层次 | 技术 | 作用 |\n|------|------|------|\n| 后端语言 | TypeScript | 类型安全的 JavaScript，提高代码可维护性 |\n| 运行环境 | Node.js | 服务器端 JavaScript 运行时 |\n| 数据库 | MySQL | 关系型数据库，存储小说、经验、笔记等数据 |\n| 前端 | HTML + CSS + JavaScript | 构建用户界面 |\n| 包管理 | pnpm | 快速、节省空间的 Node.js 包管理器 |\n| 平台 | OpenClaw | 插件运行平台，提供 HTTP 服务器、路由等能力 |\n\n## 2️⃣ 项目架构（以 novel-manager 插件为例）\n\n```\nextensions/novel-manager/\n├── index.ts                    # 路由层：接收请求，分发路由\n├── services/\n│   └── novel-service.ts        # 服务层：业务逻辑\n├── core/\n│   ├── ContentPipeline.ts      # 核心逻辑层：内容处理\n│   └── database.ts             # 数据库连接管理\n└── public/\n    ├── index.html              # 前端页面\n    ├── experience.html\n    └── ...\n```\n\n### 各层职责：\n\n1. **路由层（index.ts）**\n   - 注册 HTTP 路由\n   - 拦截页面请求和 API 请求\n   - 调用服务层处理业务逻辑\n   - 返回响应给前端\n\n2. **服务层（novel-service.ts）**\n   - 实现业务逻辑（比如：添加笔记、获取经验列表）\n   - 调用数据库层存取数据\n   - 封装核心逻辑（比如：调用 ContentPipeline 发布小说）\n\n3. **核心逻辑层（ContentPipeline.ts 等）**\n   - 实现核心功能（比如：内容清洗、番茄小说发布）\n   - 不依赖具体的路由或服务，可复用\n\n4. **前端层（public/*.html）**\n   - 用户界面\n   - 调用后端 API\n   - 展示数据和交互\n\n## 🚀 有条理开发的方法\n\n### 步骤 1：需求分析\n- 用户需要什么功能？\n- 数据结构怎么设计？\n\n### 步骤 2：数据库设计\n- 创建表结构\n- 设计字段和索引\n\n### 步骤 3：后端开发 - 服务层\n- 实现业务逻辑方法\n- 封装数据库操作\n\n### 步骤 4：后端开发 - 路由层\n- 添加 API 端点\n- 处理请求和响应\n\n### 步骤 5：前端开发\n- 构建用户界面\n- 调用后端 API\n- 实现交互逻辑\n\n### 步骤 6：测试和调试\n- 重启服务\n- 测试功能\n- 检查数据\n\n## 🎯 有条理开发的建议\n\n1. **先想清楚再动手**\n   - 需求是什么？\n   - 数据结构怎么设计？\n   - 接口怎么定义？\n\n2. **分层次开发**\n   - 先数据库，再后端，最后前端\n   - 每一层做好自己的事，不要越界\n\n3. **小步快跑**\n   - 一个功能一个功能地做\n   - 每做完一个就测试，确保没问题再继续\n\n4. **保持代码规范**\n   - 命名有意义\n   - 函数不要太长，一个函数只做一件事\n   - 写注释解释复杂的逻辑\n\n5. **版本控制**\n   - 使用 Git 管理代码\n   - 每次完成一个功能就提交\n   - 写清楚提交信息",
+    "tags": [
+      "TypeScript",
+      "Node.js",
+      "MySQL",
+      "OpenClaw",
+      "架构",
+      "开发流程"
+    ],
+    "category": "dev",
+    "createdAt": "2026-03-20T12:00:44.000Z",
+    "updatedAt": "2026-03-20T12:00:44.000Z"
+  }
+]
