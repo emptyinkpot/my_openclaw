@@ -1674,6 +1674,10 @@
       
       if (!autoScanEnabled) return;
       
+      // 页面加载时立即执行一次扫描
+      autoScanFanqieWorks();
+      
+      // 然后启动定时器，定期扫描
       autoScanTimer = setInterval(() => {
         autoScanFanqieWorks();
       }, scanInterval * 1000);
