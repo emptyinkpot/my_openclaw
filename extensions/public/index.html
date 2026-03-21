@@ -2453,11 +2453,25 @@
     // 加载资源库
     async function loadResourceLibrary() {
       try {
+        // 先尝试初始化数据库（如果没有数据的话）
+        try {
+          console.log('[loadResourceLibrary] 尝试初始化主库...');
+          const initResult = await api('/main-library/init');
+          console.log('[loadResourceLibrary] 初始化结果:', initResult);
+        } catch (e) {
+          console.warn('[loadResourceLibrary] 初始化跳过或失败:', e);
+        }
+        
         // 加载词汇
+        console.log('[loadResourceLibrary] 开始加载词汇...');
         const vocabData = await api('/main-library');
+        console.log('[loadResourceLibrary] 词汇 API 返回:', vocabData);
         if (vocabData.success && vocabData.items) {
           resourceData.vocabulary = vocabData.items;
           document.getElementById('vocabCount').textContent = resourceData.vocabulary.length;
+          console.log('[loadResourceLibrary] 词汇加载成功，数量:', resourceData.vocabulary.length);
+        } else {
+          console.warn('[loadResourceLibrary] 词汇加载失败，返回数据:', vocabData);
         }
         
         // 加载文献
