@@ -93,14 +93,19 @@ export class BannedWordsStep extends BaseStep {
    * 构建禁用词映射表
    */
   private buildBannedWordsMap(
-    customBannedWords?: Array<{ word: string; replacement: string }>
+    customBannedWords?: Array<{ word: string; replacement?: string; reason?: string }>
   ): Map<string, string> {
     const map = new Map(this.BANNED_WORDS);
     
     // 添加自定义禁用词
     if (customBannedWords) {
       customBannedWords.forEach(item => {
-        map.set(item.word, item.replacement);
+        if (item.word && item.replacement) {
+          map.set(item.word, item.replacement);
+        } else if (item.word) {
+          // 如果没有 replacement，默认替换为 ***
+          map.set(item.word, '***');
+        }
       });
     }
     

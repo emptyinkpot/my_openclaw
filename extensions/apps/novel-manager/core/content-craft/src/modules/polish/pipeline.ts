@@ -8,6 +8,7 @@
 
 import { StepRegistry } from './steps/registry';
 import { ServiceTokens, container } from '@/core/di';
+import { getDatabaseManager } from '../../../../index';
 import type { 
   PolishInput, 
   PolishOutput, 
@@ -45,6 +46,58 @@ export class PolishPipeline {
   }
   
   /**
+   * 从 MySQL 加载资源库数据
+   */
+  private async loadResourcesFromMySQL() {
+    try {
+      const db = getDatabaseManager();
+      
+      // 加载词汇表
+      const vocabulary = await db.query(`
+        SELECT 
+          content AS word,
+          category,
+          tags,
+          note,
+          example AS example_usage,
+          explanation AS description
+        FROM vocabulary
+        ORDER BY content ASC
+      `);
+      
+      // 加载禁用词表
+      const bannedWords = await db.query(`
+        SELECT 
+          content AS word,
+          alternative AS replacement,
+          reason,
+          category,
+          type
+        FROM banned_words
+        ORDER BY content ASC
+      `);
+      
+      // 加载文献表
+      const literature = await db.query(`
+        SELECT 
+          title,
+          content,
+          author,
+          tags,
+          note,
+          priority
+        FROM literature
+        ORDER BY title ASC
+      `);
+      
+      return { vocabulary, bannedWords, literature };
+    } catch (error) {
+      console.error('[PolishPipeline] 从 MySQL 加载资源失败:', error);
+      return { vocabulary: [], bannedWords: [], literature: [] };
+    }
+  }
+  
+  /**
    * 执行润色处理
    * 
    * @param input 输入数据
@@ -59,9 +112,17 @@ export class PolishPipeline {
     const startTime = Date.now();
     
     // ========================================
-    // 1. 初始化
+    // 1. 初始化并加载 MySQL 资源
     // ========================================
-    this.reportProgress(onProgress, 0, '初始化处理环境...');
+    this.reportProgress(onProgress, 0, '初始化处理环境，加载资源库...');
+    
+    // 从 MySQL 加载资源
+    const resources = await this.loadResourcesFromMySQL();
+    console.log('[PolishPipeline] 从 MySQL 加载资源完成:', {
+      vocabulary: resources.vocabulary.length,
+      bannedWords: resources.bannedWords.length,
+      literature: resources.literature.length,
+    });
     
     // 初始化步骤注册表
     StepRegistry.initialize();
@@ -104,6 +165,7 @@ export class PolishPipeline {
       completedSteps: [],
       replacements: [],
       reports: [],
+      resources,
     };
     
     let currentProgress = 5;
