@@ -1,15 +1,27 @@
 /**
- * 禁用词处理步骤
+ * 禁用词处理步骤（使用LLM智能评估）
  * 
  * 职责：
  * 1. 检测禁用词
- * 2. 替换为规范表达
+ * 2. 使用LLM智能评估并替换为合适的表达
  * 
  * @module modules/polish/steps/process/banned-words
  */
 
 import { BaseStep } from '../base';
 import type { StepContext, StepResult, StepSettings, ReplacementRecord } from '../../types';
+
+// 动态导入LLM SDK
+let LLMClient: any;
+let Config: any;
+
+try {
+  const sdk = require('coze-coding-dev-sdk');
+  LLMClient = sdk.LLMClient;
+  Config = sdk.Config;
+} catch (e) {
+  console.warn('[BannedWordsStep] coze-coding-dev-sdk not available');
+}
 
 /**
  * 禁用词处理步骤
@@ -18,24 +30,82 @@ export class BannedWordsStep extends BaseStep {
   readonly id = 'bannedWords';
   readonly name = '禁用词处理';
   readonly phase = 'process' as const;
-  readonly description = '检测并替换禁用词、敏感词';
+  readonly description = '检测并使用LLM智能替换禁用词、敏感词';
   readonly fixed = false;
   readonly dependencies = ['polish'];
-  
-  // 禁用词库（完全从 MySQL 读取，无内置硬编码）
   
   async execute(context: StepContext): Promise<StepResult> {
     const { text, settings, resources, reportProgress } = context;
     const startTime = Date.now();
     
     try {
-      reportProgress?.('正在检查禁用词...');
+      reportProgress?.('正在使用LLM检查禁用词...');
       
-      // 获取禁用词库（优先使用资源库）
-      const bannedWordsMap = this.buildBannedWordsMap(resources?.bannedWords);
+      // 获取禁用词列表（从MySQL加载的所有禁用词）
+      const bannedWords = resources?.bannedWords || [];
       
-      // 检测并替换
-      const { result, replacements } = this.processBannedWords(text, bannedWordsMap);
+      if (bannedWords.length === 0) {
+        return this.createSuccessResult(
+          text,
+          false,
+          [],
+          '未加载禁用词库'
+        );
+      }
+      
+      // 使用LLM进行智能评估和替换
+      let resultText = text;
+      const replacements: ReplacementRecord[] = [];
+      
+      if (LLMClient && Config) {
+        const config = new Config();
+        const client = new LLMClient(config);
+        
+        const systemPrompt = `你是一个专业的文本润色专家，专门处理禁用词替换任务。
+
+任务要求：
+1. 给定一段文本和禁用词列表，将文本中的禁用词替换为合适的词
+2. 替换后的文本必须：
+   - 语义通顺、流畅、无歧义
+   - 不损失原文语义和信息
+   - 符合文学性表达（适合小说创作）
+3. 禁用词列表（共${bannedWords.length}个）：
+${bannedWords.map((w: any) => `- ${w.word}`).join('\n')}
+
+请直接返回替换后的完整文本，不要添加任何解释或说明。`;
+
+        const messages = [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: text }
+        ];
+        
+        const response = await client.invoke(messages, { 
+          temperature: 0.3,
+          model: "doubao-seed-1-8-251228"
+        });
+        
+        resultText = response.content;
+        
+        // 生成替换记录
+        bannedWords.forEach((w: any) => {
+          if (text.includes(w.word) && !resultText.includes(w.word)) {
+            replacements.push({
+              original: w.word,
+              replaced: '(智能替换)',
+              reason: w.reason || '禁用词替换',
+              source: 'MySQL禁用词库+LLM智能评估'
+            });
+          }
+        });
+      } else {
+        // 如果LLM不可用，返回原文本
+        return this.createSuccessResult(
+          text,
+          false,
+          [],
+          'LLM SDK不可用，跳过禁用词处理'
+        );
+      }
       
       const duration = Date.now() - startTime;
       
@@ -49,83 +119,24 @@ export class BannedWordsStep extends BaseStep {
       }
       
       return {
-        text: result,
+        text: resultText,
         modified: true,
         replacements,
         report: {
           step: this.name,
-          report: `处理 ${replacements.length} 处禁用词`,
+          report: `使用LLM处理 ${replacements.length} 处禁用词`,
           duration,
           success: true,
         },
       };
       
     } catch (error) {
+      console.error('[BannedWordsStep] Error:', error);
       return this.createErrorResult(text, error as Error);
     }
   }
   
   buildPrompt(settings: StepSettings): string {
     return '';
-  }
-  
-  /**
-   * 构建禁用词映射表（完全从 MySQL 读取）
-   */
-  private buildBannedWordsMap(
-    customBannedWords?: Array<{ word: string; replacement?: string; reason?: string }>
-  ): Map<string, string> {
-    const map = new Map<string, string>();
-    
-    // 只从 MySQL 读取禁用词
-    if (customBannedWords) {
-      customBannedWords.forEach(item => {
-        if (item.word && item.replacement) {
-          map.set(item.word, item.replacement);
-        } else if (item.word) {
-          // 如果没有 replacement，默认替换为 ***
-          map.set(item.word, '***');
-        }
-      });
-    }
-    
-    return map;
-  }
-  
-  /**
-   * 处理禁用词
-   */
-  private processBannedWords(
-    text: string,
-    bannedWordsMap: Map<string, string>
-  ): { result: string; replacements: ReplacementRecord[] } {
-    let result = text;
-    const replacements: ReplacementRecord[] = [];
-    
-    bannedWordsMap.forEach((replacement, word) => {
-      if (result.includes(word)) {
-        const regex = new RegExp(this.escapeRegex(word), 'g');
-        const matches = result.match(regex);
-        
-        if (matches) {
-          result = result.replace(regex, replacement);
-          replacements.push({
-            original: word,
-            replaced: replacement,
-            reason: '禁用词替换',
-            source: '禁用词库',
-          });
-        }
-      }
-    });
-    
-    return { result, replacements };
-  }
-  
-  /**
-   * 转义正则表达式特殊字符
-   */
-  private escapeRegex(str: string): string {
-    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 }
