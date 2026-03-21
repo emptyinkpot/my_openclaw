@@ -199,6 +199,54 @@ function parseQuery(url: string): Record<string, string> {
   return query;
 }
 
+// 获取导航栏HTML
+function getNavBarHtml(): string {
+  const navBarPath = path.join(__dirname, '..', '..', 'public', 'nav-bar.html');
+  try {
+    return fs.readFileSync(navBarPath, 'utf-8');
+  } catch (e) {
+    console.error('[novel-manager] 无法读取导航栏文件:', navBarPath);
+    return '<div class="nav-bar">导航栏加载失败</div>';
+  }
+}
+
+// 注入导航栏到页面HTML中
+function injectNavBar(html: string, currentPage: string): string {
+  let navBarHtml = getNavBarHtml();
+  
+  // 根据当前页面给对应的链接添加 "on" 类
+  const pageToLinkMap: Record<string, string> = {
+    'index.html': '/novel/',
+    'cache.html': '/cache.html',
+    'project-structure.html': '/project-structure.html',
+    'logs.html': '/logs.html',
+    'cache-manage.html': '/cache-manage.html',
+    'publish.html': '/publish.html',
+    'experience.html': '/experience.html'
+  };
+  
+  const currentLink = pageToLinkMap[currentPage];
+  if (currentLink) {
+    // 给当前链接添加 "on" 类
+    const linkRegex = new RegExp(`href="${currentLink}"`, 'g');
+    navBarHtml = navBarHtml.replace(linkRegex, `href="${currentLink}" class="on"`);
+  }
+  
+  // 尝试替换页面中的 <div class="nav-bar"> 部分
+  const navBarRegex = /<div class="nav-bar">[\s\S]*?<\/div>\s*<\/div>?/;
+  
+  if (navBarRegex.test(html)) {
+    return html.replace(navBarRegex, navBarHtml);
+  }
+  
+  // 如果没有找到，尝试在 <body> 标签后注入
+  if (html.includes('<body>')) {
+    return html.replace('<body>', '<body>' + navBarHtml);
+  }
+  
+  return html;
+}
+
 // 获取页面HTML
 function getPageHtml(pageName: string): string {
   // 原生界面使用control-ui目录
@@ -214,7 +262,10 @@ function getPageHtml(pageName: string): string {
   
   const htmlPath = path.join(__dirname, '..', '..', 'public', pageName);
   try {
-    return fs.readFileSync(htmlPath, 'utf-8');
+    let html = fs.readFileSync(htmlPath, 'utf-8');
+    // 注入导航栏，传入当前页面
+    html = injectNavBar(html, pageName);
+    return html;
   } catch (e) {
     console.error('[novel-manager] 无法读取HTML文件:', htmlPath);
     return '<html><body><h1>页面加载失败</h1></body></html>';

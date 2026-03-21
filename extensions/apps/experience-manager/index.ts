@@ -186,11 +186,49 @@ async function handleExperienceApi(req: IncomingMessage, res: ServerResponse): P
   }
 }
 
+// 获取导航栏HTML
+function getNavBarHtml(): string {
+  const navBarPath = path.join(__dirname, '..', '..', 'public', 'nav-bar.html');
+  try {
+    return fs.readFileSync(navBarPath, 'utf-8');
+  } catch (e) {
+    console.error('[experience-manager] 无法读取导航栏文件:', navBarPath);
+    return '<div class="nav-bar">导航栏加载失败</div>';
+  }
+}
+
+// 注入导航栏到页面HTML中
+function injectNavBar(html: string, currentPage: string): string {
+  let navBarHtml = getNavBarHtml();
+  
+  // 给经验页面链接添加 "on" 类
+  if (currentPage === 'experience.html') {
+    navBarHtml = navBarHtml.replace('href="/experience.html"', 'href="/experience.html" class="on"');
+  }
+  
+  // 尝试替换页面中的 <div class="nav-bar"> 部分
+  const navBarRegex = /<div class="nav-bar">[\s\S]*?<\/div>\s*<\/div>?/;
+  
+  if (navBarRegex.test(html)) {
+    return html.replace(navBarRegex, navBarHtml);
+  }
+  
+  // 如果没有找到，尝试在 <body> 标签后注入
+  if (html.includes('<body>')) {
+    return html.replace('<body>', '<body>' + navBarHtml);
+  }
+  
+  return html;
+}
+
 // 获取经验页面HTML
 function getExperiencePageHtml(): string {
   const htmlPath = path.join(__dirname, '..', '..', 'public', 'experience.html');
   try {
-    return fs.readFileSync(htmlPath, 'utf-8');
+    let html = fs.readFileSync(htmlPath, 'utf-8');
+    // 注入导航栏，传入当前页面
+    html = injectNavBar(html, 'experience.html');
+    return html;
   } catch (e) {
     console.error('[experience-manager] 无法读取HTML文件:', htmlPath);
     return '<html><body><h1>页面加载失败</h1></body></html>';
