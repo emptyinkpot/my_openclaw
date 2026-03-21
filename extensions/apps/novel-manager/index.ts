@@ -274,7 +274,7 @@ function getPageHtml(pageName: string): string {
 
 // 处理项目结构页面
 function getProjectStructureHtml(): string {
-  return `<!DOCTYPE html>
+  let html = `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
@@ -301,6 +301,7 @@ function getProjectStructureHtml(): string {
       color: var(--text);
       margin: 0;
       min-height: 100vh;
+      padding-top: 40px; /* 给导航栏留出空间 */
     }
     .container {
       max-width: 1400px;
@@ -570,6 +571,10 @@ function getProjectStructureHtml(): string {
   </script>
 </body>
 </html>`;
+  
+  // 注入导航栏
+  html = injectNavBar(html, 'project-structure.html');
+  return html;
 }
 
 // 路由处理器 - 处理页面请求（不需要认证）
