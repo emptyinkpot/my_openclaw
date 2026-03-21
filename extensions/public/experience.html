@@ -779,7 +779,6 @@
     </div>
     <div class="tabs">
       <div class="tab active" onclick="switchTab('experience')">📝 经验</div>
-      <div class="tab" onclick="switchTab('notes')">📒 笔记</div>
     </div>
   </div>
   
@@ -997,7 +996,7 @@
     const GATEWAY_TOKEN = 'e1647cdb-1b80-4eee-a975-7599160cc89b';
     
     // 配置
-    const API_BASE = '/api/novel';
+    const API_BASE = '/api/experience';
     
     // API请求封装
     async function api(endpoint, options = {}) {
@@ -1072,8 +1071,8 @@
     async function loadData() {
       try {
         const [statsRes, recordsRes] = await Promise.all([
-          api('/experience/stats'),
-          api('/experience/records')
+          api('/stats'),
+          api('/records')
         ]);
         
         if (statsRes.success) {
@@ -1215,7 +1214,7 @@
       };
       
       try {
-        const result = await api('/experience/records', {
+        const result = await api('/records', {
           method: 'POST',
           body: JSON.stringify(data)
         });
