@@ -1674,12 +1674,12 @@
       
       if (!autoScanEnabled) return;
       
-      // 页面加载时立即执行一次扫描
-      autoScanFanqieWorks();
+      // 页面加载时立即执行一次扫描（强制真实扫描）
+      autoScanFanqieWorks(true);
       
       // 然后启动定时器，定期扫描
       autoScanTimer = setInterval(() => {
-        autoScanFanqieWorks();
+        autoScanFanqieWorks(false);
       }, scanInterval * 1000);
     }
 
@@ -1969,16 +1969,16 @@
     }
 
     // 自动扫描（静默模式，定期调用后端扫描）
-    async function autoScanFanqieWorks() {
+    async function autoScanFanqieWorks(forceRealScan = false) {
       const resultEl = document.getElementById('fanqieWorksList');
       const lastTimeEl = document.getElementById('lastScanTime');
       
       try {
-        // 1. 先调用后端扫描接口（每2次自动扫描才真正扫描一次，避免频繁请求）
-        // 第一次或每3分钟才真正调用扫描
+        // 1. 先调用后端扫描接口
+        // 如果是强制扫描（页面加载时第一次）或者超过3分钟，才真正调用扫描
         const now = Date.now();
         const lastRealScan = parseInt(localStorage.getItem('lastRealFanqieScan') || '0');
-        const shouldRealScan = !lastRealScan || (now - lastRealScan) > 3 * 60 * 1000; // 3分钟
+        const shouldRealScan = forceRealScan || !lastRealScan || (now - lastRealScan) > 3 * 60 * 1000;
         
         if (shouldRealScan) {
           console.log('[AutoScan] 执行真实扫描...');
