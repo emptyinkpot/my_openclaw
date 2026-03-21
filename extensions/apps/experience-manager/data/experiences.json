@@ -1,6 +1,31 @@
 {
   "records": [
     {
+      "type": "feature_dev",
+      "difficulty": 3,
+      "title": "完整的前端与后端开发流程 - 从页面创建到路由注册",
+      "description": "总结了前端页面创建、后端路由注册、导航栏注入的完整流程，包含最佳实践和常见问题解决方案",
+      "query": "用户反馈 novel-manager 插件没有注册路由，只修改了 pageMap 但忘记修改 routes 数组。同时需要总结完整的前端与后端创建流程，包括导航栏注入等步骤。",
+      "solution": "1. 总结了前端页面创建的完整步骤\n2. 强调了后端路由注册需要同时修改 pageMap 和 routes 数组\n3. 实现了智能适应导航栏高度的功能（CSS 变量 + JavaScript 动态计算）\n4. 总结了导航栏注入的流程和注意事项\n5. 提供了完整的检查清单和常见问题解决方案",
+      "appliedExperience": [],
+      "gainedExperience": [
+        "前端页面创建流程",
+        "后端路由注册流程",
+        "导航栏注入机制",
+        "智能适应导航栏高度",
+        "完整检查清单"
+      ],
+      "tags": [
+        "前端开发",
+        "后端开发",
+        "路由注册",
+        "导航栏",
+        "最佳实践"
+      ],
+      "id": "exp_1774133617910_fn07xroli",
+      "timestamp": 1774133617910
+    },
+    {
       "type": "bug_fix",
       "title": "TypeScript 语法错误导致插件加载失败",
       "description": "修改 novel-manager 插件代码时，引入了 TypeScript 语法错误：1) 变量重复声明（const repo 声明两次）；2) 未终止的字符串常量（logger.debug 的字符串少了右括号和引号）。这些错误导致 novel-manager 插件无法被 OpenClaw 加载，直接破坏了用户界面。",
