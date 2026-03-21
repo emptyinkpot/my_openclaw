@@ -222,7 +222,8 @@ function injectNavBar(html: string, currentPage: string): string {
     'logs.html': '/logs.html',
     'cache-manage.html': '/cache-manage.html',
     'publish.html': '/publish.html',
-    'experience.html': '/experience.html'
+    'experience.html': '/experience.html',
+    'feishu.html': '/feishu.html'
   };
   
   const currentLink = pageToLinkMap[currentPage];
@@ -636,6 +637,7 @@ async function handleNovelPage(req: IncomingMessage, res: ServerResponse): Promi
     '/logs.html': 'logs.html',
     '/cache-manage.html': 'cache-manage.html',
     '/publish.html': 'publish.html',
+    '/feishu.html': 'feishu.html',
     // 静态资源文件
     '/settings-modal.html': 'settings-modal.html',
     '/nav-bar.html': 'nav-bar.html',
