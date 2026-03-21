@@ -171,65 +171,67 @@ async function handleAutomationApi(req: IncomingMessage, res: ServerResponse): P
   return false;
 }
 
-// 插件主函数
-async function main() {
-  console.log('[automation-hub] 插件正在初始化...');
+console.log('[automation-hub] 插件正在初始化...');
+
+// 插件对象
+const plugin = {
+  id: 'automation-hub',
+  name: 'Automation Hub',
+  version: '1.0.0',
+  description: '自动化中心 - 调度管理、飞书集成、进程管理',
   
-  // 返回插件对象
-  return {
-    id: 'automation-hub',
-    name: 'Automation Hub',
-    version: '1.0.0',
-    description: '自动化中心 - 调度管理、飞书集成、进程管理',
+  // 插件注册函数
+  register(api: any) {
+    console.log('[automation-hub] Plugin registered, api:', typeof api, Object.keys(api || {}));
     
-    // 插件注册函数
-    register(api: any) {
-      console.log('[automation-hub] Plugin registered, api:', typeof api, Object.keys(api || {}));
+    // 页面路由配置
+    const pageRoutes = [
+      { path: '/automation', match: 'exact' as const },
+      { path: '/automation/', match: 'exact' as const },
+      { path: '/auto.html', match: 'exact' as const }
+    ];
+    
+    // 注册页面路由 - 不需要认证
+    if (api?.registerHttpRoute) {
+      console.log('[automation-hub] 使用 api.registerHttpRoute');
+      pageRoutes.forEach(route => {
+        api.registerHttpRoute({
+          path: route.path,
+          match: route.match,
+          handler: handleAutomationPage,
+          auth: 'plugin'
+        });
+      });
       
-      // 页面路由配置
-      const pageRoutes = [
-        { path: '/automation', match: 'exact' as const },
-        { path: '/automation/', match: 'exact' as const },
-        { path: '/auto.html', match: 'exact' as const }
+      // 注册API路由 - 需要认证
+      const apiRoutes = [
+        '/api/automation/schedules',
+        '/api/automation/schedules/save',
+        '/api/automation/feishu/config',
+        '/api/automation/feishu/config/save',
+        '/api/automation/feishu/messages',
+        '/api/automation/feishu/messages/add',
+        '/api/automation/feishu/messages/clear'
       ];
       
-      // 注册页面路由 - 不需要认证
-      if (api?.registerHttpRoute) {
-        console.log('[automation-hub] 使用 api.registerHttpRoute');
-        pageRoutes.forEach(route => {
-          api.registerHttpRoute({
-            path: route.path,
-            match: route.match,
-            handler: handleAutomationPage,
-            auth: 'plugin'
-          });
+      apiRoutes.forEach(route => {
+        api.registerHttpRoute({
+          path: route,
+          match: 'exact' as const,
+          handler: handleAutomationApi,
+          auth: 'plugin'
         });
-        
-        // 注册API路由 - 需要认证
-        const apiRoutes = [
-          '/api/automation/schedules',
-          '/api/automation/schedules/save',
-          '/api/automation/feishu/config',
-          '/api/automation/feishu/config/save',
-          '/api/automation/feishu/messages',
-          '/api/automation/feishu/messages/add',
-          '/api/automation/feishu/messages/clear'
-        ];
-        
-        apiRoutes.forEach(route => {
-          api.registerHttpRoute({
-            path: route,
-            match: 'exact' as const,
-            handler: handleAutomationApi,
-            auth: 'plugin'
-          });
-        });
-        
-        console.log('[automation-hub] API路由注册完成');
-      }
+      });
+      
+      console.log('[automation-hub] API路由注册完成');
     }
-  };
-}
+  },
+  
+  activate() {
+    console.log('[automation-hub] Plugin activated');
+  }
+};
 
-// 导出插件
-export = main();
+export default plugin;
+export const register = plugin.register;
+export const activate = plugin.activate;
