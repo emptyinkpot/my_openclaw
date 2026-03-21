@@ -1107,7 +1107,13 @@
         typeList.innerHTML = '<div class="type-item"><span style="color: var(--text-muted); font-size: 11px;">暂无数据</span></div>';
       } else {
         typeList.innerHTML = types.map(([type, count]) => {
-          const info = expTypeMap[type];
+          // 👇 修复：如果类型不在 map 里，使用默认值
+          const info = expTypeMap[type] || { 
+            label: type || '未知', 
+            icon: '📌', 
+            color: '#666', 
+            bg: '#f0f0f0' 
+          };
           const percent = stats.totalRecords ? (count / stats.totalRecords * 100) : 0;
           return `
             <div class="type-item">
