@@ -556,6 +556,25 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
       return true;
     }
 
+    // ====== 查看禁用词数据（调试用）======
+    if (path === '/api/novel/banned-words-debug' && method === 'GET') {
+      try {
+        const db = getDatabaseManager();
+        const bannedWords = await db.query(`
+          SELECT content AS word, alternative AS replacement, reason
+          FROM banned_words
+          ORDER BY content ASC
+          LIMIT 20
+        `);
+        jsonRes(res, { success: true, data: bannedWords });
+        return true;
+      } catch (error) {
+        console.error('[BannedWordsDebug] Error:', error);
+        jsonRes(res, { success: false, error: error instanceof Error ? error.message : '处理失败' }, 500);
+        return true;
+      }
+    }
+
     // ====== 禁用词替换API ======
     if (path === '/api/novel/banned-words-replace' && method === 'POST') {
       const body = await parseBody(req);
@@ -575,22 +594,43 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
           ORDER BY content ASC
         `);
         
-        // 构建禁用词映射
-        const bannedMap = new Map();
-        bannedWords.forEach(item => {
-          if (item.word && item.replacement) {
-            bannedMap.set(item.word, item.replacement);
-          } else if (item.word) {
-            bannedMap.set(item.word, '***');
-          }
+        // 只保留真正合适的禁用词替换（确保语义通顺）
+        const safeBannedMap = new Map();
+        
+        // 只保留明确合适的替换
+        const safeReplacements = [
+          { word: '不由得想起', replacement: '此情此景想起' },
+          { word: '不禁让人想到', replacement: '此情此景' },
+          { word: 'APP', replacement: '应用' },
+          { word: 'CEO', replacement: '掌柜' },
+          { word: 'KPI', replacement: '考核' },
+          { word: 'NPC', replacement: '路人' },
+          { word: 'ROI', replacement: '收益' },
+          { word: 'YYDS', replacement: '绝佳' },
+          { word: '优雅地', replacement: '从容地' },
+          { word: '像一台机器', replacement: '如同精密器械' },
+          { word: '像公司一样', replacement: '如同商行' },
+          { word: '一盘棋', replacement: '大局' },
+          { word: '一纸合同', replacement: '一份约定' },
+          { word: '二进制', replacement: '阴阳之理' },
+          { word: '互联网思维', replacement: '变通之思' },
+          { word: '代码', replacement: '文稿' },
+          { word: '企业', replacement: '商号' },
+        ];
+        
+        safeReplacements.forEach(item => {
+          safeBannedMap.set(item.word, item.replacement);
         });
         
-        // 执行替换
+        // 执行替换（按长度从长到短排序）
         let result = text;
         const replacements = [];
         
-        bannedMap.forEach((replacement, word) => {
-          if (result.includes(word)) {
+        const sortedWords = Array.from(safeBannedMap.keys()).sort((a, b) => b.length - a.length);
+        
+        sortedWords.forEach(word => {
+          const replacement = safeBannedMap.get(word);
+          if (replacement && result.includes(word)) {
             const regex = new RegExp(word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
             const matches = result.match(regex);
             
@@ -637,67 +677,63 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
           ORDER BY content ASC
         `);
         
-        // 构建优选词映射（常见词到优选词）
+        // 构建优选词映射（只保留合适的，避免语义不通）
         const preferredMap = new Map();
         
-        // 固定的常见替换对
+        // 固定的常见替换对（只保留语义通顺的）
         const fixedReplacements = [
           { common: '很多', preferred: '诸多' },
-          { common: '非常', preferred: '极其' },
-          { common: '特别', preferred: '格外' },
+          { common: '非常', preferred: '非常' }, // 不替换，保持原样
+          { common: '特别', preferred: '特别' }, // 不替换，保持原样
           { common: '好像', preferred: '仿佛' },
-          { common: '但是', preferred: '然而' },
-          { common: '所以', preferred: '故而' },
-          { common: '因为', preferred: '由于' },
-          { common: '如果', preferred: '倘若' },
-          { common: '就', preferred: '便' },
-          { common: '才', preferred: '方' },
-          { common: '都', preferred: '皆' },
-          { common: '也', preferred: '亦' },
-          { common: '不', preferred: '弗' },
-          { common: '没有', preferred: '无' },
-          { common: '的', preferred: '之' },
-          { common: '在', preferred: '于' },
-          { common: '是', preferred: '乃' },
-          { common: '有', preferred: '存有' },
-          { common: '人', preferred: '人士' },
-          { common: '地方', preferred: '所在' },
-          { common: '时候', preferred: '之际' },
-          { common: '事情', preferred: '事宜' },
-          { common: '东西', preferred: '物事' },
+          { common: '但是', preferred: '但是' }, // 不替换，保持原样
+          { common: '所以', preferred: '所以' }, // 不替换，保持原样
+          { common: '因为', preferred: '因为' }, // 不替换，保持原样
+          { common: '如果', preferred: '如果' }, // 不替换，保持原样
+          { common: '就', preferred: '就' }, // 不替换，保持原样
+          { common: '才', preferred: '才' }, // 不替换，保持原样
+          { common: '都', preferred: '都' }, // 不替换，保持原样
+          { common: '也', preferred: '也' }, // 不替换，保持原样
+          { common: '不', preferred: '不' }, // 不替换，保持原样
+          { common: '没有', preferred: '没有' }, // 不替换，保持原样
+          { common: '的', preferred: '的' }, // 不替换，保持原样
+          { common: '在', preferred: '在' }, // 不替换，保持原样
+          { common: '是', preferred: '是' }, // 不替换，保持原样
+          { common: '有', preferred: '有' }, // 不替换，保持原样
+          { common: '人', preferred: '人' }, // 不替换，保持原样
+          { common: '地方', preferred: '地方' }, // 不替换，保持原样
+          { common: '时候', preferred: '时候' }, // 不替换，保持原样
+          { common: '事情', preferred: '事情' }, // 不替换，保持原样
+          { common: '东西', preferred: '东西' }, // 不替换，保持原样
         ];
         
+        // 只添加有实际变化且语义通顺的
         fixedReplacements.forEach(item => {
-          preferredMap.set(item.common, item.preferred);
-        });
-        
-        // 从 vocabulary 表中添加（如果有 note 说明替换关系）
-        vocabulary.forEach(item => {
-          if (item.note && item.note.includes('替换')) {
-            const noteParts = item.note.split(/替换|→|->/);
-            if (noteParts.length >= 2) {
-              const common = noteParts[0].trim();
-              if (common && common.length > 0) {
-                preferredMap.set(common, item.word);
-              }
-            }
+          if (item.common !== item.preferred) {
+            preferredMap.set(item.common, item.preferred);
           }
         });
         
-        // 执行替换
+        // 从 vocabulary 表中添加（暂时不添加，避免语义问题）
+        
+        // 执行替换（保守替换，只替换明确合适的）
         let result = text;
         const replacements = [];
         
-        preferredMap.forEach((preferred, common) => {
-          if (result.includes(common)) {
+        // 按词的长度从长到短排序
+        const sortedWords = Array.from(preferredMap.keys()).sort((a, b) => b.length - a.length);
+        
+        sortedWords.forEach(common => {
+          const preferred = preferredMap.get(common);
+          if (preferred && result.includes(common)) {
             const regex = new RegExp(common.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
             const matches = result.match(regex);
             
             if (matches) {
-              // 只替换一部分，避免过度替换
+              // 只替换一小部分，避免过度替换
               let applied = 0;
               result = result.replace(regex, (match) => {
-                if (applied < matches.length * 0.3) {
+                if (applied < 1) { // 每篇文章最多替换1次
                   applied++;
                   replacements.push({
                     original: match,
