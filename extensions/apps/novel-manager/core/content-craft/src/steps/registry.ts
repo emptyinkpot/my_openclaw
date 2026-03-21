@@ -9,10 +9,6 @@
 import type { BaseStep, Step } from './base';
 import type { ProcessPhase, PolishStepConfig } from '../types';
 import { BannedWordsStep } from './process/banned-words';
-import { QuoteProtectStep } from './config/quote-protect';
-import { TitleExtractStep } from './config/title-extract';
-import { PolishStep } from './process/polish';
-import { MarkdownCleanStep } from './postprocess/markdown-clean';
 
 // 占位步骤类（用于后续扩展）
 class PlaceholderStep extends BaseStep {
@@ -44,12 +40,36 @@ export class StepRegistry {
   static initialize(): void {
     if (this.initialized) return;
     
-    // 注册实际步骤
-    this.register(new QuoteProtectStep());
-    this.register(new TitleExtractStep());
+    // 注册我们需要的步骤
     this.register(new BannedWordsStep());
-    this.register(new PolishStep());
-    this.register(new MarkdownCleanStep());
+    
+    // 注册其他占位步骤
+    // config 阶段
+    this.register(new PlaceholderStep('quoteProtect', '引用保护', 'config', '保护引号、书名号等内容不被修改', []));
+    this.register(new PlaceholderStep('titleExtract', '标题提取', 'config', '从文本中提取标题', ['quoteProtect']));
+    this.register(new PlaceholderStep('detect', 'AI检测', 'config', 'AI内容检测', []));
+    this.register(new PlaceholderStep('properNounCheck', '专有名词检查', 'config', '检查专有名词使用', []));
+    this.register(new PlaceholderStep('narrativePerspective', '叙事视角配置', 'config', '配置叙事视角', []));
+    this.register(new PlaceholderStep('classicalApply', '文言化配置', 'config', '配置文言化程度', []));
+    this.register(new PlaceholderStep('citationApply', '引用处理', 'config', '处理引用格式', []));
+    this.register(new PlaceholderStep('particleApply', '语气词配置', 'config', '配置语气词使用', []));
+    this.register(new PlaceholderStep('punctuationApply', '标点符号配置', 'config', '配置标点符号', []));
+    
+    // process 阶段
+    this.register(new PlaceholderStep('polish', '智能润色', 'process', '调用LLM进行智能润色', ['quoteProtect']));
+    this.register(new PlaceholderStep('sentencePatterns', '句式优化', 'process', '优化句式结构', []));
+    this.register(new PlaceholderStep('memeFuse', '梗融合', 'process', '融入网络梗', []));
+    this.register(new PlaceholderStep('styleForge', '风格塑造', 'process', '调整文本风格', []));
+    
+    // postprocess 阶段
+    this.register(new PlaceholderStep('markdownClean', '格式清理', 'postprocess', '清理Markdown格式', []));
+    
+    // review 阶段
+    this.register(new PlaceholderStep('breathSegment', '呼吸分段', 'review', '优化分段，提升阅读体验', []));
+    this.register(new PlaceholderStep('semanticCheck', '语义检查', 'review', '检查语义连贯性', []));
+    this.register(new PlaceholderStep('wordUsageCheck', '用词检查', 'review', '检查用词准确性', []));
+    this.register(new PlaceholderStep('smartFix', '智能修复', 'review', '智能修复问题', ['semanticCheck', 'wordUsageCheck']));
+    this.register(new PlaceholderStep('finalReview', '最终审稿', 'review', '最终审稿检查', ['smartFix']));
     
     this.initialized = true;
   }
@@ -77,9 +97,6 @@ export class StepRegistry {
   
   /**
    * 获取步骤实例
-   * 
-   * @param id 步骤ID
-   * @returns 步骤实例或undefined
    */
   static get(id: string): BaseStep | undefined {
     this.ensureInitialized();
@@ -135,22 +152,15 @@ export class StepRegistry {
   
   /**
    * 获取步骤执行顺序
-   * 
-   * 按阶段排序，返回启用的步骤ID列表
-   * 
-   * @param enabledSteps 启用的步骤ID列表
-   * @returns 排序后的步骤ID列表
    */
   static getExecutionOrder(enabledSteps: string[]): string[] {
     const phaseOrder: ProcessPhase[] = ['config', 'process', 'postprocess', 'review'];
     const allSteps = this.getAll();
     
-    // 按阶段分组并排序
     return phaseOrder.flatMap(phase => 
       allSteps
         .filter(s => s.phase === phase && enabledSteps.includes(s.id))
         .sort((a, b) => {
-          // 确保依赖在前
           if (a.dependencies.includes(b.id)) return 1;
           if (b.dependencies.includes(a.id)) return -1;
           return 0;
@@ -161,9 +171,6 @@ export class StepRegistry {
   
   /**
    * 验证步骤依赖
-   * 
-   * @param enabledSteps 启用的步骤ID列表
-   * @returns 验证结果
    */
   static validateDependencies(enabledSteps: string[]): {
     valid: boolean;
@@ -194,34 +201,21 @@ export class StepRegistry {
   // 工具方法
   // ==========================================
   
-  /**
-   * 确保已初始化
-   */
   private static ensureInitialized(): void {
     if (!this.initialized) {
       this.initialize();
     }
   }
   
-  /**
-   * 清空注册表（仅用于测试）
-   */
   static clear(): void {
     this.steps.clear();
     this.initialized = false;
   }
   
-  /**
-   * 获取注册的步骤数量
-   */
   static get size(): number {
     return this.steps.size;
   }
 }
-
-// ==========================================
-// 便捷导出
-// ==========================================
 
 export const getStep = StepRegistry.get;
 export const getAllSteps = StepRegistry.getAll;
