@@ -1,6 +1,37 @@
 {
   "records": [
     {
+      "id": "exp_1774136462221_wea3v4szp",
+      "timestamp": 1774136462221,
+      "type": "bug_fix",
+      "title": "笔记功能不显示问题排查与修复",
+      "description": "用户反馈点击\"📒 笔记\"标签后，显示\"暂无笔记\"，但实际上数据库中有 28 条笔记数据",
+      "userQuery": "📒 暂无笔记 点击\"新建笔记\"添加第一条笔记还是这个",
+      "solution": "## 问题排查过程\n\n### 1. 第一层检查：API 路由缺失\n- 发现 experience-routes.ts 已经更新添加了笔记 API\n- 但插件入口文件 index.ts 有自己独立的 HTTP 处理逻辑 handleExperienceApi\n- 完全没有使用 experience-routes.ts，也没有笔记 API 处理\n\n### 2. 第二层修复：在 index.ts 中添加笔记 API\n- 在 handleExperienceApi 函数中添加完整的笔记 CRUD 路由\n- 更新 initializeData 函数同时初始化笔记数据\n- 重启服务\n\n### 3. 第三层问题：数据格式不匹配\n- 发现 API 请求确实到达了（日志显示）\n- 但笔记还是不显示\n- 检查 NoteRepository 发现数据格式期望：{ notes: [...], version: \"1.0\" }\n- 实际保存的是：直接是一个数组 [...]\n- 同时字段名也不匹配：createdAt/updatedAt vs created_at/updated_at\n\n### 4. 最终修复：转换数据格式\n- 将数组格式转换为 { notes: [...], version: \"1.0\" } 格式\n- 转换字段名：createdAt → created_at，updatedAt → updated_at\n- 为每条笔记添加唯一 ID：db_note_ 前缀\n- 重启服务\n\n## 关键经验点\n1. 插件入口文件可能有自己的 HTTP 处理逻辑，不依赖路由文件\n2. 数据格式必须严格匹配 Repository 期望的格式\n3. 先检查日志看 API 请求是否到达，再看数据格式是否正确\n4. 字段命名规范要统一（驼峰 vs 下划线）",
+      "experienceApplied": [
+        "日志排查技巧",
+        "API 路由调试",
+        "数据格式验证"
+      ],
+      "experienceGained": [
+        "插件入口文件可能独立实现 HTTP 处理，不使用路由文件",
+        "Repository 期望的数据格式必须严格匹配",
+        "先确认 API 请求是否到达，再检查数据格式",
+        "字段命名规范要统一（驼峰 vs 下划线）",
+        "日志是排查问题的第一手资料"
+      ],
+      "tags": [
+        "OpenClaw",
+        "笔记功能",
+        "API 路由",
+        "数据格式",
+        "bug 修复",
+        "插件开发"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
       "title": "使用 console.log 调试前端问题的方法",
       "problem": "当遇到前端问题（如点击按钮无反应、显示异常）时，不知道从哪里入手定位问题",
       "solution": "使用浏览器控制台和 console.log 语句进行调试，通过添加关键节点的日志输出，逐步定位问题所在",
