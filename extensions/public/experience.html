@@ -1084,6 +1084,8 @@
         const stars = '⭐'.repeat(exp.difficulty || 1);
         const date = exp.timestamp ? new Date(exp.timestamp).toLocaleDateString() : '未知日期';
         const tags = exp.tags || [];
+        // 支持 problem 字段（新格式）和 description/userQuery（旧格式）
+        const desc = exp.problem || exp.description || exp.userQuery || '无描述';
         return `
           <div class="exp-card" onclick="showDetail('${exp.id}')">
             <div class="exp-header">
@@ -1097,7 +1099,7 @@
                 </div>
               </div>
             </div>
-            <div class="exp-desc">${exp.description || exp.userQuery || '无描述'}</div>
+            <div class="exp-desc">${desc}</div>
             <div class="exp-footer">
               <span>📅 ${date}</span>
               ${exp.experienceGained?.length ? `<span>💡 ${exp.experienceGained.length}项新经验</span>` : ''}
@@ -1171,7 +1173,34 @@
     function showDetail(id) {
       const exp = expData.find(e => e.id === id);
       if (!exp) return;
-      alert(`标题: ${exp.title}\n\n描述: ${exp.description || '无'}\n\n解决方案: ${exp.solution || '无'}`);
+      
+      let message = `📌 标题: ${exp.title}\n\n`;
+      
+      if (exp.problem) {
+        message += `❓ 问题:\n${exp.problem}\n\n`;
+      } else if (exp.description) {
+        message += `📝 描述:\n${exp.description}\n\n`;
+      } else if (exp.userQuery) {
+        message += `💬 查询:\n${exp.userQuery}\n\n`;
+      }
+      
+      if (exp.solution) {
+        message += `✅ 解决方案:\n${exp.solution}\n\n`;
+      }
+      
+      if (exp.steps && exp.steps.length > 0) {
+        message += `📋 解决步骤:\n`;
+        exp.steps.forEach((step, index) => {
+          message += `${index + 1}. ${step}\n`;
+        });
+        message += '\n';
+      }
+      
+      if (exp.tags && exp.tags.length > 0) {
+        message += `🏷️ 标签: ${exp.tags.join(', ')}\n\n`;
+      }
+      
+      alert(message);
     }
     
     // 搜索
@@ -1183,7 +1212,9 @@
       }
       const filtered = expData.filter(exp => 
         exp.title.toLowerCase().includes(q) ||
+        (exp.problem && exp.problem.toLowerCase().includes(q)) ||
         (exp.description && exp.description.toLowerCase().includes(q)) ||
+        (exp.solution && exp.solution.toLowerCase().includes(q)) ||
         exp.tags.some(t => t.toLowerCase().includes(q))
       );
       const list = document.getElementById('expList');
@@ -1197,6 +1228,8 @@
         const stars = '⭐'.repeat(exp.difficulty || 1);
         const date = exp.timestamp ? new Date(exp.timestamp).toLocaleDateString() : '未知日期';
         const tags = exp.tags || [];
+        // 支持 problem 字段（新格式）和 description/userQuery（旧格式）
+        const desc = exp.problem || exp.description || exp.userQuery || '无描述';
         return `
           <div class="exp-card" onclick="showDetail('${exp.id}')">
             <div class="exp-header">
@@ -1210,7 +1243,7 @@
                 </div>
               </div>
             </div>
-            <div class="exp-desc">${exp.description || exp.userQuery || '无描述'}</div>
+            <div class="exp-desc">${desc}</div>
             <div class="exp-footer">
               <span>📅 ${date}</span>
               ${exp.experienceGained?.length ? `<span>💡 ${exp.experienceGained.length}项新经验</span>` : ''}
