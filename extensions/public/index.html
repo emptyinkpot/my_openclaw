@@ -628,6 +628,20 @@
                 <span id="autoPublishStatus" style="font-size: 10px; padding: 2px 8px; border-radius: 10px; background: #ffebe9; color: var(--danger);">已关闭</span>
               </label>
             </div>
+            <div style="margin-bottom: 12px;">
+              <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">📋 可用平台 & 账号</div>
+              <div id="publishAccounts" style="display: grid; grid-template-columns: 1fr; gap: 8px;">
+                <div style="padding: 10px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 18px;">🍅</span>
+                    <div>
+                      <div style="font-size: 12px; font-weight: 500;">番茄小说</div>
+                      <div style="font-size: 10px; color: var(--text-muted);">账号 1 · 账号 2</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
         </div>
@@ -1518,6 +1532,49 @@
       }
     }
 
+    // 加载发布账号（动态）
+    async function loadPublishAccounts() {
+      const container = document.getElementById('publishAccounts');
+      if (!container) return;
+      
+      try {
+        // 调用 API 获取番茄账号
+        const result = await api('/fanqie/accounts');
+        const accounts = result.data || [];
+        
+        if (accounts.length === 0) {
+          container.innerHTML = `
+            <div style="padding: 20px; text-align: center; color: var(--text-muted);">
+              <div style="font-size: 24px; margin-bottom: 8px;">📭</div>
+              <div>暂无可用账号</div>
+            </div>
+          `;
+          return;
+        }
+        
+        // 渲染账号列表
+        container.innerHTML = accounts.map((account, index) => `
+          <div style="padding: 10px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 18px;">🍅</span>
+              <div style="flex: 1;">
+                <div style="font-size: 12px; font-weight: 500;">番茄小说</div>
+                <div style="font-size: 10px; color: var(--text-muted);">${account.name || `账号 ${index + 1}`}</div>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        console.error('[PublishAccounts] 加载失败:', e);
+        container.innerHTML = `
+          <div style="padding: 20px; text-align: center; color: var(--text-muted);">
+            <div style="font-size: 24px; margin-bottom: 8px;">⚠️</div>
+            <div>加载账号失败</div>
+          </div>
+        `;
+      }
+    }
+
     // 加载自动设置
     function loadAutoSettings() {
       try {
@@ -1817,6 +1874,9 @@
         
         // 加载自动设置
         loadAutoSettings();
+        
+        // 加载发布账号
+        loadPublishAccounts();
         
         await Promise.all([loadStats(), loadWorks()]);
         
