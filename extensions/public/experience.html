@@ -1001,21 +1001,27 @@
     
     // 加载数据
     async function loadData() {
+      console.log('[Experience] loadData 开始执行');
       try {
+        console.log('[Experience] 开始请求 API');
         const [statsRes, recordsRes] = await Promise.all([
           api('/stats'),
           api('/records')
         ]);
+        
+        console.log('[Experience] statsRes:', statsRes);
+        console.log('[Experience] recordsRes:', recordsRes);
         
         if (statsRes.success) {
           updateStats(statsRes.data);
         }
         if (recordsRes.success) {
           expData = recordsRes.data;
+          console.log('[Experience] expData 已设置，长度:', expData.length);
           renderList();
         }
       } catch (err) {
-        console.error('加载失败:', err);
+        console.error('[Experience] 加载失败:', err);
       }
     }
     
@@ -1062,11 +1068,15 @@
     
     // 渲染列表
     function renderList() {
+      console.log('[Experience] renderList 开始执行');
+      console.log('[Experience] expData:', expData);
       const list = document.getElementById('expList');
+      console.log('[Experience] expList 元素:', list);
       let filtered = expData;
       if (currentFilter !== 'all') {
         filtered = expData.filter(e => e.type === currentFilter);
       }
+      console.log('[Experience] filtered 长度:', filtered.length);
       
       if (filtered.length === 0) {
         list.innerHTML = `
