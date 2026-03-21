@@ -277,8 +277,9 @@ function injectNavBar(html: string, currentPage: string): string {
   
   navBarHtml = navBarHtml + dynamicHeightScript;
   
-  // 尝试替换页面中的 <div class="nav-bar"> 部分
-  const navBarRegex = /<div class="nav-bar">[\s\S]*?<\/div>\s*<\/div>?/;
+  // 尝试替换页面中的 <div class="nav-bar"> 部分（更宽松的匹配）
+  // 匹配从 <div class="nav-bar"> 到 </div>，包括可能的空白字符
+  const navBarRegex = /<div[^>]*class="[^"]*nav-bar[^"]*"[^>]*>[\s\S]*?<\/div>/;
   
   if (navBarRegex.test(html)) {
     return html.replace(navBarRegex, navBarHtml);
