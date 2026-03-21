@@ -503,58 +503,6 @@
     </div>
   </div>
   
-  <!-- 全局设置弹窗脚本 -->
-  <script>
-    // 打开全局设置弹窗
-    function openGlobalSettingsModal() {
-      const modal = document.getElementById('globalSettingsModal');
-      if (modal) {
-        modal.classList.add('show');
-      } else {
-        alert('设置弹窗未找到');
-      }
-    }
-    
-    // 关闭全局设置弹窗
-    function closeGlobalSettingsModal() {
-      const modal = document.getElementById('globalSettingsModal');
-      if (modal) {
-        modal.classList.remove('show');
-      }
-    }
-    
-    // 测试数据库连接
-    function testGlobalDBConnection() {
-      alert('🔗 测试数据库连接...\n（模拟成功）');
-    }
-    
-    // 保存设置
-    function saveGlobalSettings() {
-      alert('💾 设置已保存！');
-      closeGlobalSettingsModal();
-    }
-    
-    // 重置设置
-    function resetGlobalSettings() {
-      if (confirm('确定重置所有设置?')) {
-        alert('🔄 已重置！');
-      }
-    }
-    
-    // 点击弹窗外部关闭
-    document.addEventListener('click', function(e) {
-      const modal = document.getElementById('globalSettingsModal');
-      if (modal && e.target === modal) {
-        closeGlobalSettingsModal();
-      }
-    });
-    
-    // ESC键关闭
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') {
-        closeGlobalSettingsModal();
-      }
-    });
-  </script>
+  <!-- 全局设置弹窗脚本（由 nav-bar.html 提供） -->
 </body>
 </html>
