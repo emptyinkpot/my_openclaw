@@ -611,33 +611,11 @@
               <span id="pipelineStatus" style="padding: 2px 8px; border-radius: 10px; font-size: 10px; background: #ffebe9; color: var(--danger);">已停止</span>
             </div>
             <button id="pipelineToggleBtn" class="btn primary" style="width: 100%; margin-bottom: 8px;" onclick="togglePipeline()">▶️ 启动流水线</button>
-            <button class="btn" style="width: 100%; margin-bottom: 8px;" onclick="testBrowser()">📸 测试浏览器（截图）</button>
-          </div>
-          
-          <!-- 测试截图显示 -->
-          <div id="screenshotSection" style="margin-bottom: 16px; padding: 12px; background: var(--bg-tertiary); border-radius: 6px; display: none;">
-            <div style="font-size: 11px; font-weight: 600; margin-bottom: 8px;">📷 测试截图</div>
-            <div id="screenshotResult" style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;"></div>
-            <img id="testScreenshot" style="width: 100%; border-radius: 6px; display: none;" />
-          </div>
-          
-          <!-- 每日更新设置 -->
-          <div style="margin-bottom: 16px; padding: 12px; background: var(--bg-tertiary); border-radius: 6px;">
-            <div style="font-size: 11px; font-weight: 600; margin-bottom: 8px;">📋 每日更新计划</div>
-            <div class="form-group">
-              <label class="form-label">每作品每日更新章节数</label>
-              <input type="number" class="form-input" id="dailyChaptersPerWork" value="1" min="1" max="10" onchange="saveDailySettings()">
-            </div>
-            <div style="font-size: 10px; color: var(--text-muted); margin-top: 6px;">
-              💡 从番茄最新章节往后数，标记今日需要更新的章节
-            </div>
           </div>
           
           <!-- 快捷操作 -->
           <div style="margin-bottom: 12px;">
             <button class="btn primary" style="width: 100%; margin-bottom: 6px;" onclick="scanFanqieNow()">🔍 立即扫描番茄作品</button>
-            <button class="btn" style="width: 100%; margin-bottom: 6px;" onclick="resetDailyPlan()">🔄 重置今日计划</button>
-            <button class="btn" style="width: 100%;" onclick="markAllComplete()">✅ 全部标记完成</button>
           </div>
 
         </div>
@@ -1212,36 +1190,6 @@
     let pipelineRunning = false;
     let eventSource = null;
 
-    async function testBrowser() {
-      console.log('[testBrowser] 点击了测试浏览器');
-      const resultEl = document.getElementById('screenshotResult');
-      const screenshotSection = document.getElementById('screenshotSection');
-      const screenshotImg = document.getElementById('testScreenshot');
-      
-      if (screenshotSection) screenshotSection.style.display = 'block';
-      if (resultEl) resultEl.textContent = '⏳ 正在测试...';
-      if (screenshotImg) screenshotImg.style.display = 'none';
-      
-      try {
-        const response = await fetch(`${API_BASE}/test-browser`, { method: 'POST' });
-        const result = await response.json();
-        console.log('[testBrowser] 响应:', result);
-        
-        if (result.success) {
-          if (resultEl) resultEl.innerHTML = '✅ ' + result.message;
-          // 显示截图（注意：需要后端提供静态文件服务
-          if (screenshotImg) {
-            screenshotImg.src = '/api/novel/screenshot/test-baidu.png?t=' + Date.now();
-            screenshotImg.style.display = 'block';
-          }
-        } else {
-          if (resultEl) resultEl.innerHTML = '❌ 失败: ' + (result.message || result.error);
-        }
-      } catch (error) {
-        console.error('[testBrowser] 错误:', error);
-        if (resultEl) resultEl.innerHTML = '❌ 错误: ' + error.message;
-      }
-    }
     let currentWork = null, currentTab = 'chapters', viewMode = 'grid', currentFilter = 'all';
     let worksData = [], chaptersData = [], charactersData = [];
     let currentEditingChapter = null;
@@ -1709,15 +1657,6 @@
       try {
         showToast('🚀 正在加载数据...', 'info');
         
-        // 加载每日设置
-        loadDailySettings();
-        
-        // 设置输入框的值
-        const dailyInput = document.getElementById('dailyChaptersPerWork');
-        if (dailyInput) {
-          dailyInput.value = dailyChaptersPerWork;
-        }
-        
         await Promise.all([loadStats(), loadWorks()]);
         
         // 启动自动扫描番茄作品
@@ -1735,91 +1674,6 @@
     let autoScanTimer = null;
     let lastScanData = null;
     const AUTO_SCAN_INTERVAL = 30000; // 30秒
-    
-    // ====== 每日更新计划 ======
-    let dailyChaptersPerWork = 1;
-    let completedChapters = {}; // { workId: { chapterNumber: true } }
-    let lastPlanDate = null;
-    
-    // 加载每日设置
-    function loadDailySettings() {
-      try {
-        const saved = localStorage.getItem('fanqieDailySettings');
-        if (saved) {
-          const data = JSON.parse(saved);
-          dailyChaptersPerWork = data.dailyChaptersPerWork || 1;
-          completedChapters = data.completedChapters || {};
-          lastPlanDate = data.lastPlanDate;
-          
-          // 检查是否是新的一天
-          const today = new Date().toDateString();
-          if (lastPlanDate !== today) {
-            // 新的一天，重置完成状态
-            completedChapters = {};
-            lastPlanDate = today;
-            saveDailySettings();
-          }
-        }
-      } catch (e) {
-        console.error('[DailyPlan] 加载设置失败:', e);
-      }
-    }
-    
-    // 保存每日设置
-    function saveDailySettings() {
-      try {
-        const input = document.getElementById('dailyChaptersPerWork');
-        if (input) {
-          dailyChaptersPerWork = parseInt(input.value) || 1;
-        }
-        
-        const data = {
-          dailyChaptersPerWork,
-          completedChapters,
-          lastPlanDate: lastPlanDate || new Date().toDateString()
-        };
-        localStorage.setItem('fanqieDailySettings', JSON.stringify(data));
-        
-        // 重新渲染
-        if (lastScanData) {
-          renderFanqieWorksList(lastScanData, []);
-        }
-      } catch (e) {
-        console.error('[DailyPlan] 保存设置失败:', e);
-      }
-    }
-    
-    // 重置今日计划
-    function resetDailyPlan() {
-      completedChapters = {};
-      lastPlanDate = new Date().toDateString();
-      saveDailySettings();
-      showToast('🔄 今日计划已重置', 'success');
-    }
-    
-    // 全部标记完成
-    function markAllComplete() {
-      if (!lastScanData) return;
-      
-      lastScanData.forEach(work => {
-        const workId = work.work_id || work.workId;
-        if (workId) {
-          const latestChapter = work.latest_chapter_number || work.latestChapterNumber || 0;
-          if (!completedChapters[workId]) {
-            completedChapters[workId] = {};
-          }
-          for (let i = 0; i < dailyChaptersPerWork; i++) {
-            const chapterNum = latestChapter - i;
-            if (chapterNum > 0) {
-              completedChapters[workId][chapterNum] = true;
-            }
-          }
-        }
-      });
-      
-      saveDailySettings();
-      showToast('✅ 已全部标记完成', 'success');
-    }
     
     // 本地章节数据缓存
     let localWorksCache = {};
@@ -1977,38 +1831,6 @@
         const chapterCount = w.chapter_count || w.chapterCount || 0;
         const fanqieLatest = parseInt(w.latest_chapter_number || w.latestChapterNumber || w.chapter_count || w.chapterCount || 0);
         const localChapterCount = w.localChapterCount || 0;
-        const todayPublished = w.todayPublishedChapters || new Set();
-        
-        // 生成章节计划
-        let chapterPlanHtml = '';
-        let completedCount = 0;
-        
-        if (fanqieLatest > 0) {
-          const planChapters = [];
-          for (let i = 1; i <= dailyChaptersPerWork; i++) {
-            const chNum = fanqieLatest + i;
-            const isCompleted = todayPublished.has(chNum);
-            if (isCompleted) completedCount++;
-            planChapters.push({ num: chNum, completed: isCompleted });
-          }
-          
-          chapterPlanHtml = `
-            <div style="border-top: 2px solid var(--accent); padding-top: 12px; margin-top: 10px;">
-              <div style="font-size: 11px; color: var(--text); margin-bottom: 10px; font-weight: 600; display: flex; justify-content: space-between;">
-                <span>📋 今日更新计划</span>
-                <span style="background: var(--accent); color: white; padding: 2px 8px; border-radius: 10px;">${completedCount}/${planChapters.length}</span>
-              </div>
-              <div style="display: flex; flex-direction: column; gap: 6px;">
-                ${planChapters.map(ch => `
-                  <div style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: ${ch.completed ? 'rgba(74, 222, 128, 0.15)' : 'var(--bg-tertiary)'}; border: 1px solid ${ch.completed ? 'rgba(74, 222, 128, 0.3)' : 'var(--border)'}; border-radius: 6px; cursor: default;">
-                    <span style="font-size: 18px; ${ch.completed ? 'color: #22c55e;' : 'color: #9ca3af;'}">${ch.completed ? '☑' : '☐'}</span>
-                    <span style="font-size: 12px; ${ch.completed ? 'text-decoration: line-through; color: #9ca3af;' : 'color: var(--text); font-weight: 500;'}">第${ch.num}章</span>
-                  </div>
-                `).join('')}
-              </div>
-            </div>
-          `;
-        }
         
         return `
         <div class="fanqie-work-card" style="padding: 16px;">
@@ -2036,8 +1858,6 @@
               <div style="font-size: 10px; color: var(--text-muted);">字数</div>
             </div>
           </div>
-          
-          ${chapterPlanHtml}
         </div>
       `}).join('');
     }
