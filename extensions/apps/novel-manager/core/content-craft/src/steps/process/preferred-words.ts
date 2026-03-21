@@ -69,6 +69,10 @@ export class PreferredWordsStep extends BaseStep {
    - 符合文学性表达（适合小说创作）
    - 禁止欧化表达，禁止不符合中文习惯的外文语序
    - 不要过度替换，保持自然
+   - 确保整体文章逻辑通顺
+   - 确保同一篇文章的修辞比喻系统成体系
+   - 确保文章脉络一致且清晰
+   - 确保不前言不搭后语
 3. 优选词库（共${vocabulary.length}个，部分示例）：
 ${vocabulary.slice(0, 50).map((w: any) => `- ${w.word}`).join('\n')}
 

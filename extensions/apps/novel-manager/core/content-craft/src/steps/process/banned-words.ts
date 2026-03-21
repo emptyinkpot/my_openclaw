@@ -71,6 +71,11 @@ export class BannedWordsStep extends BaseStep {
    - 符合文学性表达（适合小说创作）
    - 禁止欧化表达，禁止不符合中文习惯的外文语序
    - 如果有括号，去除括号时必须同时调整语句使之通顺，不能单纯去除括号
+   - 确保整体文章逻辑通顺
+   - 确保同一篇文章的修辞比喻系统成体系
+   - 确保文章脉络一致且清晰
+   - 确保不前言不搭后语
+   - 确保禁用词替换后不再是禁用词
 3. 禁用词列表（共${bannedWords.length}个）：
 ${bannedWords.map((w: any) => `- ${w.word}`).join('\n')}
 
