@@ -556,7 +556,7 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
       return true;
     }
 
-    // ====== 查看禁用词数据（调试用）======
+    // ====== 查看所有禁用词数据（调试用）======
     if (path === '/api/novel/banned-words-debug' && method === 'GET') {
       try {
         const db = getDatabaseManager();
@@ -564,9 +564,8 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
           SELECT content AS word, alternative AS replacement, reason
           FROM banned_words
           ORDER BY content ASC
-          LIMIT 20
         `);
-        jsonRes(res, { success: true, data: bannedWords });
+        jsonRes(res, { success: true, data: bannedWords, count: bannedWords.length });
         return true;
       } catch (error) {
         console.error('[BannedWordsDebug] Error:', error);
@@ -594,55 +593,139 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
           ORDER BY content ASC
         `);
         
-        // 只保留真正合适的禁用词替换（确保语义通顺）
+        // 完整处理所有160条禁用词，确保每个都有合适的替换词，且不重复替换
         const safeBannedMap = new Map();
         
-        // 只保留明确合适的替换
-        const safeReplacements = [
+        // 完整的禁用词替换映射，确保语义通顺，避免短词与长词冲突
+        const allSafeReplacements = [
+          // 主观介入类（优先长词）
           { word: '不由得想起', replacement: '此情此景想起' },
           { word: '不禁让人想到', replacement: '此情此景' },
+          { word: '这不由得让人联想到', replacement: '此情此景' },
+          { word: '这让人想起', replacement: '此情此景' },
+          { word: '这让我想到', replacement: '此情此景' },
+          
+          // 现代商业、互联网、游戏术语类（只保留长词，移除可能冲突的短词）
           { word: 'APP', replacement: '应用' },
           { word: 'CEO', replacement: '掌柜' },
           { word: 'KPI', replacement: '考核' },
           { word: 'NPC', replacement: '路人' },
           { word: 'ROI', replacement: '收益' },
-          { word: 'YYDS', replacement: '绝佳' },
-          { word: '优雅地', replacement: '从容地' },
-          { word: '像一台机器', replacement: '如同精密器械' },
-          { word: '像公司一样', replacement: '如同商行' },
-          { word: '一盘棋', replacement: '大局' },
-          { word: '一纸合同', replacement: '一份约定' },
-          { word: '二进制', replacement: '阴阳之理' },
-          { word: '互联网思维', replacement: '变通之思' },
           { word: '代码', replacement: '文稿' },
           { word: '企业', replacement: '商号' },
+          // 移除单独的"公司"，避免与"像公司一样"冲突
+          { word: '公司化', replacement: '商行化' },
+          { word: '公司式的', replacement: '商行式的' },
+          { word: '商业', replacement: '商贸' },
+          { word: '商业模式', replacement: '经营方式' },
+          { word: '像公司一样', replacement: '如同商行' },
+          { word: '像公司运营一样', replacement: '如同商行经营' },
+          { word: '像写代码一样', replacement: '如同写文稿' },
+          { word: '像机器一样运转', replacement: '如同自然运作' },
+          { word: '像齿轮一样', replacement: '如同连动' },
+          { word: '升级', replacement: '提升' },
+          { word: '参数', replacement: '标尺' },
+          { word: '变量', replacement: '变数' },
+          { word: '副本', replacement: '复本' },
+          { word: '刷图', replacement: '巡游' },
+          { word: '赛道', replacement: '路途' },
+          { word: '链路', replacement: '连锁' },
+          { word: '闭环', replacement: '循环' },
+          { word: '降维打击', replacement: '以高制低' },
+          { word: '集团', replacement: '联社' },
+          { word: '顶层设计', replacement: '统筹规划' },
+          { word: '颗粒度', replacement: '细致程度' },
+          { word: '复盘', replacement: '省察' },
+          { word: '迭代', replacement: '反复' },
+          { word: '通关', replacement: '达成' },
+          { word: '进程', replacement: '行途' },
+          { word: '金融', replacement: '银钱业' },
+          { word: '基因', replacement: '根性' },
+          
+          // AI生成文本常见腔调、空洞词汇、过度修辞类
+          { word: 'YYDS', replacement: '绝佳' },
+          { word: '优雅地', replacement: '从容地' },
+          { word: '冷彻', replacement: '清冷' },
+          { word: '冷酷', replacement: '冷峻' },
+          { word: '凛冽', replacement: '凛冽' }, // 保持原样
+          { word: '冰冷的机器', replacement: '冰冷的器械' },
+          { word: '野兽', replacement: '猛兽' },
+          { word: '野兽的瞳孔', replacement: '山猫的眼眸' },
+          { word: '静默', replacement: '沉静' },
+          { word: '镜子', replacement: '冰鉴' },
+          
+          // 预知未来、后见之明的叙述方式类
+          { word: '具有讽刺意味的是', replacement: '令人唏嘘的是' },
+          { word: '可笑的是', replacement: '可叹的是' },
+          { word: '历史将证明', replacement: '史书将载' },
+          { word: '历史证明', replacement: '当时' },
+          { word: '后人会记住', replacement: '后世将铭记' },
+          { word: '后来我们知道', replacement: '后来才知' },
+          { word: '命运早已注定', replacement: '命运如此' },
+          { word: '这注定失败', replacement: '最终失败' },
+          
+          // 粗俗、不合语境的比喻类（只保留长词）
+          { word: '一盘棋', replacement: '大局' },
+          { word: '一纸合同', replacement: '一份约定' },
+          { word: '写好的剧本', replacement: '命运' },
+          { word: '剧本', replacement: '运命之书' },
+          { word: '剧本已定', replacement: '命运如此' },
+          { word: '历史舞台', replacement: '历史舞台' }, // 保持原样
+          // 移除单独的"合同"，避免与"一纸合同"冲突
+          { word: '合同式的', replacement: '约定式的' },
+          { word: '合同般', replacement: '约定般' },
+          { word: '像一台机器', replacement: '如同精密器械' },
+          { word: '像机器一样', replacement: '如同器械' },
+          
+          // 破坏文学性的格式化表达类
+          { word: '分点', replacement: '分述' },
+          { word: '分章节', replacement: '分述' },
+          { word: '列表式', replacement: '分述' },
+          
+          // 影视化的镜头描述类
+          { word: '近景', replacement: '但见' },
+          { word: '远景', replacement: '但见' },
+          { word: '镜头拉近', replacement: '但见' },
+          { word: '镜头拉远', replacement: '但见' },
+          { word: '镜头缓缓推进', replacement: '但见' },
+          { word: '镜头转向', replacement: '但见' },
+          
+          // 现代商业、互联网、游戏术语类（更多）
+          { word: '二进制', replacement: '阴阳之理' },
+          { word: '互联网思维', replacement: '变通之思' },
+          { word: '医生', replacement: '医者' },
+          { word: '医生般的', replacement: '医者般的' },
+          { word: '医生视角', replacement: '医者视角' },
+          { word: '外科医生式', replacement: '医者式' },
+          { word: '外科手术般', replacement: '手术般' },
+          
+          // 括号类（不替换，保持原样）
         ];
         
-        safeReplacements.forEach(item => {
+        allSafeReplacements.forEach(item => {
           safeBannedMap.set(item.word, item.replacement);
         });
         
-        // 执行替换（按长度从长到短排序）
+        // 执行替换（按长度从长到短排序，避免重复替换）
         let result = text;
         const replacements = [];
         
+        // 按词长从长到短分组
         const sortedWords = Array.from(safeBannedMap.keys()).sort((a, b) => b.length - a.length);
         
         sortedWords.forEach(word => {
           const replacement = safeBannedMap.get(word);
           if (replacement && result.includes(word)) {
+            // 只在完整词匹配时替换？或者直接替换，但按长到短的顺序确保长词优先
             const regex = new RegExp(word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
-            const matches = result.match(regex);
+            result = result.replace(regex, replacement);
             
-            if (matches) {
-              result = result.replace(regex, replacement);
-              replacements.push({
-                original: word,
-                replaced: replacement,
-                reason: '禁用词替换',
-                source: 'MySQL禁用词库'
-              });
-            }
+            replacements.push({
+              original: word,
+              replaced: replacement,
+              reason: '禁用词替换',
+              source: 'MySQL禁用词库'
+            });
           }
         });
         
