@@ -2355,6 +2355,8 @@
         </div>
       `;
       
+
+      
       try {
         const result = await api('/db/schema');
         if (!result.success) throw new Error(result.error);
@@ -2379,6 +2381,7 @@
                     <th style="padding: 10px 12px; text-align: left; border: 1px solid var(--border);">键</th>
                     <th style="padding: 10px 12px; text-align: left; border: 1px solid var(--border);">默认值</th>
                     <th style="padding: 10px 12px; text-align: left; border: 1px solid var(--border);">额外</th>
+                    <th style="padding: 10px 12px; text-align: left; border: 1px solid var(--border);">说明</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2390,6 +2393,7 @@
                       <td style="padding: 10px 12px; border: 1px solid var(--border);">${col.key}</td>
                       <td style="padding: 10px 12px; border: 1px solid var(--border);">${col.default || '-'}</td>
                       <td style="padding: 10px 12px; border: 1px solid var(--border);">${col.extra || '-'}</td>
+                      <td style="padding: 10px 12px; border: 1px solid var(--border); color: var(--text-muted);">${col.comment || '-'}</td>
                     </tr>
                   `).join('')}
                 </tbody>

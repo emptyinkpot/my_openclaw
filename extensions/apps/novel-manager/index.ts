@@ -576,7 +576,8 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
         const schemaData = {};
         
         for (const tableName of tableNames) {
-          const columns = await db.query(`DESCRIBE ${tableName}`);
+          // 使用 SHOW FULL COLUMNS 获取 COMMENT 注释
+          const columns = await db.query(`SHOW FULL COLUMNS FROM ${tableName}`);
           schemaData[tableName] = columns.map(col => ({
             name: col.Field,
             type: col.Type,
@@ -584,6 +585,7 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
             key: col.Key,
             default: col.Default,
             extra: col.Extra,
+            comment: col.Comment || '',
           }));
         }
         
