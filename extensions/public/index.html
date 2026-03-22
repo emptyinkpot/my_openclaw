@@ -1532,7 +1532,7 @@
     
     // 安全获取状态文本
     function getStatusText(status) {
-      if (!status) return '大纲';
+      if (!status) return '';
       // 确保 first_draft 正确翻译
       if (status === 'first_draft') return '初稿';
       return statusText[status] || status;
@@ -1540,7 +1540,7 @@
     
     // 安全获取状态颜色
     function getStatusColor(status) {
-      if (!status) return 'var(--text-muted)';
+      if (!status) return 'transparent';
       return statusColor[status] || 'var(--text-muted)';
     }
     
@@ -3499,7 +3499,7 @@
           console.log('📄 章节数据:', ch);
           // 修正状态
           ch = fixChapterStatus(ch);
-          const status = ch.status || 'outline';
+          const status = ch.status;
           const statusLabel = getStatusText(status);
           const color = getStatusColor(status);
           
@@ -3513,7 +3513,7 @@
             <div class="card-title">${ch.title || '无标题'}</div>
             <div class="card-meta">
               <span>${ch.word_count || 0}字</span>
-              <span style="color: ${color}; font-weight: 600; padding: 2px 8px; background: var(--bg-tertiary); border-radius: 4px;">${statusLabel}</span>
+              ${status ? `<span style="color: ${color}; font-weight: 600; padding: 2px 8px; background: var(--bg-tertiary); border-radius: 4px;">${statusLabel}</span>` : ''}
               <span>${ch.updated_at ? new Date(ch.updated_at).toLocaleDateString() : '-'}</span>
             </div>
             <div class="card-tags">
@@ -3533,7 +3533,7 @@
         const renderFn = (ch) => {
           // 修正状态
           ch = fixChapterStatus(ch);
-          const status = ch.status || 'outline';
+          const status = ch.status;
           const statusLabel = getStatusText(status);
           const color = getStatusColor(status);
           
@@ -3542,7 +3542,7 @@
             <div class="list-col num">#${ch.chapter_number}</div>
             <div class="list-col title">${ch.title || '无标题'}</div>
             <div class="list-col meta">${ch.word_count || 0}字</div>
-            <div class="list-col meta" style="color: ${color}; font-weight: 600;">${statusLabel}</div>
+            <div class="list-col meta">${status ? `<span style="color: ${color}; font-weight: 600;">${statusLabel}</span>` : ''}</div>
             <div class="list-col meta">${ch.updated_at ? new Date(ch.updated_at).toLocaleDateString() : '-'}</div>
             <div class="list-col actions">
               <button class="btn btn-sm" onclick="event.stopPropagation();editChapter(${ch.id})">✏️</button>
@@ -3559,7 +3559,7 @@
         }
       } else {
         const renderFn = (ch) => {
-          const status = ch.status || 'outline';
+          const status = ch.status;
           const statusLabel = getStatusText(status);
           const color = getStatusColor(status);
           
@@ -3568,7 +3568,7 @@
             <td>${ch.chapter_number}</td>
             <td>${ch.title || '无标题'}</td>
             <td>${ch.word_count || 0}</td>
-            <td style="color: ${color}; font-weight: 600;">${statusLabel}</td>
+            <td>${status ? `<span style="color: ${color}; font-weight: 600;">${statusLabel}</span>` : ''}</td>
             <td>${ch.updated_at ? new Date(ch.updated_at).toLocaleDateString() : '-'}</td>
             <td><button class="btn btn-sm" onclick="event.stopPropagation();deleteChapter(${ch.id})">🗑️</button></td>
           </tr>`;
