@@ -1277,9 +1277,17 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
     if (path === '/api/novel/config' && method === 'POST') {
       try {
         const body = await parseBody(req);
-        const { settings } = body;
+        const { settings, stepConfigs } = body;
         if (settings) {
           configManager.saveSettings(settings);
+        }
+        // 如果提供了 stepConfigs，也保存每个步骤的配置
+        if (stepConfigs && Array.isArray(stepConfigs)) {
+          stepConfigs.forEach((stepConfig: any) => {
+            if (stepConfig.id && stepConfig.settings) {
+              configManager.updateStepSetting(stepConfig.id, stepConfig.settings);
+            }
+          });
         }
         jsonRes(res, { success: true, message: '配置保存成功' });
       } catch (error) {

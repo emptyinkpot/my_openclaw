@@ -2290,11 +2290,11 @@
         document.getElementById('worksList').innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-muted);">加载失败，请检查网络连接</div>';
       }
       
-      // 初始化 AI工具箱 润色配置
-      initPolishConfig();
+      // 初始化 AI工具箱 润色配置（先从后端加载）
+      await initPolishConfig();
       
-      // 加载保存的默认参数
-      const defaultParamsLoaded = loadDefaultParams();
+      // 加载保存的默认参数（覆盖后端配置）
+      const defaultParamsLoaded = await loadDefaultParams();
       if (defaultParamsLoaded) {
         console.log('💾 默认参数已加载');
       }
@@ -5193,15 +5193,32 @@
         const result = await api('/config');
         if (result.success && result.data) {
           if (result.data.settings) {
-            currentPolishConfig = result.data.settings;
+            // 合并配置：保留后端的 settings，确保结构完整
+            currentPolishConfig = {
+              ...currentPolishConfig,
+              ...result.data.settings,
+              steps: {
+                ...currentPolishConfig.steps,
+                ...result.data.settings.steps
+              },
+              global: {
+                ...currentPolishConfig.global,
+                ...result.data.settings.global
+              }
+            };
           }
-          // 确保所有步骤都有配置
+          // 确保所有步骤都有配置，但优先使用已保存的配置
           polishStepDefinitions.forEach(step => {
             if (!currentPolishConfig.steps[step.id]) {
               currentPolishConfig.steps[step.id] = {
                 enabled: step.enabled,
                 order: polishStepDefinitions.findIndex(s => s.id === step.id)
               };
+            } else {
+              // 确保已保存的配置包含必要字段
+              if (currentPolishConfig.steps[step.id].order === undefined) {
+                currentPolishConfig.steps[step.id].order = polishStepDefinitions.findIndex(s => s.id === step.id);
+              }
             }
           });
           // 更新 UI
@@ -5215,6 +5232,7 @@
           }
         }
       } catch (e) {
+        console.warn('[Config] 加载配置失败，使用默认值:', e);
         // 如果加载失败，使用默认值
         polishStepDefinitions.forEach(step => {
           currentPolishConfig.steps[step.id] = {
@@ -5229,9 +5247,18 @@
     // 保存配置到后端
     async function savePolishConfig() {
       try {
+        // 构建 stepConfigs 数组
+        const stepConfigs = polishStepDefinitions.map(step => ({
+          id: step.id,
+          settings: currentPolishConfig.steps[step.id] || {}
+        }));
+        
         await api('/config', {
           method: 'POST',
-          body: JSON.stringify({ settings: currentPolishConfig })
+          body: JSON.stringify({ 
+            settings: currentPolishConfig,
+            stepConfigs: stepConfigs 
+          })
         });
       } catch (e) {
         console.warn('[Config] 保存配置失败:', e);
@@ -5374,7 +5401,7 @@
     }
     
     // 加载默认参数
-    function loadDefaultParams() {
+    async function loadDefaultParams() {
       try {
         const savedParams = localStorage.getItem('novelManagerDefaultParams');
         if (!savedParams) {
@@ -5385,11 +5412,13 @@
         
         if (defaultParams.polishStyle) {
           document.getElementById('polishStyle').value = defaultParams.polishStyle;
+          currentPolishConfig.global.style = defaultParams.polishStyle;
         }
         
         if (defaultParams.polishTemperature) {
           document.getElementById('polishTemperature').value = defaultParams.polishTemperature;
           updateTemperatureValue(defaultParams.polishTemperature);
+          currentPolishConfig.global.temperature = parseInt(defaultParams.polishTemperature) / 100;
         }
         
         if (defaultParams.polishSteps) {
@@ -5397,9 +5426,14 @@
           renderPolishStepsList();
         }
         
+        // 保存到后端
+        await savePolishConfig();
+        showToast('💾 默认参数已加载并保存', 'success');
+        
         return true;
       } catch (e) {
         console.error('加载默认参数失败:', e);
+        showToast('❌ 加载默认参数失败', 'error');
         return false;
       }
     }
