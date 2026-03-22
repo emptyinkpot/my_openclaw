@@ -1,0 +1,84 @@
+{
+  "enabled": false,
+  "bot": {
+    "appId": "",
+    "appSecret": "",
+    "encryptKey": "",
+    "verificationToken": ""
+  },
+  "settings": {
+    "autoReply": true,
+    "replyTemplate": "收到消息：{{content}}",
+    "welcomeMessage": "你好！我是自动化助手，输入 /help 查看可用指令。",
+    "adminUsers": []
+  },
+  "templates": [
+    {
+      "id": "tpl-daily-report",
+      "name": "每日报告",
+      "content": "📊 **每日自动化报告**\n\n今日任务完成数: {{completed}}\n成功率: {{rate}}%\n明日计划: {{planned}}"
+    },
+    {
+      "id": "tpl-alert",
+      "name": "系统告警",
+      "content": "⚠️ **系统告警**\n\n类型: {{type}}\n时间: {{time}}\n详情: {{details}}\n\n请及时处理！"
+    },
+    {
+      "id": "tpl-success",
+      "name": "任务完成",
+      "content": "✅ **任务完成通知**\n\n任务: {{task}}\n完成时间: {{time}}\n结果: {{result}}"
+    }
+  ],
+  "commands": [
+    {
+      "command": "/help",
+      "description": "查看可用指令列表",
+      "handler": "handleHelp",
+      "params": []
+    },
+    {
+      "command": "/status",
+      "description": "查看系统运行状态",
+      "handler": "handleStatus",
+      "params": []
+    },
+    {
+      "command": "/run",
+      "description": "执行指定任务",
+      "handler": "handleRun",
+      "params": ["taskId"]
+    },
+    {
+      "command": "/tasks",
+      "description": "查看任务列表",
+      "handler": "handleTasks",
+      "params": []
+    },
+    {
+      "command": "/logs",
+      "description": "查看最近日志",
+      "handler": "handleLogs",
+      "params": ["lines"]
+    },
+    {
+      "command": "/report",
+      "description": "生成运行报告",
+      "handler": "handleReport",
+      "params": ["type"]
+    }
+  ],
+  "webhooks": [
+    {
+      "name": "默认Webhook",
+      "url": "https://open.feishu.cn/open-apis/bot/v2/hook/xxx",
+      "enabled": true
+    }
+  ],
+  "policies": {
+    "dmPolicy": "open",
+    "groupPolicy": "open",
+    "requireMention": true,
+    "allowedGroups": [],
+    "blockedUsers": []
+  }
+}

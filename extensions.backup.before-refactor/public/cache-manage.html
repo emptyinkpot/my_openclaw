@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>缓存管理 - 小说管理</title>
+  <style>
+  :root {
+    --bg: #f6f8fa; --bg-secondary: #ffffff; --bg-tertiary: #f3f4f6;
+    --border: #d0d7de; --border-light: #e5e7eb;
+    --text: #24292f; --text-secondary: #57606a; --text-muted: #6e7781;
+    --accent: #0969da; --accent-hover: #0550ae;
+    --success: #1a7f37; --warning: #9a6700; --danger: #cf222e;
+    --purple: #8250df; --pink: #bf3989;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); font-size: 12px; height: 100vh; overflow: hidden; }
+  
+  /* 顶部工具栏 */
+  .top-bar { height: 36px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 12px; gap: 8px; }
+  .btn { padding: 4px 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); border-radius: 4px; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.15s; }
+  .btn:hover { border-color: var(--accent); background: var(--bg-tertiary); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+  .btn-sm { padding: 2px 6px; font-size: 10px; }
+  .spacer { flex: 1; }
+  
+  /* 主布局 */
+  .main { display: flex; height: calc(100vh - 36px); }
+  .sidebar { width: 280px; background: var(--bg-secondary); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+  .sidebar-header { padding: 8px 10px; background: var(--bg-tertiary); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .sidebar-title { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+  .sidebar-scroll { flex: 1; overflow-y: auto; }
+  .work-item { padding: 8px 10px; cursor: pointer; border-left: 2px solid transparent; display: flex; flex-direction: column; gap: 2px; }
+  .work-item:hover { background: var(--bg-tertiary); }
+  .work-item.active { background: #ddf4ff; border-left-color: var(--accent); }
+  .work-title { font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  
+  /* 内容区 */
+  .content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .toolbar { padding: 8px 12px; background: var(--bg); border-bottom: 1px solid var(--border); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .toolbar-group { display: flex; gap: 4px; padding-right: 8px; border-right: 1px solid var(--border); }
+  .toolbar-group:last-child { border-right: none; }
+  .content-area { flex: 1; overflow-y: auto; padding: 0; }
+  </style>
+</head>
+<body>
+  
+  <!-- 顶部工具栏 -->
+  <div class="top-bar">
+    <button class="btn primary" onclick="location.href='/novel/'">📖 返回小说管理</button>
+    <div class="divider"></div>
+    <span style="font-size: 13px; font-weight: 600;">💾 缓存管理</span>
+  </div>
+  
+  <!-- 缓存管理内容区 -->
+  <div class="main" style="height: calc(100vh - 36px);">
+    <div class="sidebar" style="width: 280px;">
+      <div class="sidebar-header">
+        <span class="sidebar-title">💾 缓存文件</span>
+        <button class="btn btn-sm" onclick="refreshCacheList()">🔄</button>
+      </div>
+      <div class="sidebar-scroll" id="cacheFileList" style="padding: 8px;">
+        <div style="text-align: center; padding: 20px; color: var(--text-muted);">
+          <div style="font-size: 24px; margin-bottom: 8px;">📂</div>
+          <div style="font-size: 11px;">加载中...</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="content">
+      <div class="toolbar">
+        <div class="toolbar-group">
+          <button class="btn btn-sm" onclick="saveCacheFile()">💾 保存</button>
+          <button class="btn btn-sm" onclick="formatCacheJson()">🔧 格式化</button>
+          <button class="btn btn-sm" onclick="compactCacheJson()">📦 压缩</button>
+        </div>
+        <div class="toolbar-group">
+          <button class="btn btn-sm danger" onclick="deleteCacheFile()">🗑️ 删除</button>
+          <button class="btn btn-sm" onclick="downloadCacheFile()">📥 下载</button>
+        </div>
+        <div class="spacer"></div>
+        <div class="toolbar-group">
+          <span id="cacheFileInfo" style="font-size: 11px; color: var(--text-muted);">未选择文件</span>
+        </div>
+      </div>
+      
+      <div class="content-area" style="padding: 0;">
+        <textarea id="cacheEditor" style="width: 100%; height: 100%; border: none; padding: 12px; font-family: 'Monaco', 'Consolas', monospace; font-size: 12px; line-height: 1.5; resize: none; background: var(--bg-secondary); color: var(--text);" placeholder="选择左侧缓存文件进行编辑..." spellcheck="false"></textarea>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // Gateway认证token
+    const GATEWAY_TOKEN = 'e1647cdb-1b80-4eee-a975-7599160cc89b';
+    const API_BASE = '/api/novel';
+    
+    let currentCacheFile = null;
+    let cacheFilesData = [];
+    
+    // API辅助函数
+    async function api(path, options = {}) {
+      const res = await fetch(API_BASE + path, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + GATEWAY_TOKEN,
+          ...(options.headers || {})
+        }
+      });
+      return res.json();
+    }
+    
+    // 缓存管理功能
+    async function refreshCacheList() {
+      const listEl = document.getElementById('cacheFileList');
+      try {
+        const result = await api('/cache/list');
+        if (result.success && result.data) {
+          cacheFilesData = result.data;
+          listEl.innerHTML = cacheFilesData.map(file => `
+            <div class="work-item" onclick="selectCacheFile('${file}')" data-file="${file}">
+              <div class="work-title">${file}</div>
+            </div>
+          `).join('');
+        }
+      } catch (err) {
+        console.error('[refreshCacheList] 刷新失败:', err);
+        listEl.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--danger);">加载失败</div>`;
+      }
+    }
+    
+    async function selectCacheFile(filename) {
+      try {
+        const result = await api(`/cache/read?name=${encodeURIComponent(filename)}`);
+        if (result.success && result.data !== undefined) {
+          currentCacheFile = filename;
+          const editor = document.getElementById('cacheEditor');
+          editor.value = typeof result.data === 'string' ? result.data : JSON.stringify(result.data, null, 2);
+          document.getElementById('cacheFileInfo').textContent = filename;
+          
+          // 更新选中状态
+          document.querySelectorAll('#cacheFileList .work-item').forEach(el => {
+            el.classList.remove('active');
+            if (el.dataset.file === filename) {
+              el.classList.add('active');
+            }
+          });
+        }
+      } catch (err) {
+        console.error('[selectCacheFile] 读取失败:', err);
+      }
+    }
+    
+    async function saveCacheFile() {
+      if (!currentCacheFile) {
+        alert('请先选择一个文件');
+        return;
+      }
+      
+      try {
+        const content = document.getElementById('cacheEditor').value;
+        const result = await api('/cache/write', {
+          method: 'POST',
+          body: JSON.stringify({ name: currentCacheFile, content })
+        });
+        if (result.success) {
+          alert('保存成功');
+        } else {
+          alert('保存失败: ' + (result.error || '未知错误'));
+        }
+      } catch (err) {
+        console.error('[saveCacheFile] 保存失败:', err);
+        alert('保存失败: ' + err.message);
+      }
+    }
+    
+    function formatCacheJson() {
+      const editor = document.getElementById('cacheEditor');
+      try {
+        const data = JSON.parse(editor.value);
+        editor.value = JSON.stringify(data, null, 2);
+      } catch (e) {
+        alert('JSON格式错误');
+      }
+    }
+    
+    function compactCacheJson() {
+      const editor = document.getElementById('cacheEditor');
+      try {
+        const data = JSON.parse(editor.value);
+        editor.value = JSON.stringify(data);
+      } catch (e) {
+        alert('JSON格式错误');
+      }
+    }
+    
+    async function deleteCacheFile() {
+      if (!currentCacheFile) {
+        alert('请先选择一个文件');
+        return;
+      }
+      
+      if (!confirm(`确定要删除 ${currentCacheFile} 吗？`)) {
+        return;
+      }
+      
+      try {
+        const result = await api('/cache/delete', {
+          method: 'POST',
+          body: JSON.stringify({ name: currentCacheFile })
+        });
+        if (result.success) {
+          alert('删除成功');
+          currentCacheFile = null;
+          document.getElementById('cacheEditor').value = '';
+          document.getElementById('cacheFileInfo').textContent = '未选择文件';
+          refreshCacheList();
+        } else {
+          alert('删除失败: ' + (result.error || '未知错误'));
+        }
+      } catch (err) {
+        console.error('[deleteCacheFile] 删除失败:', err);
+        alert('删除失败: ' + err.message);
+      }
+    }
+    
+    function downloadCacheFile() {
+      if (!currentCacheFile) {
+        alert('请先选择一个文件');
+        return;
+      }
+      
+      const content = document.getElementById('cacheEditor').value;
+      const blob = new Blob([content], { type: 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = currentCacheFile;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+    
+    // 初始化
+    refreshCacheList();
+    
+
+  </script>
+</body>
+</html>

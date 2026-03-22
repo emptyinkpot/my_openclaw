@@ -1,0 +1,44 @@
+# Coze.cn 网站配置
+
+name: Coze
+url: https://www.coze.cn/
+domain: coze.cn
+
+# 子产品
+products:
+  main:
+    name: 扣子办公
+    url: https://www.coze.cn/
+  programming:
+    name: 扣子编程
+    url: https://code.coze.cn/home
+
+# 登录方式
+loginMethod: 多种方式（手机/微信/抖音/飞书）
+storageType: localStorage + cookies
+
+# 登录恢复关键（重要！）
+# 扣子编程需要先访问主站设置登录状态，再跳转
+loginRestore:
+  step1: 访问主站 https://www.coze.cn/
+  step2: 设置 localStorage 和 cookies
+  step3: 跳转到目标页面（如 https://code.coze.cn/home）
+
+# 浏览器数据目录
+browserDir: /workspace/projects/browser/coze-1
+
+# 备份文件
+backupFiles:
+  full: coze-account-1-full.json
+  basic: coze-account-1.json
+
+# 脚本文件
+scripts:
+  - coze-programming.js      # 打开扣子编程
+  - open-coze.js             # 打开主站
+  - explore-coze.js          # 探测网站
+  - save-coze-login.js       # 保存登录
+
+# 探测信息
+exploredAt: 2026-03-13T05:06:58.214Z
+programmingExploredAt: 2026-03-13T05:24:00.000Z

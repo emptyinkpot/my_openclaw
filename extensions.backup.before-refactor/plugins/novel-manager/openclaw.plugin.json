@@ -1,0 +1,11 @@
+{
+  "id": "novel-manager",
+  "name": "小说数据管理",
+  "description": "小说数据管理Web界面",
+  "version": "1.0.0",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {}
+  }
+}
