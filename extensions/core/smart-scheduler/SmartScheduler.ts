@@ -134,6 +134,20 @@ export class SmartScheduler {
     
     this.activityLog.log('system', '🤖 智能调度器已启动');
     
+    // 立即启动 Content Craft 自动处理服务
+    const contentCraftStatus = this.contentCraftService.getStatus();
+    if (!contentCraftStatus.running) {
+      this.contentCraftService.start();
+      this.activityLog.log('system', '🚀 Content Craft 自动处理服务已启动');
+    }
+    
+    // 立即启动审核自动处理服务
+    const auditStatus = this.auditService.getStatus();
+    if (!auditStatus.running) {
+      this.auditService.start();
+      this.activityLog.log('system', '✅ 审核自动处理服务已启动');
+    }
+    
     // 立即执行一次调度
     setTimeout(() => {
       this.runScheduledTask();
