@@ -570,7 +570,7 @@ export class NovelService {
   /**
    * 更新章节
    */
-  async updateChapter(id: number, data: { title?: string; content?: string; status?: string }) {
+  async updateChapter(id: number, data: { title?: string; content?: string; status?: string; plot_summary?: string }) {
     const updates: string[] = [];
     const params: any[] = [];
     
@@ -583,6 +583,11 @@ export class NovelService {
     if (data.title !== undefined) {
       updates.push('title = ?');
       params.push(data.title);
+    }
+    
+    if (data.plot_summary !== undefined) {
+      updates.push('plot_summary = ?');
+      params.push(data.plot_summary);
     }
     
     if (data.content !== undefined) {
