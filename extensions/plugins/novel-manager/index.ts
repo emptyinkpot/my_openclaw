@@ -1322,10 +1322,15 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
           await getNovelService().updateChapter(chapter.id, {
             content: result.text
           });
-          // 只要经过润色模块处理，不管之前是什么状态，都更新为 polished
-          await getNovelService().updateChapter(chapter.id, {
-            status: 'polished'
-          });
+          // 使用状态机服务更新状态
+          const { getChapterStateMachine } = require('../../core/state-machine');
+          const stateMachine = getChapterStateMachine();
+          await stateMachine.transition(
+            chapter.id,
+            'polished',
+            'content_polished',
+            { metadata: { polishResult: 'success' } }
+          );
         }
         
         jsonRes(res, { 
@@ -1375,12 +1380,15 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
             await getNovelService().updateChapter(chapter.id, {
               content: result.text
             });
-            // 如果当前状态是 outline，更新为 first_draft（生成的内容是初稿，不是已润色）
-            if (chapter.status === 'outline') {
-              await getNovelService().updateChapter(chapter.id, {
-                status: 'first_draft'
-              });
-            }
+            // 使用状态机服务更新状态
+            const { getChapterStateMachine } = require('../../core/state-machine');
+            const stateMachine = getChapterStateMachine();
+            await stateMachine.transition(
+              chapter.id,
+              'first_draft',
+              'content_generated',
+              { metadata: { generationResult: 'success' } }
+            );
           }
         }
         

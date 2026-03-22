@@ -172,9 +172,34 @@ export class ChapterRepository {
    * 更新发布状态
    */
   async updatePublishStatus(workId: number, chapterNumber: number, status: string): Promise<void> {
+    // 获取章节 ID
+    const chapter = await this.db.queryOne(
+      'SELECT id FROM chapters WHERE work_id = ? AND chapter_number = ?',
+      [workId, chapterNumber]
+    );
+
+    if (chapter) {
+      // 使用状态机服务更新状态
+      try {
+        const { getChapterStateMachine } = require('../state-machine');
+        const stateMachine = getChapterStateMachine();
+        
+        await stateMachine.transition(
+          chapter.id,
+          'published',
+          'published',
+          { metadata: { publishStatus: status } }
+        );
+      } catch (error) {
+        // 如果状态机服务不可用，回退到直接更新
+        console.warn('状态机服务不可用，使用直接更新', error);
+      }
+    }
+
+    // 始终更新 publish_status 和 published_at
     await this.db.execute(
       `UPDATE chapters 
-       SET publish_status = ?, status = 'published', published_at = NOW() 
+       SET publish_status = ?, published_at = NOW() 
        WHERE work_id = ? AND chapter_number = ?`,
       [status, workId, chapterNumber]
     );

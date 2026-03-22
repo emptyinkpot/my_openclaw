@@ -615,6 +615,31 @@ export class NovelService {
       UPDATE chapters SET ${updates.join(', ')} WHERE id = ?
     `, params);
   }
+
+  /**
+   * 使用状态机更新章节状态（推荐方式）
+   */
+  async updateChapterWithStateMachine(
+    id: number,
+    toState: any,
+    reason: any,
+    data?: { title?: string; content?: string }
+  ) {
+    // 先更新标题和内容（如果有）
+    if (data) {
+      await this.updateChapter(id, data);
+    }
+    
+    // 使用状态机更新状态
+    try {
+      const { getChapterStateMachine } = require('../../../core/state-machine');
+      const stateMachine = getChapterStateMachine();
+      return await stateMachine.transition(id, toState, reason);
+    } catch (error) {
+      console.warn('[NovelService] 状态机服务不可用', error);
+      return false;
+    }
+  }
   
   /**
    * 根据卷纲生成章节

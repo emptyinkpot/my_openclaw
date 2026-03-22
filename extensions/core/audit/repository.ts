@@ -97,12 +97,38 @@ export async function updateChapterStatus(
   chapterNumber: number,
   status: string
 ): Promise<void> {
-  await db.execute(`
-    UPDATE chapters SET status = ?, updated_at = NOW()
-    WHERE work_id = ? AND chapter_number = ?
-  `, [status, workId, chapterNumber]);
-  
-  logger.info(`已更新章节状态: workId=${workId}, chapter=${chapterNumber}, status=${status}`);
+  // 获取章节 ID
+  const chapter = await db.queryOne(
+    'SELECT id FROM chapters WHERE work_id = ? AND chapter_number = ?',
+    [workId, chapterNumber]
+  );
+
+  if (!chapter) {
+    logger.warn(`未找到章节: workId=${workId}, chapter=${chapterNumber}`);
+    return;
+  }
+
+  // 使用状态机服务更新状态
+  try {
+    const { getChapterStateMachine } = require('../state-machine');
+    const stateMachine = getChapterStateMachine();
+    
+    const reason = status === 'audited' ? 'audit_passed' : 'manual_adjustment';
+    await stateMachine.transition(
+      chapter.id,
+      status as any,
+      reason as any,
+      { metadata: { auditResult: status === 'audited' ? 'passed' : 'other' } }
+    );
+  } catch (error) {
+    // 如果状态机服务不可用，回退到直接更新
+    logger.warn('状态机服务不可用，使用直接更新', error);
+    await db.execute(`
+      UPDATE chapters SET status = ?, updated_at = NOW()
+      WHERE work_id = ? AND chapter_number = ?
+    `, [status, workId, chapterNumber]);
+    logger.info(`已更新章节状态: workId=${workId}, chapter=${chapterNumber}, status=${status}`);
+  }
 }
 
 /**
