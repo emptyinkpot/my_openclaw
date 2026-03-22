@@ -201,10 +201,10 @@ export class ContentCraftAutoService {
           this.currentTask = `正在处理章节: ${chapter.title || chapter.chapter_number}`;
           logger.info(`[ContentCraftAutoService] ${this.currentTask}`);
           
-          if (chapter.state === 'outline') {
+          if ((chapter.state || chapter.status) === 'outline') {
             // 生成章节内容（完整流程：生成+润色）
             await this.generateChapter(chapter.work_id, chapter.chapter_number);
-          } else if (chapter.state === 'first_draft') {
+          } else if ((chapter.state || chapter.status) === 'first_draft') {
             // 润色章节内容
             await this.polishChapter(chapter.work_id, chapter.chapter_number);
           }
@@ -237,8 +237,8 @@ export class ContentCraftAutoService {
       
       // 筛选出状态为 outline 或 first_draft 的章节
       const chaptersToProcess = chapters.filter((chapter: any) => 
-        chapter.state === 'outline' || 
-        chapter.state === 'first_draft'
+        (chapter.state || chapter.status) === 'outline' || 
+        (chapter.state || chapter.status) === 'first_draft'
       );
       
       // 按更新时间排序，优先处理较早的

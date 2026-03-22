@@ -230,7 +230,7 @@ export class AuditAutoService {
       
       // 筛选出状态为 polished 的章节
       const chaptersToProcess = chapters.filter((chapter: any) => 
-        chapter.state === 'polished'
+        (chapter.state || chapter.status) === 'polished'
       );
       
       // 按更新时间排序，优先处理较早的
