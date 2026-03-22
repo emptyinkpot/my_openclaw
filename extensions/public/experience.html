@@ -1534,48 +1534,125 @@
       document.getElementById('detailModal').classList.remove('show');
     }
     
-    // 简单的 Markdown 转 HTML 函数
+    // 简单的 Markdown 转 HTML 函数（优化版，避免正则表达式导致的性能问题）
     function simpleMarkdownToHtml(md) {
       if (!md) return '';
       
-      let html = md;
+      // 按行处理，避免复杂的正则表达式
+      const lines = md.split('\n');
+      let html = '';
+      let inCodeBlock = false;
+      let codeBlockContent = '';
+      let inList = false;
+      let listType = null; // 'ul' 或 'ol'
       
-      // 代码块
-      html = html.replace(/```([\s\S]*?)```/g, function(match, code) {
-        return '<pre><code>' + code.trim() + '</code></pre>';
-      });
+      for (let i = 0; i < lines.length; i++) {
+        let line = lines[i];
+        
+        // 代码块开始/结束
+        if (line.trim().startsWith('```')) {
+          if (inCodeBlock) {
+            // 结束代码块
+            html += '<pre><code>' + codeBlockContent.trim() + '</code></pre>\n';
+            codeBlockContent = '';
+            inCodeBlock = false;
+          } else {
+            // 开始代码块
+            inCodeBlock = true;
+          }
+          continue;
+        }
+        
+        if (inCodeBlock) {
+          codeBlockContent += line + '\n';
+          continue;
+        }
+        
+        // 空行
+        if (line.trim() === '') {
+          if (inList) {
+            // 结束列表
+            html += '</' + listType + '>\n';
+            inList = false;
+            listType = null;
+          }
+          html += '\n';
+          continue;
+        }
+        
+        // 标题
+        if (line.startsWith('#### ')) {
+          html += '<h4>' + line.substring(5).trim() + '</h4>\n';
+          continue;
+        }
+        if (line.startsWith('### ')) {
+          html += '<h3>' + line.substring(4).trim() + '</h3>\n';
+          continue;
+        }
+        if (line.startsWith('## ')) {
+          html += '<h2>' + line.substring(3).trim() + '</h2>\n';
+          continue;
+        }
+        if (line.startsWith('# ')) {
+          html += '<h1>' + line.substring(2).trim() + '</h1>\n';
+          continue;
+        }
+        
+        // 引用
+        if (line.startsWith('> ')) {
+          html += '<blockquote>' + line.substring(2).trim() + '</blockquote>\n';
+          continue;
+        }
+        
+        // 无序列表
+        if (line.startsWith('- ')) {
+          if (!inList || listType !== 'ul') {
+            if (inList) {
+              html += '</' + listType + '>\n';
+            }
+            html += '<ul>\n';
+            inList = true;
+            listType = 'ul';
+          }
+          html += '  <li>' + line.substring(2).trim() + '</li>\n';
+          continue;
+        }
+        
+        // 有序列表
+        const orderedListMatch = line.match(/^(\d+)\. (.*)$/);
+        if (orderedListMatch) {
+          if (!inList || listType !== 'ol') {
+            if (inList) {
+              html += '</' + listType + '>\n';
+            }
+            html += '<ol>\n';
+            inList = true;
+            listType = 'ol';
+          }
+          html += '  <li>' + orderedListMatch[2].trim() + '</li>\n';
+          continue;
+        }
+        
+        // 分隔线
+        if (line.trim() === '***' || line.trim() === '---') {
+          html += '<hr>\n';
+          continue;
+        }
+        
+        // 普通段落 - 先处理行内代码
+        let processedLine = line;
+        // 行内代码
+        processedLine = processedLine.replace(/`([^`]+)`/g, function(match, code) {
+          return '<code>' + code + '</code>';
+        });
+        
+        html += '<p>' + processedLine + '</p>\n';
+      }
       
-      // 行内代码
-      html = html.replace(/`([^`]+)`/g, function(match, code) {
-        return '<code>' + code + '</code>';
-      });
-      
-      // 标题
-      html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
-      html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
-      html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
-      html = html.replace(/^#### (.*$)/gim, '<h4>$1</h4>');
-      
-      // 引用
-      html = html.replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>');
-      
-      // 无序列表
-      html = html.replace(/^- (.*$)/gim, '<li>$1</li>');
-      html = html.replace(/(<li>.*<\/li>\n?)+/g, function(match) {
-        return '<ul>' + match + '</ul>';
-      });
-      
-      // 有序列表
-      html = html.replace(/^\d+\. (.*$)/gim, '<li>$1</li>');
-      
-      // 分隔线
-      html = html.replace(/^\*\*\*$/gim, '<hr>');
-      html = html.replace(/^---$/gim, '<hr>');
-      
-      // 段落（处理换行）
-      html = html.replace(/\n\n/g, '</p><p>');
-      html = '<p>' + html + '</p>';
-      html = html.replace(/<p><\/p>/g, '');
+      // 如果最后还在列表中，关闭列表
+      if (inList) {
+        html += '</' + listType + '>\n';
+      }
       
       return html;
     }
@@ -2385,20 +2462,26 @@ graph LR
       document.getElementById('detailModal').classList.add('show');
     }
     
-    // 点击详情模态框外部关闭
-    document.addEventListener('click', function(e) {
-      const modal = document.getElementById('detailModal');
-      if (modal && e.target === modal) {
-        closeDetailModal();
-      }
-    });
+    // 点击详情模态框外部关闭（使用标记避免重复添加）
+    if (!window._detailModalClickListenerAdded) {
+      document.addEventListener('click', function(e) {
+        const modal = document.getElementById('detailModal');
+        if (modal && e.target === modal) {
+          closeDetailModal();
+        }
+      });
+      window._detailModalClickListenerAdded = true;
+    }
     
-    // ESC 键关闭详情模态框
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') {
-        closeDetailModal();
-      }
-    });
+    // ESC 键关闭详情模态框（使用标记避免重复添加）
+    if (!window._detailModalKeyListenerAdded) {
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          closeDetailModal();
+        }
+      });
+      window._detailModalKeyListenerAdded = true;
+    }
     
     // 初始化
     init();
