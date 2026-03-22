@@ -703,6 +703,114 @@
                   </div>
                 </div>
                 
+                <!-- 状态判断逻辑详细说明 -->
+                <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                  <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                    <span>📖 状态判断逻辑详解</span>
+                  </h3>
+                  
+                  <div style="display: grid; grid-template-columns: 1fr; gap: 16px;">
+                    <!-- outline 状态 -->
+                    <div style="padding: 14px; background: #fff7e6; border: 1px solid #ffe7ba; border-radius: 6px; border-left: 4px solid #faad14;">
+                      <div style="font-size: 13px; font-weight: 600; color: #9a6700; margin-bottom: 8px;">📋 outline（大纲） - 判断逻辑</div>
+                      <div style="font-size: 11px; color: #5c4b29; line-height: 1.7;">
+                        <strong>判定条件（满足以下任一）：</strong>
+                        <ul style="margin: 6px 0 6px 16px; padding: 0;">
+                          <li>章节内容 <strong>为空</strong> 或 <strong>仅包含空白字符</strong></li>
+                          <li>数据库中该章节的 <code>status</code> 字段为 <code>'outline'</code></li>
+                        </ul>
+                        <strong>自动修复规则：</strong>
+                        <ul style="margin: 6px 0 6px 16px; padding: 0;">
+                          <li>若章节内容为空 → 强制设置为 <code>outline</code></li>
+                        </ul>
+                      </div>
+                    </div>
+                    
+                    <!-- first_draft 状态 -->
+                    <div style="padding: 14px; background: #f6f8fa; border: 1px solid var(--border); border-radius: 6px; border-left: 4px solid #6e7781;">
+                      <div style="font-size: 13px; font-weight: 600; color: #57606a; margin-bottom: 8px;">📝 first_draft（初稿） - 判断逻辑</div>
+                      <div style="font-size: 11px; color: #424a53; line-height: 1.7;">
+                        <strong>判定条件（同时满足）：</strong>
+                        <ul style="margin: 6px 0 6px 16px; padding: 0;">
+                          <li>章节内容 <strong>非空</strong>（去除空白字符后长度 > 0）</li>
+                          <li><strong>未经过</strong> 润色模块流程处理（即 <code>polishedAt</code> 为空 或 无润色记录）</li>
+                          <li>数据库中该章节的 <code>status</code> 字段 <strong>不是</strong> <code>polished/audited/published</code></li>
+                        </ul>
+                        <strong>自动修复规则：</strong>
+                        <ul style="margin: 6px 0 6px 16px; padding: 0;">
+                          <li>若章节有内容但状态为 <code>outline</code> → 自动升级为 <code>first_draft</code></li>
+                          <li>若章节有内容且状态不在状态机范畴内 → 强制设置为 <code>first_draft</code></li>
+                        </ul>
+                      </div>
+                    </div>
+                    
+                    <!-- polished 状态 -->
+                    <div style="padding: 14px; background: #ddf4ff; border: 1px solid #b3d7ff; border-radius: 6px; border-left: 4px solid #0969da;">
+                      <div style="font-size: 13px; font-weight: 600; color: #0969da; margin-bottom: 8px;">✨ polished（已润色） - 判断逻辑</div>
+                      <div style="font-size: 11px; color: #0550ae; line-height: 1.7;">
+                        <strong>判定条件（同时满足）：</strong>
+                        <ul style="margin: 6px 0 6px 16px; padding: 0;">
+                          <li>章节内容 <strong>非空</strong></li>
+                          <li><strong>经过</strong> 润色模块流程处理（即 <code>polishedAt</code> 有值 或 存在润色记录）</li>
+                          <li>数据库中该章节的 <code>status</code> 字段为 <code>'polished'</code></li>
+                        </ul>
+                        <strong>关键约束：</strong>
+                        <ul style="margin: 6px 0 6px 16px; padding: 0;">
+                          <li>只有通过润色模块完整流程处理的章节才能标记为 <code>polished</code></li>
+                          <li>手动编辑内容不会自动将状态提升为 <code>polished</code></li>
+                        </ul>
+                      </div>
+                    </div>
+                    
+                    <!-- audited 状态 -->
+                    <div style="padding: 14px; background: #dafbe1; border: 1px solid #abe2b5; border-radius: 6px; border-left: 4px solid #1a7f37;">
+                      <div style="font-size: 13px; font-weight: 600; color: #1a7f37; margin-bottom: 8px;">✅ audited（已审核） - 判断逻辑</div>
+                      <div style="font-size: 11px; color: #0f5132; line-height: 1.7;">
+                        <strong>判定条件：</strong>
+                        <ul style="margin: 6px 0 6px 16px; padding: 0;">
+                          <li>数据库中该章节的 <code>status</code> 字段为 <code>'audited'</code></li>
+                          <li>通常表示章节已通过人工审核或质量检查</li>
+                        </ul>
+                      </div>
+                    </div>
+                    
+                    <!-- published 状态 -->
+                    <div style="padding: 14px; background: #f3e8ff; border: 1px solid #d8b9ff; border-radius: 6px; border-left: 4px solid #8250df;">
+                      <div style="font-size: 13px; font-weight: 600; color: #8250df; margin-bottom: 8px;">🚀 published（已发布） - 判断逻辑</div>
+                      <div style="font-size: 11px; color: #6639b6; line-height: 1.7;">
+                        <strong>判定条件：</strong>
+                        <ul style="margin: 6px 0 6px 16px; padding: 0;">
+                          <li>数据库中该章节的 <code>status</code> 字段为 <code>'published'</code></li>
+                          <li>表示章节已发布到番茄小说或其他平台</li>
+                        </ul>
+                      </div>
+                    </div>
+                    
+                    <!-- 状态机覆盖原则 -->
+                    <div style="padding: 14px; background: #fff0f0; border: 1px solid #ffd6d6; border-radius: 6px; border-left: 4px solid #cf222e;">
+                      <div style="font-size: 13px; font-weight: 600; color: #cf222e; margin-bottom: 8px;">⚠️ 状态机覆盖原则（100% 覆盖保证）</div>
+                      <div style="font-size: 11px; color: #8c1d1d; line-height: 1.7;">
+                        <strong>任何章节都必须且只能属于以下 5 种状态之一：</strong>
+                        <ol style="margin: 6px 0 6px 16px; padding: 0;">
+                          <li><code>outline</code> → <code>first_draft</code> → <code>polished</code> → <code>audited</code> → <code>published</code></li>
+                        </ol>
+                        <strong>自动修复执行时机：</strong>
+                        <ul style="margin: 6px 0 6px 16px; padding: 0;">
+                          <li>系统启动时</li>
+                          <li>执行诊断和修复时</li>
+                          <li>状态转换前验证时</li>
+                        </ul>
+                        <strong>修复优先级：</strong>
+                        <ul style="margin: 6px 0 6px 16px; padding: 0;">
+                          <li>内容为空 → 优先修复为 <code>outline</code></li>
+                          <li>内容非空但状态无效 → 修复为 <code>first_draft</code></li>
+                          <li>已润色但状态过低 → 提升为 <code>polished</code></li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
                 <!-- 最近状态转换日志 -->
                 <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 20px;">
                   <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
