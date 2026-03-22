@@ -2080,6 +2080,12 @@
       // 初始化 AI工具箱 润色配置
       initPolishConfig();
       
+      // 加载保存的默认参数
+      const defaultParamsLoaded = loadDefaultParams();
+      if (defaultParamsLoaded) {
+        console.log('💾 默认参数已加载');
+      }
+      
       // 初始化 AI工具箱 生成配置（加载作品列表）
       await loadGenWorkList();
       
@@ -4766,6 +4772,54 @@
     }
     
     // 重置配置
+    // 保存默认参数
+    function saveDefaultParams() {
+      try {
+        const defaultParams = {
+          polishStyle: document.getElementById('polishStyle').value,
+          polishTemperature: document.getElementById('polishTemperature').value,
+          polishSteps: currentPolishConfig.steps
+        };
+        
+        localStorage.setItem('novelManagerDefaultParams', JSON.stringify(defaultParams));
+        showToast('💾 默认参数已保存', 'success');
+      } catch (e) {
+        console.error('保存默认参数失败:', e);
+        showToast('❌ 保存失败', 'error');
+      }
+    }
+    
+    // 加载默认参数
+    function loadDefaultParams() {
+      try {
+        const savedParams = localStorage.getItem('novelManagerDefaultParams');
+        if (!savedParams) {
+          return false;
+        }
+        
+        const defaultParams = JSON.parse(savedParams);
+        
+        if (defaultParams.polishStyle) {
+          document.getElementById('polishStyle').value = defaultParams.polishStyle;
+        }
+        
+        if (defaultParams.polishTemperature) {
+          document.getElementById('polishTemperature').value = defaultParams.polishTemperature;
+          updateTemperatureValue(defaultParams.polishTemperature);
+        }
+        
+        if (defaultParams.polishSteps) {
+          currentPolishConfig.steps = defaultParams.polishSteps;
+          renderPolishStepsList();
+        }
+        
+        return true;
+      } catch (e) {
+        console.error('加载默认参数失败:', e);
+        return false;
+      }
+    }
+    
     async function resetPolishConfig() {
       try {
         await api('/config/reset', { method: 'POST' });
@@ -5010,6 +5064,7 @@
         
         <div class="polish-actions">
           <button class="btn" onclick="resetPolishConfig()">🔄 重置配置</button>
+          <button class="btn" onclick="saveDefaultParams()">💾 保存为默认</button>
           <button class="btn" onclick="document.getElementById('polishText').value='';document.getElementById('polishResult').value=''">🗑️ 清空</button>
           <button class="btn primary" onclick="startPolish()">✨ 开始润色</button>
         </div>
