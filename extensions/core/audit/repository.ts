@@ -143,13 +143,67 @@ export async function saveAuditResult(
 ): Promise<void> {
   const issuesJson = JSON.stringify(auditIssues);
   
-  await db.execute(`
-    UPDATE chapters 
-    SET audit_status = ?, audit_issues = ?, suggested_action = ?, updated_at = NOW()
-    WHERE work_id = ? AND chapter_number = ?
-  `, [auditStatus, issuesJson, suggestedAction, workId, chapterNumber]);
+  // 动态构建 UPDATE 语句，只更新存在的字段
+  const updates: string[] = [];
+  const params: any[] = [];
   
-  logger.info(`已保存审核结果: workId=${workId}, chapter=${chapterNumber}, status=${auditStatus}`);
+  // 检查 audit_status 字段是否存在
+  try {
+    const [auditStatusCheck] = await db.query(`
+      SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'chapters' AND COLUMN_NAME = 'audit_status'
+    `);
+    if (auditStatusCheck[0].cnt > 0) {
+      updates.push('audit_status = ?');
+      params.push(auditStatus);
+    }
+  } catch (e) {
+    console.warn('[AuditRepository] 检查 audit_status 字段失败:', e.message);
+  }
+  
+  // 检查 audit_issues 字段是否存在
+  try {
+    const [auditIssuesCheck] = await db.query(`
+      SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'chapters' AND COLUMN_NAME = 'audit_issues'
+    `);
+    if (auditIssuesCheck[0].cnt > 0) {
+      updates.push('audit_issues = ?');
+      params.push(issuesJson);
+    }
+  } catch (e) {
+    console.warn('[AuditRepository] 检查 audit_issues 字段失败:', e.message);
+  }
+  
+  // 检查 suggested_action 字段是否存在
+  try {
+    const [suggestedActionCheck] = await db.query(`
+      SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'chapters' AND COLUMN_NAME = 'suggested_action'
+    `);
+    if (suggestedActionCheck[0].cnt > 0) {
+      updates.push('suggested_action = ?');
+      params.push(suggestedAction);
+    }
+  } catch (e) {
+    console.warn('[AuditRepository] 检查 suggested_action 字段失败:', e.message);
+  }
+  
+  // 如果有要更新的字段，执行更新
+  if (updates.length > 0) {
+    updates.push('updated_at = NOW()');
+    params.push(workId, chapterNumber);
+    
+    await db.execute(`
+      UPDATE chapters 
+      SET ${updates.join(', ')}
+      WHERE work_id = ? AND chapter_number = ?
+    `, params);
+    
+    logger.info(`已保存审核结果: workId=${workId}, chapter=${chapterNumber}, status=${auditStatus}`);
+  } else {
+    logger.info(`没有可更新的审核字段，跳过保存: workId=${workId}, chapter=${chapterNumber}`);
+  }
 }
 
 /**
@@ -160,8 +214,55 @@ export async function getAuditResult(workId: number, chapterNumber: number): Pro
   auditIssues: AuditIssue[];
   suggestedAction: SuggestedAction;
 } | null> {
+  // 动态构建 SELECT 语句，只查询存在的字段
+  const fields: string[] = [];
+  
+  // 检查 audit_status 字段是否存在
+  try {
+    const [auditStatusCheck] = await db.query(`
+      SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'chapters' AND COLUMN_NAME = 'audit_status'
+    `);
+    if (auditStatusCheck[0].cnt > 0) {
+      fields.push('audit_status');
+    }
+  } catch (e) {
+    console.warn('[AuditRepository] 检查 audit_status 字段失败:', e.message);
+  }
+  
+  // 检查 audit_issues 字段是否存在
+  try {
+    const [auditIssuesCheck] = await db.query(`
+      SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'chapters' AND COLUMN_NAME = 'audit_issues'
+    `);
+    if (auditIssuesCheck[0].cnt > 0) {
+      fields.push('audit_issues');
+    }
+  } catch (e) {
+    console.warn('[AuditRepository] 检查 audit_issues 字段失败:', e.message);
+  }
+  
+  // 检查 suggested_action 字段是否存在
+  try {
+    const [suggestedActionCheck] = await db.query(`
+      SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'chapters' AND COLUMN_NAME = 'suggested_action'
+    `);
+    if (suggestedActionCheck[0].cnt > 0) {
+      fields.push('suggested_action');
+    }
+  } catch (e) {
+    console.warn('[AuditRepository] 检查 suggested_action 字段失败:', e.message);
+  }
+  
+  // 如果没有字段，返回 null
+  if (fields.length === 0) {
+    return null;
+  }
+  
   const row = await db.queryOne(`
-    SELECT audit_status, audit_issues, suggested_action
+    SELECT ${fields.join(', ')}
     FROM chapters
     WHERE work_id = ? AND chapter_number = ?
   `, [workId, chapterNumber]);
