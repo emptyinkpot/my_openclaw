@@ -97,7 +97,7 @@
         "lastDurationMs": 25637,
         "lastDeliveryStatus": "unknown",
         "consecutiveErrors": 2,
-        "lastError": "Channel is required (no configured channels detected). Set delivery.channel explicitly or use a main session with a previous channel."
+        "runningAtMs": 1774180800003
       }
     }
   ]
