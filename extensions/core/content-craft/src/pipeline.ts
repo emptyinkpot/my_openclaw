@@ -136,9 +136,6 @@ export class PolishPipeline {
       literature: resources.literature.length,
     });
     
-    // 初始化步骤注册表
-    StepRegistry.initialize();
-    
     // ========================================
     // 2. 初始化步骤注册表
     // ========================================
