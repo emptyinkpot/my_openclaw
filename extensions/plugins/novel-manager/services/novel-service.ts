@@ -634,7 +634,7 @@ export class NovelService {
     
     try {
       // 动态导入 FanqieScanner
-      const { getFanqieScanner } = require('../../../core/storage/FanqieScanner');
+      const { getFanqieScanner } = require('../../../core/pipeline/FanqieScanner');
       const scanner = getFanqieScanner();
       
       // 调用真实扫描
@@ -683,7 +683,7 @@ export class NovelService {
       
       // 尝试读取缓存
       try {
-        const { getFanqieScanner } = require('../../../core/storage/FanqieScanner');
+        const { getFanqieScanner } = require('../../../core/pipeline/FanqieScanner');
         const scanner = getFanqieScanner();
         const cachedWorks = scanner.readCache(accountId);
         
