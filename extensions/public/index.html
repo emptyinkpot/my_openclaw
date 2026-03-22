@@ -1314,7 +1314,7 @@
     let eventSource = null;
 
     let currentWork = null, currentTab = 'chapters', viewMode = 'grid', currentFilter = 'all';
-    let worksData = [], chaptersData = [], charactersData = [];
+    let worksData = [], chaptersData = [], charactersData = [], outlinesData = [];
     let currentEditingChapter = null;
     let parsedChapters = [];
     let parsedCharacters = [];
@@ -2831,11 +2831,12 @@
     
     // 渲染标签数据
     function renderTabData(tab, data) {
+      outlinesData = data.outlines || [];
       if (tab === 'chapters') {
         chaptersData = data.chapters || [];
         renderChapters(chaptersData);
       } else if (tab === 'volumes') {
-        renderVolumes(data.volumes || [], data.outlines || []);
+        renderVolumes(data.volumes || [], outlinesData);
       } else if (tab === 'characters') {
         charactersData = data.characters || [];
         renderCharacters(charactersData);
@@ -2859,6 +2860,11 @@
       const CHUNK_SIZE = 100;
       const shouldChunk = filtered.length > CHUNK_SIZE;
       
+      // 检查章节是否有大纲
+      const hasOutline = (chapterNumber) => {
+        return outlinesData.some(o => o.chapter_number === chapterNumber);
+      };
+      
       if (viewMode === 'grid') {
         const renderFn = (ch) => `
           <div class="data-card ${ch.word_count > 100 ? 'has-content' : 'no-content'}" onclick="editChapter(${ch.id})">
@@ -2872,7 +2878,7 @@
               <span>${ch.updated_at ? new Date(ch.updated_at).toLocaleDateString() : '-'}</span>
             </div>
             <div class="card-tags">
-              ${ch.plot_summary ? '<span class="tag">📋 大纲</span>' : ''}
+              ${hasOutline(ch.chapter_number) ? '<span class="tag" style="background: var(--accent); color: white;">📋 大纲</span>' : ''}
               ${ch.word_count > 3000 ? '<span class="tag">✓ 完</span>' : ''}
             </div>
           </div>`;
@@ -3275,12 +3281,16 @@
       if (!ch) return;
       
       currentEditingChapter = ch;
+      
+      // 从 outlinesData 中获取大纲
+      const outline = outlinesData.find(o => o.chapter_number === ch.chapter_number);
+      
       document.getElementById('chapterModalTitle').textContent = `编辑第${ch.chapter_number}章`;
       document.getElementById('chapterModalMeta').textContent = `${ch.word_count || 0}字 | 创建于 ${ch.created_at ? new Date(ch.created_at).toLocaleDateString() : '-'}`;
       document.getElementById('editChapterId').value = ch.id;
       document.getElementById('editTitle').value = ch.title || '';
       document.getElementById('editContent').value = ch.content || '';
-      document.getElementById('editOutline').value = ch.plot_summary || '';
+      document.getElementById('editOutline').value = outline ? (outline.plot_summary || outline.summary || '') : (ch.plot_summary || '');
       updateWordCount();
       document.getElementById('chapterModal').classList.add('show');
       
