@@ -141,13 +141,13 @@ export class GenerationPipeline {
     const formattedChapterOutline: ChapterOutline = {
       chapterNumber: chapterOutline.chapter_number,
       title: chapterOutline.title || '',
-      summary: chapterOutline.summary || '',
-      keyEvents: chapterOutline.key_events ? JSON.parse(chapterOutline.key_events) : [],
+      summary: chapterOutline.plot_summary || '',
+      keyEvents: chapterOutline.main_scenes ? [chapterOutline.main_scenes] : [],
       characters: chapterOutline.characters ? JSON.parse(chapterOutline.characters) : [],
-      location: chapterOutline.location || '',
-      time: chapterOutline.time || '',
-      mood: chapterOutline.mood || '',
-      targetWordCount: chapterOutline.target_word_count || 2000
+      location: '',
+      time: '',
+      mood: chapterOutline.emotion_tone || '',
+      targetWordCount: 2000
     };
 
     // ========================================
@@ -177,7 +177,7 @@ export class GenerationPipeline {
         // 尝试获取细纲作为 summary
         for (const ch of chapters) {
           const outline = await this.db.queryOne(
-            'SELECT summary FROM chapter_outlines WHERE work_id = ? AND chapter_number = ?',
+            'SELECT plot_summary FROM chapter_outlines WHERE work_id = ? AND chapter_number = ?',
             [workId, ch.chapterNumber]
           );
           
@@ -185,7 +185,7 @@ export class GenerationPipeline {
             chapterNumber: ch.chapterNumber,
             title: ch.title || '',
             content: ch.content,
-            summary: outline?.summary || this.summarizeContent(ch.content, 300)
+            summary: outline?.plot_summary || this.summarizeContent(ch.content, 300)
           });
         }
       }
