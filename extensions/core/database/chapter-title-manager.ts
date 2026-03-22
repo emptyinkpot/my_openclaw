@@ -59,17 +59,34 @@ export class ChapterTitleManager {
     };
 
     try {
-      // 1. 获取所有作品
-      const works = await this.db.query('SELECT id, title FROM works');
+      // 1. 获取所有作品（即使表不存在也继续）
+      let works: any[] = [];
+      try {
+        works = await this.db.query('SELECT id, title FROM works');
+      } catch (e) {
+        logger.warn('[ChapterTitleManager] works 表可能不存在，跳过');
+        return result;
+      }
       
       for (const work of works) {
         logger.info(`[ChapterTitleManager] 处理作品: ${work.title} (ID: ${work.id})`);
         
-        // 2. 获取该作品的卷纲
-        const volumes = await this.getVolumesForWork(work.id);
+        // 2. 获取该作品的卷纲（表不存在时返回空数组）
+        let volumes: VolumeOutline[] = [];
+        try {
+          volumes = await this.getVolumesForWork(work.id);
+        } catch (e) {
+          // 表不存在，继续使用空数组
+        }
         
         // 3. 获取该作品的所有章节
-        const chapters = await this.getChaptersForWork(work.id);
+        let chapters: Chapter[] = [];
+        try {
+          chapters = await this.getChaptersForWork(work.id);
+        } catch (e) {
+          logger.warn(`[ChapterTitleManager] 作品 ${work.id} 的 chapters 表访问失败`);
+          continue;
+        }
         
         // 4. 对每个章节补充标题
         for (const chapter of chapters) {
@@ -103,7 +120,8 @@ export class ChapterTitleManager {
       
     } catch (error) {
       logger.error('[ChapterTitleManager] 自动补充失败:', error);
-      throw error;
+      // 不抛出错误，避免影响启动
+      return result;
     }
   }
 
@@ -229,41 +247,61 @@ export class ChapterTitleManager {
   // ============== 辅助方法 ==============
 
   private async getVolumesForWork(workId: number): Promise<VolumeOutline[]> {
-    const rows = await this.db.query(
-      'SELECT * FROM volume_outlines WHERE work_id = ? ORDER BY volume_number',
-      [workId]
-    );
-    return rows as VolumeOutline[];
+    try {
+      const rows = await this.db.query(
+        'SELECT * FROM volume_outlines WHERE work_id = ? ORDER BY volume_number',
+        [workId]
+      );
+      return rows as VolumeOutline[];
+    } catch (e) {
+      // 表不存在，返回空数组
+      return [];
+    }
   }
 
   private async getChaptersForWork(workId: number): Promise<Chapter[]> {
-    const rows = await this.db.query(
-      'SELECT id, work_id, chapter_number, title, content FROM chapters WHERE work_id = ? ORDER BY chapter_number',
-      [workId]
-    );
-    return rows.map((row: any) => ({
-      id: row.id,
-      workId: row.work_id,
-      chapterNumber: row.chapter_number,
-      title: row.title,
-      content: row.content
-    }));
+    try {
+      const rows = await this.db.query(
+        'SELECT id, work_id, chapter_number, title, content FROM chapters WHERE work_id = ? ORDER BY chapter_number',
+        [workId]
+      );
+      return rows.map((row: any) => ({
+        id: row.id,
+        workId: row.work_id,
+        chapterNumber: row.chapter_number,
+        title: row.title,
+        content: row.content
+      }));
+    } catch (e) {
+      // 表不存在，返回空数组
+      return [];
+    }
   }
 
   private async getChapterOutline(workId: number, chapterNumber: number): Promise<ChapterOutline | null> {
-    const row = await this.db.queryOne(
-      'SELECT * FROM chapter_outlines WHERE work_id = ? AND chapter_number = ?',
-      [workId, chapterNumber]
-    );
-    return row as ChapterOutline | null;
+    try {
+      const row = await this.db.queryOne(
+        'SELECT * FROM chapter_outlines WHERE work_id = ? AND chapter_number = ?',
+        [workId, chapterNumber]
+      );
+      return row as ChapterOutline | null;
+    } catch (e) {
+      // 表不存在，返回 null
+      return null;
+    }
   }
 
   private async getChapterOutlinesForWork(workId: number): Promise<ChapterOutline[]> {
-    const rows = await this.db.query(
-      'SELECT * FROM chapter_outlines WHERE work_id = ? ORDER BY chapter_number',
-      [workId]
-    );
-    return rows as ChapterOutline[];
+    try {
+      const rows = await this.db.query(
+        'SELECT * FROM chapter_outlines WHERE work_id = ? ORDER BY chapter_number',
+        [workId]
+      );
+      return rows as ChapterOutline[];
+    } catch (e) {
+      // 表不存在，返回空数组
+      return [];
+    }
   }
 
   private findVolumeForChapter(chapterNumber: number, volumes: VolumeOutline[]): VolumeOutline | null {
