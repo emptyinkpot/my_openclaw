@@ -1,73 +1,92 @@
 {
   "steps": {
     "detect": {
-      "enabled": true
-    },
-    "properNounCheck": {
-      "enabled": false
-    },
-    "narrativePerspective": {
-      "enabled": false
-    },
-    "classicalApply": {
-      "enabled": false
-    },
-    "citationApply": {
-      "enabled": false
-    },
-    "particleApply": {
-      "enabled": true
-    },
-    "punctuationApply": {
-      "enabled": true
+      "enabled": true,
+      "order": 0
     },
     "quoteProtect": {
-      "enabled": true
+      "enabled": true,
+      "order": 1
     },
     "titleExtract": {
-      "enabled": true
+      "enabled": true,
+      "order": 2
+    },
+    "properNounCheck": {
+      "enabled": false,
+      "order": 3
+    },
+    "narrativePerspective": {
+      "enabled": false,
+      "order": 4
+    },
+    "classicalApply": {
+      "enabled": false,
+      "order": 5
+    },
+    "citationApply": {
+      "enabled": false,
+      "order": 6
+    },
+    "particleApply": {
+      "enabled": false,
+      "order": 7
+    },
+    "punctuationApply": {
+      "enabled": true,
+      "order": 8
     },
     "polish": {
-      "enabled": false
+      "enabled": false,
+      "order": 9
     },
     "bannedWords": {
-      "enabled": true
+      "enabled": true,
+      "order": 10
     },
     "preferredWords": {
-      "enabled": true
+      "enabled": true,
+      "order": 11
     },
     "sentencePatterns": {
-      "enabled": true
+      "enabled": false,
+      "order": 12
     },
     "memeFuse": {
-      "enabled": false
+      "enabled": false,
+      "order": 13
     },
     "styleForge": {
-      "enabled": true
+      "enabled": false,
+      "order": 14
     },
     "markdownClean": {
-      "enabled": true
+      "enabled": true,
+      "order": 15
     },
     "semanticCheck": {
-      "enabled": true
+      "enabled": true,
+      "order": 16
     },
     "wordUsageCheck": {
-      "enabled": true
+      "enabled": false,
+      "order": 17
     },
     "smartFix": {
-      "enabled": true
+      "enabled": false,
+      "order": 18
     },
     "finalReview": {
-      "enabled": true
+      "enabled": true,
+      "order": 19
     },
     "breathSegment": {
-      "enabled": false
+      "enabled": false,
+      "order": 20
     }
   },
   "global": {
-    "style": "literary",
-    "temperature": 0.7,
-    "maxLength": 100000
-  },
-  "resources": {}
+    "style": "narrative",
+    "temperature": 0.7
+  }
 }
