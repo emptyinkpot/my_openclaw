@@ -251,12 +251,13 @@ export class ContentCraftAutoService {
       const db = getDatabaseManager();
       
       // 直接查询状态为 outline 或 first_draft 的章节
+      // 优先按作品序号（work_id）升序，再按章节序号（chapter_number）升序
       // 直接拼接 LIMIT 子句，避免 MySQL 参数绑定问题
       const limit = Math.max(1, Math.min(10, this.config.maxChaptersPerRun));
       const chapters = await db.query(`
         SELECT * FROM chapters 
         WHERE status IN ('outline', 'first_draft')
-        ORDER BY updated_at ASC
+        ORDER BY work_id ASC, chapter_number ASC
         LIMIT ${limit}
       `);
       
