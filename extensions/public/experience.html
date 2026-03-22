@@ -1419,7 +1419,7 @@
     // 加载专栏数据
     async function loadColumns() {
       try {
-        const columnsRes = await api('/experience/columns');
+        const columnsRes = await api('/columns');
         
         if (columnsRes.success) {
           columnData = columnsRes.data;
