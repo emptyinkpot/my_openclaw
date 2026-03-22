@@ -44,6 +44,8 @@ export class ContentCraftAutoService {
   private processedCount = 0;
   private errorCount = 0;
   private isProcessing = false; // 并发锁：防止同时执行多个处理流程
+  private chapterLocks = new Set<number>(); // 章节级别的锁
+  private readonly MAX_PARALLEL_WORKS = 3; // 最大并行处理的作品数
   private config: AutoServiceConfig = {
     enabled: false,
     processInterval: 60, // 默认 60 秒
@@ -169,6 +171,96 @@ export class ContentCraftAutoService {
   }
 
   /**
+   * 辅助函数：按属性分组
+   */
+  private groupBy<T>(array: T[], key: keyof T): Record<string, T[]> {
+    return array.reduce((result, item) => {
+      const groupKey = String(item[key]);
+      if (!result[groupKey]) {
+        result[groupKey] = [];
+      }
+      result[groupKey].push(item);
+      return result;
+    }, {} as Record<string, T[]>);
+  }
+
+  /**
+   * 辅助函数：有限并行执行器
+   */
+  private async promiseAllLimit<T>(
+    tasks: Array<() => Promise<T>>,
+    limit: number
+  ): Promise<T[]> {
+    const results: T[] = [];
+    const executing: Promise<void>[] = [];
+    
+    for (let i = 0; i < tasks.length; i++) {
+      const index = i;
+      const task = tasks[i];
+      
+      const promise = task().then(result => {
+        results[index] = result;
+      });
+      
+      executing.push(promise);
+      
+      if (executing.length >= limit) {
+        await Promise.race(executing);
+        // 移除已完成的任务
+        for (let j = executing.length - 1; j >= 0; j--) {
+          try {
+            // 检查是否已完成（不会抛出错误，因为我们已经处理了）
+          } catch (e) {
+            // 忽略
+          }
+        }
+      }
+    }
+    
+    await Promise.all(executing);
+    return results;
+  }
+
+  /**
+   * 处理单个章节
+   */
+  private async processSingleChapter(chapter: any): Promise<void> {
+    // 检查章节锁
+    if (this.chapterLocks.has(chapter.id)) {
+      logger.info(`[ContentCraftAutoService] 章节 ${chapter.id} 已在处理中，跳过`);
+      return;
+    }
+    
+    // 加章节锁
+    this.chapterLocks.add(chapter.id);
+    
+    try {
+      this.currentTask = `正在处理章节: ${chapter.title || chapter.chapter_number}`;
+      logger.info(`[ContentCraftAutoService] ${this.currentTask}`);
+      this.activityLog.log('progress', `开始处理第 ${chapter.chapter_number} 章: ${chapter.title || '无标题'}`);
+      
+      if ((chapter.state || chapter.status) === 'outline') {
+        // 生成章节内容（完整流程：生成+润色）
+        await this.generateChapter(chapter.work_id, chapter.chapter_number);
+      } else if ((chapter.state || chapter.status) === 'first_draft') {
+        // 润色章节内容
+        await this.polishChapter(chapter.work_id, chapter.chapter_number);
+      }
+      
+      this.processedCount++;
+      logger.info(`[ContentCraftAutoService] 章节处理成功: ${chapter.title || chapter.chapter_number}`);
+      this.activityLog.log('completed', `第 ${chapter.chapter_number} 章处理完成`);
+    } catch (error: any) {
+      this.errorCount++;
+      logger.error(`[ContentCraftAutoService] 章节处理失败: ${chapter.title || chapter.chapter_number}`, error.message);
+      this.activityLog.log('error', `第 ${chapter.chapter_number} 章处理失败: ${error.message}`);
+    } finally {
+      // 释放章节锁
+      this.chapterLocks.delete(chapter.id);
+    }
+  }
+
+  /**
    * 处理章节
    */
   private async processChapters(): Promise<void> {
@@ -204,30 +296,25 @@ export class ContentCraftAutoService {
       logger.info(`[ContentCraftAutoService] 找到 ${chaptersToProcess.length} 个需要处理的章节`);
       this.activityLog.log('progress', `找到 ${chaptersToProcess.length} 个需要处理的章节`);
       
-      // 只处理第一个章节（确保串行，避免并发问题）
-      const chapter = chaptersToProcess[0];
+      // 按作品分组
+      const chaptersByWork = this.groupBy(chaptersToProcess, 'work_id');
+      const workIds = Object.keys(chaptersByWork);
       
-      try {
-        this.currentTask = `正在处理章节: ${chapter.title || chapter.chapter_number}`;
-        logger.info(`[ContentCraftAutoService] ${this.currentTask}`);
-        this.activityLog.log('progress', `开始处理第 ${chapter.chapter_number} 章: ${chapter.title || '无标题'}`);
-        
-        if ((chapter.state || chapter.status) === 'outline') {
-          // 生成章节内容（完整流程：生成+润色）
-          await this.generateChapter(chapter.work_id, chapter.chapter_number);
-        } else if ((chapter.state || chapter.status) === 'first_draft') {
-          // 润色章节内容
-          await this.polishChapter(chapter.work_id, chapter.chapter_number);
-        }
-        
-        this.processedCount++;
-        logger.info(`[ContentCraftAutoService] 章节处理成功: ${chapter.title || chapter.chapter_number}`);
-        this.activityLog.log('completed', `第 ${chapter.chapter_number} 章处理完成`);
-      } catch (error: any) {
-        this.errorCount++;
-        logger.error(`[ContentCraftAutoService] 章节处理失败: ${chapter.title || chapter.chapter_number}`, error.message);
-        this.activityLog.log('error', `第 ${chapter.chapter_number} 章处理失败: ${error.message}`);
-      }
+      logger.info(`[ContentCraftAutoService] 涉及 ${workIds.length} 个作品，将并行处理`);
+      
+      // 为每个作品创建一个串行任务
+      const workTasks = workIds.map(workId => {
+        const chapters = chaptersByWork[workId];
+        return async () => {
+          // 单个作品内的章节串行处理
+          for (const chapter of chapters) {
+            await this.processSingleChapter(chapter);
+          }
+        };
+      });
+      
+      // 不同作品之间并行处理，限制最大并行数
+      await this.promiseAllLimit(workTasks, this.MAX_PARALLEL_WORKS);
       
       this.currentTask = null;
       logger.info('[ContentCraftAutoService] 章节处理完成');
