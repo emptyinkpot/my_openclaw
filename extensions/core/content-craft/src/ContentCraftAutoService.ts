@@ -293,7 +293,7 @@ export class ContentCraftAutoService {
     });
 
     // 保存生成后的内容并更新状态
-    if (result.text) {
+    if (result.finalText) {
       // 先获取章节ID
       const chapter = await db.queryOne(
         'SELECT * FROM chapters WHERE work_id = ? AND chapter_number = ?', 
@@ -301,11 +301,13 @@ export class ContentCraftAutoService {
       );
       if (chapter) {
         // 直接更新数据库，不依赖 novelService
+        // 生成+润色完成后，状态更新为 polished
         await db.execute(
           'UPDATE chapters SET content = ?, status = ?, updated_at = NOW() WHERE id = ?',
-          [result.text, 'first_draft', chapter.id]
+          [result.finalText, 'polished', chapter.id]
         );
-        logger.info(`[ContentCraftAutoService] 已更新章节 ${chapter.id} 的内容`);
+        logger.info(`[ContentCraftAutoService] 已更新章节 ${chapter.id} 的内容，状态更新为 polished`);
+        this.activityLog.log('progress', `已保存第 ${chapterNumber} 章内容，状态更新为 polished`);
       }
     }
     
@@ -351,7 +353,8 @@ export class ContentCraftAutoService {
         'UPDATE chapters SET content = ?, status = ?, updated_at = NOW() WHERE id = ?',
         [result.text, 'polished', chapter.id]
       );
-      logger.info(`[ContentCraftAutoService] 已更新章节 ${chapter.id} 的润色内容`);
+      logger.info(`[ContentCraftAutoService] 已更新章节 ${chapter.id} 的润色内容，状态更新为 polished`);
+      this.activityLog.log('progress', `已保存第 ${chapterNumber} 章润色内容，状态更新为 polished`);
     }
     
     logger.info(`[ContentCraftAutoService] 章节润色完成 (workId: ${workId}, chapterNumber: ${chapterNumber})`);
