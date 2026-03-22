@@ -139,7 +139,93 @@ export class PunctuationApplyStep extends BaseStep {
       }
       
       // ============================================
-      // 3. 括号处理：禁用小括号，使用LLM优化句子结构
+      // 3. 禁用破折号
+      // ============================================
+      reportProgress?.('正在处理破折号...');
+      
+      const hasDashes = resultText.includes('——') || resultText.includes('—') || 
+                       resultText.includes('–') || resultText.includes('-');
+      
+      if (hasDashes) {
+        let count = 0;
+        // 将各种破折号替换为逗号或句号，根据上下文
+        resultText = resultText.replace(/——/g, (match) => {
+          count++;
+          replacements.push({
+            original: match,
+            replaced: '，',
+            reason: '禁用破折号→逗号',
+            source: '标点规范'
+          });
+          return '，';
+        });
+        
+        resultText = resultText.replace(/—/g, (match) => {
+          count++;
+          replacements.push({
+            original: match,
+            replaced: '，',
+            reason: '禁用破折号→逗号',
+            source: '标点规范'
+          });
+          return '，';
+        });
+        
+        resultText = resultText.replace(/–/g, (match) => {
+          count++;
+          replacements.push({
+            original: match,
+            replaced: '，',
+            reason: '禁用破折号→逗号',
+            source: '标点规范'
+          });
+          return '，';
+        });
+        
+        if (count > 0) {
+          console.log(`[PunctuationApplyStep] 处理了 ${count} 处破折号`);
+        }
+      }
+      
+      // ============================================
+      // 4. 禁用冒号
+      // ============================================
+      reportProgress?.('正在处理冒号...');
+      
+      const hasColons = resultText.includes('：') || resultText.includes(':');
+      
+      if (hasColons) {
+        let count = 0;
+        // 将冒号替换为逗号或句号，根据上下文
+        resultText = resultText.replace(/：/g, (match) => {
+          count++;
+          replacements.push({
+            original: match,
+            replaced: '，',
+            reason: '禁用冒号→逗号',
+            source: '标点规范'
+          });
+          return '，';
+        });
+        
+        resultText = resultText.replace(/:/g, (match) => {
+          count++;
+          replacements.push({
+            original: match,
+            replaced: '，',
+            reason: '禁用冒号→逗号',
+            source: '标点规范'
+          });
+          return '，';
+        });
+        
+        if (count > 0) {
+          console.log(`[PunctuationApplyStep] 处理了 ${count} 处冒号`);
+        }
+      }
+      
+      // ============================================
+      // 5. 括号处理：禁用小括号，使用LLM优化句子结构
       // ============================================
       reportProgress?.('正在处理小括号...');
       
