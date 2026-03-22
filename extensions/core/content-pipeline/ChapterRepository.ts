@@ -45,7 +45,8 @@ export class ChapterRepository {
   }
 
   /**
-   * 按章节号获取章节内容（用于发布，不管发布状态）
+   * 按章节号获取章节内容（用于发布）
+   * 条件：有内容 + status = 'audited'
    */
   async getChapterByNumber(workId: number, chapterNumber: number): Promise<ChapterData | null> {
     const sql = `
@@ -65,6 +66,7 @@ export class ChapterRepository {
         AND c.chapter_number = ?
         AND c.content IS NOT NULL 
         AND LENGTH(c.content) > 100
+        AND c.status = 'audited'
       LIMIT 1
     `;
     
@@ -74,7 +76,7 @@ export class ChapterRepository {
 
   /**
    * 获取待发布章节
-   * 条件：有内容 + 已润色 + 审核通过 + 未发布
+   * 条件：有内容 + status = 'audited'
    */
   async getPendingPublish(filter: ChapterFilter = {}): Promise<ChapterData[]> {
     const { workId, chapterNumber, limit = 10 } = filter;
@@ -95,9 +97,7 @@ export class ChapterRepository {
       JOIN works w ON c.work_id = w.id
       WHERE c.content IS NOT NULL 
         AND c.content != ''
-        AND c.polish_status = 'polished'
-        AND c.audit_status = 'passed'
-        AND (c.publish_status IS NULL OR c.publish_status != 'published')
+        AND c.status = 'audited'
     `;
 
     if (workId) {
@@ -119,7 +119,7 @@ export class ChapterRepository {
 
   /**
    * 获取待处理章节（流水线用）
-   * 条件：有内容 + 未发布
+   * 条件：有内容
    */
   async getPendingProcess(filter: ChapterFilter = {}): Promise<ChapterData[]> {
     const { workId, chapterRange, limit = 100 } = filter;
@@ -153,8 +153,6 @@ export class ChapterRepository {
       sql += ' AND c.chapter_number BETWEEN ? AND ?';
       params.push(chapterRange[0], chapterRange[1]);
     }
-
-    sql += " AND (c.publish_status IS NULL OR c.publish_status != 'published')";
     
     // 直接拼接 LIMIT，避免 MySQL prepared statement 问题
     const safeLimit = Math.min(Math.max(1, limit), 1000);
@@ -170,11 +168,12 @@ export class ChapterRepository {
 
   /**
    * 更新发布状态
+   * 条件：更新 status 和 published_at
    */
   async updatePublishStatus(workId: number, chapterNumber: number, status: string): Promise<void> {
     await this.db.execute(
       `UPDATE chapters 
-       SET publish_status = ?, published_at = NOW() 
+       SET status = ?, published_at = NOW() 
        WHERE work_id = ? AND chapter_number = ?`,
       [status, workId, chapterNumber]
     );

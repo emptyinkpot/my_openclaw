@@ -1091,13 +1091,13 @@ export class NovelService {
         c.chapter_number,
         c.title,
         LENGTH(c.content) as content_length,
-        c.publish_status
+        c.status
       FROM chapters c
       WHERE c.content IS NOT NULL 
         AND LENGTH(c.content) > 100
         AND c.work_id = ?
         AND c.chapter_number BETWEEN ? AND ?
-        AND (c.publish_status IS NULL OR c.publish_status != 'published')
+        AND c.status != 'published'
       ORDER BY c.chapter_number
     `;
     
