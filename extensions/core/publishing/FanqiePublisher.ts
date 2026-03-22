@@ -53,7 +53,7 @@ export class FanqiePublisher {
 
   /**
    * 获取所有待发布的章节
-   * 条件：有内容 + 已润色(polished) + 审核通过(passed)
+   * 条件：有内容 + status = 'audited' + 未发布
    */
   async getPendingChapters(workId?: number, limit: number = 10): Promise<ChapterToPublish[]> {
     const repo = getChapterRepository();

@@ -45,7 +45,8 @@ export class ChapterRepository {
   }
 
   /**
-   * 按章节号获取章节内容（用于发布，不管发布状态）
+   * 按章节号获取章节内容（用于发布）
+   * 条件：有内容 + status = 'audited' + 未发布
    */
   async getChapterByNumber(workId: number, chapterNumber: number): Promise<ChapterData | null> {
     const sql = `
@@ -65,6 +66,8 @@ export class ChapterRepository {
         AND c.chapter_number = ?
         AND c.content IS NOT NULL 
         AND LENGTH(c.content) > 100
+        AND c.status = 'audited'
+        AND (c.publish_status IS NULL OR c.publish_status != 'published')
       LIMIT 1
     `;
     
