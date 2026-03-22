@@ -1354,19 +1354,19 @@
       return statusColor[status] || 'var(--text-muted)';
     }
     
-    // 修正章节状态（确保字数为0时状态为outline）
+    // 修正章节状态（确保状态逻辑正确）
     function fixChapterStatus(chapter) {
       if (!chapter) return chapter;
       
-      // 如果字数为0且状态不是outline，修正为outline
+      // 规则1：如果字数为0，状态必须是outline
       if ((!chapter.word_count || chapter.word_count === 0) && chapter.status !== 'outline') {
-        console.warn('⚠️ 修正章节状态:', chapter.id, '从', chapter.status, '到 outline');
+        console.warn('⚠️ 修正章节状态:', chapter.id, '从', chapter.status, '到 outline（字数为0）');
         chapter.status = 'outline';
       }
       
-      // 如果字数大于0且状态是outline，修正为first_draft或polished
+      // 规则2：如果字数大于0且状态是outline，修正为first_draft（只有经过润色模块处理的才能是polished）
       if (chapter.word_count && chapter.word_count > 0 && chapter.status === 'outline') {
-        console.warn('⚠️ 修正章节状态:', chapter.id, '从 outline 到 first_draft');
+        console.warn('⚠️ 修正章节状态:', chapter.id, '从 outline 到 first_draft（有内容但未润色）');
         chapter.status = 'first_draft';
       }
       

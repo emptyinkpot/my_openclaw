@@ -594,7 +594,7 @@ export class NovelService {
           updates.push('status = ?');
           params.push('outline');
         } else if (currentChapter && currentChapter.status === 'outline') {
-          // 从 outline 更新为 first_draft
+          // 从 outline 更新为 first_draft（只有经过润色模块的才能是 polished）
           updates.push('status = ?');
           params.push('first_draft');
         }

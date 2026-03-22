@@ -16,7 +16,7 @@
       "enabled": false
     },
     "particleApply": {
-      "enabled": false
+      "enabled": true
     },
     "punctuationApply": {
       "enabled": true
@@ -37,13 +37,13 @@
       "enabled": true
     },
     "sentencePatterns": {
-      "enabled": false
+      "enabled": true
     },
     "memeFuse": {
       "enabled": false
     },
     "styleForge": {
-      "enabled": false
+      "enabled": true
     },
     "markdownClean": {
       "enabled": true
@@ -52,10 +52,10 @@
       "enabled": true
     },
     "wordUsageCheck": {
-      "enabled": false
+      "enabled": true
     },
     "smartFix": {
-      "enabled": false
+      "enabled": true
     },
     "finalReview": {
       "enabled": true

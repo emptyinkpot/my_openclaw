@@ -1322,12 +1322,10 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
           await getNovelService().updateChapter(chapter.id, {
             content: result.text
           });
-          // 如果当前状态是 first_draft，更新为 polished
-          if (chapter.status === 'first_draft') {
-            await getNovelService().updateChapter(chapter.id, {
-              status: 'polished'
-            });
-          }
+          // 只要经过润色模块处理，不管之前是什么状态，都更新为 polished
+          await getNovelService().updateChapter(chapter.id, {
+            status: 'polished'
+          });
         }
         
         jsonRes(res, { 
@@ -1377,10 +1375,10 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
             await getNovelService().updateChapter(chapter.id, {
               content: result.text
             });
-            // 如果当前状态是 outline，更新为 polished
+            // 如果当前状态是 outline，更新为 first_draft（生成的内容是初稿，不是已润色）
             if (chapter.status === 'outline') {
               await getNovelService().updateChapter(chapter.id, {
-                status: 'polished'
+                status: 'first_draft'
               });
             }
           }
