@@ -200,6 +200,22 @@ export class NovelService {
         console.log('[NovelService] publish_status 删除跳过（可能不存在）');
       }
       
+      // 添加 plot_summary 字段（如果不存在）
+      try {
+        const [colCheck] = await this.db.query(`
+          SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'chapters' AND COLUMN_NAME = 'plot_summary'
+        `);
+        if (colCheck[0].cnt === 0) {
+          await this.db.execute(`
+            ALTER TABLE chapters ADD COLUMN plot_summary TEXT COMMENT '章节大纲/摘要' AFTER content
+          `);
+          console.log('[NovelService] plot_summary 字段已添加');
+        }
+      } catch (e) {
+        console.log('[NovelService] plot_summary 添加跳过');
+      }
+      
       // 创建角色表
       await this.db.execute(`
         CREATE TABLE IF NOT EXISTS characters (
