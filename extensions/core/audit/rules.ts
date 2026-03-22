@@ -139,9 +139,14 @@ export function checkNoGarbage(content: string): AuditIssue[] {
 export function autoFixRemoveTitles(content: string): string {
   // 删除 Markdown 标题（# 开头的行）
   let result = content.replace(/^#{1,6}\s+.+$/gm, '');
-  // 清理多余的空行
-  result = result.replace(/\n\s*\n\s*\n/g, '\n\n');
-  return result.trim();
+  
+  // 删除"第x章"开头的标题行
+  result = result.replace(/^第[0-9]+章.*$/gm, '');
+  
+  // 清理多余的空行（但保留换行符）
+  result = result.replace(/\n{3,}/g, '\n\n');
+  
+  return result;
 }
 
 /**
@@ -177,10 +182,11 @@ export function autoFixGarbage(content: string): string {
   // 删除无意义字母数字单词（10个字符以上的无意义组合）
   result = result.replace(/\b[a-zA-Z0-9]{10,}\b/g, '');
   
-  // 清理多余的空格
-  result = result.replace(/\s+/g, ' ');
+  // 清理多余的空格（但不删除换行符）
+  // 只替换连续的空格（不包含换行符）
+  result = result.replace(/[ \t]+/g, ' ');
   
-  return result.trim();
+  return result;
 }
 
 /**
