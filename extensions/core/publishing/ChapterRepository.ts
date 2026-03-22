@@ -199,12 +199,12 @@ export class ChapterRepository {
       }
     }
 
-    // 始终更新 publish_status 和 published_at
+    // 始终更新 status、publish_status 和 published_at
     await this.db.execute(
       `UPDATE chapters 
-       SET publish_status = ?, published_at = NOW() 
+       SET status = ?, publish_status = ?, published_at = NOW() 
        WHERE work_id = ? AND chapter_number = ?`,
-      [status, workId, chapterNumber]
+      [status, status, workId, chapterNumber]
     );
   }
 
