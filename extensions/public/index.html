@@ -983,6 +983,68 @@
                   <div style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">审核失败或发现问题时，自动执行完整修复流程</div>
                 </div>
               </div>
+
+              <!-- 自动发布服务控制面板 -->
+              <div style="margin-bottom: 16px; padding: 16px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px;">
+                <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                  <h3 style="font-size: 14px; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <span>🚀 自动发布服务</span>
+                    <span id="publishAutoStatusBadge" style="font-size: 10px; padding: 2px 8px; border-radius: 10px; background: #ffebe9; color: var(--danger);">已关闭</span>
+                  </h3>
+                  <button id="publishAutoToggleBtn" class="btn primary" onclick="togglePublishAuto()">▶️ 启动服务</button>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 12px;">
+                  <div style="padding: 12px; background: var(--bg-tertiary); border-radius: 6px;">
+                    <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 4px;">最后运行时间</div>
+                    <div id="publishAutoLastRun" style="font-size: 13px; font-weight: 500;">-</div>
+                  </div>
+                  <div style="padding: 12px; background: var(--bg-tertiary); border-radius: 6px;">
+                    <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 4px;">当前任务</div>
+                    <div id="publishAutoCurrentTask" style="font-size: 13px; font-weight: 500;">-</div>
+                  </div>
+                  <div style="padding: 12px; background: var(--bg-tertiary); border-radius: 6px;">
+                    <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 4px;">已发布章节</div>
+                    <div id="publishAutoProcessed" style="font-size: 13px; font-weight: 500; color: var(--success);">0</div>
+                  </div>
+                  <div style="padding: 12px; background: var(--bg-tertiary); border-radius: 6px;">
+                    <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 4px;">错误次数</div>
+                    <div id="publishAutoErrors" style="font-size: 13px; font-weight: 500; color: var(--danger);">0</div>
+                  </div>
+                </div>
+                
+                <!-- 配置项 -->
+                <div style="padding: 12px; background: var(--bg-tertiary); border-radius: 6px;">
+                  <div style="font-size: 11px; font-weight: 600; margin-bottom: 12px;">⚙️ 服务配置</div>
+                  
+                  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 12px;">
+                    <div>
+                      <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 6px;">处理间隔（秒）</label>
+                      <input type="number" id="publishAutoInterval" value="300" min="60" max="3600" style="width: 100%; padding: 6px 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px;" onchange="savePublishAutoConfig()">
+                    </div>
+                    <div>
+                      <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 6px;">每次最多发布章节数</label>
+                      <input type="number" id="publishAutoMaxChapters" value="1" min="1" max="5" style="width: 100%; padding: 6px 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px;" onchange="savePublishAutoConfig()">
+                    </div>
+                  </div>
+                  
+                  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 12px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0;">
+                        <input type="checkbox" id="publishAutoHeadless" checked style="width: 16px; height: 16px; cursor: pointer;" onchange="savePublishAutoConfig()">
+                        <span style="font-size: 11px; color: var(--text);">无头模式</span>
+                      </label>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0;">
+                        <input type="checkbox" id="publishAutoDryRun" style="width: 16px; height: 16px; cursor: pointer;" onchange="savePublishAutoConfig()">
+                        <span style="font-size: 11px; color: var(--text);">模拟模式</span>
+                      </label>
+                    </div>
+                  </div>
+                  <div style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">无头模式：不显示浏览器窗口；模拟模式：不实际发布</div>
+                </div>
+              </div>
               
               <!-- 处理说明 -->
               <div style="padding: 16px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px;">
@@ -1016,6 +1078,12 @@
                         <li>保证内容信息不受影响</li>
                       </ul>
                     </div>
+                  </div>
+
+                  <!-- 发布自动处理规则 -->
+                  <div style="padding: 10px; background: var(--bg-tertiary); border-radius: 6px; border-left: 3px solid var(--accent); margin-top: 12px;">
+                    <div style="font-size: 12px; font-weight: 500; margin-bottom: 4px;">🚀 发布自动处理: 已审核 → 已发布</div>
+                    <div style="font-size: 11px; color: var(--text-muted);">自动发布状态为 <code style="background: var(--bg); padding: 1px 4px; border-radius: 3px; font-size: 10px;">audited</code> 的章节到番茄小说，完成后标记为 <code style="background: var(--bg); padding: 1px 4px; border-radius: 3px; font-size: 10px;">published</code></div>
                   </div>
                 </div>
               </div>

@@ -1928,6 +1928,71 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
       return true;
     }
 
+    // ==================== 发布自动服务 API ====================
+    // 获取发布自动服务状态
+    if (path === '/api/novel/publish-auto/status' && method === 'GET') {
+      try {
+        const publishService = getPublishAutoService();
+        const status = publishService.getStatus();
+        jsonRes(res, { success: true, data: status });
+      } catch (e: any) {
+        jsonRes(res, { success: false, error: e.message }, 500);
+      }
+      return true;
+    }
+
+    // 启动发布自动服务
+    if (path === '/api/novel/publish-auto/start' && method === 'POST') {
+      try {
+        const publishService = getPublishAutoService();
+        publishService.start();
+        const status = publishService.getStatus();
+        jsonRes(res, { success: true, data: status });
+      } catch (e: any) {
+        jsonRes(res, { success: false, error: e.message }, 500);
+      }
+      return true;
+    }
+
+    // 停止发布自动服务
+    if (path === '/api/novel/publish-auto/stop' && method === 'POST') {
+      try {
+        const publishService = getPublishAutoService();
+        publishService.stop();
+        const status = publishService.getStatus();
+        jsonRes(res, { success: true, data: status });
+      } catch (e: any) {
+        jsonRes(res, { success: false, error: e.message }, 500);
+      }
+      return true;
+    }
+
+    // 获取发布自动服务配置
+    if (path === '/api/novel/publish-auto/config' && method === 'GET') {
+      try {
+        const publishService = getPublishAutoService();
+        const config = publishService.getConfig();
+        jsonRes(res, { success: true, data: config });
+      } catch (e: any) {
+        jsonRes(res, { success: false, error: e.message }, 500);
+      }
+      return true;
+    }
+
+    // 更新发布自动服务配置
+    if (path === '/api/novel/publish-auto/config' && method === 'POST') {
+      try {
+        const body = await parseBody(req);
+        const publishService = getPublishAutoService();
+        publishService.updateConfig(body);
+        const config = publishService.getConfig();
+        jsonRes(res, { success: true, data: config });
+      } catch (e: any) {
+        jsonRes(res, { success: false, error: e.message }, 500);
+      }
+      return true;
+    }
+
     // ==================== 活动日志 API ====================
     // 获取活动日志
     if (path === '/api/novel/activity-log' && method === 'GET') {
