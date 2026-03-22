@@ -16,9 +16,11 @@ import {
 } from './types';
 import { getPendingAuditChapters, updateChapterStatus, getWork } from './repository';
 import { auditChapter, autoFixChapter } from './service';
+import { AuditAutoService, getAuditAutoService } from './audit-auto-service';
 
 // 导出所有类型供外部使用
 export * from './types';
+export * from './audit-auto-service';
 
 /**
  * 运行完整审稿流程 - 唯一对外暴露的函数

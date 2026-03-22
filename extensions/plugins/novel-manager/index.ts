@@ -19,6 +19,8 @@ import { PolishPipeline } from '../../../core/content-craft/src/pipeline';
 import { FanqieSimplePipeline } from '../../../core/publishing/FanqieSimplePipeline';
 // 导入 content-craft 自动处理服务
 import { getContentCraftAutoService } from '../../../core/content-craft/src';
+// 导入审核自动处理服务
+import { getAuditAutoService } from '../../../core/audit';
 
 // 尝试导入 registerPluginHttpRoute
 let registerPluginHttpRoute: any;
@@ -1897,6 +1899,73 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
       }
       return true;
     }
+
+    // ==================== 审核自动处理服务 API ====================
+    // 获取审核自动处理服务状态
+    if (path === '/api/novel/audit-auto/status' && method === 'GET') {
+      try {
+        const auditAutoService = getAuditAutoService();
+        const status = auditAutoService.getStatus();
+        jsonRes(res, { success: true, data: status });
+      } catch (e: any) {
+        jsonRes(res, { success: false, error: e.message }, 500);
+      }
+      return true;
+    }
+
+    // 获取审核自动处理服务配置
+    if (path === '/api/novel/audit-auto/config' && method === 'GET') {
+      try {
+        const auditAutoService = getAuditAutoService();
+        const config = auditAutoService.getConfig();
+        jsonRes(res, { success: true, data: config });
+      } catch (e: any) {
+        jsonRes(res, { success: false, error: e.message }, 500);
+      }
+      return true;
+    }
+
+    // 更新审核自动处理服务配置
+    if (path === '/api/novel/audit-auto/config' && method === 'POST') {
+      try {
+        const body = await parseBody(req);
+        const auditAutoService = getAuditAutoService();
+        auditAutoService.updateConfig(body);
+        const config = auditAutoService.getConfig();
+        const status = auditAutoService.getStatus();
+        jsonRes(res, { success: true, data: { config, status } });
+      } catch (e: any) {
+        jsonRes(res, { success: false, error: e.message }, 500);
+      }
+      return true;
+    }
+
+    // 启动审核自动处理服务
+    if (path === '/api/novel/audit-auto/start' && method === 'POST') {
+      try {
+        const auditAutoService = getAuditAutoService();
+        auditAutoService.start();
+        const status = auditAutoService.getStatus();
+        jsonRes(res, { success: true, data: status });
+      } catch (e: any) {
+        jsonRes(res, { success: false, error: e.message }, 500);
+      }
+      return true;
+    }
+
+    // 停止审核自动处理服务
+    if (path === '/api/novel/audit-auto/stop' && method === 'POST') {
+      try {
+        const auditAutoService = getAuditAutoService();
+        auditAutoService.stop();
+        const status = auditAutoService.getStatus();
+        jsonRes(res, { success: true, data: status });
+      } catch (e: any) {
+        jsonRes(res, { success: false, error: e.message }, 500);
+      }
+      return true;
+    }
+
 
     // ====== 资源库相关API ======
     // 资源库：词汇表
