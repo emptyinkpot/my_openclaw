@@ -1320,6 +1320,22 @@
     let parsedCharacters = [];
     let parsedVolumes = [];
     
+    // 状态翻译
+    const statusText = {
+      'outline': '大纲',
+      'pending': '待写',
+      'audited': '已审核',
+      'published': '已发布'
+    };
+    
+    // 状态颜色
+    const statusColor = {
+      'outline': 'var(--warning)',
+      'pending': 'var(--text-muted)',
+      'audited': 'var(--success)',
+      'published': 'var(--accent)'
+    };
+    
     // ====== 数据缓存系统 ======
     const dataCache = {
       works: null,
@@ -2879,7 +2895,12 @@
       };
       
       if (viewMode === 'grid') {
-        const renderFn = (ch) => `
+        const renderFn = (ch) => {
+          const status = ch.status || 'pending';
+          const statusLabel = statusText[status] || status;
+          const color = statusColor[status] || 'var(--text-muted)';
+          
+          return `
           <div class="data-card ${ch.word_count > 100 ? 'has-content' : 'no-content'}" onclick="editChapter(${ch.id})">
             <div class="card-header">
               <span class="card-num">#${ch.chapter_number}</span>
@@ -2888,6 +2909,7 @@
             <div class="card-title">${ch.title || '无标题'}</div>
             <div class="card-meta">
               <span>${ch.word_count || 0}字</span>
+              <span style="color: ${color}; font-weight: 500;">${statusLabel}</span>
               <span>${ch.updated_at ? new Date(ch.updated_at).toLocaleDateString() : '-'}</span>
             </div>
             <div class="card-tags">
@@ -2895,6 +2917,7 @@
               ${ch.word_count > 3000 ? '<span class="tag">✓ 完</span>' : ''}
             </div>
           </div>`;
+        };
         
         if (shouldChunk) {
           container.innerHTML = '<div class="data-grid" id="chapters-grid"></div>';
@@ -2903,18 +2926,24 @@
           container.innerHTML = `<div class="data-grid">${filtered.map(renderFn).join('')}</div>`;
         }
       } else if (viewMode === 'list') {
-        const renderFn = (ch) => `
+        const renderFn = (ch) => {
+          const status = ch.status || 'pending';
+          const statusLabel = statusText[status] || status;
+          const color = statusColor[status] || 'var(--text-muted)';
+          
+          return `
           <div class="list-item" onclick="editChapter(${ch.id})">
             <div class="list-col num">#${ch.chapter_number}</div>
             <div class="list-col title">${ch.title || '无标题'}</div>
             <div class="list-col meta">${ch.word_count || 0}字</div>
-            <div class="list-col meta">${ch.status || '草稿'}</div>
+            <div class="list-col meta" style="color: ${color}; font-weight: 500;">${statusLabel}</div>
             <div class="list-col meta">${ch.updated_at ? new Date(ch.updated_at).toLocaleDateString() : '-'}</div>
             <div class="list-col actions">
               <button class="btn btn-sm" onclick="event.stopPropagation();editChapter(${ch.id})">✏️</button>
               <button class="btn btn-sm" onclick="event.stopPropagation();deleteChapter(${ch.id})">🗑️</button>
             </div>
           </div>`;
+        };
         
         if (shouldChunk) {
           container.innerHTML = '<div class="data-list" id="chapters-list"></div>';
@@ -2923,15 +2952,21 @@
           container.innerHTML = `<div class="data-list">${filtered.map(renderFn).join('')}</div>`;
         }
       } else {
-        const renderFn = (ch) => `
+        const renderFn = (ch) => {
+          const status = ch.status || 'pending';
+          const statusLabel = statusText[status] || status;
+          const color = statusColor[status] || 'var(--text-muted)';
+          
+          return `
           <tr onclick="editChapter(${ch.id})">
             <td>${ch.chapter_number}</td>
             <td>${ch.title || '无标题'}</td>
             <td>${ch.word_count || 0}</td>
-            <td>${ch.status || '草稿'}</td>
+            <td style="color: ${color}; font-weight: 500;">${statusLabel}</td>
             <td>${ch.updated_at ? new Date(ch.updated_at).toLocaleDateString() : '-'}</td>
             <td><button class="btn btn-sm" onclick="event.stopPropagation();deleteChapter(${ch.id})">🗑️</button></td>
           </tr>`;
+        };
         
         if (shouldChunk) {
           container.innerHTML = '<table class="data-table"><thead><tr><th>#</th><th>标题</th><th>字数</th><th>状态</th><th>更新时间</th><th>操作</th></tr></thead><tbody id="chapters-tbody"></tbody></table>';
