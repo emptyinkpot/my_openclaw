@@ -132,12 +132,7 @@ export class SmartScheduler {
     this.config.enabled = true;
     logger.info('[SmartScheduler] 智能调度器已启动');
     
-    this.activityLog.addEntry({
-      type: 'system',
-      level: 'info',
-      message: '🤖 智能调度器已启动',
-      timestamp: new Date().toISOString()
-    });
+    this.activityLog.log('system', '🤖 智能调度器已启动');
     
     // 立即执行一次调度
     setTimeout(() => {
@@ -167,12 +162,7 @@ export class SmartScheduler {
     this.stopTimer();
     logger.info('[SmartScheduler] 智能调度器已停止');
     
-    this.activityLog.addEntry({
-      type: 'system',
-      level: 'info',
-      message: '🛑 智能调度器已停止',
-      timestamp: new Date().toISOString()
-    });
+    this.activityLog.log('system', '🛑 智能调度器已停止');
   }
 
   /**
@@ -229,12 +219,7 @@ export class SmartScheduler {
       const contentCraftStatus = this.contentCraftService.getStatus();
       if (!contentCraftStatus.running) {
         this.contentCraftService.start();
-        this.activityLog.addEntry({
-          type: 'system',
-          level: 'info',
-          message: '🚀 Content Craft 自动处理服务已启动',
-          timestamp: new Date().toISOString()
-        });
+        this.activityLog.log('system', '🚀 Content Craft 自动处理服务已启动');
       }
       
       // 2. 等待一小会儿，让 Content Craft 处理
@@ -244,24 +229,14 @@ export class SmartScheduler {
       const auditStatus = this.auditService.getStatus();
       if (!auditStatus.running) {
         this.auditService.start();
-        this.activityLog.addEntry({
-          type: 'system',
-          level: 'info',
-          message: '✅ 审核自动处理服务已启动',
-          timestamp: new Date().toISOString()
-        });
+        this.activityLog.log('system', '✅ 审核自动处理服务已启动');
       }
       
       this.currentTask = null;
       logger.info('[SmartScheduler] 调度任务完成');
     } catch (error: any) {
       logger.error('[SmartScheduler] 调度任务出错:', error.message);
-      this.activityLog.addEntry({
-        type: 'system',
-        level: 'error',
-        message: `❌ 调度任务出错: ${error.message}`,
-        timestamp: new Date().toISOString()
-      });
+      this.activityLog.log('error', `❌ 调度任务出错: ${error.message}`);
       this.currentTask = null;
     }
   }

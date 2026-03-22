@@ -36,12 +36,7 @@ export class ActivityLog {
 
   constructor() {
     // 初始化时添加一条启动日志
-    this.addEntry({
-      type: 'system',
-      level: 'info',
-      message: '📋 活动日志系统已初始化',
-      timestamp: new Date().toISOString()
-    });
+    this.log('system', '📋 活动日志系统已初始化');
   }
 
   /**
@@ -86,12 +81,7 @@ export class ActivityLog {
   clear(): void {
     this.logs = [];
     this.nextId = 1;
-    this.addEntry({
-      type: 'system',
-      level: 'info',
-      message: '🧹 日志已清除',
-      timestamp: new Date().toISOString()
-    });
+    this.log('system', '🧹 日志已清除');
     this.notifyListeners();
   }
 
