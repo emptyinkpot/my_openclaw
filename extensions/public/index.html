@@ -83,10 +83,6 @@
     .data-card.no-content { border-left: 3px solid var(--text-muted); }
     .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
     .card-num { font-size: 10px; color: var(--accent); font-weight: 600; }
-    .card-status { width: 6px; height: 6px; border-radius: 50%; }
-    .card-status.done { background: var(--success); }
-    .card-status.pending { background: var(--warning); }
-    .card-status.empty { background: var(--text-muted); }
     .card-title { font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
     .card-meta { font-size: 10px; color: var(--text-muted); display: flex; justify-content: space-between; }
     .card-tags { display: flex; gap: 4px; margin-top: 6px; flex-wrap: wrap; }
@@ -339,9 +335,11 @@
             </div>
             <div class="toolbar-group">
               <span class="filter-btn active" onclick="filterStatus('all')">全部</span>
-              <span class="filter-btn" onclick="filterStatus('completed')">已完成</span>
+              <span class="filter-btn" onclick="filterStatus('outline')">大纲</span>
               <span class="filter-btn" onclick="filterStatus('first_draft')">初稿</span>
-              <span class="filter-btn" onclick="filterStatus('outline')">有大纲</span>
+              <span class="filter-btn" onclick="filterStatus('polished')">已润色</span>
+              <span class="filter-btn" onclick="filterStatus('audited')">已审核</span>
+              <span class="filter-btn" onclick="filterStatus('published')">已发布</span>
             </div>
             <div class="toolbar-group">
               <button class="btn btn-sm" onclick="batchSelect()">☐ 批量</button>
@@ -3511,7 +3509,6 @@
           <div class="data-card ${ch.word_count > 100 ? 'has-content' : 'no-content'}" onclick="editChapter(${ch.id})">
             <div class="card-header">
               <span class="card-num">#${ch.chapter_number}</span>
-              <span class="card-status ${ch.word_count > 2000 ? 'done' : ch.word_count > 100 ? 'pending' : 'empty'}"></span>
             </div>
             <div class="card-title">${ch.title || '无标题'}</div>
             <div class="card-meta">
@@ -3912,9 +3909,12 @@
     }
 
     function filterData(data) {
-      if (currentFilter === 'completed') return data.filter(ch => ch.word_count > 2000);
-      if (currentFilter === 'pending') return data.filter(ch => ch.word_count <= 100);
-      if (currentFilter === 'outline') return data.filter(ch => ch.plot_summary);
+      if (currentFilter === 'all') return data;
+      if (currentFilter === 'outline') return data.filter(ch => ch.status === 'outline');
+      if (currentFilter === 'first_draft') return data.filter(ch => ch.status === 'first_draft');
+      if (currentFilter === 'polished') return data.filter(ch => ch.status === 'polished');
+      if (currentFilter === 'audited') return data.filter(ch => ch.status === 'audited');
+      if (currentFilter === 'published') return data.filter(ch => ch.status === 'published');
       return data;
     }
 
