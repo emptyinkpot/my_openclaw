@@ -3499,7 +3499,7 @@
           console.log('📄 章节数据:', ch);
           // 修正状态
           ch = fixChapterStatus(ch);
-          const status = ch.status || 'pending';
+          const status = ch.status || 'outline';
           const statusLabel = getStatusText(status);
           const color = getStatusColor(status);
           
@@ -3533,7 +3533,7 @@
         const renderFn = (ch) => {
           // 修正状态
           ch = fixChapterStatus(ch);
-          const status = ch.status || 'pending';
+          const status = ch.status || 'outline';
           const statusLabel = getStatusText(status);
           const color = getStatusColor(status);
           
@@ -3559,7 +3559,7 @@
         }
       } else {
         const renderFn = (ch) => {
-          const status = ch.status || 'pending';
+          const status = ch.status || 'outline';
           const statusLabel = getStatusText(status);
           const color = getStatusColor(status);
           
