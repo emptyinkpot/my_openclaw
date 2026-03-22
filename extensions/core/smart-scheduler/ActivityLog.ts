@@ -32,6 +32,7 @@ export class ActivityLog {
   private logs: LogEntry[] = [];
   private maxLogs = 500; // 最多保留 500 条日志
   private listeners: ((logs: LogEntry[]) => void)[] = [];
+  private nextId = 1; // 简单的自增 ID 用于前端
 
   constructor() {
     // 初始化时添加一条启动日志
@@ -41,6 +42,57 @@ export class ActivityLog {
       message: '📋 活动日志系统已初始化',
       timestamp: new Date().toISOString()
     });
+  }
+
+  /**
+   * 简单的 log 方法（供前端和快速使用）
+   */
+  log(type: string, message: string): void {
+    const fullEntry: LogEntry & { id: number } = {
+      id: this.nextId++,
+      type: type as any,
+      level: 'info',
+      message,
+      timestamp: new Date().toISOString()
+    };
+    
+    // @ts-ignore - 临时添加 id 字段用于前端
+    this.logs.unshift(fullEntry);
+    
+    // 限制日志数量
+    if (this.logs.length > this.maxLogs) {
+      this.logs = this.logs.slice(0, this.maxLogs);
+    }
+    
+    // 通知所有监听器
+    this.notifyListeners();
+  }
+
+  /**
+   * 获取最近的日志（带简单 ID，供前端使用）
+   */
+  getRecentLogs(limit = 50): (LogEntry & { id: number })[] {
+    // 确保所有日志都有 id
+    return this.logs.slice(0, limit).map((log, index) => ({
+      ...log,
+      // @ts-ignore
+      id: log.id || (this.nextId - this.logs.length + index)
+    }));
+  }
+
+  /**
+   * 清空日志
+   */
+  clear(): void {
+    this.logs = [];
+    this.nextId = 1;
+    this.addEntry({
+      type: 'system',
+      level: 'info',
+      message: '🧹 日志已清除',
+      timestamp: new Date().toISOString()
+    });
+    this.notifyListeners();
   }
 
   /**
