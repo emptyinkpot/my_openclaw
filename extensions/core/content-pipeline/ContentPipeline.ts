@@ -83,8 +83,8 @@ export interface PipelineOptions {
 }
 
 // 作品状态定义
-export type WorkStatus = 'outline' | 'pending' | 'audited' | 'published';
-export type ChapterStatus = 'outline' | 'pending' | 'audited' | 'published';
+export type WorkStatus = 'outline' | 'first_draft' | 'polished' | 'audited' | 'published';
+export type ChapterStatus = 'outline' | 'first_draft' | 'polished' | 'audited' | 'published';
 
 /**
  * 审稿模块 - 审核调度

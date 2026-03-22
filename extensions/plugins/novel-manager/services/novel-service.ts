@@ -589,7 +589,7 @@ export class NovelService {
         if (!existing) {
           await this.db.execute(`
             INSERT INTO chapters (work_id, chapter_number, title, content, word_count, status, created_at, updated_at)
-            VALUES (?, ?, ?, NULL, 0, 'pending', NOW(), NOW())
+            VALUES (?, ?, ?, NULL, 0, 'outline', NOW(), NOW())
           `, [workId, num, `第${num}章`]);
           generated++;
         }

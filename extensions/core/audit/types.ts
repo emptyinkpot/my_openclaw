@@ -8,7 +8,7 @@
 export type WorkStatus = 'outline' | 'pending' | 'audited' | 'published';
 
 // 章节状态
-export type ChapterStatus = 'outline' | 'pending' | 'audited' | 'published';
+export type ChapterStatus = 'outline' | 'first_draft' | 'polished' | 'audited' | 'published';
 
 // 审核状态
 export type AuditStatus = 'pending' | 'reviewing' | 'passed' | 'failed';

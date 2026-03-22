@@ -1316,6 +1316,19 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
         }, (progress) => {
           console.log(`[PolishAPI] [进度] ${progress.currentStep || 'processing'}: ${progress.message} (${progress.progress}%)`);
         });
+
+        // 3. 保存润色后的内容并更新状态
+        if (result.text) {
+          await getNovelService().updateChapter(chapter.id, {
+            content: result.text
+          });
+          // 如果当前状态是 first_draft，更新为 polished
+          if (chapter.status === 'first_draft') {
+            await getNovelService().updateChapter(chapter.id, {
+              status: 'polished'
+            });
+          }
+        }
         
         jsonRes(res, { 
           success: true, 
@@ -1351,6 +1364,27 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
         }, (progress) => {
           console.log(`[GenerationAPI] [进度] ${progress.phase || 'generating'}: ${progress.message} (${progress.progress}%)`);
         });
+
+        // 保存生成后的内容并更新状态
+        if (result.text) {
+          // 先获取章节ID
+          const db = getDatabaseManager();
+          const chapter = await db.queryOne(
+            'SELECT * FROM chapters WHERE work_id = ? AND chapter_number = ?', 
+            [workId, chapterNumber]
+          );
+          if (chapter) {
+            await getNovelService().updateChapter(chapter.id, {
+              content: result.text
+            });
+            // 如果当前状态是 outline，更新为 polished
+            if (chapter.status === 'outline') {
+              await getNovelService().updateChapter(chapter.id, {
+                status: 'polished'
+              });
+            }
+          }
+        }
         
         jsonRes(res, { 
           success: true, 

@@ -74,7 +74,7 @@ export class ChapterRepository {
 
   /**
    * 获取待发布章节
-   * 条件：有内容 + 已润色 + 审核通过 + 未发布
+   * 条件：有内容 + status = 'audited' + 未发布
    */
   async getPendingPublish(filter: ChapterFilter = {}): Promise<ChapterData[]> {
     const { workId, chapterNumber, limit = 10 } = filter;
@@ -88,6 +88,7 @@ export class ChapterRepository {
         c.title as chapterTitle,
         c.content,
         c.word_count as wordCount,
+        c.status as status,
         c.polish_status as polishStatus,
         c.audit_status as auditStatus,
         c.publish_status as publishStatus
@@ -95,8 +96,7 @@ export class ChapterRepository {
       JOIN works w ON c.work_id = w.id
       WHERE c.content IS NOT NULL 
         AND c.content != ''
-        AND c.polish_status = 'polished'
-        AND c.audit_status = 'passed'
+        AND c.status = 'audited'
         AND (c.publish_status IS NULL OR c.publish_status != 'published')
     `;
 
@@ -174,7 +174,7 @@ export class ChapterRepository {
   async updatePublishStatus(workId: number, chapterNumber: number, status: string): Promise<void> {
     await this.db.execute(
       `UPDATE chapters 
-       SET publish_status = ?, published_at = NOW() 
+       SET publish_status = ?, status = 'published', published_at = NOW() 
        WHERE work_id = ? AND chapter_number = ?`,
       [status, workId, chapterNumber]
     );

@@ -13,7 +13,7 @@ import {
   SuggestedAction,
 } from './types';
 import { runAllAuditRules, autoFixFullWidthSymbols } from './rules';
-import { getChapter, saveAuditResult, updateChapterContent } from './repository';
+import { getChapter, saveAuditResult, updateChapterContent, updateChapterStatus } from './repository';
 
 /**
  * 审核章节
@@ -58,6 +58,11 @@ export async function auditChapter(workId: number, chapterNumber: number): Promi
 
   // 保存审核结果
   await saveAuditResult(workId, chapterNumber, auditStatus, issues, suggestedAction);
+
+  // 如果审核通过，更新状态为 audited
+  if (auditStatus === 'passed') {
+    await updateChapterStatus(workId, chapterNumber, 'audited');
+  }
 
   logger.info(`审核完成: workId=${workId}, chapter=${chapterNumber}, status=${auditStatus}, score=${score}`);
 

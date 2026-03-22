@@ -20,7 +20,7 @@ export async function getPendingAuditChapters(options: {
   let sql = `
     SELECT c.id, c.work_id, c.chapter_number, c.title, c.content, c.status
     FROM chapters c
-    WHERE c.status = 'pending'
+    WHERE c.status = 'polished'
   `;
   const params: any[] = [];
 
