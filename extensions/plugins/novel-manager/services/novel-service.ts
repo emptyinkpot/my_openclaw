@@ -385,10 +385,20 @@ export class NovelService {
    * 获取作品的所有章节
    */
   async getChaptersByWorkId(workId: number) {
-    return await this.db.query(`
-      SELECT id, chapter_number, title, word_count, status, created_at, updated_at
-      FROM chapters WHERE work_id = ? ORDER BY chapter_number
-    `, [workId]);
+    // 尝试获取 polish_info 字段，如果不存在则不获取
+    try {
+      return await this.db.query(`
+        SELECT id, chapter_number, title, word_count, status, polish_info, created_at, updated_at
+        FROM chapters WHERE work_id = ? ORDER BY chapter_number
+      `, [workId]);
+    } catch (e) {
+      // polish_info 字段不存在，使用基础字段
+      console.warn('[NovelService] polish_info 字段不存在，使用基础字段');
+      return await this.db.query(`
+        SELECT id, chapter_number, title, word_count, status, created_at, updated_at
+        FROM chapters WHERE work_id = ? ORDER BY chapter_number
+      `, [workId]);
+    }
   }
   
   /**
