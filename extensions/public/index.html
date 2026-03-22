@@ -339,7 +339,7 @@
             <div class="toolbar-group">
               <span class="filter-btn active" onclick="filterStatus('all')">全部</span>
               <span class="filter-btn" onclick="filterStatus('completed')">已完成</span>
-              <span class="filter-btn" onclick="filterStatus('pending')">待写</span>
+              <span class="filter-btn" onclick="filterStatus('first_draft')">初稿</span>
               <span class="filter-btn" onclick="filterStatus('outline')">有大纲</span>
             </div>
             <div class="toolbar-group">
@@ -1428,7 +1428,6 @@
     const statusText = {
       'outline': '大纲',
       'first_draft': '初稿',
-      'pending': '待写',
       'polished': '已润色',
       'audited': '已审核',
       'published': '已发布'
@@ -1438,7 +1437,6 @@
     const statusColor = {
       'outline': 'var(--warning)',
       'first_draft': 'var(--text-muted)',
-      'pending': 'var(--text-muted)',
       'polished': 'var(--accent)',
       'audited': 'var(--success)',
       'published': 'var(--purple)'
@@ -1446,7 +1444,7 @@
     
     // 安全获取状态文本
     function getStatusText(status) {
-      if (!status) return '待写';
+      if (!status) return '大纲';
       // 确保 first_draft 正确翻译
       if (status === 'first_draft') return '初稿';
       return statusText[status] || status;
