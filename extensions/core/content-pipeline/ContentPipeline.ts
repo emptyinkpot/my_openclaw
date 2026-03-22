@@ -12,7 +12,7 @@ import { getChapterRepository, ChapterData } from './ChapterRepository';
 import { logger } from '../../plugins/novel-manager/utils/logger';
 import { getConfig } from '../config';
 import { delay } from '../../plugins/novel-manager/utils/helpers';
-import { getDatabaseManager } from '../../database';
+import { getDatabaseManager } from '../database';
 
 // 流水线步骤定义
 export type PipelineStep = 

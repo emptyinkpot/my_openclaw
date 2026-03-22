@@ -9,7 +9,7 @@
 import * as mysql from 'mysql2/promise';
 import * as path from 'path';
 import * as fs from 'fs';
-import { getConfig } from '../core/config';
+import { getConfig } from '../config';
 
 // 查询结果类型
 export interface QueryResult<T = any> {

@@ -4,7 +4,7 @@
  * 负责所有数据库操作，低耦合
  */
 
-import { getDatabaseManager } from '../../database';
+import { getDatabaseManager } from '../database';
 import { ChapterData, WorkData, AuditStatus, SuggestedAction, AuditIssue } from './types';
 import { logger } from '../../plugins/novel-manager/utils/logger';
 
