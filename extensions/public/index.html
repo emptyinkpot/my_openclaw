@@ -1013,6 +1013,15 @@
                   </div>
                 </div>
                 
+                <!-- 缓存状态 -->
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--bg-tertiary); border-radius: 6px; margin-bottom: 12px;">
+                  <div>
+                    <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 2px;">番茄中不存在的作品</div>
+                    <div id="publishAutoMissingWorks" style="font-size: 13px; font-weight: 500; color: var(--warning);">0 个（已跳过）</div>
+                  </div>
+                  <button class="btn secondary" style="font-size: 12px; padding: 6px 12px;" onclick="clearPublishAutoCache()">🔄 清除缓存</button>
+                </div>
+                
                 <!-- 配置项 -->
                 <div style="padding: 12px; background: var(--bg-tertiary); border-radius: 6px;">
                   <div style="font-size: 11px; font-weight: 600; margin-bottom: 12px;">⚙️ 服务配置</div>
@@ -3038,16 +3047,20 @@
         await loadContentCraftAutoData();
         await loadAuditAutoData();
         await loadSmartSchedulerData();
+        await loadPublishAutoStatus();
+        await loadPublishAutoConfig();
         await loadActivityLog();
         startContentCraftAutoRefresh();
         startAuditAutoRefresh();
         startSmartSchedulerRefresh();
+        startPublishAutoRefresh();
         startActivityLogRefresh();
       } else {
         // 离开 AI自动处理页面时停止自动刷新
         stopContentCraftAutoRefresh();
         stopAuditAutoRefresh();
         stopSmartSchedulerRefresh();
+        stopPublishAutoRefresh();
         stopActivityLogRefresh();
       }
     }
@@ -3605,6 +3618,183 @@
       if (smartSchedulerRefreshTimer) {
         clearInterval(smartSchedulerRefreshTimer);
         smartSchedulerRefreshTimer = null;
+      }
+    }
+
+    // ========== 发布自动服务相关函数 ==========
+    const PUBLISH_AUTO_REFRESH_INTERVAL = 2000; // 2秒刷新一次
+    let publishAutoRefreshTimer = null;
+
+    // 加载发布自动服务状态
+    async function loadPublishAutoStatus() {
+      try {
+        const statusResult = await api('/novel/publish-auto/status');
+        if (statusResult.success) {
+          updatePublishAutoStatus(statusResult.data);
+        }
+      } catch (e) {
+        console.error('[PublishAuto] 加载状态失败:', e);
+      }
+    }
+
+    // 更新发布自动服务状态显示
+    function updatePublishAutoStatus(status) {
+      const statusBadge = document.getElementById('publishAutoStatusBadge');
+      const toggleBtn = document.getElementById('publishAutoToggleBtn');
+      const lastRunEl = document.getElementById('publishAutoLastRun');
+      const currentTaskEl = document.getElementById('publishAutoCurrentTask');
+      const processedEl = document.getElementById('publishAutoProcessed');
+      const errorsEl = document.getElementById('publishAutoErrors');
+      const missingWorksEl = document.getElementById('publishAutoMissingWorks');
+
+      if (statusBadge) {
+        if (status.running) {
+          statusBadge.textContent = '运行中';
+          statusBadge.style.background = 'rgba(26, 127, 55, 0.2)';
+          statusBadge.style.color = '#1a7f37';
+        } else {
+          statusBadge.textContent = '已关闭';
+          statusBadge.style.background = '#ffebe9';
+          statusBadge.style.color = 'var(--danger)';
+        }
+      }
+
+      if (toggleBtn) {
+        toggleBtn.textContent = status.running ? '⏹️ 停止服务' : '▶️ 启动服务';
+      }
+
+      if (lastRunEl) {
+        lastRunEl.textContent = status.lastRunTime 
+          ? new Date(status.lastRunTime).toLocaleString() 
+          : '-';
+      }
+
+      if (currentTaskEl) {
+        currentTaskEl.textContent = status.currentTask || '-';
+      }
+
+      if (processedEl) {
+        processedEl.textContent = status.processedCount || 0;
+      }
+
+      if (errorsEl) {
+        errorsEl.textContent = status.errorCount || 0;
+      }
+
+      if (missingWorksEl) {
+        const count = status.missingWorksCount || 0;
+        missingWorksEl.textContent = `${count} 个（已跳过）`;
+      }
+    }
+
+    // 切换发布自动服务状态
+    async function togglePublishAuto() {
+      try {
+        const statusResult = await api('/novel/publish-auto/status');
+        if (!statusResult.success) {
+          showToast('❌ 获取状态失败', 'error');
+          return;
+        }
+
+        const isRunning = statusResult.data.running;
+        const endpoint = isRunning ? '/novel/publish-auto/stop' : '/novel/publish-auto/start';
+        
+        const result = await api(endpoint, { method: 'POST' });
+        
+        if (result.success) {
+          updatePublishAutoStatus(result.data);
+          showToast(isRunning ? '⏹️ 发布服务已停止' : '▶️ 发布服务已启动', 'success');
+        } else {
+          showToast('❌ 操作失败: ' + result.error, 'error');
+        }
+      } catch (e) {
+        console.error('[PublishAuto] 切换状态失败:', e);
+        showToast('❌ 操作失败', 'error');
+      }
+    }
+
+    // 清除发布自动服务缓存
+    async function clearPublishAutoCache() {
+      try {
+        const result = await api('/novel/publish-auto/clear-cache', { method: 'POST' });
+        
+        if (result.success) {
+          updatePublishAutoStatus(result.data);
+          showToast('🔄 缓存已清除', 'success');
+        } else {
+          showToast('❌ 操作失败: ' + result.error, 'error');
+        }
+      } catch (e) {
+        console.error('[PublishAuto] 清除缓存失败:', e);
+        showToast('❌ 操作失败', 'error');
+      }
+    }
+
+    // 加载发布自动服务配置
+    async function loadPublishAutoConfig() {
+      try {
+        const result = await api('/novel/publish-auto/config');
+        if (result.success) {
+          const config = result.data;
+          const intervalEl = document.getElementById('publishAutoInterval');
+          const maxChaptersEl = document.getElementById('publishAutoMaxChapters');
+          const headlessEl = document.getElementById('publishAutoHeadless');
+          const dryRunEl = document.getElementById('publishAutoDryRun');
+
+          if (intervalEl) intervalEl.value = config.processInterval || 300;
+          if (maxChaptersEl) maxChaptersEl.value = config.maxChaptersPerRun || 1;
+          if (headlessEl) headlessEl.checked = config.headless !== false;
+          if (dryRunEl) dryRunEl.checked = config.dryRun === true;
+        }
+      } catch (e) {
+        console.error('[PublishAuto] 加载配置失败:', e);
+      }
+    }
+
+    // 保存发布自动服务配置
+    async function savePublishAutoConfig() {
+      try {
+        const intervalEl = document.getElementById('publishAutoInterval');
+        const maxChaptersEl = document.getElementById('publishAutoMaxChapters');
+        const headlessEl = document.getElementById('publishAutoHeadless');
+        const dryRunEl = document.getElementById('publishAutoDryRun');
+
+        const config = {
+          processInterval: parseInt(intervalEl?.value) || 300,
+          maxChaptersPerRun: parseInt(maxChaptersEl?.value) || 1,
+          headless: headlessEl?.checked !== false,
+          dryRun: dryRunEl?.checked === true
+        };
+
+        const result = await api('/novel/publish-auto/config', {
+          method: 'POST',
+          body: JSON.stringify(config)
+        });
+
+        if (result.success) {
+          showToast('✅ 配置已保存', 'success');
+        } else {
+          showToast('❌ 保存失败: ' + result.error, 'error');
+        }
+      } catch (e) {
+        console.error('[PublishAuto] 保存配置失败:', e);
+        showToast('❌ 保存失败', 'error');
+      }
+    }
+
+    // 启动发布自动服务自动刷新
+    function startPublishAutoRefresh() {
+      stopPublishAutoRefresh();
+      publishAutoRefreshTimer = setInterval(() => {
+        loadPublishAutoStatus();
+      }, PUBLISH_AUTO_REFRESH_INTERVAL);
+    }
+
+    // 停止发布自动服务自动刷新
+    function stopPublishAutoRefresh() {
+      if (publishAutoRefreshTimer) {
+        clearInterval(publishAutoRefreshTimer);
+        publishAutoRefreshTimer = null;
       }
     }
 

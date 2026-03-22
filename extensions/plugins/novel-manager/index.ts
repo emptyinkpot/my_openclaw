@@ -1993,6 +1993,19 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
       return true;
     }
 
+    // 清除发布自动服务的不存在作品缓存
+    if (path === '/api/novel/publish-auto/clear-cache' && method === 'POST') {
+      try {
+        const publishService = getPublishAutoService();
+        publishService.clearMissingWorksCache();
+        const status = publishService.getStatus();
+        jsonRes(res, { success: true, data: status });
+      } catch (e: any) {
+        jsonRes(res, { success: false, error: e.message }, 500);
+      }
+      return true;
+    }
+
     // ==================== 活动日志 API ====================
     // 获取活动日志
     if (path === '/api/novel/activity-log' && method === 'GET') {

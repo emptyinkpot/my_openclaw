@@ -42,6 +42,7 @@ export class PublishAutoService {
   private isProcessing = false; // 并发锁：防止同时执行多个处理流程
   private chapterLocks = new Set<number>(); // 章节级别的锁
   private readonly MAX_PARALLEL_WORKS = 1; // 发布服务一次只处理一个作品
+  private missingWorksCache = new Set<string>(); // 缓存番茄中不存在的作品，避免重复检查
   private config: PublishAutoServiceConfig = {
     enabled: false,
     processInterval: 300, // 默认 5 分钟
@@ -58,14 +59,26 @@ export class PublishAutoService {
   /**
    * 获取当前状态
    */
-  getStatus(): PublishAutoServiceStatus {
+  getStatus(): PublishAutoServiceStatus & { missingWorksCount: number } {
     return {
       running: this.running,
       lastRunTime: this.lastRunTime?.toISOString() || null,
       currentTask: this.currentTask,
       processedCount: this.processedCount,
-      errorCount: this.errorCount
+      errorCount: this.errorCount,
+      missingWorksCount: this.missingWorksCache.size
     };
+  }
+
+  /**
+   * 清除不存在作品的缓存
+   * 让用户可以手动刷新，重新检查作品是否存在
+   */
+  clearMissingWorksCache(): void {
+    const count = this.missingWorksCache.size;
+    this.missingWorksCache.clear();
+    logger.info(`[PublishAutoService] 已清除 ${count} 个不存在作品的缓存`);
+    this.activityLog.log('system', `已清除 ${count} 个不存在作品的缓存，将重新检查`);
   }
 
   /**
@@ -237,7 +250,17 @@ export class PublishAutoService {
           '自动'
         );
       } else {
-        throw new Error(results.length > 0 ? results[0].error || '发布失败' : '发布失败');
+        const errorMsg = results.length > 0 ? results[0].error || '发布失败' : '发布失败';
+        
+        // 检查是否是作品不存在的错误
+        if (errorMsg.includes('未在番茄找到对应作品') || errorMsg.includes('WORK_NOT_FOUND')) {
+          const cacheKey = `${chapter.work_id}-${chapter.work_title || '未知作品'}`;
+          this.missingWorksCache.add(cacheKey);
+          logger.warn(`[PublishAutoService] 作品 "${chapter.work_title || '未知作品'}" 在番茄中不存在，已加入跳过缓存`);
+          this.activityLog.log('warn', `作品 "${chapter.work_title || '未知作品'}" 在番茄中不存在，后续将自动跳过`);
+        }
+        
+        throw new Error(errorMsg);
       }
       
     } catch (error: any) {
@@ -256,6 +279,24 @@ export class PublishAutoService {
       // 释放章节锁
       this.chapterLocks.delete(chapter.id);
     }
+  }
+
+  /**
+   * 检查作品在番茄中是否存在
+   * 这个方法会先检查缓存，如果缓存中不存在，才会真正去番茄检查
+   */
+  private async isWorkExistInFanqie(workTitle: string, workId: number): Promise<boolean> {
+    // 先检查缓存
+    const cacheKey = `${workId}-${workTitle}`;
+    if (this.missingWorksCache.has(cacheKey)) {
+      logger.info(`[PublishAutoService] 作品 "${workTitle}" (ID: ${workId}) 在缓存中标记为不存在，跳过`);
+      return false;
+    }
+    
+    // 这里我们不实际去番茄检查（因为太耗时）
+    // 而是依赖 processSingleChapter() 中的失败来标记
+    // 这样可以避免频繁启动浏览器
+    return true;
   }
 
   /**
@@ -303,6 +344,16 @@ export class PublishAutoService {
       // 逐个作品处理，确保顺序
       for (const workId of workIds) {
         const chapters = chaptersByWork[workId];
+        const workTitle = chapters[0].work_title || '未知作品';
+        
+        // 检查作品是否在缓存中标记为不存在
+        const cacheKey = `${workId}-${workTitle}`;
+        if (this.missingWorksCache.has(cacheKey)) {
+          logger.info(`[PublishAutoService] 跳过作品 "${workTitle}" (ID: ${workId})，番茄中不存在`);
+          this.activityLog.log('progress', `跳过作品 "${workTitle}"，番茄中不存在`);
+          continue;
+        }
+        
         // 单个作品内的章节串行处理
         for (const chapter of chapters) {
           await this.processSingleChapter(chapter);
