@@ -36,14 +36,18 @@ export class ChapterStateMachine {
   async hasBeenPolished(chapterId: number): Promise<boolean> {
     try {
       // 方案1：检查状态转换历史中是否有 content_polished 记录
-      const transitionLog = await this.db.queryOne(`
-        SELECT id FROM state_transition_logs 
-        WHERE chapter_id = ? AND reason = 'content_polished'
-        LIMIT 1
-      `, [chapterId]);
-      
-      if (transitionLog) {
-        return true;
+      try {
+        const transitionLog = await this.db.queryOne(`
+          SELECT id FROM state_transition_logs 
+          WHERE chapter_id = ? AND reason = 'content_polished'
+          LIMIT 1
+        `, [chapterId]);
+        
+        if (transitionLog) {
+          return true;
+        }
+      } catch (e) {
+        // state_transition_logs 表可能不存在，忽略
       }
       
       // 方案2：检查 chapters 表的 polish_info 字段（如果有）
@@ -57,7 +61,7 @@ export class ChapterStateMachine {
           return polishInfo && polishInfo.hasBeenPolished === true;
         }
       } catch (e) {
-        // 字段可能不存在，忽略
+        // polish_info 字段可能不存在，忽略
       }
       
       return false;
