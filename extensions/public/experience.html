@@ -1088,12 +1088,19 @@
     }
     
     // 切换标签
-    function switchTab(tab) {
+    function switchTab(tab, event) {
       currentTab = tab;
       
       // 更新标签样式
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      event.target.classList.add('active');
+      const tabs = document.querySelectorAll('.tab');
+      tabs.forEach(t => t.classList.remove('active'));
+      
+      // 根据 tab 值找到对应的元素并添加 active 类
+      tabs.forEach(t => {
+        if (t.textContent.includes(tab === 'experience' ? '经验' : tab === 'notes' ? '笔记' : '专栏')) {
+          t.classList.add('active');
+        }
+      });
       
       // 更新左侧边栏
       document.getElementById('experienceSidebar').style.display = tab === 'experience' ? 'flex' : 'none';
@@ -1250,8 +1257,22 @@
     // 过滤
     function filterExp(type) {
       currentFilter = type;
-      document.querySelectorAll('#experienceToolbar .filter-tab').forEach(t => t.classList.remove('active'));
-      event.target.classList.add('active');
+      const tabs = document.querySelectorAll('#experienceToolbar .filter-tab');
+      tabs.forEach(t => t.classList.remove('active'));
+      
+      // 根据 type 值找到对应的元素并添加 active 类
+      const typeLabels = {
+        'all': '全部',
+        'problem_solving': '问题解决',
+        'bug_fix': 'Bug修复',
+        'feature_dev': '功能开发'
+      };
+      tabs.forEach(t => {
+        if (t.textContent.includes(typeLabels[type] || type)) {
+          t.classList.add('active');
+        }
+      });
+      
       renderList();
     }
     
@@ -1450,8 +1471,18 @@
     // 过滤笔记
     function filterNotes(category) {
       currentNoteFilter = category;
-      document.querySelectorAll('#noteCategoryTabs .filter-tab').forEach(t => t.classList.remove('active'));
-      event.target.classList.add('active');
+      const tabs = document.querySelectorAll('#noteCategoryTabs .filter-tab');
+      tabs.forEach(t => t.classList.remove('active'));
+      
+      // 根据 category 值找到对应的元素并添加 active 类
+      tabs.forEach(t => {
+        if (category === 'all' && t.textContent === '全部') {
+          t.classList.add('active');
+        } else if (t.textContent.includes(category)) {
+          t.classList.add('active');
+        }
+      });
+      
       renderNoteList();
     }
     
@@ -2315,8 +2346,22 @@ graph LR
     // 过滤专栏
     function filterColumns(category) {
       currentColumnFilter = category;
-      document.querySelectorAll('#columnsToolbar .filter-tab').forEach(t => t.classList.remove('active'));
-      event.target.classList.add('active');
+      const tabs = document.querySelectorAll('#columnsToolbar .filter-tab');
+      tabs.forEach(t => t.classList.remove('active'));
+      
+      // 根据 category 值找到对应的元素并添加 active 类
+      const categoryLabels = {
+        'all': '全部',
+        'dev_flow': '开发流程',
+        'tech_stack': '技术栈',
+        'best_practices': '最佳实践'
+      };
+      tabs.forEach(t => {
+        if (t.textContent.includes(categoryLabels[category] || category)) {
+          t.classList.add('active');
+        }
+      });
+      
       renderColumnList();
     }
     
