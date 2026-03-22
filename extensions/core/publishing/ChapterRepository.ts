@@ -46,7 +46,7 @@ export class ChapterRepository {
 
   /**
    * 按章节号获取章节内容（用于发布）
-   * 条件：有内容 + status = 'audited' + 未发布
+   * 条件：有内容 + status = 'audited'
    */
   async getChapterByNumber(workId: number, chapterNumber: number): Promise<ChapterData | null> {
     const sql = `
@@ -67,7 +67,6 @@ export class ChapterRepository {
         AND c.content IS NOT NULL 
         AND LENGTH(c.content) > 100
         AND c.status = 'audited'
-        AND (c.publish_status IS NULL OR c.publish_status != 'published')
       LIMIT 1
     `;
     
@@ -77,7 +76,7 @@ export class ChapterRepository {
 
   /**
    * 获取待发布章节
-   * 条件：有内容 + status = 'audited' + 未发布
+   * 条件：有内容 + status = 'audited'
    */
   async getPendingPublish(filter: ChapterFilter = {}): Promise<ChapterData[]> {
     const { workId, chapterNumber, limit = 10 } = filter;
@@ -100,7 +99,6 @@ export class ChapterRepository {
       WHERE c.content IS NOT NULL 
         AND c.content != ''
         AND c.status = 'audited'
-        AND (c.publish_status IS NULL OR c.publish_status != 'published')
     `;
 
     if (workId) {
@@ -157,7 +155,7 @@ export class ChapterRepository {
       params.push(chapterRange[0], chapterRange[1]);
     }
 
-    sql += " AND (c.publish_status IS NULL OR c.publish_status != 'published')";
+
     
     // 直接拼接 LIMIT，避免 MySQL prepared statement 问题
     const safeLimit = Math.min(Math.max(1, limit), 1000);
@@ -199,12 +197,12 @@ export class ChapterRepository {
       }
     }
 
-    // 始终更新 status、publish_status 和 published_at
+    // 始终更新 status 和 published_at
     await this.db.execute(
       `UPDATE chapters 
-       SET status = ?, publish_status = ?, published_at = NOW() 
+       SET status = ?, published_at = NOW() 
        WHERE work_id = ? AND chapter_number = ?`,
-      [status, status, workId, chapterNumber]
+      [status, workId, chapterNumber]
     );
   }
 
