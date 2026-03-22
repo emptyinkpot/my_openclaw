@@ -172,13 +172,11 @@ export class SmartScheduler {
       this.activityLog.log('system', '✅ 审核自动处理服务已启动');
     }
     
-    // 如果发布服务启用，立即启动发布自动处理服务
-    if (this.config.publish.enabled) {
-      const publishStatus = this.publishService.getStatus();
-      if (!publishStatus.running) {
-        this.publishService.start();
-        this.activityLog.log('system', '🚀 自动发布服务已启动');
-      }
+    // 立即启动发布自动处理服务
+    const publishStatus = this.publishService.getStatus();
+    if (!publishStatus.running) {
+      this.publishService.start();
+      this.activityLog.log('system', '🚀 自动发布服务已启动');
     }
     
     // 立即执行一次调度
@@ -283,13 +281,11 @@ export class SmartScheduler {
       // 4. 等待一小会儿，让审核处理
       await this.sleep(2000);
       
-      // 5. 如果发布服务启用，启动发布服务（如果还没启动）
-      if (this.config.publish.enabled) {
-        const publishStatus = this.publishService.getStatus();
-        if (!publishStatus.running) {
-          this.publishService.start();
-          this.activityLog.log('system', '🚀 自动发布服务已启动');
-        }
+      // 5. 启动发布服务（如果还没启动）
+      const publishStatus = this.publishService.getStatus();
+      if (!publishStatus.running) {
+        this.publishService.start();
+        this.activityLog.log('system', '🚀 自动发布服务已启动');
       }
       
       this.currentTask = null;
