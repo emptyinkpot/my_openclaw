@@ -1324,6 +1324,7 @@
     const statusText = {
       'outline': '大纲',
       'pending': '待写',
+      'polished': '已润色',
       'audited': '已审核',
       'published': '已发布'
     };
@@ -1332,9 +1333,22 @@
     const statusColor = {
       'outline': 'var(--warning)',
       'pending': 'var(--text-muted)',
+      'polished': 'var(--accent)',
       'audited': 'var(--success)',
-      'published': 'var(--accent)'
+      'published': 'var(--purple)'
     };
+    
+    // 安全获取状态文本
+    function getStatusText(status) {
+      if (!status) return '待写';
+      return statusText[status] || status;
+    }
+    
+    // 安全获取状态颜色
+    function getStatusColor(status) {
+      if (!status) return 'var(--text-muted)';
+      return statusColor[status] || 'var(--text-muted)';
+    }
     
     // ====== 数据缓存系统 ======
     const dataCache = {
@@ -2896,9 +2910,12 @@
       
       if (viewMode === 'grid') {
         const renderFn = (ch) => {
+          console.log('📄 章节数据:', ch);
           const status = ch.status || 'pending';
-          const statusLabel = statusText[status] || status;
-          const color = statusColor[status] || 'var(--text-muted)';
+          const statusLabel = getStatusText(status);
+          const color = getStatusColor(status);
+          
+          console.log('  → status:', status, 'label:', statusLabel, 'color:', color);
           
           return `
           <div class="data-card ${ch.word_count > 100 ? 'has-content' : 'no-content'}" onclick="editChapter(${ch.id})">
@@ -2909,7 +2926,7 @@
             <div class="card-title">${ch.title || '无标题'}</div>
             <div class="card-meta">
               <span>${ch.word_count || 0}字</span>
-              <span style="color: ${color}; font-weight: 500;">${statusLabel}</span>
+              <span style="color: ${color}; font-weight: 600; padding: 2px 8px; background: var(--bg-tertiary); border-radius: 4px;">${statusLabel}</span>
               <span>${ch.updated_at ? new Date(ch.updated_at).toLocaleDateString() : '-'}</span>
             </div>
             <div class="card-tags">
@@ -2928,15 +2945,15 @@
       } else if (viewMode === 'list') {
         const renderFn = (ch) => {
           const status = ch.status || 'pending';
-          const statusLabel = statusText[status] || status;
-          const color = statusColor[status] || 'var(--text-muted)';
+          const statusLabel = getStatusText(status);
+          const color = getStatusColor(status);
           
           return `
           <div class="list-item" onclick="editChapter(${ch.id})">
             <div class="list-col num">#${ch.chapter_number}</div>
             <div class="list-col title">${ch.title || '无标题'}</div>
             <div class="list-col meta">${ch.word_count || 0}字</div>
-            <div class="list-col meta" style="color: ${color}; font-weight: 500;">${statusLabel}</div>
+            <div class="list-col meta" style="color: ${color}; font-weight: 600;">${statusLabel}</div>
             <div class="list-col meta">${ch.updated_at ? new Date(ch.updated_at).toLocaleDateString() : '-'}</div>
             <div class="list-col actions">
               <button class="btn btn-sm" onclick="event.stopPropagation();editChapter(${ch.id})">✏️</button>
@@ -2954,15 +2971,15 @@
       } else {
         const renderFn = (ch) => {
           const status = ch.status || 'pending';
-          const statusLabel = statusText[status] || status;
-          const color = statusColor[status] || 'var(--text-muted)';
+          const statusLabel = getStatusText(status);
+          const color = getStatusColor(status);
           
           return `
           <tr onclick="editChapter(${ch.id})">
             <td>${ch.chapter_number}</td>
             <td>${ch.title || '无标题'}</td>
             <td>${ch.word_count || 0}</td>
-            <td style="color: ${color}; font-weight: 500;">${statusLabel}</td>
+            <td style="color: ${color}; font-weight: 600;">${statusLabel}</td>
             <td>${ch.updated_at ? new Date(ch.updated_at).toLocaleDateString() : '-'}</td>
             <td><button class="btn btn-sm" onclick="event.stopPropagation();deleteChapter(${ch.id})">🗑️</button></td>
           </tr>`;
