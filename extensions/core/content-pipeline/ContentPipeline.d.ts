@@ -50,8 +50,8 @@ export interface PipelineOptions {
     maxConcurrent?: number;
     onProgress?: (event: PipelineProgressEvent) => void;
 }
-export type WorkStatus = 'outline' | 'first_draft' | 'polished' | 'audited' | 'published';
-export type ChapterStatus = 'outline' | 'first_draft' | 'polished' | 'audited' | 'published';
+export type WorkStatus = 'outline' | 'pending' | 'audited' | 'published';
+export type ChapterStatus = 'outline' | 'pending' | 'audited' | 'published';
 /**
  * 审稿模块 - 审核调度
  */

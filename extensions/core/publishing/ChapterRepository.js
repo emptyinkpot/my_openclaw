@@ -48,7 +48,7 @@ class ChapterRepository {
     }
     /**
      * 获取待发布章节
-     * 条件：有内容 + status = 'audited' + 未发布
+     * 条件：有内容 + 已润色 + 审核通过 + 未发布
      */
     async getPendingPublish(filter = {}) {
         const { workId, chapterNumber, limit = 10 } = filter;
@@ -61,7 +61,6 @@ class ChapterRepository {
         c.title as chapterTitle,
         c.content,
         c.word_count as wordCount,
-        c.status as status,
         c.polish_status as polishStatus,
         c.audit_status as auditStatus,
         c.publish_status as publishStatus
@@ -69,7 +68,8 @@ class ChapterRepository {
       JOIN works w ON c.work_id = w.id
       WHERE c.content IS NOT NULL 
         AND c.content != ''
-        AND c.status = 'audited'
+        AND c.polish_status = 'polished'
+        AND c.audit_status = 'passed'
         AND (c.publish_status IS NULL OR c.publish_status != 'published')
     `;
         if (workId) {
@@ -131,21 +131,6 @@ class ChapterRepository {
      * 更新发布状态
      */
     async updatePublishStatus(workId, chapterNumber, status) {
-        // 获取章节 ID
-        const chapter = await this.db.queryOne('SELECT id FROM chapters WHERE work_id = ? AND chapter_number = ?', [workId, chapterNumber]);
-        if (chapter) {
-            // 使用状态机服务更新状态
-            try {
-                const { getChapterStateMachine } = require('../state-machine');
-                const stateMachine = getChapterStateMachine();
-                await stateMachine.transition(chapter.id, 'published', 'published', { metadata: { publishStatus: status } });
-            }
-            catch (error) {
-                // 如果状态机服务不可用，回退到直接更新
-                console.warn('状态机服务不可用，使用直接更新', error);
-            }
-        }
-        // 始终更新 publish_status 和 published_at
         await this.db.execute(`UPDATE chapters 
        SET publish_status = ?, published_at = NOW() 
        WHERE work_id = ? AND chapter_number = ?`, [status, workId, chapterNumber]);

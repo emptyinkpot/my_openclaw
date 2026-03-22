@@ -40,7 +40,7 @@ export declare class ChapterRepository {
     getChapterByNumber(workId: number, chapterNumber: number): Promise<ChapterData | null>;
     /**
      * 获取待发布章节
-     * 条件：有内容 + status = 'audited' + 未发布
+     * 条件：有内容 + 已润色 + 审核通过 + 未发布
      */
     getPendingPublish(filter?: ChapterFilter): Promise<ChapterData[]>;
     /**
