@@ -13,6 +13,7 @@
 import { logger } from '../../plugins/novel-manager/utils/logger';
 import { getContentCraftAutoService, ContentCraftAutoService } from '../content-craft/src';
 import { getAuditAutoService, AuditAutoService } from '../audit';
+import { getPublishAutoService, PublishAutoService } from '../publishing/PublishAutoService';
 import { ActivityLog, getActivityLog } from './ActivityLog';
 
 export interface SchedulerStatus {
@@ -21,6 +22,7 @@ export interface SchedulerStatus {
   currentTask: string | null;
   contentCraftStatus: any;
   auditStatus: any;
+  publishStatus: any;
 }
 
 export interface SchedulerConfig {
@@ -36,11 +38,18 @@ export interface SchedulerConfig {
   audit: {
     autoFix: boolean;
   };
+  // 发布配置
+  publish: {
+    enabled: boolean;
+    headless: boolean;
+    dryRun: boolean;
+  };
 }
 
 export class SmartScheduler {
   private contentCraftService: ContentCraftAutoService;
   private auditService: AuditAutoService;
+  private publishService: PublishAutoService;
   private activityLog: ActivityLog;
   
   private running = false;
@@ -57,12 +66,18 @@ export class SmartScheduler {
     },
     audit: {
       autoFix: true
+    },
+    publish: {
+      enabled: false,
+      headless: true,
+      dryRun: false
     }
   };
 
   constructor() {
     this.contentCraftService = getContentCraftAutoService();
     this.auditService = getAuditAutoService();
+    this.publishService = getPublishAutoService();
     this.activityLog = getActivityLog();
   }
 
@@ -75,7 +90,8 @@ export class SmartScheduler {
       lastRunTime: this.lastRunTime?.toISOString() || null,
       currentTask: this.currentTask,
       contentCraftStatus: this.contentCraftService.getStatus(),
-      auditStatus: this.auditService.getStatus()
+      auditStatus: this.auditService.getStatus(),
+      publishStatus: this.publishService.getStatus()
     };
   }
 
@@ -93,7 +109,7 @@ export class SmartScheduler {
     this.config = { ...this.config, ...newConfig };
     logger.info('[SmartScheduler] 配置已更新:', this.config);
     
-    // 更新两个服务的配置
+    // 更新三个服务的配置
     this.contentCraftService.updateConfig({
       processInterval: this.config.processInterval,
       maxChaptersPerRun: this.config.maxChaptersPerRun,
@@ -105,6 +121,14 @@ export class SmartScheduler {
       processInterval: this.config.processInterval,
       maxChaptersPerRun: this.config.maxChaptersPerRun,
       autoFix: this.config.audit.autoFix
+    });
+    
+    this.publishService.updateConfig({
+      enabled: this.config.publish.enabled,
+      processInterval: this.config.processInterval,
+      maxChaptersPerRun: this.config.maxChaptersPerRun,
+      headless: this.config.publish.headless,
+      dryRun: this.config.publish.dryRun
     });
     
     // 如果启用状态改变，控制服务
@@ -148,6 +172,15 @@ export class SmartScheduler {
       this.activityLog.log('system', '✅ 审核自动处理服务已启动');
     }
     
+    // 如果发布服务启用，立即启动发布自动处理服务
+    if (this.config.publish.enabled) {
+      const publishStatus = this.publishService.getStatus();
+      if (!publishStatus.running) {
+        this.publishService.start();
+        this.activityLog.log('system', '🚀 自动发布服务已启动');
+      }
+    }
+    
     // 立即执行一次调度
     setTimeout(() => {
       this.runScheduledTask();
@@ -169,9 +202,10 @@ export class SmartScheduler {
     this.running = false;
     this.config.enabled = false;
     
-    // 停止两个服务
+    // 停止三个服务
     this.contentCraftService.stop();
     this.auditService.stop();
+    this.publishService.stop();
     
     this.stopTimer();
     logger.info('[SmartScheduler] 智能调度器已停止');
@@ -226,8 +260,8 @@ export class SmartScheduler {
       
       this.currentTask = '正在检查待处理章节...';
       
-      // 智能调度：先运行 Content Craft，再运行审核
-      // 这样可以确保生成/润色完成的章节能立即进入审核流程
+      // 智能调度：先运行 Content Craft，再运行审核，最后运行发布
+      // 这样可以确保生成/润色完成的章节能立即进入审核流程，审核通过的章节能立即发布
       
       // 1. 先启动 Content Craft 服务（如果还没启动）
       const contentCraftStatus = this.contentCraftService.getStatus();
@@ -244,6 +278,18 @@ export class SmartScheduler {
       if (!auditStatus.running) {
         this.auditService.start();
         this.activityLog.log('system', '✅ 审核自动处理服务已启动');
+      }
+      
+      // 4. 等待一小会儿，让审核处理
+      await this.sleep(2000);
+      
+      // 5. 如果发布服务启用，启动发布服务（如果还没启动）
+      if (this.config.publish.enabled) {
+        const publishStatus = this.publishService.getStatus();
+        if (!publishStatus.running) {
+          this.publishService.start();
+          this.activityLog.log('system', '🚀 自动发布服务已启动');
+        }
       }
       
       this.currentTask = null;

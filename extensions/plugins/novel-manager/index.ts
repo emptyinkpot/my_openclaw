@@ -25,6 +25,8 @@ import { getAuditAutoService } from '../../../core/audit';
 import { getSmartScheduler } from '../../../core/smart-scheduler';
 // 导入活动日志
 import { getActivityLog } from '../../../core/smart-scheduler';
+// 导入自动发布服务
+import { getPublishAutoService } from '../../../core/publishing';
 // 导入故事状态管理器
 import { getStoryStateManager } from '../../../core/content-craft/src/story-state-manager';
 // 导入关联章节管理器

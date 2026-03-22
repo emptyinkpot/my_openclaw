@@ -12,7 +12,7 @@
 
 export interface LogEntry {
   id: string;
-  type: 'system' | 'content-craft' | 'audit' | 'chapter';
+  type: 'system' | 'content-craft' | 'audit' | 'publish' | 'chapter';
   level: 'info' | 'success' | 'warning' | 'error';
   message: string;
   timestamp: string;
@@ -25,6 +25,8 @@ export interface LogEntry {
     toState?: string;
     duration?: number;
     error?: string;
+    platform?: string;
+    account?: string;
   };
 }
 
@@ -342,6 +344,96 @@ export class ActivityLog {
         chapterTitle,
         error
       }
+    });
+  }
+
+  // ========== 发布相关日志 ==========
+
+  /**
+   * 记录章节发布开始
+   */
+  logChapterPublishStart(workId: number, workTitle: string, chapterNumber: number, chapterTitle?: string, platform?: string, account?: string): void {
+    this.addEntry({
+      type: 'publish',
+      level: 'info',
+      message: `🚀 开始发布: ${workTitle} 第${chapterNumber}章`,
+      timestamp: new Date().toISOString(),
+      details: {
+        workId,
+        workTitle,
+        chapterNumber,
+        chapterTitle,
+        platform,
+        account
+      }
+    });
+  }
+
+  /**
+   * 记录章节发布成功
+   */
+  logChapterPublishSuccess(workId: number, workTitle: string, chapterNumber: number, chapterTitle?: string, duration?: number, platform?: string, account?: string): void {
+    this.addEntry({
+      type: 'publish',
+      level: 'success',
+      message: `✅ 发布成功: ${workTitle} 第${chapterNumber}章`,
+      timestamp: new Date().toISOString(),
+      details: {
+        workId,
+        workTitle,
+        chapterNumber,
+        chapterTitle,
+        duration,
+        platform,
+        account,
+        fromState: 'audited',
+        toState: 'published'
+      }
+    });
+  }
+
+  /**
+   * 记录章节发布失败
+   */
+  logChapterPublishError(workId: number, workTitle: string, chapterNumber: number, error: string, chapterTitle?: string, platform?: string, account?: string): void {
+    this.addEntry({
+      type: 'publish',
+      level: 'error',
+      message: `❌ 发布失败: ${workTitle} 第${chapterNumber}章 - ${error}`,
+      timestamp: new Date().toISOString(),
+      details: {
+        workId,
+        workTitle,
+        chapterNumber,
+        chapterTitle,
+        error,
+        platform,
+        account
+      }
+    });
+  }
+
+  /**
+   * 记录发布服务启动
+   */
+  logPublishServiceStart(): void {
+    this.addEntry({
+      type: 'system',
+      level: 'info',
+      message: '🚀 自动发布服务已启动',
+      timestamp: new Date().toISOString()
+    });
+  }
+
+  /**
+   * 记录发布服务停止
+   */
+  logPublishServiceStop(): void {
+    this.addEntry({
+      type: 'system',
+      level: 'info',
+      message: '🛑 自动发布服务已停止',
+      timestamp: new Date().toISOString()
     });
   }
 }
