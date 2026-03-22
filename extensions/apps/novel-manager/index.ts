@@ -105,6 +105,22 @@ async function getProjectStructure() {
     console.error('[ProjectStructure] 获取服务列表失败:', e);
   }
 
+  // 获取自定义前端页面列表
+  const customPages: string[] = [];
+  try {
+    const publicDir = path.join(projectRoot, 'extensions', 'public');
+    if (fs.existsSync(publicDir)) {
+      const entries = fs.readdirSync(publicDir, { withFileTypes: true });
+      for (const entry of entries) {
+        if (entry.isFile() && entry.name.endsWith('.html') && entry.name !== 'nav-bar.html') {
+          customPages.push(entry.name);
+        }
+      }
+    }
+  } catch (e) {
+    console.error('[ProjectStructure] 获取自定义页面列表失败:', e);
+  }
+
   return {
     projectRoot,
     timestamp: new Date().toISOString(),
@@ -117,8 +133,18 @@ async function getProjectStructure() {
     structure: {
       frontend: {
         status: 'active',
-        description: 'Control UI (原生界面)',
-        components: ['Control UI', 'Dashboard']
+        official: {
+          name: 'OpenClaw 官方 Dashboard',
+          tech: 'React',
+          description: 'OpenClaw 自带的控制面板',
+          pages: ['index.html', 'novel-home.html', 'auto.html', 'experience.html', 'cache.html', 'feishu.html', 'settings.html', 'schema.html']
+        },
+        custom: {
+          name: '项目自定义页面',
+          tech: '原生 HTML/CSS/JS',
+          description: '我们通过插件自定义的页面',
+          pages: customPages
+        }
       },
       backend: {
         routing: {
@@ -824,16 +850,31 @@ function getProjectStructureHtml(): string {
         </div>
         
         <div class="grid">
-          <!-- 前端模块 -->
+          <!-- OpenClaw 官方 Dashboard -->
           <div class="card">
             <div class="card-header">
-              <h3 class="card-title">🎨 前端层</h3>
+              <h3 class="card-title">🦞 官方 Dashboard</h3>
+              <span class="status-badge status-active">React</span>
             </div>
-            <div class="stat-value">\${structure.frontend.components.length}</div>
-            <div class="stat-label">组件</div>
+            <div class="stat-value">\${structure.frontend.official.pages.length}</div>
+            <div class="stat-label">页面</div>
             <div class="list">
-              \${structure.frontend.components.slice(0, 6).map(c => \`<div class="list-item">\${c}</div>\`).join('')}
-              \${structure.frontend.components.length > 6 ? \`<div class="list-item" style="color: var(--text-muted);">... 还有 \${structure.frontend.components.length - 6} 个</div>\` : ''}
+              \${structure.frontend.official.pages.slice(0, 6).map(p => \`<div class="list-item"><code>\${p}</code></div>\`).join('')}
+              \${structure.frontend.official.pages.length > 6 ? \`<div class="list-item" style="color: var(--text-muted);">... 还有 \${structure.frontend.official.pages.length - 6} 个</div>\` : ''}
+            </div>
+          </div>
+
+          <!-- 项目自定义页面 -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">✨ 自定义页面</h3>
+              <span class="status-badge status-active">HTML/CSS/JS</span>
+            </div>
+            <div class="stat-value">\${structure.frontend.custom.pages.length}</div>
+            <div class="stat-label">页面</div>
+            <div class="list">
+              \${structure.frontend.custom.pages.slice(0, 6).map(p => \`<div class="list-item"><code>\${p}</code></div>\`).join('')}
+              \${structure.frontend.custom.pages.length > 6 ? \`<div class="list-item" style="color: var(--text-muted);">... 还有 \${structure.frontend.custom.pages.length - 6} 个</div>\` : ''}
             </div>
           </div>
 
@@ -889,8 +930,8 @@ function getProjectStructureHtml(): string {
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
               <div style="text-align: center;">
-                <div style="font-size: 18px; font-weight: 700; color: var(--accent);">\${structure.frontend.components.length}</div>
-                <div style="font-size: 11px; color: var(--text-secondary);">前端</div>
+                <div style="font-size: 18px; font-weight: 700; color: var(--accent);">\${structure.frontend.official.pages.length + structure.frontend.custom.pages.length}</div>
+                <div style="font-size: 11px; color: var(--text-secondary);">前端页面</div>
               </div>
               <div style="text-align: center;">
                 <div style="font-size: 18px; font-weight: 700; color: var(--success);">\${structure.backend.routing.count}</div>
