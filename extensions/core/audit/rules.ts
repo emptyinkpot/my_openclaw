@@ -41,7 +41,7 @@ export function checkNoTitlesInContent(content: string): AuditIssue[] {
   const titlePattern = /^#{1,6}\s+.+$/gm;
   const titleMatches = content.match(titlePattern);
   
-  if (titleMatches && titleMatches.length > 0) {
+  if (titleMatches &amp;&amp; titleMatches.length &gt; 0) {
     issues.push({
       type: 'format',
       message: `正文中发现 ${titleMatches.length} 个标题，不允许有标题`,
@@ -65,12 +65,12 @@ export function checkNoMarkdown(content: string): AuditIssue[] {
   ];
   
   let markdownCount = 0;
-  markdownPatterns.forEach(pattern => {
+  markdownPatterns.forEach(pattern =&gt; {
     const matches = content.match(pattern);
     if (matches) markdownCount += matches.length;
   });
   
-  if (markdownCount > 0) {
+  if (markdownCount &gt; 0) {
     issues.push({
       type: 'format',
       message: `正文中发现 ${markdownCount} 处Markdown语法，不允许使用Markdown`,
@@ -89,7 +89,7 @@ export function checkJapaneseHalfWidth(content: string): AuditIssue[] {
   const fullWidthPattern = /[、。，；：！？「」『』【】〔〕〖〗〘〙〚〛]/g;
   const fullWidthMatches = content.match(fullWidthPattern);
   
-  if (fullWidthMatches && fullWidthMatches.length > 0) {
+  if (fullWidthMatches &amp;&amp; fullWidthMatches.length &gt; 0) {
     issues.push({
       type: 'format',
       message: `正文中发现 ${fullWidthMatches.length} 个全角符号，必须使用日文半角符号`,
@@ -110,7 +110,7 @@ export function checkNoGarbage(content: string): AuditIssue[] {
   const garbageWordPattern = /\b[a-zA-Z0-9]{10,}\b/g;
   const garbageWordMatches = content.match(garbageWordPattern);
   
-  if (garbageWordMatches && garbageWordMatches.length > 0) {
+  if (garbageWordMatches &amp;&amp; garbageWordMatches.length &gt; 0) {
     issues.push({
       type: 'content',
       message: `正文中发现 ${garbageWordMatches.length} 个无意义字母数字单词`,
@@ -122,7 +122,7 @@ export function checkNoGarbage(content: string): AuditIssue[] {
   const garbageCharPattern = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g;
   const garbageCharMatches = content.match(garbageCharPattern);
   
-  if (garbageCharMatches && garbageCharMatches.length > 0) {
+  if (garbageCharMatches &amp;&amp; garbageCharMatches.length &gt; 0) {
     issues.push({
       type: 'content',
       message: `正文中发现 ${garbageCharMatches.length} 个垃圾字符`,
@@ -134,10 +134,60 @@ export function checkNoGarbage(content: string): AuditIssue[] {
 }
 
 /**
+ * 自动修复1：删除正文中的标题（不影响内容）
+ */
+export function autoFixRemoveTitles(content: string): string {
+  // 删除 Markdown 标题（# 开头的行）
+  let result = content.replace(/^#{1,6}\s+.+$/gm, '');
+  // 清理多余的空行
+  result = result.replace(/\n\s*\n\s*\n/g, '\n\n');
+  return result.trim();
+}
+
+/**
+ * 自动修复2：修复 Markdown 语法（转换为普通文本，不影响内容意思）
+ */
+export function autoFixMarkdown(content: string): string {
+  let result = content;
+  
+  // 粗体 **text** → text
+  result = result.replace(/\*\*(.+?)\*\*/g, '$1');
+  
+  // 斜体 _text_ → text
+  result = result.replace(/_(.+?)_/g, '$1');
+  
+  // 链接 [text](url) → text
+  result = result.replace(/\[(.+?)\]\(.+?\)/g, '$1');
+  
+  // 代码 `code` → code
+  result = result.replace(/`{1,3}(.+?)`{1,3}/g, '$1');
+  
+  return result;
+}
+
+/**
+ * 自动修复3：删除垃圾字符和无意义单词
+ */
+export function autoFixGarbage(content: string): string {
+  let result = content;
+  
+  // 删除垃圾字符
+  result = result.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+  
+  // 删除无意义字母数字单词（10个字符以上的无意义组合）
+  result = result.replace(/\b[a-zA-Z0-9]{10,}\b/g, '');
+  
+  // 清理多余的空格
+  result = result.replace(/\s+/g, ' ');
+  
+  return result.trim();
+}
+
+/**
  * 自动修复：将全角符号转换为半角符号
  */
 export function autoFixFullWidthSymbols(content: string): string {
-  const fullWidthToHalfWidth: Record<string, string> = {
+  const fullWidthToHalfWidth: Record&lt;string, string&gt; = {
     '、': ',',
     '。': '.',
     '，': ',',
@@ -162,6 +212,27 @@ export function autoFixFullWidthSymbols(content: string): string {
 }
 
 /**
+ * 完整自动修复：按顺序执行所有自动修复，保证内容信息不受影响
+ */
+export function autoFixAll(content: string): string {
+  let result = content;
+  
+  // 1. 删除正文中的标题
+  result = autoFixRemoveTitles(result);
+  
+  // 2. 修复 Markdown 语法
+  result = autoFixMarkdown(result);
+  
+  // 3. 删除垃圾字符和无意义单词
+  result = autoFixGarbage(result);
+  
+  // 4. 转换全角符号为半角符号
+  result = autoFixFullWidthSymbols(result);
+  
+  return result;
+}
+
+/**
  * 运行所有审稿规则
  */
 export function runAllAuditRules(title: string | null, content: string): {
@@ -180,13 +251,13 @@ export function runAllAuditRules(title: string | null, content: string): {
   issues = issues.concat(checkNoGarbage(content));
 
   // 计算分数
-  issues.forEach(issue => {
+  issues.forEach(issue =&gt; {
     if (issue.severity === 'error') score -= 20;
     else if (issue.severity === 'warning') score -= 10;
   });
 
-  // 检查是否可以自动修复
-  const canAutoFix = issues.some(issue => issue.type === 'format' && issue.message.includes('全角符号'));
+  // 检查是否可以自动修复（只要有问题就可以尝试自动修复）
+  const canAutoFix = issues.length &gt; 0;
 
   return {
     issues,
@@ -194,3 +265,4 @@ export function runAllAuditRules(title: string | null, content: string): {
     canAutoFix,
   };
 }
+

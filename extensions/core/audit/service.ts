@@ -12,13 +12,13 @@ import {
   AuditIssue,
   SuggestedAction,
 } from './types';
-import { runAllAuditRules, autoFixFullWidthSymbols } from './rules';
+import { runAllAuditRules, autoFixAll } from './rules';
 import { getChapter, saveAuditResult, updateChapterContent, updateChapterStatus } from './repository';
 
 /**
  * 审核章节
  */
-export async function auditChapter(workId: number, chapterNumber: number): Promise<AuditResult> {
+export async function auditChapter(workId: number, chapterNumber: number): Promise&lt;AuditResult&gt; {
   logger.info(`开始审核: workId=${workId}, chapter=${chapterNumber}`);
 
   const chapter = await getChapter(workId, chapterNumber);
@@ -39,7 +39,7 @@ export async function auditChapter(workId: number, chapterNumber: number): Promi
   const { issues, score, canAutoFix } = runAllAuditRules(chapter.title, chapter.content);
 
   // 确定审核状态
-  const hasErrors = issues.some(issue => issue.severity === 'error');
+  const hasErrors = issues.some(issue =&gt; issue.severity === 'error');
   const auditStatus: AuditStatus = hasErrors ? 'failed' : 'passed';
 
   // 确定建议操作
@@ -70,9 +70,9 @@ export async function auditChapter(workId: number, chapterNumber: number): Promi
 }
 
 /**
- * 自动修复章节
+ * 自动修复章节（完整修复：删除标题、修复Markdown、删除垃圾字符、转换全角符号）
  */
-export async function autoFixChapter(workId: number, chapterNumber: number): Promise<boolean> {
+export async function autoFixChapter(workId: number, chapterNumber: number): Promise&lt;boolean&gt; {
   logger.info(`开始自动修复: workId=${workId}, chapter=${chapterNumber}`);
 
   const chapter = await getChapter(workId, chapterNumber);
@@ -81,8 +81,8 @@ export async function autoFixChapter(workId: number, chapterNumber: number): Pro
     return false;
   }
 
-  // 执行自动修复
-  const fixedContent = autoFixFullWidthSymbols(chapter.content);
+  // 执行完整自动修复
+  const fixedContent = autoFixAll(chapter.content);
   
   if (fixedContent === chapter.content) {
     logger.info('没有需要自动修复的内容');
@@ -91,7 +91,8 @@ export async function autoFixChapter(workId: number, chapterNumber: number): Pro
 
   // 更新章节内容到数据库
   await updateChapterContent(workId, chapterNumber, fixedContent);
-  logger.info(`自动修复完成: workId=${workId}, chapter=${chapterNumber}, 内容已更新`);
+  logger.info(`自动修复完成: workId=${workId}, chapter=${chapterNumber}, 内容已更新到 MySQL`);
   
   return true;
 }
+
