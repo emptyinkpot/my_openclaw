@@ -601,9 +601,22 @@ export class NovelService {
       params.push(data.title);
     }
     
+    // 只有在 plot_summary 字段存在时才更新
     if (data.plot_summary !== undefined) {
-      updates.push('plot_summary = ?');
-      params.push(data.plot_summary);
+      try {
+        // 先检查 plot_summary 字段是否存在
+        const [colCheck] = await this.db.query(`
+          SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'chapters' AND COLUMN_NAME = 'plot_summary'
+        `);
+        if (colCheck[0].cnt > 0) {
+          updates.push('plot_summary = ?');
+          params.push(data.plot_summary);
+        }
+      } catch (e) {
+        // 如果检查失败，就不更新 plot_summary 字段
+        console.warn('[NovelService] 检查 plot_summary 字段失败，跳过更新:', e.message);
+      }
     }
     
     if (data.content !== undefined) {

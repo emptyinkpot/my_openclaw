@@ -90,14 +90,13 @@
         "channel": "last"
       },
       "state": {
-        "nextRunAtMs": 1774180800000,
+        "nextRunAtMs": 1774267200000,
         "lastRunAtMs": 1774094400003,
         "lastRunStatus": "error",
         "lastStatus": "error",
         "lastDurationMs": 25637,
         "lastDeliveryStatus": "unknown",
-        "consecutiveErrors": 2,
-        "lastError": "Channel is required (no configured channels detected). Set delivery.channel explicitly or use a main session with a previous channel."
+        "consecutiveErrors": 2
       }
     }
   ]
