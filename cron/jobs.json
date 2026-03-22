@@ -96,8 +96,7 @@
         "lastStatus": "error",
         "lastDurationMs": 25637,
         "lastDeliveryStatus": "unknown",
-        "consecutiveErrors": 2,
-        "runningAtMs": 1774181218600
+        "consecutiveErrors": 2
       }
     }
   ]

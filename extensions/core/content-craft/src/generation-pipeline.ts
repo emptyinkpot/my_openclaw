@@ -384,8 +384,10 @@ export class GenerationPipeline {
 5. 注重细节描写，让读者有代入感
 6. 字数要充足，内容要充实
 7. 不要在内容中添加任何说明、注释或标记
+8. 不要生成标题或副标题
+9. 直接从正文内容开始，不要添加任何章节标题、题记、序言等额外内容
 
-请直接返回生成的小说内容，不要添加任何额外的文字。`;
+请直接返回生成的小说正文内容，不要添加任何额外的文字。`;
   }
 
   /**
@@ -473,6 +475,11 @@ export class GenerationPipeline {
     
     parts.push('');
     parts.push('请根据以上信息撰写本章内容。');
+    parts.push('');
+    parts.push('重要提示：');
+    parts.push('1. 不要生成章节标题或副标题');
+    parts.push('2. 直接从正文内容开始');
+    parts.push('3. 不要添加任何题记、序言、说明等额外内容');
     
     return parts.join('\n');
   }
