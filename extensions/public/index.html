@@ -301,6 +301,7 @@
           <div class="tab active" onclick="switchNovelDataSubTab('novel-data')" data-subtab="novel-data">📚 小说数据</div>
           <div class="tab" onclick="switchNovelDataSubTab('mysql-fields')" data-subtab="mysql-fields">🗄️ MySQL字段</div>
           <div class="tab" onclick="switchNovelDataSubTab('resource-library')" data-subtab="resource-library">📦 资源库</div>
+          <div class="tab" onclick="switchNovelDataSubTab('state-machine')" data-subtab="state-machine">⚙️ 状态机</div>
         </div>
         
         <!-- 三级标签内容区 -->
@@ -616,6 +617,109 @@
             </div>
           </div>
           <!-- /资源库子页面 -->
+          
+          <!-- 状态机子页面 -->
+          <div id="stateMachineSubPage" class="subtab-content" style="flex: 1; display: none; overflow: hidden;">
+            <div style="display: flex; height: 100%; flex-direction: column;">
+              <!-- 顶部工具栏 -->
+              <div class="toolbar" style="border-bottom: 1px solid var(--border); background: var(--bg-secondary);">
+                <div class="toolbar-group">
+                  <span style="font-size: 12px; font-weight: 600; color: var(--accent);">⚙️ 状态机监视器</span>
+                </div>
+                <div class="toolbar-group">
+                  <button class="btn btn-sm" onclick="refreshStateMachine()">🔄 刷新</button>
+                  <label style="display: flex; align-items: center; gap: 8px; font-size: 11px;">
+                    <input type="checkbox" id="autoRefreshToggle" checked onchange="toggleAutoRefresh()">
+                    自动刷新
+                  </label>
+                </div>
+                <div class="spacer"></div>
+                <div class="toolbar-group">
+                  <span id="lastUpdateTime" style="font-size: 11px; color: var(--text-muted);">最后更新: --</span>
+                </div>
+              </div>
+              
+              <!-- 内容区 -->
+              <div style="flex: 1; overflow-y: auto; padding: 16px;">
+                <!-- 状态统计卡片 -->
+                <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px;">
+                  <div class="stat-card" style="background: linear-gradient(135deg, #fff7e6 0%, #ffffff 100%); border: 1px solid #ffe7ba;">
+                    <div class="stat-value" id="statOutline" style="color: #9a6700;">0</div>
+                    <div class="stat-label">📋 大纲</div>
+                  </div>
+                  <div class="stat-card" style="background: linear-gradient(135deg, #f6f8fa 0%, #ffffff 100%); border: 1px solid var(--border);">
+                    <div class="stat-value" id="statFirstDraft" style="color: #6e7781;">0</div>
+                    <div class="stat-label">📝 初稿</div>
+                  </div>
+                  <div class="stat-card" style="background: linear-gradient(135deg, #ddf4ff 0%, #ffffff 100%); border: 1px solid #b3d7ff;">
+                    <div class="stat-value" id="statPolished" style="color: #0969da;">0</div>
+                    <div class="stat-label">✨ 已润色</div>
+                  </div>
+                  <div class="stat-card" style="background: linear-gradient(135deg, #dafbe1 0%, #ffffff 100%); border: 1px solid #abe2b5;">
+                    <div class="stat-value" id="statAudited" style="color: #1a7f37;">0</div>
+                    <div class="stat-label">✅ 已审核</div>
+                  </div>
+                  <div class="stat-card" style="background: linear-gradient(135deg, #f3e8ff 0%, #ffffff 100%); border: 1px solid #d8b9ff;">
+                    <div class="stat-value" id="statPublished" style="color: #8250df;">0</div>
+                    <div class="stat-label">🚀 已发布</div>
+                  </div>
+                </div>
+                
+                <!-- 状态转换图 -->
+                <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                  <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                    <span>🔄 状态转换规则</span>
+                  </h3>
+                  <div style="display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap;">
+                    <div style="text-align: center; padding: 12px 16px; background: #fff7e6; border: 2px solid #ffd591; border-radius: 8px; min-width: 100px;">
+                      <div style="font-size: 24px; margin-bottom: 4px;">📋</div>
+                      <div style="font-size: 11px; font-weight: 600; color: #9a6700;">outline</div>
+                      <div style="font-size: 10px; color: #9a6700;">大纲</div>
+                    </div>
+                    <div style="font-size: 20px; color: var(--accent);">→</div>
+                    <div style="text-align: center; padding: 12px 16px; background: #f6f8fa; border: 2px solid var(--border); border-radius: 8px; min-width: 100px;">
+                      <div style="font-size: 24px; margin-bottom: 4px;">📝</div>
+                      <div style="font-size: 11px; font-weight: 600; color: #6e7781;">first_draft</div>
+                      <div style="font-size: 10px; color: #6e7781;">初稿</div>
+                    </div>
+                    <div style="font-size: 20px; color: var(--accent);">→</div>
+                    <div style="text-align: center; padding: 12px 16px; background: #ddf4ff; border: 2px solid #b3d7ff; border-radius: 8px; min-width: 100px;">
+                      <div style="font-size: 24px; margin-bottom: 4px;">✨</div>
+                      <div style="font-size: 11px; font-weight: 600; color: #0969da;">polished</div>
+                      <div style="font-size: 10px; color: #0969da;">已润色</div>
+                    </div>
+                    <div style="font-size: 20px; color: var(--accent);">→</div>
+                    <div style="text-align: center; padding: 12px 16px; background: #dafbe1; border: 2px solid #abe2b5; border-radius: 8px; min-width: 100px;">
+                      <div style="font-size: 24px; margin-bottom: 4px;">✅</div>
+                      <div style="font-size: 11px; font-weight: 600; color: #1a7f37;">audited</div>
+                      <div style="font-size: 10px; color: #1a7f37;">已审核</div>
+                    </div>
+                    <div style="font-size: 20px; color: var(--accent);">→</div>
+                    <div style="text-align: center; padding: 12px 16px; background: #f3e8ff; border: 2px solid #d8b9ff; border-radius: 8px; min-width: 100px;">
+                      <div style="font-size: 24px; margin-bottom: 4px;">🚀</div>
+                      <div style="font-size: 11px; font-weight: 600; color: #8250df;">published</div>
+                      <div style="font-size: 10px; color: #8250df;">已发布</div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- 最近状态转换日志 -->
+                <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 20px;">
+                  <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                    <span>📜 最近状态转换</span>
+                    <span style="font-size: 10px; color: var(--text-muted);" id="transitionCount">0 条记录</span>
+                  </h3>
+                  <div id="stateTransitionLog" style="max-height: 400px; overflow-y: auto;">
+                    <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+                      <div style="font-size: 32px; margin-bottom: 12px;">📜</div>
+                      <div style="font-size: 12px;">暂无状态转换记录</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- /状态机子页面 -->
         </div>
         <!-- /三级标签内容区 -->
       </div>
@@ -2529,6 +2633,10 @@
     }
 
     // 切换 MySQL数据 三级标签
+    // 状态机自动刷新定时器
+    let stateMachineRefreshTimer = null;
+    const STATE_MACHINE_REFRESH_INTERVAL = 5000; // 5秒刷新一次
+    
     async function switchNovelDataSubTab(subtab) {
       // 更新三级标签 active 状态
       document.querySelectorAll('#novelDataPage .tabs .tab').forEach(el => el.classList.remove('active'));
@@ -2538,6 +2646,7 @@
       document.getElementById('novelDataSubPage').style.display = subtab === 'novel-data' ? 'flex' : 'none';
       document.getElementById('mysqlFieldsSubPage').style.display = subtab === 'mysql-fields' ? 'block' : 'none';
       document.getElementById('resourceLibrarySubPage').style.display = subtab === 'resource-library' ? 'flex' : 'none';
+      document.getElementById('stateMachineSubPage').style.display = subtab === 'state-machine' ? 'flex' : 'none';
       
       // 如果切换到 MySQL 字段页面，实时从数据库读取
       if (subtab === 'mysql-fields') {
@@ -2547,6 +2656,140 @@
       // 如果切换到资源库页面，加载资源
       if (subtab === 'resource-library') {
         await loadResourceLibrary();
+      }
+      
+      // 如果切换到状态机页面，加载状态机数据并启动自动刷新
+      if (subtab === 'state-machine') {
+        await loadStateMachineData();
+        startStateMachineAutoRefresh();
+      } else {
+        // 离开状态机页面时停止自动刷新
+        stopStateMachineAutoRefresh();
+      }
+    }
+    
+    // 加载状态机数据
+    async function loadStateMachineData() {
+      try {
+        // 1. 获取章节状态统计
+        const statsRes = await api('/works');
+        const works = statsRes.data || [];
+        
+        // 统计各状态的章节数
+        let outline = 0, firstDraft = 0, polished = 0, audited = 0, published = 0;
+        
+        works.forEach(work => {
+          (work.chapters || []).forEach(chapter => {
+            switch(chapter.status) {
+              case 'outline': outline++; break;
+              case 'first_draft': firstDraft++; break;
+              case 'polished': polished++; break;
+              case 'audited': audited++; break;
+              case 'published': published++; break;
+            }
+          });
+        });
+        
+        // 更新统计卡片
+        document.getElementById('statOutline').textContent = outline;
+        document.getElementById('statFirstDraft').textContent = firstDraft;
+        document.getElementById('statPolished').textContent = polished;
+        document.getElementById('statAudited').textContent = audited;
+        document.getElementById('statPublished').textContent = published;
+        
+        // 2. 获取最近的状态转换日志（尝试从 state_transition_logs 表读取）
+        try {
+          const logRes = await api('/state-machine/transitions');
+          if (logRes.success && logRes.data) {
+            renderStateTransitionLog(logRes.data);
+            document.getElementById('transitionCount').textContent = `${logRes.data.length} 条记录`;
+          }
+        } catch (e) {
+          console.log('[StateMachine] 状态转换日志表可能不存在，显示示例');
+          renderSampleTransitionLog();
+        }
+        
+        // 更新最后更新时间
+        document.getElementById('lastUpdateTime').textContent = `最后更新: ${new Date().toLocaleTimeString()}`;
+        
+      } catch (err) {
+        console.error('[StateMachine] 加载失败:', err);
+        showToast('❌ 状态机数据加载失败', 'error');
+      }
+    }
+    
+    // 渲染状态转换日志
+    function renderStateTransitionLog(transitions) {
+      const container = document.getElementById('stateTransitionLog');
+      if (!container) return;
+      
+      if (!transitions || transitions.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+            <div style="font-size: 32px; margin-bottom: 12px;">📜</div>
+            <div style="font-size: 12px;">暂无状态转换记录</div>
+          </div>
+        `;
+        return;
+      }
+      
+      container.innerHTML = transitions.map(t => `
+        <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+            <div style="font-weight: 600; font-size: 12px;">
+              ${t.workTitle || '作品'} 第${t.chapterNumber}章
+            </div>
+            <div style="font-size: 10px; color: var(--text-muted);">
+              ${new Date(t.timestamp).toLocaleString()}
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 11px;">
+            <span style="padding: 2px 8px; background: var(--bg-tertiary); border-radius: 4px;">${getStatusLabel(t.fromState)}</span>
+            <span style="color: var(--accent);">→</span>
+            <span style="padding: 2px 8px; background: var(--accent); color: #fff; border-radius: 4px;">${getStatusLabel(t.toState)}</span>
+            <span style="color: var(--text-muted); margin-left: auto;">${t.reason}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+    
+    // 渲染示例转换日志
+    function renderSampleTransitionLog() {
+      const sampleTransitions = [
+        { workTitle: '示例作品', chapterNumber: 1, fromState: 'outline', toState: 'first_draft', reason: 'content_generated', timestamp: new Date(Date.now() - 3600000) },
+        { workTitle: '示例作品', chapterNumber: 1, fromState: 'first_draft', toState: 'polished', reason: 'content_polished', timestamp: new Date(Date.now() - 1800000) }
+      ];
+      renderStateTransitionLog(sampleTransitions);
+    }
+    
+    // 刷新状态机
+    function refreshStateMachine() {
+      loadStateMachineData();
+    }
+    
+    // 切换自动刷新
+    function toggleAutoRefresh() {
+      const toggle = document.getElementById('autoRefreshToggle');
+      if (toggle.checked) {
+        startStateMachineAutoRefresh();
+      } else {
+        stopStateMachineAutoRefresh();
+      }
+    }
+    
+    // 启动自动刷新
+    function startStateMachineAutoRefresh() {
+      stopStateMachineAutoRefresh();
+      stateMachineRefreshTimer = setInterval(() => {
+        loadStateMachineData();
+      }, STATE_MACHINE_REFRESH_INTERVAL);
+    }
+    
+    // 停止自动刷新
+    function stopStateMachineAutoRefresh() {
+      if (stateMachineRefreshTimer) {
+        clearInterval(stateMachineRefreshTimer);
+        stateMachineRefreshTimer = null;
       }
     }
     

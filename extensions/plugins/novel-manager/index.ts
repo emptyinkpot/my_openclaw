@@ -1699,6 +1699,31 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
       return true;
     }
 
+    // ====== 状态机相关API ======
+    // 获取状态转换日志
+    if (path === '/api/novel/state-machine/transitions' && method === 'GET') {
+      const db = getDatabaseManager();
+      try {
+        // 尝试查询 state_transition_logs 表
+        const rows = await db.query(`
+          SELECT 
+            stl.*,
+            w.title as workTitle
+          FROM state_transition_logs stl
+          LEFT JOIN works w ON stl.work_id = w.id
+          ORDER BY stl.timestamp DESC
+          LIMIT 50
+        `);
+        
+        jsonRes(res, { success: true, data: rows });
+      } catch (error) {
+        // 表可能不存在，返回空数据
+        console.log('[StateMachineAPI] state_transition_logs 表可能不存在');
+        jsonRes(res, { success: true, data: [] });
+      }
+      return true;
+    }
+
     // 资源库：禁用词
     if (path === '/api/novel/banned-words' && method === 'GET') {
       const db = getDatabaseManager();
