@@ -137,13 +137,24 @@ export function checkNoGarbage(content: string): AuditIssue[] {
  * 自动修复1：删除正文中的标题（不影响内容）
  */
 export function autoFixRemoveTitles(content: string): string {
-  // 删除 Markdown 标题（# 开头的行）
-  let result = content.replace(/^#{1,6}\s+.+$/gm, '');
+  let result = content;
   
-  // 删除"第x章"开头的标题行
-  result = result.replace(/^第[0-9]+章.*$/gm, '');
+  // 1. 删除 Markdown 标题（# 开头的行）
+  result = result.replace(/^#{1,6}\s+.+$/gm, '');
   
-  // 清理多余的空行（但保留换行符）
+  // 2. 删除所有格式的"第x章"标题（包括中文数字、空格、副标题等）
+  // 匹配：
+  // - 第34章
+  // - 第 34 章
+  // - 第三十四章
+  // - 第34章 能量过载
+  // - 第 34 章 能量过载
+  // - 第三十四章 能量过载
+  // - 第34章 能量过载 - 副标题
+  // - 等等各种格式
+  result = result.replace(/^第\s*[0-9零一二三四五六七八九十百千]+章.*$/gm, '');
+  
+  // 3. 清理多余的空行（但保留换行符）
   result = result.replace(/\n{3,}/g, '\n\n');
   
   return result;
