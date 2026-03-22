@@ -31,6 +31,43 @@ export class ChapterStateMachine {
   }
 
   /**
+   * 检查章节是否确实经过润色流程
+   */
+  async hasBeenPolished(chapterId: number): Promise<boolean> {
+    try {
+      // 方案1：检查状态转换历史中是否有 content_polished 记录
+      const transitionLog = await this.db.queryOne(`
+        SELECT id FROM state_transition_logs 
+        WHERE chapter_id = ? AND reason = 'content_polished'
+        LIMIT 1
+      `, [chapterId]);
+      
+      if (transitionLog) {
+        return true;
+      }
+      
+      // 方案2：检查 chapters 表的 polish_info 字段（如果有）
+      try {
+        const chapter = await this.db.queryOne(`
+          SELECT polish_info FROM chapters WHERE id = ?
+        `, [chapterId]);
+        
+        if (chapter && chapter.polish_info) {
+          const polishInfo = JSON.parse(chapter.polish_info);
+          return polishInfo && polishInfo.hasBeenPolished === true;
+        }
+      } catch (e) {
+        // 字段可能不存在，忽略
+      }
+      
+      return false;
+    } catch (error) {
+      logger.error('[StateMachine] 检查润色状态失败', error);
+      return false;
+    }
+  }
+
+  /**
    * 检查是否可以从一个状态转换到另一个状态
    */
   canTransition(from: ChapterStatus, to: ChapterStatus): boolean {
@@ -80,7 +117,19 @@ export class ChapterStateMachine {
       return true;
     }
 
-    // 3. 验证转换是否合法
+    // 3. 特殊验证：只有确实经过润色流程的才能转换到 polished
+    if (toState === 'polished' && reason !== 'content_polished') {
+      // 检查章节是否确实经过润色流程
+      const hasBeenPolished = await this.hasBeenPolished(chapterId);
+      if (!hasBeenPolished) {
+        logger.warn(
+          `[StateMachine] 拒绝转换到 polished: 章节未经过润色流程, id=${chapterId}, reason=${reason}`
+        );
+        return false;
+      }
+    }
+
+    // 4. 验证转换是否合法
     if (this.config.strictMode && !this.canTransition(fromState, toState)) {
       logger.error(
         `[StateMachine] 非法状态转换: id=${chapterId}, ${fromState} → ${toState}, reason=${reason}`

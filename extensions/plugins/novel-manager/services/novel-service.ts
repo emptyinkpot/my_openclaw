@@ -598,6 +598,8 @@ export class NovelService {
           updates.push('status = ?');
           params.push('first_draft');
         }
+        // 注意：我们不会自动把 first_draft 变成 polished
+        // 只有经过润色模块流程处理的，才能变成 polished
       }
     }
     
