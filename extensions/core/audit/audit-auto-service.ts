@@ -176,17 +176,20 @@ export class AuditAutoService {
     try {
       this.lastRunTime = new Date();
       logger.info('[AuditAutoService] 开始处理章节审核...');
+      this.activityLog.log('progress', '审核服务开始检查待审核章节...');
       
       // 获取需要处理的章节
       const chaptersToProcess = await this.getChaptersToProcess();
       
       if (chaptersToProcess.length === 0) {
         logger.info('[AuditAutoService] 没有需要审核的章节');
+        this.activityLog.log('progress', '没有需要审核的章节，等待中...');
         this.currentTask = null;
         return;
       }
 
       logger.info(`[AuditAutoService] 找到 ${chaptersToProcess.length} 个需要审核的章节`);
+      this.activityLog.log('progress', `找到 ${chaptersToProcess.length} 个需要审核的章节`);
       
       // 限制每次处理的数量
       const chaptersToProcessNow = chaptersToProcess.slice(0, this.config.maxChaptersPerRun);

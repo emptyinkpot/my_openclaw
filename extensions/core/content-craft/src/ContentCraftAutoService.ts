@@ -177,17 +177,20 @@ export class ContentCraftAutoService {
     try {
       this.lastRunTime = new Date();
       logger.info('[ContentCraftAutoService] 开始处理章节...');
+      this.activityLog.log('progress', 'Content Craft 开始检查待处理章节...');
       
       // 获取需要处理的章节
       const chaptersToProcess = await this.getChaptersToProcess();
       
       if (chaptersToProcess.length === 0) {
         logger.info('[ContentCraftAutoService] 没有需要处理的章节');
+        this.activityLog.log('progress', '没有需要处理的章节，等待中...');
         this.currentTask = null;
         return;
       }
 
       logger.info(`[ContentCraftAutoService] 找到 ${chaptersToProcess.length} 个需要处理的章节`);
+      this.activityLog.log('progress', `找到 ${chaptersToProcess.length} 个需要处理的章节`);
       
       // 限制每次处理的数量
       const chaptersToProcessNow = chaptersToProcess.slice(0, this.config.maxChaptersPerRun);
