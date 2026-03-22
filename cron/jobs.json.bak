@@ -57,13 +57,14 @@
         "channel": "last"
       },
       "state": {
-        "nextRunAtMs": 1774141200000,
+        "nextRunAtMs": 1774227600000,
         "lastRunAtMs": 1774054800003,
         "lastRunStatus": "error",
         "lastStatus": "error",
         "lastDurationMs": 71886,
         "lastDeliveryStatus": "unknown",
-        "consecutiveErrors": 3
+        "consecutiveErrors": 3,
+        "runningAtMs": 1774141352243
       }
     },
     {
