@@ -1,6 +1,38 @@
 {
   "records": [
     {
+      "id": "exp_1774142000000_service_troubleshooting",
+      "timestamp": 1774142000000,
+      "type": "problem_solving",
+      "title": "服务反复启动失败问题排查与修复",
+      "description": "用户反馈服务总会启动失败，进程退出码为1。通过深入调查日志和系统状态，发现了问题根源并修复。",
+      "userQuery": "服务启动失败，进程退出码: 1，为什么总会出现这个问题是架构的原因吗？修复并记录经验",
+      "solution": "## 问题排查过程\n\n### 1. 初步状态检查\n- 运行 `openclaw status --all` 查看整体状态\n- 发现 Gateway 实际上是在运行的（端口 5000 被占用）\n- 运行 `openclaw gateway probe` 显示服务可达\n\n### 2. 深入日志分析\n- 查看完整的日志文件 `/tmp/openclaw/openclaw-2026-03-22.log`\n- 发现服务实际上一直在正常启动，没有崩溃错误\n- 但服务一直在收到 `SIGTERM` 信号被关闭\n- 注意：SIGTERM 是外部终止信号，不是服务自己崩溃\n\n### 3. 系统检查\n- 检查 crontab：`crontab -l`\n- 发现有定时任务在运行不存在的脚本：\n  - `0 * * * * /workspace/projects/auto-scripts/bin/auto-health-check.sh`\n  - 这个脚本路径不存在\n- 检查进程：发现有 cloud-monitor-agent 在运行\n\n### 4. 问题修复\n- 备份当前 crontab：`crontab -l > /tmp/crontab.bak`\n- 移除引用不存在脚本的定时任务：`grep -v \"auto-scripts\" /tmp/crontab.bak | crontab -`\n- 验证服务正常运行\n\n## 关键发现\n1. **服务并没有崩溃** - 退出码 1 的说法可能来自其他地方\n2. **SIGTERM 不是崩溃** - 这是外部发送的终止信号\n3. **不要轻易假设是架构问题** - 先看日志、看状态、看事实\n4. **crontab 清理** - 定期检查定时任务，移除无效项",
+      "experienceApplied": [
+        "日志分析技巧",
+        "系统状态排查",
+        "问题定位方法论"
+      ],
+      "experienceGained": [
+        "SIGTERM 是外部终止信号，不是服务自己崩溃",
+        "排查问题的顺序：先看状态 → 再看日志 → 再猜原因",
+        "crontab 中如果有引用不存在脚本的任务，应该清理掉",
+        "退出码 1 不一定是服务崩溃，要看具体上下文",
+        "不要轻易假设是架构问题，先基于事实判断",
+        "openclaw status --all 和 openclaw gateway probe 是快速检查的好工具"
+      ],
+      "tags": [
+        "服务排查",
+        "日志分析",
+        "crontab",
+        "SIGTERM",
+        "问题定位",
+        "OpenClaw"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
       "id": "exp_1774140000000_column_creation",
       "timestamp": 1774140000000,
       "type": "feature_dev",
