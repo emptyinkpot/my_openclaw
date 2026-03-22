@@ -17,12 +17,25 @@ import { syncExperienceToMemory } from './src/core/MemorySync';
 // 读取专栏数据
 function getColumnsData(): any[] {
   try {
-    const columnsPath = path.join(__dirname, 'data', 'columns.json');
-    if (fs.existsSync(columnsPath)) {
-      const content = fs.readFileSync(columnsPath, 'utf-8');
-      const data = JSON.parse(content);
-      return data.columns || [];
+    // 尝试多个候选路径
+    const candidates = [
+      // 从源码目录计算
+      path.join(__dirname, 'data', 'columns.json'),
+      // 从编译后目录计算（dist/ -> data/）
+      path.join(__dirname, '..', 'data', 'columns.json'),
+      // 绝对路径
+      '/workspace/projects/extensions/plugins/experience-manager/data/columns.json',
+    ];
+    
+    for (const columnsPath of candidates) {
+      if (fs.existsSync(columnsPath)) {
+        console.log(`[experience-manager] 找到专栏数据: ${columnsPath}`);
+        const content = fs.readFileSync(columnsPath, 'utf-8');
+        const data = JSON.parse(content);
+        return data.columns || [];
+      }
     }
+    console.log(`[experience-manager] 未找到专栏数据，尝试的路径:`, candidates);
   } catch (e) {
     console.error('[experience-manager] 读取专栏数据失败:', e);
   }
