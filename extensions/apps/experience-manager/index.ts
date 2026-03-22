@@ -14,6 +14,21 @@ import { experienceRepo } from './src/core/ExperienceRepository';
 import { noteRepo } from './src/core/NoteRepository';
 import { syncExperienceToMemory } from './src/core/MemorySync';
 
+// 读取专栏数据
+function getColumnsData(): any[] {
+  try {
+    const columnsPath = path.join(__dirname, 'data', 'columns.json');
+    if (fs.existsSync(columnsPath)) {
+      const content = fs.readFileSync(columnsPath, 'utf-8');
+      const data = JSON.parse(content);
+      return data.columns || [];
+    }
+  } catch (e) {
+    console.error('[experience-manager] 读取专栏数据失败:', e);
+  }
+  return [];
+}
+
 // 插件信息
 const PLUGIN_ID = 'experience-manager';
 const PLUGIN_NAME = '经验积累系统';
@@ -232,6 +247,15 @@ async function handleExperienceApi(req: IncomingMessage, res: ServerResponse): P
         return true;
       }
       jsonRes(res, { success: true });
+      return true;
+    }
+
+    // ========== 专栏相关 API ==========
+
+    // GET /api/experience/columns - 获取所有专栏
+    if (path === '/api/experience/columns' && method === 'GET') {
+      const columns = getColumnsData();
+      jsonRes(res, { success: true, data: columns });
       return true;
     }
 
