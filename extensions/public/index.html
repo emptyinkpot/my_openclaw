@@ -98,6 +98,11 @@
     .list-col.meta { color: var(--text-muted); }
     .list-col.actions { display: flex; gap: 4px; justify-content: flex-end; }
     
+    /* 故事状态子标签页 */
+    .story-subtab { padding: 8px 14px; border: none; background: transparent; color: var(--text-secondary); border-radius: 4px; font-size: 11px; cursor: default; transition: all 0.15s; }
+    .story-subtab:hover { background: var(--bg-secondary); color: var(--text); }
+    .story-subtab.active { background: var(--accent); color: #fff; }
+    
     /* 表格 */
     .data-table { width: 100%; border-collapse: collapse; font-size: 11px; }
     .data-table th { text-align: left; padding: 8px 10px; background: var(--bg-tertiary); border-bottom: 1px solid var(--border); font-weight: 600; color: var(--text-secondary); position: sticky; top: 0; }
@@ -361,6 +366,7 @@
             <div class="tab" onclick="switchTab('characters')" data-tab="characters">👥 角色</div>
             <div class="tab" onclick="switchTab('world')" data-tab="world">🌍 世界观</div>
             <div class="tab" onclick="switchTab('timeline')" data-tab="timeline">📅 时间线</div>
+            <div class="tab" onclick="switchTab('story-state')" data-tab="story-state">📜 故事状态</div>
             <div class="tab" onclick="switchTab('analysis')" data-tab="analysis">📊 分析</div>
           </div>
 
@@ -4023,6 +4029,8 @@
         renderWorldSettings(data.worldSettings || []);
       } else if (tab === 'timeline') {
         renderTimeline();
+      } else if (tab === 'story-state') {
+        renderStoryState();
       } else if (tab === 'analysis') {
         renderAnalysis();
       }
@@ -4323,6 +4331,226 @@
           </div>
         </div>
       `;
+    }
+
+    // 渲染故事状态
+    async function renderStoryState() {
+      const container = document.getElementById('contentArea');
+      container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);">加载中...</div>';
+      
+      try {
+        const result = await api(`/story-state/works/${currentWork}`);
+        const state = result.data || {};
+        
+        const events = state.events || [];
+        const characterGrowth = state.characterGrowth || [];
+        const importantItems = state.importantItems || [];
+        
+        container.innerHTML = `
+          <div style="padding: 16px;">
+            <!-- 顶部工具栏 -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+              <h3 style="margin: 0;">📜 故事状态</h3>
+              <button class="btn btn-sm" onclick="extractStoryState()">🔄 从章节提取</button>
+            </div>
+            
+            <!-- 统计卡片 -->
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px;">
+              <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; padding: 12px; text-align: center;">
+                <div style="font-size: 24px; font-weight: 600; color: var(--accent);">${events.length}</div>
+                <div style="font-size: 11px; color: var(--text-muted);">关键事件</div>
+              </div>
+              <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; padding: 12px; text-align: center;">
+                <div style="font-size: 24px; font-weight: 600; color: var(--purple);">${characterGrowth.length}</div>
+                <div style="font-size: 11px; color: var(--text-muted);">角色成长</div>
+              </div>
+              <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; padding: 12px; text-align: center;">
+                <div style="font-size: 24px; font-weight: 600; color: var(--success);">${importantItems.length}</div>
+                <div style="font-size: 11px; color: var(--text-muted);">重要物品</div>
+              </div>
+            </div>
+            
+            <!-- 二级标签页 -->
+            <div style="display: flex; gap: 4px; margin-bottom: 16px; padding: 4px; background: var(--bg-tertiary); border-radius: 6px;">
+              <button class="story-subtab active" onclick="switchStorySubTab('events')" id="storySubtabEvents">⚡ 关键事件</button>
+              <button class="story-subtab" onclick="switchStorySubTab('growth')" id="storySubtabGrowth">📈 角色成长</button>
+              <button class="story-subtab" onclick="switchStorySubTab('items')" id="storySubtabItems">🎒 重要物品</button>
+            </div>
+            
+            <!-- 关键事件内容 -->
+            <div id="storyContentEvents" class="story-tab-content">
+              ${events.length === 0 ? `
+                <div style="text-align: center; padding: 60px; color: var(--text-muted);">
+                  <div style="font-size: 32px; margin-bottom: 12px;">⚡</div>
+                  <div>暂无关键事件</div>
+                  <div style="font-size: 12px; margin-top: 8px;">点击上方"从章节提取"按钮来分析已有章节</div>
+                </div>
+              ` : `
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                  ${events.map(event => `
+                    <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; padding: 12px;">
+                      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                        <div>
+                          <span style="font-size: 11px; color: var(--accent); font-weight: 600;">第${event.chapterNumber}章</span>
+                          <span style="margin-left: 8px; font-weight: 500;">${event.title}</span>
+                        </div>
+                        <span style="padding: 2px 8px; border-radius: 12px; font-size: 10px; ${
+                          event.importance === 'critical' ? 'background: var(--danger-bg); color: var(--danger);' :
+                          event.importance === 'high' ? 'background: var(--warning-bg); color: var(--warning);' :
+                          'background: var(--bg-tertiary); color: var(--text-secondary);'
+                        }">${
+                          event.importance === 'critical' ? '关键' :
+                          event.importance === 'high' ? '重要' :
+                          event.importance === 'medium' ? '一般' : '低'
+                        }</span>
+                      </div>
+                      <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.5;">${event.description}</div>
+                      ${event.charactersInvolved?.length > 0 ? `
+                        <div style="margin-top: 8px; display: flex; gap: 4px; flex-wrap: wrap;">
+                          ${event.charactersInvolved.map(char => `
+                            <span style="padding: 2px 6px; background: var(--bg-tertiary); border-radius: 3px; font-size: 10px;">👤 ${char}</span>
+                          `).join('')}
+                        </div>
+                      ` : ''}
+                    </div>
+                  `).join('')}
+                </div>
+              `}
+            </div>
+            
+            <!-- 角色成长内容 -->
+            <div id="storyContentGrowth" class="story-tab-content" style="display: none;">
+              ${characterGrowth.length === 0 ? `
+                <div style="text-align: center; padding: 60px; color: var(--text-muted);">
+                  <div style="font-size: 32px; margin-bottom: 12px;">📈</div>
+                  <div>暂无角色成长记录</div>
+                </div>
+              ` : `
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px;">
+                  ${characterGrowth.map(growth => `
+                    <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; padding: 12px;">
+                      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                        <div>
+                          <span style="font-weight: 600;">👤 ${growth.characterName}</span>
+                          <span style="margin-left: 8px; font-size: 11px; color: var(--accent);">第${growth.chapterNumber}章</span>
+                        </div>
+                        <span style="padding: 2px 8px; border-radius: 12px; font-size: 10px; background: var(--purple-bg); color: var(--purple);">${
+                          growth.growthType === 'skill' ? '技能' :
+                          growth.growthType === 'personality' ? '性格' :
+                          growth.growthType === 'knowledge' ? '知识' :
+                          growth.growthType === 'status' ? '地位' : '关系'
+                        }</span>
+                      </div>
+                      <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">${growth.description}</div>
+                      ${growth.before && growth.after ? `
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px;">
+                          <div style="background: var(--bg-tertiary); padding: 8px; border-radius: 4px;">
+                            <div style="color: var(--text-muted); margin-bottom: 4px;">变化前</div>
+                            <div>${growth.before}</div>
+                          </div>
+                          <div style="background: var(--success-bg); padding: 8px; border-radius: 4px;">
+                            <div style="color: var(--success); margin-bottom: 4px;">变化后</div>
+                            <div>${growth.after}</div>
+                          </div>
+                        </div>
+                      ` : ''}
+                    </div>
+                  `).join('')}
+                </div>
+              `}
+            </div>
+            
+            <!-- 重要物品内容 -->
+            <div id="storyContentItems" class="story-tab-content" style="display: none;">
+              ${importantItems.length === 0 ? `
+                <div style="text-align: center; padding: 60px; color: var(--text-muted);">
+                  <div style="font-size: 32px; margin-bottom: 12px;">🎒</div>
+                  <div>暂无重要物品记录</div>
+                </div>
+              ` : `
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px;">
+                  ${importantItems.map(item => `
+                    <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; padding: 12px;">
+                      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                        <div style="font-weight: 600;">${item.name}</div>
+                        <span style="padding: 2px 8px; border-radius: 12px; font-size: 10px; background: var(--success-bg); color: var(--success);">${
+                          item.type === 'weapon' ? '武器' :
+                          item.type === 'artifact' ? '神器' :
+                          item.type === 'document' ? '文档' :
+                          item.type === 'key' ? '钥匙' : '物品'
+                        }</span>
+                      </div>
+                      <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; line-height: 1.5;">${item.description}</div>
+                      <div style="display: flex; flex-direction: column; gap: 4px; font-size: 11px;">
+                        <div><span style="color: var(--text-muted);">持有者:</span> ${item.currentOwner || '未知'}</div>
+                        <div><span style="color: var(--text-muted);">位置:</span> ${item.currentLocation || '未知'}</div>
+                        ${item.acquiredAt?.chapterNumber ? `
+                          <div><span style="color: var(--text-muted);">获得:</span> 第${item.acquiredAt.chapterNumber}章 - ${item.acquiredAt.description || ''}</div>
+                        ` : ''}
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              `}
+            </div>
+          </div>
+        `;
+      } catch (err) {
+        container.innerHTML = `<div style="text-align:center;padding:40px;color:var(--danger);">加载失败: ${err.message}</div>`;
+      }
+    }
+
+    // 切换故事状态子标签
+    function switchStorySubTab(tab) {
+      document.querySelectorAll('.story-subtab').forEach(el => el.classList.remove('active'));
+      document.getElementById('storySubtab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+      
+      document.querySelectorAll('.story-tab-content').forEach(el => el.style.display = 'none');
+      document.getElementById('storyContent' + tab.charAt(0).toUpperCase() + tab.slice(1)).style.display = 'block';
+    }
+
+    // 从章节提取故事状态
+    async function extractStoryState() {
+      if (!currentWork || !chaptersData || chaptersData.length === 0) {
+        alert('请先选择作品并确保有章节内容');
+        return;
+      }
+      
+      try {
+        // 找到最新的有内容的章节
+        const latestChapter = chaptersData
+          .filter(ch => ch.content && ch.content.length > 100)
+          .sort((a, b) => (b.chapter_number || b.chapterNumber) - (a.chapter_number || a.chapterNumber))[0];
+        
+        if (!latestChapter) {
+          alert('没有找到有内容的章节');
+          return;
+        }
+        
+        const btn = event.target;
+        btn.disabled = true;
+        btn.textContent = '分析中...';
+        
+        await api('/story-state/extract', {
+          method: 'POST',
+          body: JSON.stringify({
+            workId: currentWork,
+            chapterNumber: latestChapter.chapter_number || latestChapter.chapterNumber,
+            content: latestChapter.content
+          })
+        });
+        
+        alert('故事状态已更新！');
+        await renderStoryState();
+      } catch (err) {
+        alert('提取失败: ' + err.message);
+      } finally {
+        const btn = event.target;
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = '🔄 从章节提取';
+        }
+      }
     }
 
     // 渲染世界观

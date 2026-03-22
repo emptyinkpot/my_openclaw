@@ -25,6 +25,12 @@ import { getAuditAutoService } from '../../../core/audit';
 import { getSmartScheduler } from '../../../core/smart-scheduler';
 // 导入活动日志
 import { getActivityLog } from '../../../core/smart-scheduler';
+// 导入故事状态管理器
+import { getStoryStateManager } from '../../../core/content-craft/src/story-state-manager';
+// 导入关联章节管理器
+import { getRelatedChaptersManager } from '../../../core/content-craft/src/related-chapters-manager';
+// 导入一致性检查器
+import { getConsistencyChecker } from '../../../core/content-craft/src/consistency-checker';
 
 // 尝试导入 registerPluginHttpRoute
 let registerPluginHttpRoute: any;
@@ -1788,6 +1794,93 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
         auditAutoService.stop();
         const status = auditAutoService.getStatus();
         jsonRes(res, { success: true, data: status });
+      } catch (e: any) {
+        jsonRes(res, { success: false, error: e.message }, 500);
+      }
+      return true;
+    }
+
+    // ==================== 故事状态管理 API ====================
+    // 获取作品的完整故事状态
+    const storyStateMatch = path.match(/^\/api\/novel\/story-state\/works\/(\d+)$/);
+    if (storyStateMatch && method === 'GET') {
+      try {
+        const workId = parseInt(storyStateMatch[1], 10);
+        const storyStateManager = getStoryStateManager();
+        await storyStateManager.initTables();
+        const state = await storyStateManager.getStoryState(workId);
+        jsonRes(res, { success: true, data: state });
+      } catch (e: any) {
+        jsonRes(res, { success: false, error: e.message }, 500);
+      }
+      return true;
+    }
+
+    // 获取故事状态摘要（用于生成上下文）
+    if (storyStateMatch && path.includes('/summary') && method === 'GET') {
+      try {
+        const workId = parseInt(storyStateMatch[1], 10);
+        const currentChapter = parseInt(query.currentChapter || '1', 10);
+        const storyStateManager = getStoryStateManager();
+        await storyStateManager.initTables();
+        const summary = await storyStateManager.getContextSummary(workId, currentChapter);
+        jsonRes(res, { success: true, data: { summary } });
+      } catch (e: any) {
+        jsonRes(res, { success: false, error: e.message }, 500);
+      }
+      return true;
+    }
+
+    // 从章节内容中提取并更新故事状态
+    if (path === '/api/novel/story-state/extract' && method === 'POST') {
+      try {
+        const body = await parseBody(req);
+        const { workId, chapterNumber, content } = body;
+        if (!workId || !chapterNumber || !content) {
+          jsonRes(res, { success: false, error: '缺少必要参数: workId, chapterNumber, content' }, 400);
+          return true;
+        }
+        const storyStateManager = getStoryStateManager();
+        await storyStateManager.initTables();
+        await storyStateManager.extractAndUpdateState(workId, chapterNumber, content);
+        jsonRes(res, { success: true, message: '故事状态已更新' });
+      } catch (e: any) {
+        jsonRes(res, { success: false, error: e.message }, 500);
+      }
+      return true;
+    }
+
+    // ==================== 一致性检查 API ====================
+    // 生成前检查
+    if (path === '/api/novel/consistency/pre-check' && method === 'POST') {
+      try {
+        const body = await parseBody(req);
+        const { workId, chapterNumber, chapterOutline } = body;
+        if (!workId || !chapterNumber) {
+          jsonRes(res, { success: false, error: '缺少必要参数: workId, chapterNumber' }, 400);
+          return true;
+        }
+        const consistencyChecker = getConsistencyChecker();
+        const report = await consistencyChecker.preGenerationCheck(workId, chapterNumber, chapterOutline);
+        jsonRes(res, { success: true, data: report });
+      } catch (e: any) {
+        jsonRes(res, { success: false, error: e.message }, 500);
+      }
+      return true;
+    }
+
+    // 生成后验证
+    if (path === '/api/novel/consistency/post-validate' && method === 'POST') {
+      try {
+        const body = await parseBody(req);
+        const { workId, chapterNumber, content } = body;
+        if (!workId || !chapterNumber || !content) {
+          jsonRes(res, { success: false, error: '缺少必要参数: workId, chapterNumber, content' }, 400);
+          return true;
+        }
+        const consistencyChecker = getConsistencyChecker();
+        const report = await consistencyChecker.postGenerationValidate(workId, chapterNumber, content);
+        jsonRes(res, { success: true, data: report });
       } catch (e: any) {
         jsonRes(res, { success: false, error: e.message }, 500);
       }

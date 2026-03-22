@@ -25,21 +25,21 @@ class ChapterRepository {
      */
     async getChapterByNumber(workId, chapterNumber) {
         const sql = `
-      SELECT 
+      SELECT
         c.work_id as workId,
         w.title as workTitle,
         c.chapter_number as chapterNumber,
         c.title as chapterTitle,
         c.content,
         c.word_count as wordCount,
-        c.polish_status as polishStatus,
-        c.audit_status as auditStatus,
-        c.publish_status as publishStatus
+        c.status as status,
+        c.audit_score as auditScore,
+        c.suggested_action as suggestedAction
       FROM chapters c
       JOIN works w ON c.work_id = w.id
-      WHERE c.work_id = ? 
+      WHERE c.work_id = ?
         AND c.chapter_number = ?
-        AND c.content IS NOT NULL 
+        AND c.content IS NOT NULL
         AND LENGTH(c.content) > 100
       LIMIT 1
     `;
@@ -54,7 +54,7 @@ class ChapterRepository {
         const { workId, chapterNumber, limit = 10 } = filter;
         const params = [];
         let sql = `
-      SELECT 
+      SELECT
         c.work_id as workId,
         w.title as workTitle,
         c.chapter_number as chapterNumber,
@@ -62,15 +62,13 @@ class ChapterRepository {
         c.content,
         c.word_count as wordCount,
         c.status as status,
-        c.polish_status as polishStatus,
-        c.audit_status as auditStatus,
-        c.publish_status as publishStatus
+        c.audit_score as auditScore,
+        c.suggested_action as suggestedAction
       FROM chapters c
       JOIN works w ON c.work_id = w.id
-      WHERE c.content IS NOT NULL 
+      WHERE c.content IS NOT NULL
         AND c.content != ''
         AND c.status = 'audited'
-        AND (c.publish_status IS NULL OR c.publish_status != 'published')
     `;
         if (workId) {
             sql += ' AND c.work_id = ?';
@@ -94,20 +92,21 @@ class ChapterRepository {
         const params = [];
         console.log('[ChapterRepository] getPendingProcess filter:', JSON.stringify(filter));
         let sql = `
-      SELECT 
+      SELECT
         c.work_id as workId,
         w.title as workTitle,
         c.chapter_number as chapterNumber,
         c.title as chapterTitle,
         c.content,
         c.word_count as wordCount,
-        c.polish_status as polishStatus,
-        c.audit_status as auditStatus,
-        c.publish_status as publishStatus
+        c.status as status,
+        c.audit_score as auditScore,
+        c.suggested_action as suggestedAction
       FROM chapters c
       JOIN works w ON c.work_id = w.id
-      WHERE c.content IS NOT NULL 
+      WHERE c.content IS NOT NULL
         AND LENGTH(c.content) > 100
+        AND c.status != 'published'
     `;
         if (workId) {
             sql += ' AND c.work_id = ?';
@@ -117,7 +116,6 @@ class ChapterRepository {
             sql += ' AND c.chapter_number BETWEEN ? AND ?';
             params.push(chapterRange[0], chapterRange[1]);
         }
-        sql += " AND (c.publish_status IS NULL OR c.publish_status != 'published')";
         // 直接拼接 LIMIT，避免 MySQL prepared statement 问题
         const safeLimit = Math.min(Math.max(1, limit), 1000);
         sql += ` ORDER BY c.work_id, c.chapter_number LIMIT ${safeLimit}`;
@@ -138,33 +136,33 @@ class ChapterRepository {
             try {
                 const { getChapterStateMachine } = require('../state-machine');
                 const stateMachine = getChapterStateMachine();
-                await stateMachine.transition(chapter.id, 'published', 'published', { metadata: { publishStatus: status } });
+                await stateMachine.transition(chapter.id, 'audited', 'published', { metadata: { publishStatus: status } });
             }
             catch (error) {
-                // 如果状态机服务不可用，回退到直接更新
+                // 如果状态机服务不可用，回退到直接更新 status 列
                 console.warn('状态机服务不可用，使用直接更新', error);
+                await this.db.execute(`UPDATE chapters SET status = ? WHERE work_id = ? AND chapter_number = ?`, ['published', workId, chapterNumber]);
             }
         }
-        // 始终更新 publish_status 和 published_at
-        await this.db.execute(`UPDATE chapters 
-       SET publish_status = ?, published_at = NOW() 
-       WHERE work_id = ? AND chapter_number = ?`, [status, workId, chapterNumber]);
     }
     /**
      * 更新审核状态
      */
     async updateAuditStatus(workId, chapterNumber, status, issues) {
-        await this.db.execute(`UPDATE chapters 
-       SET audit_status = ?, audit_issues = ?, audited_at = NOW() 
-       WHERE work_id = ? AND chapter_number = ?`, [status, issues || null, workId, chapterNumber]);
+        await this.db.execute(`UPDATE chapters
+       SET audit_score = ?, suggested_action = ?
+       WHERE work_id = ? AND chapter_number = ?`, [status || null, issues || null, workId, chapterNumber]);
     }
     /**
      * 更新润色状态
      */
     async updatePolishStatus(workId, chapterNumber, status, polishedContent) {
-        await this.db.execute(`UPDATE chapters 
-       SET polish_status = ?, polished_content = ?, polished_at = NOW() 
-       WHERE work_id = ? AND chapter_number = ?`, [status, polishedContent || null, workId, chapterNumber]);
+        // 由于没有 polish_status 列，只更新内容
+        if (polishedContent) {
+            await this.db.execute(`UPDATE chapters
+       SET content = ?
+       WHERE work_id = ? AND chapter_number = ?`, [polishedContent, workId, chapterNumber]);
+        }
     }
     /**
      * 获取章节内容
