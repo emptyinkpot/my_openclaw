@@ -867,6 +867,7 @@
           <div class="filter-tab" onclick="filterColumns('best_practices')">✨ 最佳实践</div>
         </div>
         <div class="toolbar-spacer"></div>
+        <button class="btn btn-primary" onclick="showDevelopmentGuide()">📖 开发指南</button>
         <button class="btn" onclick="refreshColumns()">🔄 刷新</button>
       </div>
       
@@ -1809,6 +1810,29 @@
       `;
       document.getElementById('detailModalBody').innerHTML = content;
       document.getElementById('detailModal').classList.add('show');
+    }
+    
+    // 快速打开开发指南
+    function showDevelopmentGuide() {
+      // 确保 columnData 已加载
+      if (columnData.length === 0) {
+        alert('请先刷新页面加载专栏数据');
+        return;
+      }
+      
+      // 找到开发指南专栏
+      const devGuideColumn = columnData.find(c => c.id === 'development_guide_complete');
+      if (devGuideColumn) {
+        showColumnDetail('development_guide_complete');
+      } else {
+        // 如果找不到，显示第一条最佳实践专栏
+        const bestPracticeColumn = columnData.find(c => c.category === 'best_practices');
+        if (bestPracticeColumn) {
+          showColumnDetail(bestPracticeColumn.id);
+        } else {
+          alert('未找到开发指南专栏');
+        }
+      }
     }
     
     // 点击详情模态框外部关闭
