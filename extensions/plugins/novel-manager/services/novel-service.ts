@@ -103,7 +103,7 @@ export class NovelService {
       // 修改 works 表 status 字段
       try {
         await this.db.execute(`
-          ALTER TABLE works MODIFY COLUMN status VARCHAR(50) DEFAULT 'outline' COMMENT '作品状态（outline/pending/audited/published）'
+          ALTER TABLE works MODIFY COLUMN status VARCHAR(50) DEFAULT 'outline' COMMENT '作品状态（outline/first_draft/polished/audited/published）'
         `);
         console.log('[NovelService] works.status 字段已更新');
       } catch (e) {
@@ -113,7 +113,7 @@ export class NovelService {
       // 修改 chapters 表 status 字段
       try {
         await this.db.execute(`
-          ALTER TABLE chapters MODIFY COLUMN status VARCHAR(50) DEFAULT 'pending' COMMENT '章节状态（outline/pending/audited/published）'
+          ALTER TABLE chapters MODIFY COLUMN status VARCHAR(50) DEFAULT 'outline' COMMENT '章节状态（outline/first_draft/polished/audited/published）'
         `);
         console.log('[NovelService] chapters.status 字段已更新');
       } catch (e) {
