@@ -628,6 +628,7 @@
                 </div>
                 <div class="toolbar-group">
                   <button class="btn btn-sm" onclick="refreshStateMachine()">🔄 刷新</button>
+                  <button class="btn btn-sm primary" onclick="diagnoseAndFixStateMachine()">🔧 诊断和修复</button>
                   <label style="display: flex; align-items: center; gap: 8px; font-size: 11px;">
                     <input type="checkbox" id="autoRefreshToggle" checked onchange="toggleAutoRefresh()">
                     自动刷新
@@ -2805,6 +2806,32 @@
       stateMachineRefreshTimer = setInterval(() => {
         loadStateMachineData();
       }, STATE_MACHINE_REFRESH_INTERVAL);
+    }
+    
+    // 诊断和修复状态
+    async function diagnoseAndFixStateMachine() {
+      if (!confirm('确定要诊断和修复所有章节的状态吗？\n\n这将会：\n1. 检查所有章节的状态\n2. 修复不合理的状态\n3. 清理旧状态残留')) {
+        return;
+      }
+      
+      try {
+        showToast('🔧 正在诊断和修复...', 'info');
+        
+        const result = await api('/state-machine/diagnose-and-fix', { method: 'POST' });
+        
+        if (result.success) {
+          const data = result.data;
+          showToast(`✅ 诊断和修复完成！\n总计: ${data.total}\n修复: ${data.fixed}\n保持: ${data.noChange}\n错误: ${data.errors}`, 'success');
+          
+          // 刷新状态机数据
+          await loadStateMachineData();
+        } else {
+          showToast('❌ 诊断和修复失败: ' + (result.error || '未知错误'), 'error');
+        }
+      } catch (err) {
+        console.error('[StateMachine] 诊断和修复失败:', err);
+        showToast('❌ 诊断和修复失败: ' + (err.message || '网络错误'), 'error');
+      }
     }
     
     // 停止自动刷新

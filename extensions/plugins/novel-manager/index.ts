@@ -1773,6 +1773,125 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
       return true;
     }
     
+    // 诊断和修复章节状态
+    if (path === '/api/novel/state-machine/diagnose-and-fix' && method === 'POST') {
+      const db = getDatabaseManager();
+      const { getChapterStateMachine } = require('../../core/state-machine');
+      const stateMachine = getChapterStateMachine();
+      
+      try {
+        console.log('[StateMachineAPI] 开始诊断和修复章节状态...');
+        
+        // 1. 获取所有章节
+        const allChapters = await db.query(`
+          SELECT id, work_id, chapter_number, title, content, word_count, status, polish_info
+          FROM chapters
+          ORDER BY work_id, chapter_number
+        `);
+        
+        console.log(`[StateMachineAPI] 找到 ${allChapters.length} 个章节`);
+        
+        const results = {
+          total: allChapters.length,
+          fixed: 0,
+          noChange: 0,
+          errors: 0,
+          details: []
+        };
+        
+        // 2. 逐个诊断和修复
+        for (const chapter of allChapters) {
+          const originalStatus = chapter.status;
+          let newStatus = originalStatus;
+          let fixed = false;
+          let error = null;
+          
+          try {
+            // 规则1：如果没有内容，必须是 outline
+            if ((!chapter.content || chapter.content.length === 0 || !chapter.word_count || chapter.word_count === 0) && 
+                chapter.status !== 'outline') {
+              newStatus = 'outline';
+              fixed = true;
+              console.log(`[StateMachineAPI] 修复章节 ${chapter.work_id}-${chapter.chapter_number}: ${originalStatus} → outline（无内容）`);
+            }
+            
+            // 规则2：如果有内容且状态是 outline，改为 first_draft
+            else if (chapter.content && chapter.content.length > 0 && 
+                     chapter.word_count && chapter.word_count > 0 && 
+                     chapter.status === 'outline') {
+              newStatus = 'first_draft';
+              fixed = true;
+              console.log(`[StateMachineAPI] 修复章节 ${chapter.work_id}-${chapter.chapter_number}: outline → first_draft（有内容但未润色）`);
+            }
+            
+            // 规则3：如果状态是 polished，检查是否确实经过润色流程
+            else if (chapter.status === 'polished') {
+              const hasBeenPolished = await stateMachine.hasBeenPolished(chapter.id);
+              if (!hasBeenPolished) {
+                // 没有经过润色流程，降级为 first_draft
+                newStatus = 'first_draft';
+                fixed = true;
+                console.log(`[StateMachineAPI] 修复章节 ${chapter.work_id}-${chapter.chapter_number}: polished → first_draft（未经过润色流程）`);
+              }
+            }
+            
+            // 规则4：清理旧状态 pending
+            if (chapter.status === 'pending') {
+              if (!chapter.content || chapter.content.length === 0) {
+                newStatus = 'outline';
+              } else {
+                newStatus = 'first_draft';
+              }
+              fixed = true;
+              console.log(`[StateMachineAPI] 修复章节 ${chapter.work_id}-${chapter.chapter_number}: pending → ${newStatus}（清理旧状态）`);
+            }
+            
+            // 如果需要修复，执行更新
+            if (fixed && newStatus !== originalStatus) {
+              await db.execute(`
+                UPDATE chapters SET status = ?, updated_at = NOW() WHERE id = ?
+              `, [newStatus, chapter.id]);
+              results.fixed++;
+            } else {
+              results.noChange++;
+            }
+            
+            results.details.push({
+              chapterId: chapter.id,
+              workId: chapter.work_id,
+              chapterNumber: chapter.chapter_number,
+              originalStatus,
+              newStatus,
+              fixed,
+              error
+            });
+            
+          } catch (err) {
+            results.errors++;
+            error = err.message;
+            console.error(`[StateMachineAPI] 处理章节 ${chapter.id} 失败:`, err);
+            results.details.push({
+              chapterId: chapter.id,
+              workId: chapter.work_id,
+              chapterNumber: chapter.chapter_number,
+              originalStatus: chapter.status,
+              newStatus: chapter.status,
+              fixed: false,
+              error: err.message
+            });
+          }
+        }
+        
+        console.log(`[StateMachineAPI] 诊断和修复完成: 总计 ${results.total}, 修复 ${results.fixed}, 保持 ${results.noChange}, 错误 ${results.errors}`);
+        
+        jsonRes(res, { success: true, data: results });
+      } catch (error) {
+        console.error('[StateMachineAPI] 诊断和修复失败:', error);
+        jsonRes(res, { success: false, error: error.message });
+      }
+      return true;
+    }
+    
     // 获取状态转换日志
     if (path === '/api/novel/state-machine/transitions' && method === 'GET') {
       const db = getDatabaseManager();
