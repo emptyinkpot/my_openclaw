@@ -3615,8 +3615,10 @@
       const streamEl = document.getElementById('activityLogStream');
       if (!streamEl) return;
 
-      // 只添加新的日志
-      const newLogs = logs.filter(log => log.id > lastLogId);
+      // API 返回的日志是倒序的（最新的在最前面），我们需要反转它
+      // 然后只添加新的日志
+      const sortedLogs = [...logs].reverse(); // 反转成正序
+      const newLogs = sortedLogs.filter(log => log.id > lastLogId);
       if (newLogs.length === 0) return;
 
       newLogs.forEach(log => {
@@ -3641,7 +3643,9 @@
         logEl.innerHTML = `<span style="color: #636e72;">[${new Date(log.timestamp).toLocaleTimeString()}]</span> ${log.message}`;
         
         streamEl.appendChild(logEl);
-        lastLogId = log.id;
+        if (log.id > lastLogId) {
+          lastLogId = log.id;
+        }
       });
 
       // 自动滚动到底部
