@@ -2671,24 +2671,48 @@
     // 加载状态机数据
     async function loadStateMachineData() {
       try {
-        // 1. 获取章节状态统计
-        const statsRes = await api('/works');
-        const works = statsRes.data || [];
-        
-        // 统计各状态的章节数
+        // 1. 获取状态统计（使用专门的高效 API）
         let outline = 0, firstDraft = 0, polished = 0, audited = 0, published = 0;
         
-        works.forEach(work => {
-          (work.chapters || []).forEach(chapter => {
-            switch(chapter.status) {
-              case 'outline': outline++; break;
-              case 'first_draft': firstDraft++; break;
-              case 'polished': polished++; break;
-              case 'audited': audited++; break;
-              case 'published': published++; break;
+        try {
+          const statsRes = await api('/state-machine/stats');
+          if (statsRes.success && statsRes.data) {
+            outline = statsRes.data.outline || 0;
+            firstDraft = statsRes.data.first_draft || 0;
+            polished = statsRes.data.polished || 0;
+            audited = statsRes.data.audited || 0;
+            published = statsRes.data.published || 0;
+          }
+        } catch (e) {
+          console.error('[StateMachine] 获取状态统计失败，尝试备用方案:', e);
+          
+          // 备用方案：逐个获取作品详情
+          try {
+            const worksRes = await api('/works');
+            const works = worksRes.data || [];
+            
+            for (const work of works) {
+              try {
+                const workDetailRes = await api(`/works/${work.id}`);
+                if (workDetailRes.success && workDetailRes.data && workDetailRes.data.chapters) {
+                  workDetailRes.data.chapters.forEach(chapter => {
+                    switch(chapter.status) {
+                      case 'outline': outline++; break;
+                      case 'first_draft': firstDraft++; break;
+                      case 'polished': polished++; break;
+                      case 'audited': audited++; break;
+                      case 'published': published++; break;
+                    }
+                  });
+                }
+              } catch (e2) {
+                console.log('[StateMachine] 获取作品详情失败:', work.id, e2);
+              }
             }
-          });
-        });
+          } catch (e2) {
+            console.error('[StateMachine] 备用方案也失败:', e2);
+          }
+        }
         
         // 更新统计卡片
         document.getElementById('statOutline').textContent = outline;

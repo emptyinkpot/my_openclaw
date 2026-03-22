@@ -1700,6 +1700,42 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
     }
 
     // ====== 状态机相关API ======
+    // 获取状态统计
+    if (path === '/api/novel/state-machine/stats' && method === 'GET') {
+      const db = getDatabaseManager();
+      try {
+        // 直接统计各状态的章节数
+        const rows = await db.query(`
+          SELECT 
+            status,
+            COUNT(*) as count
+          FROM chapters
+          GROUP BY status
+        `);
+        
+        // 转换为对象
+        const stats = {
+          outline: 0,
+          first_draft: 0,
+          polished: 0,
+          audited: 0,
+          published: 0
+        };
+        
+        rows.forEach(row => {
+          if (row.status && stats.hasOwnProperty(row.status)) {
+            stats[row.status] = row.count;
+          }
+        });
+        
+        jsonRes(res, { success: true, data: stats });
+      } catch (error) {
+        console.error('[StateMachineAPI] 获取状态统计失败:', error);
+        jsonRes(res, { success: false, error: error.message });
+      }
+      return true;
+    }
+    
     // 获取状态转换日志
     if (path === '/api/novel/state-machine/transitions' && method === 'GET') {
       const db = getDatabaseManager();
