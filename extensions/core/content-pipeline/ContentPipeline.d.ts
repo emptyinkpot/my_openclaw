@@ -104,5 +104,5 @@ export declare class ContentPipeline {
         };
     };
     getEfficiencyReport(): import("./StateService").EfficiencyReport;
-    getFailureReport(): string | null;
+    getFailureReport(): string;
 }
