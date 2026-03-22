@@ -53,7 +53,7 @@ async function generateChapterFromDb(workId: number, chapterNumber: number): Pro
   });
 
   // 保存生成后的内容并更新状态
-  if (result.text) {
+  if (result.finalText) {
     // 先获取章节ID
     const db = getDatabaseManager();
     const chapter = await db.queryOne(
@@ -61,19 +61,11 @@ async function generateChapterFromDb(workId: number, chapterNumber: number): Pro
       [workId, chapterNumber]
     );
     if (chapter) {
-      // 先更新内容，但不自动更新状态（我们会用状态机来处理）
-      await getNovelService().updateChapter(chapter.id, {
-        content: result.text,
-        status: chapter.status // 明确传入当前状态，避免自动更新
-      });
-      // 使用状态机服务更新状态
-      const { getChapterStateMachine } = require('../../core/state-machine');
-      const stateMachine = getChapterStateMachine();
-      await stateMachine.transition(
-        chapter.id,
-        'first_draft',
-        'content_generated',
-        { metadata: { generationResult: 'success' } }
+      // 直接更新内容、字数和状态
+      const wordCount = result.finalText.length;
+      await db.execute(
+        'UPDATE chapters SET content = ?, word_count = ?, status = ?, updated_at = NOW() WHERE id = ?',
+        [result.finalText, wordCount, 'polished', chapter.id]
       );
     }
   }
@@ -109,53 +101,11 @@ async function polishChapterFromDb(workId: number, chapterNumber: number): Promi
 
   // 3. 保存润色后的内容并更新状态
   if (result.text) {    
-    // 先更新内容，但不自动更新状态（我们会用状态机来处理）
-    await getNovelService().updateChapter(chapter.id, {
-      content: result.text,
-      status: chapter.status // 明确传入当前状态，避免自动更新
-    });
-    
-    // 记录润色信息到 polish_info 字段（先尝试添加字段）
-    try {
-      // 检查 polish_info 字段是否存在
-      const [colCheck] = await db.query(`
-        SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
-        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'chapters' AND COLUMN_NAME = 'polish_info'
-      `);
-      
-      if (colCheck[0].cnt === 0) {
-        // 字段不存在，添加它
-        await db.execute(`
-          ALTER TABLE chapters ADD COLUMN polish_info JSON COMMENT '润色信息（是否经过润色流程、步骤等）' AFTER status
-        `);
-        console.log('[ContentCraft] 已添加 polish_info 字段');
-      }
-      
-      // 更新 polish_info 字段
-      const polishInfo = {
-        hasBeenPolished: true,
-        polishedAt: new Date().toISOString(),
-        stepsExecuted: result.metadata?.stepsExecuted || 0,
-        totalSteps: result.metadata?.totalSteps || 0,
-        processingTime: result.metadata?.processingTime || 0
-      };
-      
-      await db.execute(`
-        UPDATE chapters SET polish_info = ? WHERE id = ?
-      `, [JSON.stringify(polishInfo), chapter.id]);
-      
-    } catch (e) {
-      console.warn('[ContentCraft] 更新 polish_info 失败（可能字段不存在）:', e);
-    }
-    
-    // 使用状态机服务更新状态
-    const { getChapterStateMachine } = require('../../core/state-machine');
-    const stateMachine = getChapterStateMachine();
-    await stateMachine.transition(
-      chapter.id,
-      'polished',
-      'content_polished',
-      { metadata: { polishResult: 'success' } }
+    // 直接更新内容、字数和状态
+    const wordCount = result.text.length;
+    await db.execute(
+      'UPDATE chapters SET content = ?, word_count = ?, status = ?, updated_at = NOW() WHERE id = ?',
+      [result.text, wordCount, 'polished', chapter.id]
     );
   }
   

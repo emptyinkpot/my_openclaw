@@ -388,54 +388,11 @@ export class ContentCraftAutoService {
         [workId, chapterNumber]
       );
       if (chapter) {
-        // 先更新内容
+        // 直接更新内容、字数和状态
+        const wordCount = result.finalText.length;
         await db.execute(
-          'UPDATE chapters SET content = ?, updated_at = NOW() WHERE id = ?',
-          [result.finalText, chapter.id]
-        );
-        
-        // 记录润色信息到 polish_info 字段（先生成+润色也算已润色）
-        try {
-          // 检查 polish_info 字段是否存在
-          const [colCheck] = await db.query(`
-            SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
-            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'chapters' AND COLUMN_NAME = 'polish_info'
-          `);
-          
-          if (colCheck[0].cnt === 0) {
-            // 字段不存在，添加它
-            await db.execute(`
-              ALTER TABLE chapters ADD COLUMN polish_info JSON COMMENT '润色信息（是否经过润色流程、步骤等）' AFTER status
-            `);
-            console.log('[ContentCraftAutoService] 已添加 polish_info 字段');
-          }
-          
-          // 更新 polish_info 字段（生成+润色也算已润色）
-          const polishInfo = {
-            hasBeenPolished: true,
-            polishedAt: new Date().toISOString(),
-            stepsExecuted: result.metadata?.stepsExecuted || 0,
-            totalSteps: result.metadata?.totalSteps || 0,
-            processingTime: result.metadata?.polishTime || result.metadata?.generationTime || 0,
-            fromGeneration: true // 标记是从生成流程来的
-          };
-          
-          await db.execute(`
-            UPDATE chapters SET polish_info = ? WHERE id = ?
-          `, [JSON.stringify(polishInfo), chapter.id]);
-          
-        } catch (e) {
-          console.warn('[ContentCraftAutoService] 更新 polish_info 失败（可能字段不存在）:', e);
-        }
-        
-        // 使用状态机更新状态
-        const { getChapterStateMachine } = require('../../state-machine');
-        const stateMachine = getChapterStateMachine();
-        await stateMachine.transition(
-          chapter.id,
-          'polished',
-          'content_generated',
-          { metadata: { generationResult: 'success' } }
+          'UPDATE chapters SET content = ?, word_count = ?, status = ?, updated_at = NOW() WHERE id = ?',
+          [result.finalText, wordCount, 'polished', chapter.id]
         );
         
         logger.info(`[ContentCraftAutoService] 已更新章节 ${chapter.id} 的内容，状态更新为 polished`);
@@ -480,53 +437,11 @@ export class ContentCraftAutoService {
 
     // 3. 保存润色后的内容并更新状态
     if (result.text) {    
-      // 先更新内容
+      // 直接更新内容、字数和状态
+      const wordCount = result.text.length;
       await db.execute(
-        'UPDATE chapters SET content = ?, updated_at = NOW() WHERE id = ?',
-        [result.text, chapter.id]
-      );
-      
-      // 记录润色信息到 polish_info 字段（先尝试添加字段）
-      try {
-        // 检查 polish_info 字段是否存在
-        const [colCheck] = await db.query(`
-          SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
-          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'chapters' AND COLUMN_NAME = 'polish_info'
-        `);
-        
-        if (colCheck[0].cnt === 0) {
-          // 字段不存在，添加它
-          await db.execute(`
-            ALTER TABLE chapters ADD COLUMN polish_info JSON COMMENT '润色信息（是否经过润色流程、步骤等）' AFTER status
-          `);
-          console.log('[ContentCraftAutoService] 已添加 polish_info 字段');
-        }
-        
-        // 更新 polish_info 字段
-        const polishInfo = {
-          hasBeenPolished: true,
-          polishedAt: new Date().toISOString(),
-          stepsExecuted: result.metadata?.stepsExecuted || 0,
-          totalSteps: result.metadata?.totalSteps || 0,
-          processingTime: result.metadata?.processingTime || 0
-        };
-        
-        await db.execute(`
-          UPDATE chapters SET polish_info = ? WHERE id = ?
-        `, [JSON.stringify(polishInfo), chapter.id]);
-        
-      } catch (e) {
-        console.warn('[ContentCraftAutoService] 更新 polish_info 失败（可能字段不存在）:', e);
-      }
-      
-      // 使用状态机更新状态
-      const { getChapterStateMachine } = require('../../state-machine');
-      const stateMachine = getChapterStateMachine();
-      await stateMachine.transition(
-        chapter.id,
-        'polished',
-        'content_polished',
-        { metadata: { polishResult: 'success' } }
+        'UPDATE chapters SET content = ?, word_count = ?, status = ?, updated_at = NOW() WHERE id = ?',
+        [result.text, wordCount, 'polished', chapter.id]
       );
       
       logger.info(`[ContentCraftAutoService] 已更新章节 ${chapter.id} 的润色内容，状态更新为 polished`);
