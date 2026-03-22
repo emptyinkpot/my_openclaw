@@ -1774,8 +1774,10 @@
         chapter.word_count > 0
       );
       
-      // 严格判断：是否经过润色流程
+      // 严格判断：是否经过润色流程（使用数据库中现有的字段）
       let hasBeenPolished = false;
+      
+      // 方式1：检查 polish_info 字段（如果存在）
       try {
         if (chapter.polish_info) {
           const polishInfo = typeof chapter.polish_info === 'string' 
@@ -1784,8 +1786,25 @@
           hasBeenPolished = !!(polishInfo && polishInfo.hasBeenPolished === true);
         }
       } catch (e) {
-        // 解析失败，视为未经过润色
-        hasBeenPolished = false;
+        // 解析失败，继续尝试其他方式
+      }
+      
+      // 方式2：如果 polish_info 不存在或没有标记，检查 polish_status 字段
+      if (!hasBeenPolished && chapter.polish_status) {
+        hasBeenPolished = chapter.polish_status === 'polished';
+      }
+      
+      // 方式3：如果还没有，检查 polished_at 字段
+      if (!hasBeenPolished && chapter.polished_at) {
+        hasBeenPolished = true;
+      }
+      
+      // 方式4：如果还没有，检查 polished_content 字段
+      if (!hasBeenPolished && chapter.polished_content) {
+        hasBeenPolished = !!(
+          typeof chapter.polished_content === 'string' && 
+          chapter.polished_content.trim().length > 0
+        );
       }
       
       let originalStatus = chapter.status;

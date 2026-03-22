@@ -37,52 +37,40 @@
       "order": 2
     },
     "polish": {
-      "enabled": true,
-      "order": 9
+      "enabled": true
     },
     "bannedWords": {
-      "enabled": true,
-      "order": 10
+      "enabled": true
     },
     "preferredWords": {
-      "enabled": true,
-      "order": 11
+      "enabled": true
     },
     "sentencePatterns": {
-      "enabled": true,
-      "order": 12
+      "enabled": true
     },
     "memeFuse": {
-      "enabled": false,
-      "order": 13
+      "enabled": false
     },
     "styleForge": {
-      "enabled": true,
-      "order": 14
+      "enabled": true
     },
     "markdownClean": {
-      "enabled": true,
-      "order": 15
+      "enabled": true
     },
     "semanticCheck": {
-      "enabled": true,
-      "order": 16
+      "enabled": true
     },
     "wordUsageCheck": {
-      "enabled": true,
-      "order": 17
+      "enabled": true
     },
     "smartFix": {
-      "enabled": true,
-      "order": 18
+      "enabled": true
     },
     "finalReview": {
-      "enabled": true,
-      "order": 19
+      "enabled": true
     },
     "breathSegment": {
-      "enabled": true,
-      "order": 20
+      "enabled": true
     }
   },
   "global": {
