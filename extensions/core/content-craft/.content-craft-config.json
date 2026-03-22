@@ -33,7 +33,7 @@
       "order": 1
     },
     "titleExtract": {
-      "enabled": true,
+      "enabled": false,
       "order": 2
     },
     "polish": {
