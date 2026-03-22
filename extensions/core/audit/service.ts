@@ -18,7 +18,7 @@ import { getChapter, saveAuditResult, updateChapterContent, updateChapterStatus 
 /**
  * 审核章节
  */
-export async function auditChapter(workId: number, chapterNumber: number): Promise&lt;AuditResult&gt; {
+export async function auditChapter(workId: number, chapterNumber: number): Promise<AuditResult> {
   logger.info(`开始审核: workId=${workId}, chapter=${chapterNumber}`);
 
   const chapter = await getChapter(workId, chapterNumber);
@@ -39,7 +39,7 @@ export async function auditChapter(workId: number, chapterNumber: number): Promi
   const { issues, score, canAutoFix } = runAllAuditRules(chapter.title, chapter.content);
 
   // 确定审核状态
-  const hasErrors = issues.some(issue =&gt; issue.severity === 'error');
+  const hasErrors = issues.some(issue => issue.severity === 'error');
   const auditStatus: AuditStatus = hasErrors ? 'failed' : 'passed';
 
   // 确定建议操作
@@ -72,7 +72,7 @@ export async function auditChapter(workId: number, chapterNumber: number): Promi
 /**
  * 自动修复章节（完整修复：删除标题、修复Markdown、删除垃圾字符、转换全角符号）
  */
-export async function autoFixChapter(workId: number, chapterNumber: number): Promise&lt;boolean&gt; {
+export async function autoFixChapter(workId: number, chapterNumber: number): Promise<boolean> {
   logger.info(`开始自动修复: workId=${workId}, chapter=${chapterNumber}`);
 
   const chapter = await getChapter(workId, chapterNumber);

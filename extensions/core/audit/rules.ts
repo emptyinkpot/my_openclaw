@@ -41,7 +41,7 @@ export function checkNoTitlesInContent(content: string): AuditIssue[] {
   const titlePattern = /^#{1,6}\s+.+$/gm;
   const titleMatches = content.match(titlePattern);
   
-  if (titleMatches &amp;&amp; titleMatches.length &gt; 0) {
+  if (titleMatches && titleMatches.length > 0) {
     issues.push({
       type: 'format',
       message: `正文中发现 ${titleMatches.length} 个标题，不允许有标题`,
@@ -65,12 +65,12 @@ export function checkNoMarkdown(content: string): AuditIssue[] {
   ];
   
   let markdownCount = 0;
-  markdownPatterns.forEach(pattern =&gt; {
+  markdownPatterns.forEach(pattern => {
     const matches = content.match(pattern);
     if (matches) markdownCount += matches.length;
   });
   
-  if (markdownCount &gt; 0) {
+  if (markdownCount > 0) {
     issues.push({
       type: 'format',
       message: `正文中发现 ${markdownCount} 处Markdown语法，不允许使用Markdown`,
@@ -89,7 +89,7 @@ export function checkJapaneseHalfWidth(content: string): AuditIssue[] {
   const fullWidthPattern = /[、。，；：！？「」『』【】〔〕〖〗〘〙〚〛]/g;
   const fullWidthMatches = content.match(fullWidthPattern);
   
-  if (fullWidthMatches &amp;&amp; fullWidthMatches.length &gt; 0) {
+  if (fullWidthMatches && fullWidthMatches.length > 0) {
     issues.push({
       type: 'format',
       message: `正文中发现 ${fullWidthMatches.length} 个全角符号，必须使用日文半角符号`,
@@ -110,7 +110,7 @@ export function checkNoGarbage(content: string): AuditIssue[] {
   const garbageWordPattern = /\b[a-zA-Z0-9]{10,}\b/g;
   const garbageWordMatches = content.match(garbageWordPattern);
   
-  if (garbageWordMatches &amp;&amp; garbageWordMatches.length &gt; 0) {
+  if (garbageWordMatches && garbageWordMatches.length > 0) {
     issues.push({
       type: 'content',
       message: `正文中发现 ${garbageWordMatches.length} 个无意义字母数字单词`,
@@ -122,7 +122,7 @@ export function checkNoGarbage(content: string): AuditIssue[] {
   const garbageCharPattern = /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g;
   const garbageCharMatches = content.match(garbageCharPattern);
   
-  if (garbageCharMatches &amp;&amp; garbageCharMatches.length &gt; 0) {
+  if (garbageCharMatches && garbageCharMatches.length > 0) {
     issues.push({
       type: 'content',
       message: `正文中发现 ${garbageCharMatches.length} 个垃圾字符`,
@@ -187,7 +187,7 @@ export function autoFixGarbage(content: string): string {
  * 自动修复：将全角符号转换为半角符号
  */
 export function autoFixFullWidthSymbols(content: string): string {
-  const fullWidthToHalfWidth: Record&lt;string, string&gt; = {
+  const fullWidthToHalfWidth: Record<string, string> = {
     '、': ',',
     '。': '.',
     '，': ',',
@@ -251,13 +251,13 @@ export function runAllAuditRules(title: string | null, content: string): {
   issues = issues.concat(checkNoGarbage(content));
 
   // 计算分数
-  issues.forEach(issue =&gt; {
+  issues.forEach(issue => {
     if (issue.severity === 'error') score -= 20;
     else if (issue.severity === 'warning') score -= 10;
   });
 
   // 检查是否可以自动修复（只要有问题就可以尝试自动修复）
-  const canAutoFix = issues.length &gt; 0;
+  const canAutoFix = issues.length > 0;
 
   return {
     issues,

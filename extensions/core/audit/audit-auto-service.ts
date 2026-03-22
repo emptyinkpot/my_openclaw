@@ -75,18 +75,18 @@ export class AuditAutoService {
   /**
    * 更新配置
    */
-  updateConfig(newConfig: Partial&lt;AuditAutoServiceConfig&gt;): void {
+  updateConfig(newConfig: Partial<AuditAutoServiceConfig>): void {
     this.config = { ...this.config, ...newConfig };
     logger.info('[AuditAutoService] 配置已更新:', this.config);
     
     // 如果启用状态改变，重启服务
-    if (newConfig.enabled !== undefined &amp;&amp; newConfig.enabled !== this.running) {
+    if (newConfig.enabled !== undefined && newConfig.enabled !== this.running) {
       if (newConfig.enabled) {
         this.start();
       } else {
         this.stop();
       }
-    } else if (newConfig.processInterval !== undefined &amp;&amp; this.running) {
+    } else if (newConfig.processInterval !== undefined && this.running) {
       // 如果只是间隔改变，重启定时器
       this.restartTimer();
     }
@@ -106,7 +106,7 @@ export class AuditAutoService {
     logger.info('[AuditAutoService] 自动审核服务已启动');
     
     // 立即执行一次处理
-    setTimeout(() =&gt; {
+    setTimeout(() => {
       this.processChapters();
     }, 1000);
     
@@ -135,7 +135,7 @@ export class AuditAutoService {
   private startTimer(): void {
     this.stopTimer();
     
-    this.timer = setInterval(() =&gt; {
+    this.timer = setInterval(() => {
       this.processChapters();
     }, this.config.processInterval * 1000);
     
@@ -165,7 +165,7 @@ export class AuditAutoService {
   /**
    * 处理章节
    */
-  private async processChapters(): Promise&lt;void&gt; {
+  private async processChapters(): Promise<void> {
     if (!this.running) {
       return;
     }
@@ -219,19 +219,19 @@ export class AuditAutoService {
   /**
    * 获取需要审核的章节
    */
-  private async getChaptersToProcess(): Promise&lt;any[]&gt; {
+  private async getChaptersToProcess(): Promise<any[]> {
     try {
       // 获取所有章节
       const result = await this.novelService.getChapters({});
       const chapters = result.data || [];
       
       // 筛选出状态为 polished 的章节
-      const chaptersToProcess = chapters.filter((chapter: any) =&gt; 
+      const chaptersToProcess = chapters.filter((chapter: any) => 
         chapter.state === 'polished'
       );
       
       // 按更新时间排序，优先处理较早的
-      chaptersToProcess.sort((a: any, b: any) =&gt; {
+      chaptersToProcess.sort((a: any, b: any) => {
         const timeA = new Date(a.updated_at || a.created_at || 0).getTime();
         const timeB = new Date(b.updated_at || b.created_at || 0).getTime();
         return timeA - timeB;
@@ -247,7 +247,7 @@ export class AuditAutoService {
   /**
    * 审核单个章节（完整流程）
    */
-  private async auditChapter(workId: number, chapterNumber: number): Promise&lt;void&gt; {
+  private async auditChapter(workId: number, chapterNumber: number): Promise<void> {
     logger.info(`[AuditAutoService] 审核章节 (workId: ${workId}, chapterNumber: ${chapterNumber})`);
     
     const db = getDatabaseManager();
@@ -259,7 +259,7 @@ export class AuditAutoService {
     let auditPassed = auditResult.status === 'passed';
     
     // 2. 如果开启了自动修复，并且审核失败或有问题，执行完整自动修复
-    if (this.config.autoFix &amp;&amp; (!auditPassed || auditResult.issues.length &gt; 0)) {
+    if (this.config.autoFix && (!auditPassed || auditResult.issues.length > 0)) {
       logger.info(`[AuditAutoService] 自动修复章节 (workId: ${workId}, chapterNumber: ${chapterNumber})`);
       
       // 获取原始内容
@@ -268,7 +268,7 @@ export class AuditAutoService {
         [workId, chapterNumber]
       );
       
-      if (chapter &amp;&amp; chapter.content) {
+      if (chapter && chapter.content) {
         // 执行完整自动修复
         finalContent = autoFixAll(chapter.content);
         
