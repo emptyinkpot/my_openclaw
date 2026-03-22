@@ -168,6 +168,38 @@ export class NovelService {
         console.log('[NovelService] suggested_action 添加跳过');
       }
       
+      // 删除不再使用的 polish_status 字段
+      try {
+        const [colCheck] = await this.db.query(`
+          SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'chapters' AND COLUMN_NAME = 'polish_status'
+        `);
+        if (colCheck[0].cnt > 0) {
+          await this.db.execute(`
+            ALTER TABLE chapters DROP COLUMN polish_status
+          `);
+          console.log('[NovelService] polish_status 字段已删除');
+        }
+      } catch (e) {
+        console.log('[NovelService] polish_status 删除跳过（可能不存在）');
+      }
+      
+      // 删除不再使用的 publish_status 字段
+      try {
+        const [colCheck] = await this.db.query(`
+          SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'chapters' AND COLUMN_NAME = 'publish_status'
+        `);
+        if (colCheck[0].cnt > 0) {
+          await this.db.execute(`
+            ALTER TABLE chapters DROP COLUMN publish_status
+          `);
+          console.log('[NovelService] publish_status 字段已删除');
+        }
+      } catch (e) {
+        console.log('[NovelService] publish_status 删除跳过（可能不存在）');
+      }
+      
       // 创建角色表
       await this.db.execute(`
         CREATE TABLE IF NOT EXISTS characters (
