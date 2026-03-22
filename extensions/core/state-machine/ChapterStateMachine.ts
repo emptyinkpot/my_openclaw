@@ -31,6 +31,52 @@ export class ChapterStateMachine {
   }
 
   /**
+   * 确保章节状态是合理的（转换前的前置检查）
+   */
+  private async ensureChapterStateValid(chapter: any): Promise<void> {
+    let newStatus = chapter.status;
+    let needFix = false;
+    
+    try {
+      // 规则1：如果没有内容，必须是 outline
+      if ((!chapter.content || chapter.content.length === 0 || !chapter.word_count || chapter.word_count === 0) && 
+          chapter.status !== 'outline') {
+        newStatus = 'outline';
+        needFix = true;
+      }
+      
+      // 规则2：如果有内容且状态是 outline，改为 first_draft
+      else if (chapter.content && chapter.content.length > 0 && 
+               chapter.word_count && chapter.word_count > 0 && 
+               chapter.status === 'outline') {
+        newStatus = 'first_draft';
+        needFix = true;
+      }
+      
+      // 规则3：清理旧状态 pending
+      if (chapter.status === 'pending') {
+        if (!chapter.content || chapter.content.length === 0) {
+          newStatus = 'outline';
+        } else {
+          newStatus = 'first_draft';
+        }
+        needFix = true;
+      }
+      
+      // 如果需要修复，执行更新
+      if (needFix && newStatus !== chapter.status) {
+        await this.db.execute(`
+          UPDATE chapters SET status = ?, updated_at = NOW() WHERE id = ?
+        `, [newStatus, chapter.id]);
+        logger.info(`[StateMachine] 前置检查修复章节 ${chapter.work_id}-${chapter.chapter_number}: ${chapter.status} → ${newStatus}`);
+      }
+    } catch (err) {
+      logger.error(`[StateMachine] 前置检查失败: ${chapter.id}`, err);
+      // 即使失败也不要阻止后续流程
+    }
+  }
+
+  /**
    * 检查章节是否确实经过润色流程
    */
   async hasBeenPolished(chapterId: number): Promise<boolean> {
@@ -113,15 +159,29 @@ export class ChapterStateMachine {
       return false;
     }
 
-    const fromState = chapter.status as ChapterStatus;
+    // 2. 转换前先检查并修复该章节的状态（确保前置条件正确）
+    await this.ensureChapterStateValid(chapter);
 
-    // 2. 如果状态没有变化，直接返回
+    // 3. 重新获取最新的章节数据（因为可能已经修复）
+    const latestChapter = await this.db.queryOne(
+      'SELECT * FROM chapters WHERE id = ?',
+      [chapterId]
+    );
+    
+    if (!latestChapter) {
+      logger.error(`[StateMachine] 章节不存在: id=${chapterId}`);
+      return false;
+    }
+
+    const fromState = latestChapter.status as ChapterStatus;
+
+    // 4. 如果状态没有变化，直接返回
     if (fromState === toState) {
       logger.debug(`[StateMachine] 状态未变化: id=${chapterId}, state=${fromState}`);
       return true;
     }
 
-    // 3. 特殊验证：只有确实经过润色流程的才能转换到 polished
+    // 5. 特殊验证：只有确实经过润色流程的才能转换到 polished
     if (toState === 'polished' && reason !== 'content_polished') {
       // 检查章节是否确实经过润色流程
       const hasBeenPolished = await this.hasBeenPolished(chapterId);
@@ -133,7 +193,7 @@ export class ChapterStateMachine {
       }
     }
 
-    // 4. 验证转换是否合法
+    // 6. 验证转换是否合法
     if (this.config.strictMode && !this.canTransition(fromState, toState)) {
       logger.error(
         `[StateMachine] 非法状态转换: id=${chapterId}, ${fromState} → ${toState}, reason=${reason}`

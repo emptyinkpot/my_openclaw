@@ -2572,6 +2572,94 @@ const plugin = {
   },
   activate() {
     console.log('[novel-manager] Plugin activated');
+    
+    // 启动时自动诊断和修复章节状态（延迟执行，确保数据库连接已建立）
+    setTimeout(async () => {
+      try {
+        console.log('[novel-manager] 启动时自动诊断和修复章节状态...');
+        
+        const db = getDatabaseManager();
+        const { getChapterStateMachine } = require('../../core/state-machine');
+        const stateMachine = getChapterStateMachine();
+        
+        // 1. 获取所有章节
+        const allChapters = await db.query(`
+          SELECT id, work_id, chapter_number, title, content, word_count, status
+          FROM chapters
+          ORDER BY work_id, chapter_number
+        `);
+        
+        console.log(`[novel-manager] 找到 ${allChapters.length} 个章节，开始检查...`);
+        
+        let fixed = 0;
+        
+        // 2. 逐个检查和修复
+        for (const chapter of allChapters) {
+          let newStatus = chapter.status;
+          let needFix = false;
+          
+          try {
+            // 规则1：如果没有内容，必须是 outline
+            if ((!chapter.content || chapter.content.length === 0 || !chapter.word_count || chapter.word_count === 0) && 
+                chapter.status !== 'outline') {
+              newStatus = 'outline';
+              needFix = true;
+            }
+            
+            // 规则2：如果有内容且状态是 outline，改为 first_draft
+            else if (chapter.content && chapter.content.length > 0 && 
+                     chapter.word_count && chapter.word_count > 0 && 
+                     chapter.status === 'outline') {
+              newStatus = 'first_draft';
+              needFix = true;
+            }
+            
+            // 规则3：如果状态是 polished，检查是否确实经过润色流程
+            else if (chapter.status === 'polished') {
+              try {
+                const hasBeenPolished = await stateMachine.hasBeenPolished(chapter.id);
+                if (!hasBeenPolished) {
+                  newStatus = 'first_draft';
+                  needFix = true;
+                }
+              } catch (e) {
+                // 检查润色状态失败，暂时跳过
+              }
+            }
+            
+            // 规则4：清理旧状态 pending
+            if (chapter.status === 'pending') {
+              if (!chapter.content || chapter.content.length === 0) {
+                newStatus = 'outline';
+              } else {
+                newStatus = 'first_draft';
+              }
+              needFix = true;
+            }
+            
+            // 如果需要修复，执行更新
+            if (needFix && newStatus !== chapter.status) {
+              await db.execute(`
+                UPDATE chapters SET status = ?, updated_at = NOW() WHERE id = ?
+              `, [newStatus, chapter.id]);
+              fixed++;
+              console.log(`[novel-manager] 修复章节 ${chapter.work_id}-${chapter.chapter_number}: ${chapter.status} → ${newStatus}`);
+            }
+          } catch (err) {
+            console.error(`[novel-manager] 处理章节 ${chapter.id} 失败:`, err);
+          }
+        }
+        
+        if (fixed > 0) {
+          console.log(`[novel-manager] 启动时自动诊断和修复完成，修复了 ${fixed} 个章节`);
+        } else {
+          console.log('[novel-manager] 启动时自动诊断和修复完成，所有章节状态正常');
+        }
+        
+      } catch (err) {
+        console.error('[novel-manager] 启动时自动诊断和修复失败:', err);
+      }
+    }, 3000); // 延迟3秒执行，确保系统完全启动
   }
 };
 
