@@ -54,7 +54,7 @@ export class PolishPipeline {
   }
   
   /**
-   * 从 MySQL 加载资源库数据（备用方法）
+   * 从 MySQL 加载资源库数据
    */
   private async loadResourcesFromMySQL() {
     // 如果有外部资源，直接使用外部资源
@@ -66,8 +66,47 @@ export class PolishPipeline {
       };
     }
     
-    // 否则返回空资源
-    return { vocabulary: [], bannedWords: [], literature: [] };
+    try {
+      // 动态导入数据库管理器
+      const { getDatabaseManager } = require('../../database');
+      const db = getDatabaseManager();
+      
+      console.log('[PolishPipeline] 开始从 MySQL 加载资源库...');
+      
+      // 1. 加载优选词库（vocabulary 表）
+      let vocabulary: any[] = [];
+      try {
+        vocabulary = await db.query('SELECT * FROM vocabulary ORDER BY category, id');
+        console.log(`[PolishPipeline] 加载了 ${vocabulary.length} 个优选词`);
+      } catch (e) {
+        console.warn('[PolishPipeline] 加载优选词库失败:', e.message);
+      }
+      
+      // 2. 加载禁用词库（banned_words 表）
+      let bannedWords: any[] = [];
+      try {
+        bannedWords = await db.query('SELECT * FROM banned_words ORDER BY category, id');
+        console.log(`[PolishPipeline] 加载了 ${bannedWords.length} 个禁用词`);
+      } catch (e) {
+        console.warn('[PolishPipeline] 加载禁用词库失败:', e.message);
+      }
+      
+      // 3. 加载文学库（literature 表）
+      let literature: any[] = [];
+      try {
+        literature = await db.query('SELECT * FROM literature ORDER BY priority DESC, id');
+        console.log(`[PolishPipeline] 加载了 ${literature.length} 条文学资源`);
+      } catch (e) {
+        console.warn('[PolishPipeline] 加载文学库失败:', e.message);
+      }
+      
+      return { vocabulary, bannedWords, literature };
+      
+    } catch (error) {
+      console.error('[PolishPipeline] 从 MySQL 加载资源库失败:', error);
+      // 失败时返回空资源
+      return { vocabulary: [], bannedWords: [], literature: [] };
+    }
   }
   
   /**
