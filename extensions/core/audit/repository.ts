@@ -6,7 +6,7 @@
 
 import { getDatabaseManager } from '../storage/database';
 import { ChapterData, WorkData, AuditStatus, SuggestedAction, AuditIssue } from './types';
-import { logger } from '../plugins/novel-manager/utils/logger';
+import { logger } from '../../plugins/novel-manager/utils/logger';
 
 const db = getDatabaseManager();
 

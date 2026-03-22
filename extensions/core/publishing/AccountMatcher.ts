@@ -5,7 +5,7 @@
 
 import { getConfig } from '../config';
 import { getFanqieScanner } from '../storage/FanqieScanner';
-import { logger } from '../plugins/novel-manager/utils/logger';
+import { logger } from '../../plugins/novel-manager/utils/logger';
 
 export interface FanqieAccount {
   id: string;

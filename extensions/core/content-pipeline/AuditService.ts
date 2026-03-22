@@ -4,7 +4,7 @@
  */
 
 import { getDatabaseManager } from '../storage/database';
-import { logger } from '../plugins/novel-manager/utils/logger';
+import { logger } from '../../plugins/novel-manager/utils/logger';
 
 export type AuditStatus = 'pending' | 'passed' | 'failed';
 export type SuggestedAction = 'none' | 'autofix' | 'manual';

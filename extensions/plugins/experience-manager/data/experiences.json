@@ -2684,7 +2684,7 @@
       "title": "经验积累中心页面 JavaScript 错误完整修复实战",
       "description": "用户反馈经验积累中心页面卡住，所有按钮无法点击。通过完整的排查，发现并修复了三大问题：重复的函数定义、使用 event.target 但没有传 event 参数、JavaScript 模板字符串中的反引号没有转义。",
       "userQuery": "经验积累中心页面还是卡着的，没法点击笔记和专栏按钮和页面的其他按钮",
-      "solution": "## 问题现象：经验积累中心页面完全卡住，所有按钮无法点击，控制台报出多个 JavaScript 错误。\n\n## 排查过程：\n1. 发现有重复的 showDetail 函数定义；2. 发现多个函数使用了 event.target 但没有传 event 参数；3. 发现专栏内容的 JavaScript 模板字符串中的反引号没有转义，导致 SyntaxError: Unexpected identifier 'mermaid'。\n\n## 修复步骤：\n1. 删除重复的 showDetail 函数；2. 修复所有使用 event.target 但没有传 event 参数的函数（switchTab、filterExp、filterNotes、filterColumns）；3. 手动逐个替换所有专栏内容中的 ``` 为 \\\`\\\`\\\`。",
+      "solution": "## 问题现象：经验积累中心页面完全卡住，所有按钮无法点击，控制台报出多个 JavaScript 错误。\n\n## 排查过程：\n1. 发现有重复的 showDetail 函数定义；2. 发现多个函数使用了 event.target 但没有传 event 参数；3. 发现专栏内容的 JavaScript 模板字符串中的反引号没有转义，导致 SyntaxError: Unexpected identifier 'mermaid'。\n\n## 修复步骤：\n1. 删除重复的 showDetail 函数；2. 修复所有使用 event.target 但没有传 event 参数的函数（switchTab、filterExp、filterNotes、filterColumns）；3. 手动逐个替换所有专栏内容中的 ``` 为 \\`\\`\\`。",
       "experienceApplied": [
         "JavaScript 调试",
         "错误排查",

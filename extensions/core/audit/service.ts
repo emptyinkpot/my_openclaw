@@ -4,7 +4,7 @@
  * 负责协调规则和数据访问，高内聚
  */
 
-import { logger } from '../plugins/novel-manager/utils/logger';
+import { logger } from '../../plugins/novel-manager/utils/logger';
 import {
   ChapterData,
   AuditResult,

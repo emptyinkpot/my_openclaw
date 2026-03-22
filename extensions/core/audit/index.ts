@@ -5,8 +5,8 @@
  * 低耦合高内聚，模块化设计
  */
 
-import { logger } from '../plugins/novel-manager/utils/logger';
-import { delay } from '../plugins/novel-manager/utils/helpers';
+import { logger } from '../../plugins/novel-manager/utils/logger';
+import { delay } from '../../plugins/novel-manager/utils/helpers';
 import {
   AuditOptions,
   AuditProgressEvent,

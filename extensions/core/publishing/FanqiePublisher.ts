@@ -6,7 +6,7 @@
  */
 
 import { getConfig } from '../config';
-import { logger } from '../plugins/novel-manager/utils/logger';
+import { logger } from '../../plugins/novel-manager/utils/logger';
 import { extractChapterNumber } from '../utils/text';
 import { chromium, BrowserContext, Page } from 'playwright';
 import * as fs from 'fs';
