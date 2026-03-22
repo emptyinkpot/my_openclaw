@@ -571,15 +571,36 @@ export class NovelService {
     const updates: string[] = [];
     const params: any[] = [];
     
+    // 获取当前章节数据
+    const currentChapter = await this.db.queryOne(
+      'SELECT * FROM chapters WHERE id = ?',
+      [id]
+    );
+    
     if (data.title !== undefined) {
       updates.push('title = ?');
       params.push(data.title);
     }
+    
     if (data.content !== undefined) {
       updates.push('content = ?');
       updates.push('word_count = ?');
       params.push(data.content, data.content.length);
+      
+      // 如果没有明确指定状态，根据内容自动修正状态
+      if (data.status === undefined) {
+        if (!data.content || data.content.length === 0) {
+          // 内容为空，状态设为 outline
+          updates.push('status = ?');
+          params.push('outline');
+        } else if (currentChapter && currentChapter.status === 'outline') {
+          // 从 outline 更新为 first_draft
+          updates.push('status = ?');
+          params.push('first_draft');
+        }
+      }
     }
+    
     if (data.status !== undefined) {
       updates.push('status = ?');
       params.push(data.status);

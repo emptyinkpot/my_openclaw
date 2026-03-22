@@ -1343,6 +1343,8 @@
     // 安全获取状态文本
     function getStatusText(status) {
       if (!status) return '待写';
+      // 确保 first_draft 正确翻译
+      if (status === 'first_draft') return '初稿';
       return statusText[status] || status;
     }
     
@@ -1350,6 +1352,25 @@
     function getStatusColor(status) {
       if (!status) return 'var(--text-muted)';
       return statusColor[status] || 'var(--text-muted)';
+    }
+    
+    // 修正章节状态（确保字数为0时状态为outline）
+    function fixChapterStatus(chapter) {
+      if (!chapter) return chapter;
+      
+      // 如果字数为0且状态不是outline，修正为outline
+      if ((!chapter.word_count || chapter.word_count === 0) && chapter.status !== 'outline') {
+        console.warn('⚠️ 修正章节状态:', chapter.id, '从', chapter.status, '到 outline');
+        chapter.status = 'outline';
+      }
+      
+      // 如果字数大于0且状态是outline，修正为first_draft或polished
+      if (chapter.word_count && chapter.word_count > 0 && chapter.status === 'outline') {
+        console.warn('⚠️ 修正章节状态:', chapter.id, '从 outline 到 first_draft');
+        chapter.status = 'first_draft';
+      }
+      
+      return chapter;
     }
     
     // ====== 数据缓存系统 ======
@@ -2919,6 +2940,8 @@
       if (viewMode === 'grid') {
         const renderFn = (ch) => {
           console.log('📄 章节数据:', ch);
+          // 修正状态
+          ch = fixChapterStatus(ch);
           const status = ch.status || 'pending';
           const statusLabel = getStatusText(status);
           const color = getStatusColor(status);
@@ -2952,6 +2975,8 @@
         }
       } else if (viewMode === 'list') {
         const renderFn = (ch) => {
+          // 修正状态
+          ch = fixChapterStatus(ch);
           const status = ch.status || 'pending';
           const statusLabel = getStatusText(status);
           const color = getStatusColor(status);
