@@ -787,6 +787,7 @@
       <div class="tab active" onclick="switchTab('experience')">📝 经验</div>
       <div class="tab" onclick="switchTab('notes')">📒 笔记</div>
       <div class="tab" onclick="switchTab('columns')">📚 专栏</div>
+      <div class="tab" onclick="switchTab('guide')">📖 开发指南</div>
     </div>
   </div>
   
@@ -867,8 +868,16 @@
           <div class="filter-tab" onclick="filterColumns('best_practices')">✨ 最佳实践</div>
         </div>
         <div class="toolbar-spacer"></div>
-        <button class="btn btn-primary" onclick="showDevelopmentGuide()">📖 开发指南</button>
         <button class="btn" onclick="refreshColumns()">🔄 刷新</button>
+      </div>
+      
+      <!-- 开发指南工具栏 -->
+      <div class="toolbar" id="guideToolbar" style="display: none;">
+        <div style="font-size: 12px; color: var(--text-secondary);">
+          📖 开发指南 - 避免错误的最佳实践
+        </div>
+        <div class="toolbar-spacer"></div>
+        <button class="btn btn-primary" onclick="openDevelopmentGuide()">📖 打开完整指南</button>
       </div>
       
       <!-- 经验列表 -->
@@ -895,6 +904,47 @@
           <div class="empty-icon">📚</div>
           <div class="empty-text">暂无专栏</div>
           <div class="empty-hint">专栏正在整理中...</div>
+        </div>
+      </div>
+      
+      <!-- 开发指南内容 -->
+      <div class="guide-content" id="guideContent" style="display: none; flex: 1; overflow-y: auto; padding: 16px;">
+        <div style="max-width: 900px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #0969da20, #8250df20); border-radius: 12px; padding: 24px; margin-bottom: 20px;">
+            <h2 style="font-size: 20px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px;">
+              📖 开发指南
+            </h2>
+            <p style="color: var(--text-secondary); margin-bottom: 0;">从实战中提炼的最佳实践，帮助你在开发时就避免常见错误</p>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px;">
+            <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 16px; cursor: pointer; transition: all 0.15s;" onclick="openGuideSection('api')">
+              <div style="font-size: 24px; margin-bottom: 8px;">🔗</div>
+              <h3 style="font-size: 14px; margin-bottom: 6px;">API 设计规范</h3>
+              <p style="font-size: 11px; color: var(--text-secondary); line-height: 1.5;">如何设计一致的 API 路径，避免重复前缀错误</p>
+            </div>
+            <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 16px; cursor: pointer; transition: all 0.15s;" onclick="openGuideSection('paths')">
+              <div style="font-size: 24px; margin-bottom: 8px;">📂</div>
+              <h3 style="font-size: 14px; margin-bottom: 6px;">路径管理规范</h3>
+              <p style="font-size: 11px; color: var(--text-secondary); line-height: 1.5;">相对路径计算方法，避免模块找不到错误</p>
+            </div>
+            <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 16px; cursor: pointer; transition: all 0.15s;" onclick="openGuideSection('frontend')">
+              <div style="font-size: 24px; margin-bottom: 8px;">🎨</div>
+              <h3 style="font-size: 14px; margin-bottom: 6px;">前端开发规范</h3>
+              <p style="font-size: 11px; color: var(--text-secondary); line-height: 1.5;">console.log 调试技巧和错误预防</p>
+            </div>
+            <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 16px; cursor: pointer; transition: all 0.15s;" onclick="openGuideSection('backend')">
+              <div style="font-size: 24px; margin-bottom: 8px;">⚙️</div>
+              <h3 style="font-size: 14px; margin-bottom: 6px;">后端开发规范</h3>
+              <p style="font-size: 11px; color: var(--text-secondary); line-height: 1.5;">路由注册和文件路径查找策略</p>
+            </div>
+          </div>
+          
+          <div style="text-align: center;">
+            <button class="btn btn-primary" style="padding: 10px 24px; font-size: 13px;" onclick="openDevelopmentGuide()">
+              📖 打开完整开发指南
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -1105,8 +1155,14 @@
       tabs.forEach(t => t.classList.remove('active'));
       
       // 根据 tab 值找到对应的元素并添加 active 类
+      const tabLabels = {
+        'experience': '经验',
+        'notes': '笔记',
+        'columns': '专栏',
+        'guide': '开发指南'
+      };
       tabs.forEach(t => {
-        if (t.textContent.includes(tab === 'experience' ? '经验' : tab === 'notes' ? '笔记' : '专栏')) {
+        if (t.textContent.includes(tabLabels[tab] || tab)) {
           t.classList.add('active');
         }
       });
@@ -1118,11 +1174,13 @@
       document.getElementById('experienceToolbar').style.display = tab === 'experience' ? 'flex' : 'none';
       document.getElementById('notesToolbar').style.display = tab === 'notes' ? 'flex' : 'none';
       document.getElementById('columnsToolbar').style.display = tab === 'columns' ? 'flex' : 'none';
+      document.getElementById('guideToolbar').style.display = tab === 'guide' ? 'flex' : 'none';
       
-      // 更新列表
+      // 更新内容区域
       document.getElementById('expList').classList.toggle('active', tab === 'experience');
       document.getElementById('noteList').classList.toggle('active', tab === 'notes');
       document.getElementById('columnList').classList.toggle('active', tab === 'columns');
+      document.getElementById('guideContent').style.display = tab === 'guide' ? 'block' : 'none';
       
       // 如果是专栏标签，加载专栏数据
       if (tab === 'columns') {
@@ -1812,8 +1870,13 @@
       document.getElementById('detailModal').classList.add('show');
     }
     
-    // 快速打开开发指南
-    function showDevelopmentGuide() {
+    // 打开开发指南的某个章节
+    function openGuideSection(section) {
+      openDevelopmentGuide();
+    }
+    
+    // 打开完整开发指南
+    function openDevelopmentGuide() {
       // 确保 columnData 已加载
       if (columnData.length === 0) {
         alert('请先刷新页面加载专栏数据');
