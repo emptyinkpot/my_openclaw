@@ -227,25 +227,25 @@ export class AuditAutoService {
    */
   private async getChaptersToProcess(): Promise<any[]> {
     try {
-      // 获取所有章节
-      const result = await this.novelService.getChapters({});
-      const chapters = result.data || [];
+      // 直接查询数据库，不依赖 novelService
+      const db = getDatabaseManager();
       
-      // 筛选出状态为 polished 的章节
-      const chaptersToProcess = chapters.filter((chapter: any) => 
-        (chapter.state || chapter.status) === 'polished'
-      );
+      // 直接查询状态为 polished 的章节
+      const limit = Math.max(1, Math.min(10, this.config.maxChaptersPerRun));
+      const chapters = await db.query(`
+        SELECT * FROM chapters 
+        WHERE status = 'polished'
+        ORDER BY updated_at ASC
+        LIMIT ${limit}
+      `);
       
-      // 按更新时间排序，优先处理较早的
-      chaptersToProcess.sort((a: any, b: any) => {
-        const timeA = new Date(a.updated_at || a.created_at || 0).getTime();
-        const timeB = new Date(b.updated_at || b.created_at || 0).getTime();
-        return timeA - timeB;
-      });
+      logger.info(`[AuditAutoService] 找到 ${chapters.length} 个需要审核的章节`);
+      this.activityLog.log('progress', `找到 ${chapters.length} 个需要审核的章节`);
       
-      return chaptersToProcess;
+      return chapters;
     } catch (error: any) {
       logger.error('[AuditAutoService] 获取需要审核的章节失败:', error.message);
+      this.activityLog.log('error', `获取审核章节失败: ${error.message}`);
       return [];
     }
   }
