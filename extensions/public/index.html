@@ -299,7 +299,6 @@
           <div class="tab" onclick="switchNovelDataSubTab('resource-library')" data-subtab="resource-library">📦 资源库</div>
           <div class="tab" onclick="switchNovelDataSubTab('state-machine')" data-subtab="state-machine">⚙️ 状态机</div>
           <div class="tab" onclick="switchNovelDataSubTab('content-craft-auto')" data-subtab="content-craft-auto">✨ AI自动处理</div>
-          <div class="tab" onclick="switchNovelDataSubTab('audit-auto')" data-subtab="audit-auto">✅ 审核自动处理</div>
         </div>
         
         <!-- 三级标签内容区 -->
@@ -917,86 +916,6 @@
             </div>
           </div>
           <!-- /AI自动处理子页面 -->
-          
-          <!-- 审核自动处理子页面 -->
-          <div id="auditAutoSubPage" class="subtab-content" style="flex: 1; display: none; overflow: hidden;">
-            <div class="content" style="padding: 16px; overflow-y: auto;">
-              
-              <!-- 审核自动处理服务控制面板 -->
-              <div style="margin-bottom: 16px; padding: 16px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px;">
-                <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
-                  <h3 style="font-size: 14px; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 8px;">
-                    <span>✅ 审核自动处理服务</span>
-                    <span id="auditAutoStatusBadge" style="font-size: 10px; padding: 2px 8px; border-radius: 10px; background: #ffebe9; color: var(--danger);">已关闭</span>
-                  </h3>
-                  <button id="auditAutoToggleBtn" class="btn primary" onclick="toggleAuditAuto()">▶️ 启动服务</button>
-                </div>
-                
-                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 12px;">
-                  <div style="padding: 12px; background: var(--bg-tertiary); border-radius: 6px;">
-                    <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 4px;">最后运行时间</div>
-                    <div id="auditAutoLastRun" style="font-size: 13px; font-weight: 500;">-</div>
-                  </div>
-                  <div style="padding: 12px; background: var(--bg-tertiary); border-radius: 6px;">
-                    <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 4px;">当前任务</div>
-                    <div id="auditAutoCurrentTask" style="font-size: 13px; font-weight: 500;">-</div>
-                  </div>
-                  <div style="padding: 12px; background: var(--bg-tertiary); border-radius: 6px;">
-                    <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 4px;">已处理章节</div>
-                    <div id="auditAutoProcessed" style="font-size: 13px; font-weight: 500; color: var(--success);">0</div>
-                  </div>
-                  <div style="padding: 12px; background: var(--bg-tertiary); border-radius: 6px;">
-                    <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 4px;">错误次数</div>
-                    <div id="auditAutoErrors" style="font-size: 13px; font-weight: 500; color: var(--danger);">0</div>
-                  </div>
-                </div>
-                
-                <!-- 配置项 -->
-                <div style="padding: 12px; background: var(--bg-tertiary); border-radius: 6px;">
-                  <div style="font-size: 11px; font-weight: 600; margin-bottom: 12px;">⚙️ 服务配置</div>
-                  
-                  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 12px;">
-                    <div>
-                      <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 6px;">处理间隔（秒）</label>
-                      <input type="number" id="auditAutoInterval" value="60" min="10" max="3600" style="width: 100%; padding: 6px 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px;" onchange="saveAuditAutoConfig()">
-                    </div>
-                    <div>
-                      <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 6px;">每次最多处理章节数</label>
-                      <input type="number" id="auditAutoMaxChapters" value="3" min="1" max="10" style="width: 100%; padding: 6px 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px;" onchange="saveAuditAutoConfig()">
-                    </div>
-                  </div>
-                  
-                  <div style="font-size: 11px; font-weight: 600; margin-bottom: 12px; margin-top: 16px;">📝 审核配置</div>
-                  
-                  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
-                    <div>
-                      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin-bottom: 6px;">
-                        <input type="checkbox" id="auditAutoAutoFix" checked style="width: 16px; height: 16px; cursor: pointer;" onchange="saveAuditAutoConfig()">
-                        <span style="font-size: 11px; color: var(--text);">自动修复可修复问题</span>
-                      </label>
-                      <div style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">审核失败时自动修复可修复的问题</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- 处理说明 -->
-              <div style="padding: 16px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px;">
-                <h3 style="font-size: 14px; font-weight: 600; margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
-                  <span>📋 处理规则</span>
-                </h3>
-                <div style="display: grid; grid-template-columns: 1fr; gap: 8px;">
-                  <div style="padding: 10px; background: var(--bg-tertiary); border-radius: 6px; border-left: 3px solid var(--success);">
-                    <div style="font-size: 12px; font-weight: 500; margin-bottom: 4px;">✨ 润色完成 → 已审核</div>
-                    <div style="font-size: 11px; color: var(--text-muted);">自动审核状态为 <code style="background: var(--bg); padding: 1px 4px; border-radius: 3px; font-size: 10px;">polished</code> 的章节，审核通过后标记为 <code style="background: var(--bg); padding: 1px 4px; border-radius: 3px; font-size: 10px;">audited</code>（只有这个流程能赋予此状态）</div>
-                  </div>
-                </div>
-              </div>
-              
-            </div>
-          </div>
-          <!-- /审核自动处理子页面 -->
-
         </div>
         <!-- /三级标签内容区 -->
       </div>
@@ -2978,7 +2897,6 @@
       document.getElementById('resourceLibrarySubPage').style.display = subtab === 'resource-library' ? 'flex' : 'none';
       document.getElementById('stateMachineSubPage').style.display = subtab === 'state-machine' ? 'flex' : 'none';
       document.getElementById('contentCraftAutoSubPage').style.display = subtab === 'content-craft-auto' ? 'flex' : 'none';
-      document.getElementById('auditAutoSubPage').style.display = subtab === 'audit-auto' ? 'flex' : 'none';
       
       // 如果切换到 MySQL 字段页面，实时从数据库读取
       if (subtab === 'mysql-fields') {
@@ -3006,15 +2924,6 @@
       } else {
         // 离开 AI自动处理页面时停止自动刷新
         stopContentCraftAutoRefresh();
-      }
-      
-      // 如果切换到 审核自动处理页面，加载数据并启动自动刷新
-      if (subtab === 'audit-auto') {
-        await loadAuditAutoData();
-        startAuditAutoRefresh();
-      } else {
-        // 离开 审核自动处理页面时停止自动刷新
-        stopAuditAutoRefresh();
       }
     }
     
@@ -3358,168 +3267,6 @@
       if (stateMachineRefreshTimer) {
         clearInterval(stateMachineRefreshTimer);
         stateMachineRefreshTimer = null;
-      }
-    }
-
-    // ====== 审核自动处理服务相关函数 ======
-    let auditAutoRefreshTimer = null;
-    const AUDIT_AUTO_REFRESH_INTERVAL = 3000; // 3秒
-
-    // 加载审核自动处理数据
-    async function loadAuditAutoData() {
-      try {
-        // 加载状态
-        const statusResult = await api('/audit-auto/status');
-        if (statusResult.success) {
-          updateAuditAutoStatus(statusResult.data);
-        }
-        
-        // 加载配置
-        const configResult = await api('/audit-auto/config');
-        if (configResult.success) {
-          updateAuditAutoConfig(configResult.data);
-        }
-      } catch (e) {
-        console.error('[AuditAuto] 加载数据失败:', e);
-      }
-    }
-
-    // 更新审核自动处理状态显示
-    function updateAuditAutoStatus(status) {
-      const statusBadge = document.getElementById('auditAutoStatusBadge');
-      const toggleBtn = document.getElementById('auditAutoToggleBtn');
-      const lastRunEl = document.getElementById('auditAutoLastRun');
-      const currentTaskEl = document.getElementById('auditAutoCurrentTask');
-      const processedEl = document.getElementById('auditAutoProcessed');
-      const errorsEl = document.getElementById('auditAutoErrors');
-
-      if (!statusBadge || !toggleBtn) return;
-
-      if (status.running) {
-        statusBadge.textContent = '运行中';
-        statusBadge.style.background = '#dafbe1';
-        statusBadge.style.color = 'var(--success)';
-        toggleBtn.textContent = '⏹️ 停止服务';
-        toggleBtn.classList.remove('primary');
-        toggleBtn.classList.add('danger');
-      } else {
-        statusBadge.textContent = '已关闭';
-        statusBadge.style.background = '#ffebe9';
-        statusBadge.style.color = 'var(--danger)';
-        toggleBtn.textContent = '▶️ 启动服务';
-        toggleBtn.classList.remove('danger');
-        toggleBtn.classList.add('primary');
-      }
-
-      if (lastRunEl) {
-        lastRunEl.textContent = status.lastRunTime 
-          ? new Date(status.lastRunTime).toLocaleString('zh-CN') 
-          : '-';
-      }
-
-      if (currentTaskEl) {
-        currentTaskEl.textContent = status.currentTask || '-';
-      }
-
-      if (processedEl) {
-        processedEl.textContent = status.processedCount || 0;
-      }
-
-      if (errorsEl) {
-        errorsEl.textContent = status.errorCount || 0;
-      }
-    }
-
-    // 更新审核自动处理配置显示
-    function updateAuditAutoConfig(config) {
-      const intervalInput = document.getElementById('auditAutoInterval');
-      const maxChaptersInput = document.getElementById('auditAutoMaxChapters');
-      const autoFixInput = document.getElementById('auditAutoAutoFix');
-
-      if (intervalInput) {
-        intervalInput.value = config.processInterval || 60;
-      }
-
-      if (maxChaptersInput) {
-        maxChaptersInput.value = config.maxChaptersPerRun || 3;
-      }
-
-      if (autoFixInput) {
-        autoFixInput.checked = config.autoFix !== false;
-      }
-    }
-
-    // 切换审核自动处理服务状态
-    async function toggleAuditAuto() {
-      try {
-        const statusResult = await api('/audit-auto/status');
-        if (!statusResult.success) {
-          showToast('❌ 获取状态失败', 'error');
-          return;
-        }
-
-        const isRunning = statusResult.data.running;
-        const endpoint = isRunning ? '/audit-auto/stop' : '/audit-auto/start';
-        
-        const result = await api(endpoint, { method: 'POST' });
-        
-        if (result.success) {
-          updateAuditAutoStatus(result.data);
-          showToast(isRunning ? '⏹️ 服务已停止' : '▶️ 服务已启动', 'success');
-        } else {
-          showToast('❌ 操作失败: ' + result.error, 'error');
-        }
-      } catch (e) {
-        console.error('[AuditAuto] 切换服务状态失败:', e);
-        showToast('❌ 操作失败', 'error');
-      }
-    }
-
-    // 保存审核自动处理配置
-    async function saveAuditAutoConfig() {
-      try {
-        const intervalInput = document.getElementById('auditAutoInterval');
-        const maxChaptersInput = document.getElementById('auditAutoMaxChapters');
-        const autoFixInput = document.getElementById('auditAutoAutoFix');
-        
-        const config = {
-          processInterval: parseInt(intervalInput?.value) || 60,
-          maxChaptersPerRun: parseInt(maxChaptersInput?.value) || 3,
-          autoFix: autoFixInput?.checked !== false
-        };
-        
-        const result = await api('/audit-auto/config', {
-          method: 'POST',
-          body: JSON.stringify(config)
-        });
-        
-        if (result.success) {
-          updateAuditAutoConfig(result.data.config);
-          updateAuditAutoStatus(result.data.status);
-          showToast('✅ 配置已保存', 'success');
-        } else {
-          showToast('❌ 保存配置失败: ' + result.error, 'error');
-        }
-      } catch (e) {
-        console.error('[AuditAuto] 保存配置失败:', e);
-        showToast('❌ 保存配置失败', 'error');
-      }
-    }
-
-    // 启动审核自动处理自动刷新
-    function startAuditAutoRefresh() {
-      stopAuditAutoRefresh();
-      auditAutoRefreshTimer = setInterval(() =&gt; {
-        loadAuditAutoData();
-      }, AUDIT_AUTO_REFRESH_INTERVAL);
-    }
-
-    // 停止审核自动处理自动刷新
-    function stopAuditAutoRefresh() {
-      if (auditAutoRefreshTimer) {
-        clearInterval(auditAutoRefreshTimer);
-        auditAutoRefreshTimer = null;
-      }
       }
     }
     
