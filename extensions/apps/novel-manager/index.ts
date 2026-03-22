@@ -328,146 +328,166 @@ function getProjectStructureHtml(): string {
   <title>工程结构 - 项目监视器</title>
   <style>
     :root {
-      --bg: #0f172a;
-      --bg-secondary: #1e293b;
-      --card: #1e293b;
-      --text: #e2e8f0;
+      --bg: #ffffff;
+      --bg-secondary: #f8fafc;
+      --bg-tertiary: #f1f5f9;
+      --card: #ffffff;
+      --text: #1e293b;
+      --text-secondary: #64748b;
       --text-muted: #94a3b8;
-      --accent: #3b82f6;
-      --accent-hover: #2563eb;
-      --border: #334155;
-      --success: #22c55e;
-      --warning: #f59e0b;
-      --danger: #ef4444;
+      --accent: #0969da;
+      --accent-hover: #0550ae;
+      --accent-light: #ddf4ff;
+      --border: #d1d9e0;
+      --border-light: #eaeef2;
+      --success: #1a7f37;
+      --success-bg: #dafbe1;
+      --warning: #9a6700;
+      --warning-bg: #fff8c5;
+      --danger: #cf222e;
+      --danger-bg: #ffebe9;
+      --purple: #8250df;
+      --purple-bg: #fbefff;
     }
     * { box-sizing: border-box; }
     body {
-      font-family: system-ui, -apple-system, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
       background: var(--bg);
       color: var(--text);
       margin: 0;
       min-height: 100vh;
+      font-size: 14px;
+      line-height: 1.5;
     }
     .container {
-      max-width: 1400px;
+      max-width: 1200px;
       margin: 0 auto;
-      padding: 24px;
+      padding: 16px;
     }
     .header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 32px;
-      padding-bottom: 24px;
-      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-light);
     }
     .header h1 {
-      font-size: 28px;
-      font-weight: 700;
+      font-size: 20px;
+      font-weight: 600;
       margin: 0;
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 8px;
     }
     .header h1 .badge {
-      font-size: 14px;
+      font-size: 12px;
       font-weight: 500;
-      background: var(--accent);
-      padding: 4px 12px;
-      border-radius: 6px;
+      background: var(--accent-light);
+      color: var(--accent);
+      padding: 3px 10px;
+      border-radius: 12px;
+      border: 1px solid var(--accent);
     }
     .refresh-btn {
-      padding: 10px 20px;
+      padding: 6px 14px;
       background: var(--accent);
       color: white;
-      border: none;
-      border-radius: 8px;
+      border: 1px solid var(--accent);
+      border-radius: 6px;
       cursor: pointer;
       font-weight: 500;
+      font-size: 13px;
       display: flex;
       align-items: center;
-      gap: 8px;
-      transition: all 0.2s;
+      gap: 6px;
+      transition: all 0.15s;
     }
-    .refresh-btn:hover { background: var(--accent-hover); }
-    .refresh-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .refresh-btn:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+    .refresh-btn:active { transform: scale(0.98); }
+    .refresh-btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 20px;
-      margin-bottom: 24px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 12px;
     }
     .card {
       background: var(--card);
-      border-radius: 12px;
-      padding: 20px;
-      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px;
+      border: 1px solid var(--border-light);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }
     .card-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 16px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid var(--border);
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-light);
     }
     .card-title {
-      font-size: 16px;
+      font-size: 13px;
       font-weight: 600;
       margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
     .status-badge {
-      font-size: 12px;
-      padding: 4px 10px;
-      border-radius: 4px;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 12px;
       font-weight: 500;
     }
-    .status-active { background: var(--success); color: white; }
-    .status-warning { background: var(--warning); color: #1f2937; }
-    .status-danger { background: var(--danger); color: white; }
+    .status-active { background: var(--success-bg); color: var(--success); border: 1px solid var(--success); }
     .stat-value {
-      font-size: 32px;
+      font-size: 28px;
       font-weight: 700;
       color: var(--accent);
-      margin-bottom: 4px;
+      margin-bottom: 2px;
+      line-height: 1.1;
     }
     .stat-label {
-      color: var(--text-muted);
-      font-size: 13px;
+      color: var(--text-secondary);
+      font-size: 12px;
     }
     .list {
-      max-height: 300px;
+      max-height: 160px;
       overflow-y: auto;
+      margin-top: 8px;
     }
+    .list::-webkit-scrollbar { width: 6px; }
+    .list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
     .list-item {
-      padding: 10px 0;
-      border-bottom: 1px solid var(--border);
-      font-size: 13px;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border-light);
+      font-size: 12px;
+      color: var(--text-secondary);
     }
     .list-item:last-child { border-bottom: none; }
     .list-item code {
-      background: var(--bg);
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 12px;
+      background: var(--bg-tertiary);
+      padding: 2px 5px;
+      border-radius: 3px;
+      font-size: 11px;
+      color: var(--purple);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     }
     .timestamp {
       color: var(--text-muted);
-      font-size: 12px;
-      margin-top: 12px;
+      font-size: 11px;
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
     .loading {
       text-align: center;
-      padding: 40px;
+      padding: 40px 20px;
       color: var(--text-muted);
-    }
-    .section-title {
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--text-muted);
-      margin: 20px 0 12px 0;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+      font-size: 13px;
     }
     .full-width {
       grid-column: 1 / -1;
@@ -479,7 +499,7 @@ function getProjectStructureHtml(): string {
     <div class="header">
       <h1>
         🏗️ 工程结构
-        <span class="badge">项目监视器</span>
+        <span class="badge">项目概览</span>
       </h1>
       <button class="refresh-btn" id="refreshBtn" onclick="loadData()">
         <span>🔄</span>
@@ -531,71 +551,95 @@ function getProjectStructureHtml(): string {
     }
 
     function renderData(data) {
-      const { structure, modules, timestamp } = data;
+      const { structure, timestamp } = data;
       
       document.getElementById('content').innerHTML = \`
-        <div class="timestamp">最后更新: \${new Date(timestamp).toLocaleString('zh-CN')}</div>
+        <div class="timestamp">
+          <span>🕐</span>
+          最后更新: \${new Date(timestamp).toLocaleString('zh-CN')}
+        </div>
         
         <div class="grid">
           <!-- 前端模块 -->
           <div class="card">
             <div class="card-header">
               <h3 class="card-title">🎨 前端层</h3>
-              <span class="status-badge status-active">Active</span>
             </div>
             <div class="stat-value">\${structure.frontend.components.length}</div>
             <div class="stat-label">组件</div>
             <div class="list">
-              \${structure.frontend.components.map(c => \`<div class="list-item">\${c}</div>\`).join('')}
+              \${structure.frontend.components.slice(0, 6).map(c => \`<div class="list-item">\${c}</div>\`).join('')}
+              \${structure.frontend.components.length > 6 ? \`<div class="list-item" style="color: var(--text-muted);">... 还有 \${structure.frontend.components.length - 6} 个</div>\` : ''}
             </div>
           </div>
 
           <!-- 后端路由 -->
           <div class="card">
             <div class="card-header">
-              <h3 class="card-title">🔌 后端路由层</h3>
-              <span class="status-badge status-active">Active</span>
+              <h3 class="card-title">🔌 API 端点</h3>
             </div>
             <div class="stat-value">\${structure.backend.routing.count}</div>
-            <div class="stat-label">API 端点</div>
+            <div class="stat-label">接口</div>
           </div>
 
           <!-- 后端服务 -->
           <div class="card">
             <div class="card-header">
-              <h3 class="card-title">⚙️ 后端服务层</h3>
-              <span class="status-badge status-active">Active</span>
+              <h3 class="card-title">⚙️ 服务层</h3>
             </div>
             <div class="stat-value">\${structure.backend.services.count}</div>
             <div class="stat-label">服务</div>
             <div class="list">
-              \${structure.backend.services.list.map(s => \`<div class="list-item"><code>\${s}</code></div>\`).join('')}
+              \${structure.backend.services.list.slice(0, 6).map(s => \`<div class="list-item"><code>\${s}</code></div>\`).join('')}
             </div>
           </div>
 
           <!-- 内容工艺 -->
           <div class="card">
             <div class="card-header">
-              <h3 class="card-title">✏️ 内容工艺模块</h3>
-              <span class="status-badge status-active">Active</span>
+              <h3 class="card-title">✏️ 内容工艺</h3>
             </div>
             <div class="stat-value">\${structure.contentCraft.steps.length}</div>
-            <div class="stat-label">处理步骤</div>
+            <div class="stat-label">步骤</div>
             <div class="list">
-              \${structure.contentCraft.steps.map(s => \`<div class="list-item"><code>\${s}</code></div>\`).join('')}
+              \${structure.contentCraft.steps.slice(0, 6).map(s => \`<div class="list-item"><code>\${s}</code></div>\`).join('')}
             </div>
           </div>
 
           <!-- 插件模块 -->
           <div class="card">
             <div class="card-header">
-              <h3 class="card-title">🔌 插件模块</h3>
-              <span class="status-badge status-active">Active</span>
+              <h3 class="card-title">🔌 插件</h3>
             </div>
             <div class="stat-value">\${structure.plugins.count}</div>
-            <div class="stat-label">插件</div>
+            <div class="stat-label">已启用</div>
             <div class="list">
               \${structure.plugins.list.map(p => \`<div class="list-item"><code>\${p}</code></div>\`).join('')}
+            </div>
+          </div>
+
+          <!-- 快速统计 -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">📊 概览</h3>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
+              <div style="text-align: center;">
+                <div style="font-size: 18px; font-weight: 700; color: var(--accent);">\${structure.frontend.components.length}</div>
+                <div style="font-size: 11px; color: var(--text-secondary);">前端</div>
+              </div>
+              <div style="text-align: center;">
+                <div style="font-size: 18px; font-weight: 700; color: var(--success);">\${structure.backend.routing.count}</div>
+                <div style="font-size: 11px; color: var(--text-secondary);">API</div>
+              </div>
+              <div style="text-align: center;">
+                <div style="font-size: 18px; font-weight: 700; color: var(--warning);">\${structure.backend.services.count}</div>
+                <div style="font-size: 11px; color: var(--text-secondary);">服务</div>
+              </div>
+              <div style="text-align: center;">
+                <div style="font-size: 18px; font-weight: 700; color: var(--purple);">\${structure.plugins.count}</div>
+                <div style="font-size: 11px; color: var(--text-secondary);">插件</div>
+              </div>
             </div>
           </div>
         </div>
@@ -605,7 +649,7 @@ function getProjectStructureHtml(): string {
           <div class="card-header">
             <h3 class="card-title">📋 API 端点详情</h3>
           </div>
-          <div class="list">
+          <div class="list" style="max-height: 200px;">
             \${structure.backend.routing.routes.map(r => \`<div class="list-item"><code>\${r}</code></div>\`).join('')}
           </div>
         </div>
