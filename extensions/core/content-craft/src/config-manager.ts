@@ -103,7 +103,8 @@ export class ConfigManager {
         try {
           const fs = require('fs');
           const path = require('path');
-          const configPath = path.join(process.cwd(), '.content-craft-config.json');
+          // 配置文件在当前目录的上级目录（extensions/core/content-craft/）
+          const configPath = path.join(__dirname, '..', '.content-craft-config.json');
           
           if (fs.existsSync(configPath)) {
             const saved = fs.readFileSync(configPath, 'utf8');
@@ -140,7 +141,8 @@ export class ConfigManager {
         try {
           const fs = require('fs');
           const path = require('path');
-          const configPath = path.join(process.cwd(), '.content-craft-config.json');
+          // 配置文件在当前目录的上级目录（extensions/core/content-craft/）
+          const configPath = path.join(__dirname, '..', '.content-craft-config.json');
           
           fs.writeFileSync(configPath, JSON.stringify(settings, null, 2));
           console.log('[ConfigManager] 保存设置到文件成功');
