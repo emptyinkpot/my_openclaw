@@ -69,3 +69,16 @@ export type {
 } from './generation-types';
 
 export { GenerationPipeline } from './generation-pipeline';
+
+// ==========================================
+// 自动处理服务
+// ==========================================
+export type {
+  AutoServiceStatus,
+  AutoServiceConfig,
+} from './ContentCraftAutoService';
+
+export { 
+  ContentCraftAutoService, 
+  getContentCraftAutoService 
+} from './ContentCraftAutoService';

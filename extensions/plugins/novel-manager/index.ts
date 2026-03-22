@@ -17,6 +17,8 @@ import { GenerationPipeline } from '../../../core/content-craft/src/generation-p
 import { PolishPipeline } from '../../../core/content-craft/src/pipeline';
 // 导入番茄发布功能
 import { FanqieSimplePipeline } from '../../../core/publishing/FanqieSimplePipeline';
+// 导入 content-craft 自动处理服务
+import { getContentCraftAutoService } from '../../../core/content-craft/src';
 
 // 尝试导入 registerPluginHttpRoute
 let registerPluginHttpRoute: any;
@@ -1692,6 +1694,72 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
     if (path === '/api/novel/pipeline/status' && method === 'GET') {
       const status = await getNovelService().getPipelineStatus();
       jsonRes(res, { success: true, data: status });
+      return true;
+    }
+
+    // ==================== ContentCraft 自动处理服务 API ====================
+    // 获取自动处理服务状态
+    if (path === '/api/novel/content-craft-auto/status' && method === 'GET') {
+      try {
+        const autoService = getContentCraftAutoService();
+        const status = autoService.getStatus();
+        jsonRes(res, { success: true, data: status });
+      } catch (e: any) {
+        jsonRes(res, { success: false, error: e.message }, 500);
+      }
+      return true;
+    }
+
+    // 获取自动处理服务配置
+    if (path === '/api/novel/content-craft-auto/config' && method === 'GET') {
+      try {
+        const autoService = getContentCraftAutoService();
+        const config = autoService.getConfig();
+        jsonRes(res, { success: true, data: config });
+      } catch (e: any) {
+        jsonRes(res, { success: false, error: e.message }, 500);
+      }
+      return true;
+    }
+
+    // 更新自动处理服务配置
+    if (path === '/api/novel/content-craft-auto/config' && method === 'POST') {
+      try {
+        const body = await parseBody(req);
+        const autoService = getContentCraftAutoService();
+        autoService.updateConfig(body);
+        const config = autoService.getConfig();
+        const status = autoService.getStatus();
+        jsonRes(res, { success: true, data: { config, status } });
+      } catch (e: any) {
+        jsonRes(res, { success: false, error: e.message }, 500);
+      }
+      return true;
+    }
+
+    // 启动自动处理服务
+    if (path === '/api/novel/content-craft-auto/start' && method === 'POST') {
+      try {
+        const autoService = getContentCraftAutoService();
+        autoService.start();
+        const status = autoService.getStatus();
+        jsonRes(res, { success: true, data: status });
+      } catch (e: any) {
+        jsonRes(res, { success: false, error: e.message }, 500);
+      }
+      return true;
+    }
+
+    // 停止自动处理服务
+    if (path === '/api/novel/content-craft-auto/stop' && method === 'POST') {
+      try {
+        const autoService = getContentCraftAutoService();
+        autoService.stop();
+        const status = autoService.getStatus();
+        jsonRes(res, { success: true, data: status });
+      } catch (e: any) {
+        jsonRes(res, { success: false, error: e.message }, 500);
+      }
       return true;
     }
 
