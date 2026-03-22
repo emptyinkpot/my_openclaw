@@ -492,6 +492,106 @@ function getProjectStructureHtml(): string {
     .full-width {
       grid-column: 1 / -1;
     }
+    /* 二级标签导航 */
+    .sub-tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 12px;
+      padding: 4px;
+      background: var(--bg-secondary);
+      border-radius: 6px;
+      border: 1px solid var(--border-light);
+    }
+    .sub-tab {
+      padding: 8px 16px;
+      background: transparent;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      transition: all 0.15s;
+    }
+    .sub-tab:hover {
+      background: var(--bg-tertiary);
+      color: var(--text);
+    }
+    .sub-tab.active {
+      background: var(--accent);
+      color: white;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    /* UI 设计标签内容 */
+    .ui-section {
+      margin-bottom: 16px;
+    }
+    .ui-section-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .ui-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    .ui-item {
+      background: var(--card);
+      border: 1px solid var(--border-light);
+      border-radius: 6px;
+      padding: 12px;
+    }
+    .ui-item-title {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--accent);
+    }
+    .ui-item-desc {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+    .ui-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .ui-tag {
+      font-size: 11px;
+      padding: 2px 8px;
+      background: var(--bg-tertiary);
+      border-radius: 12px;
+      color: var(--text-secondary);
+    }
+    .ui-tag.accent {
+      background: var(--accent-light);
+      color: var(--accent);
+    }
+    .ui-progress {
+      margin-top: 8px;
+      height: 4px;
+      background: var(--bg-tertiary);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .ui-progress-bar {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      transition: width 0.3s;
+    }
   </style>
 </head>
 <body>
@@ -499,7 +599,7 @@ function getProjectStructureHtml(): string {
     <div class="header">
       <h1>
         🏗️ 工程结构
-        <span class="badge">项目概览</span>
+        <span class="badge">项目管理</span>
       </h1>
       <button class="refresh-btn" id="refreshBtn" onclick="loadData()">
         <span>🔄</span>
@@ -507,8 +607,161 @@ function getProjectStructureHtml(): string {
       </button>
     </div>
 
-    <div id="content">
-      <div class="loading">加载中...</div>
+    <!-- 二级标签导航 -->
+    <div class="sub-tabs">
+      <button class="sub-tab active" onclick="switchSubTab('overview')" id="tab-overview">
+        📊 结构概览
+      </button>
+      <button class="sub-tab" onclick="switchSubTab('ui')" id="tab-ui">
+        🎨 UI 设计
+      </button>
+    </div>
+
+    <!-- 结构概览标签内容 -->
+    <div class="tab-content active" id="content-overview">
+      <div id="content">
+        <div class="loading">加载中...</div>
+      </div>
+    </div>
+
+    <!-- UI 设计标签内容 -->
+    <div class="tab-content" id="content-ui">
+      <div class="ui-section">
+        <div class="ui-section-title">✨ 我能做到的 UI 设计</div>
+        <div class="ui-grid">
+          <div class="ui-item">
+            <div class="ui-item-title">🎨 颜色方案设计</div>
+            <div class="ui-item-desc">为项目设计统一的配色方案，包括主色调、辅助色、背景色、文字色等</div>
+            <div class="ui-tags">
+              <span class="ui-tag accent">配色</span>
+              <span class="ui-tag">主色调</span>
+              <span class="ui-tag">渐变</span>
+            </div>
+          </div>
+          <div class="ui-item">
+            <div class="ui-item-title">📐 布局与间距</div>
+            <div class="ui-item-desc">设计合理的页面布局、网格系统、间距规范，确保视觉平衡</div>
+            <div class="ui-tags">
+              <span class="ui-tag accent">布局</span>
+              <span class="ui-tag">网格</span>
+              <span class="ui-tag">间距</span>
+            </div>
+          </div>
+          <div class="ui-item">
+            <div class="ui-item-title">🖼️ 组件设计</div>
+            <div class="ui-item-desc">设计按钮、卡片、表单、导航等常用组件的样式和交互效果</div>
+            <div class="ui-tags">
+              <span class="ui-tag accent">组件</span>
+              <span class="ui-tag">按钮</span>
+              <span class="ui-tag">卡片</span>
+            </div>
+          </div>
+          <div class="ui-item">
+            <div class="ui-item-title">✨ 动效与交互</div>
+            <div class="ui-item-desc">添加过渡动画、悬停效果、点击反馈，提升用户体验</div>
+            <div class="ui-tags">
+              <span class="ui-tag accent">动效</span>
+              <span class="ui-tag">过渡</span>
+              <span class="ui-tag">交互</span>
+            </div>
+          </div>
+          <div class="ui-item">
+            <div class="ui-item-title">📱 响应式设计</div>
+            <div class="ui-item-desc">确保页面在不同屏幕尺寸下都有良好的显示效果</div>
+            <div class="ui-tags">
+              <span class="ui-tag accent">响应式</span>
+              <span class="ui-tag">移动端</span>
+              <span class="ui-tag">适配</span>
+            </div>
+          </div>
+          <div class="ui-item">
+            <div class="ui-item-title">🔧 样式重构</div>
+            <div class="ui-item-desc">优化现有样式，让页面更美观、更紧凑、更实用</div>
+            <div class="ui-tags">
+              <span class="ui-tag accent">重构</span>
+              <span class="ui-tag">优化</span>
+              <span class="ui-tag">紧凑</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ui-section">
+        <div class="ui-section-title">🎯 已完成的 UI 优化</div>
+        <div class="grid">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">项目结构页面</h3>
+            </div>
+            <div class="stat-value">100%</div>
+            <div class="stat-label">已完成</div>
+            <div class="ui-progress">
+              <div class="ui-progress-bar" style="width: 100%;"></div>
+            </div>
+            <div class="list" style="margin-top: 8px;">
+              <div class="list-item">✅ 浅色背景设计</div>
+              <div class="list-item">✅ 更紧凑的布局</div>
+              <div class="list-item">✅ 更美观的样式</div>
+              <div class="list-item">✅ 二级标签导航</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">经验积累中心</h3>
+            </div>
+            <div class="stat-value">100%</div>
+            <div class="stat-label">已完成</div>
+            <div class="ui-progress">
+              <div class="ui-progress-bar" style="width: 100%;"></div>
+            </div>
+            <div class="list" style="margin-top: 8px;">
+              <div class="list-item">✅ 经验列表</div>
+              <div class="list-item">✅ 笔记功能</div>
+              <div class="list-item">✅ 专栏功能</div>
+              <div class="list-item">✅ 卡片式布局</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">导航栏统一</h3>
+            </div>
+            <div class="stat-value">100%</div>
+            <div class="stat-label">已完成</div>
+            <div class="ui-progress">
+              <div class="ui-progress-bar" style="width: 100%;"></div>
+            </div>
+            <div class="list" style="margin-top: 8px;">
+              <div class="list-item">✅ 统一 nav-bar.html</div>
+              <div class="list-item">✅ 页面高亮显示</div>
+              <div class="list-item">✅ 动态高度调整</div>
+              <div class="list-item">✅ 设置弹窗集成</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ui-section">
+        <div class="ui-section-title">📋 UI 设计规范</div>
+        <div class="card full-width">
+          <div class="list">
+            <div class="list-item">
+              <strong>配色原则：</strong>使用 GitHub 风格配色，主色调 #0969da，背景色 #ffffff
+            </div>
+            <div class="list-item">
+              <strong>间距规范：</strong>使用 4px 基准单位，常用间距 4/8/12/16/24px
+            </div>
+            <div class="list-item">
+              <strong>圆角规范：</strong>小元素 3/4px，卡片 6/8px，按钮 6/12px
+            </div>
+            <div class="list-item">
+              <strong>字体规范：</strong>系统字体栈，标题 16-20px，正文 13-14px，小字 11-12px
+            </div>
+            <div class="list-item">
+              <strong>阴影规范：</strong>轻微阴影 0 1px 3px rgba(0,0,0,0.04)
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -548,6 +801,17 @@ function getProjectStructureHtml(): string {
       } finally {
         btn.disabled = false;
       }
+    }
+
+    // 二级标签切换
+    function switchSubTab(tab) {
+      // 更新标签样式
+      document.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+      document.getElementById('tab-' + tab).classList.add('active');
+      
+      // 更新内容显示
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      document.getElementById('content-' + tab).classList.add('active');
     }
 
     function renderData(data) {
