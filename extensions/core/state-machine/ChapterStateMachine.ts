@@ -194,21 +194,8 @@ export class ChapterStateMachine {
       return false;
     }
 
-    // 2. 转换前先检查并修复该章节的状态（确保前置条件正确）
-    await this.ensureChapterStateValid(chapter);
-
-    // 3. 重新获取最新的章节数据（因为可能已经修复）
-    const latestChapter = await this.db.queryOne(
-      'SELECT * FROM chapters WHERE id = ?',
-      [chapterId]
-    );
-    
-    if (!latestChapter) {
-      logger.error(`[StateMachine] 章节不存在: id=${chapterId}`);
-      return false;
-    }
-
-    const fromState = latestChapter.status as ChapterStatus;
+    // 2. 直接获取当前状态，不做强制修正（避免干扰明确的状态转换）
+    const fromState = chapter.status as ChapterStatus;
 
     // 4. 如果状态没有变化，直接返回
     if (fromState === toState) {
@@ -216,7 +203,7 @@ export class ChapterStateMachine {
       return true;
     }
 
-    // 5. 特殊验证：只有确实经过润色流程的才能转换到 polished
+    // 5. 特殊验证：只有确实经过润色流程的才能转换到 polished（除非 reason 是 content_polished）
     if (toState === 'polished' && reason !== 'content_polished') {
       // 检查章节是否确实经过润色流程
       const hasBeenPolished = await this.hasBeenPolished(chapterId);
@@ -227,6 +214,9 @@ export class ChapterStateMachine {
         return false;
       }
     }
+    
+    // 但如果 reason 是 content_polished，我们直接信任调用方，允许转换到 polished
+    // 因为调用方已经完成了润色流程并更新了 polish_info
 
     // 6. 验证转换是否合法
     if (this.config.strictMode && !this.canTransition(fromState, toState)) {

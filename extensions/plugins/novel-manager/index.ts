@@ -61,8 +61,10 @@ async function generateChapterFromDb(workId: number, chapterNumber: number): Pro
       [workId, chapterNumber]
     );
     if (chapter) {
+      // 先更新内容，但不自动更新状态（我们会用状态机来处理）
       await getNovelService().updateChapter(chapter.id, {
-        content: result.text
+        content: result.text,
+        status: chapter.status // 明确传入当前状态，避免自动更新
       });
       // 使用状态机服务更新状态
       const { getChapterStateMachine } = require('../../core/state-machine');
@@ -107,9 +109,10 @@ async function polishChapterFromDb(workId: number, chapterNumber: number): Promi
 
   // 3. 保存润色后的内容并更新状态
   if (result.text) {    
-    // 先更新内容
+    // 先更新内容，但不自动更新状态（我们会用状态机来处理）
     await getNovelService().updateChapter(chapter.id, {
-      content: result.text
+      content: result.text,
+      status: chapter.status // 明确传入当前状态，避免自动更新
     });
     
     // 记录润色信息到 polish_info 字段（先尝试添加字段）
