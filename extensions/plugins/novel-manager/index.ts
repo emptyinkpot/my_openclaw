@@ -21,6 +21,10 @@ import { FanqieSimplePipeline } from '../../../core/publishing/FanqieSimplePipel
 import { getContentCraftAutoService } from '../../../core/content-craft/src';
 // 导入审核自动处理服务
 import { getAuditAutoService } from '../../../core/audit';
+// 导入智能调度器
+import { getSmartScheduler } from '../../../core/smart-scheduler';
+// 导入活动日志
+import { getActivityLog } from '../../../core/smart-scheduler';
 
 // 尝试导入 registerPluginHttpRoute
 let registerPluginHttpRoute: any;
@@ -1966,6 +1970,69 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
       return true;
     }
 
+    // ==================== 智能调度器 API ====================
+    // 获取智能调度器状态
+    if (path === '/api/novel/smart-scheduler/status' && method === 'GET') {
+      try {
+        const scheduler = getSmartScheduler();
+        const status = scheduler.getStatus();
+        jsonRes(res, { success: true, data: status });
+      } catch (e: any) {
+        jsonRes(res, { success: false, error: e.message }, 500);
+      }
+      return true;
+    }
+
+    // 启动智能调度器
+    if (path === '/api/novel/smart-scheduler/start' && method === 'POST') {
+      try {
+        const scheduler = getSmartScheduler();
+        scheduler.start();
+        const status = scheduler.getStatus();
+        jsonRes(res, { success: true, data: status });
+      } catch (e: any) {
+        jsonRes(res, { success: false, error: e.message }, 500);
+      }
+      return true;
+    }
+
+    // 停止智能调度器
+    if (path === '/api/novel/smart-scheduler/stop' && method === 'POST') {
+      try {
+        const scheduler = getSmartScheduler();
+        scheduler.stop();
+        const status = scheduler.getStatus();
+        jsonRes(res, { success: true, data: status });
+      } catch (e: any) {
+        jsonRes(res, { success: false, error: e.message }, 500);
+      }
+      return true;
+    }
+
+    // ==================== 活动日志 API ====================
+    // 获取活动日志
+    if (path === '/api/novel/activity-log' && method === 'GET') {
+      try {
+        const activityLog = getActivityLog();
+        const logs = activityLog.getRecentLogs(parseInt(query.limit as string) || 50);
+        jsonRes(res, { success: true, data: logs });
+      } catch (e: any) {
+        jsonRes(res, { success: false, error: e.message }, 500);
+      }
+      return true;
+    }
+
+    // 清空活动日志
+    if (path === '/api/novel/activity-log/clear' && method === 'POST') {
+      try {
+        const activityLog = getActivityLog();
+        activityLog.clear();
+        jsonRes(res, { success: true });
+      } catch (e: any) {
+        jsonRes(res, { success: false, error: e.message }, 500);
+      }
+      return true;
+    }
 
     // ====== 资源库相关API ======
     // 资源库：词汇表

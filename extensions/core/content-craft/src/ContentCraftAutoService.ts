@@ -15,6 +15,7 @@ import { ChapterStatus } from '../../../core/state-machine';
 import { PolishPipeline } from './pipeline';
 import { GenerationPipeline } from './generation-pipeline';
 import { configManager } from './config-manager';
+import { getActivityLog, ActivityLog } from '../../smart-scheduler';
 
 export interface AutoServiceStatus {
   running: boolean;
@@ -34,6 +35,7 @@ export interface AutoServiceConfig {
 
 export class ContentCraftAutoService {
   private novelService: NovelService;
+  private activityLog: ActivityLog;
   
   private running = false;
   private timer: NodeJS.Timeout | null = null;
@@ -51,6 +53,7 @@ export class ContentCraftAutoService {
 
   constructor() {
     this.novelService = new NovelService();
+    this.activityLog = getActivityLog();
   }
 
   /**
@@ -257,6 +260,7 @@ export class ContentCraftAutoService {
    */
   private async generateChapter(workId: number, chapterNumber: number): Promise<void> {
     logger.info(`[ContentCraftAutoService] 生成章节内容 (workId: ${workId}, chapterNumber: ${chapterNumber})`);
+    this.activityLog.log('generating', `开始生成第 ${chapterNumber} 章内容`);
     
     const db = getDatabaseManager();
     const generationPipeline = new GenerationPipeline();
@@ -270,6 +274,9 @@ export class ContentCraftAutoService {
       }
     }, (progress: any) => {
       logger.info(`[ContentCraftAutoService] [生成进度] ${progress.phase || 'generating'}: ${progress.message} (${progress.progress}%)`);
+      if (progress.message) {
+        this.activityLog.log('progress', `[生成] ${progress.message}`);
+      }
     });
 
     // 保存生成后的内容并更新状态
@@ -296,6 +303,7 @@ export class ContentCraftAutoService {
     }
     
     logger.info(`[ContentCraftAutoService] 章节生成完成 (workId: ${workId}, chapterNumber: ${chapterNumber})`);
+    this.activityLog.log('completed', `第 ${chapterNumber} 章生成完成`);
   }
 
   /**
@@ -303,6 +311,7 @@ export class ContentCraftAutoService {
    */
   private async polishChapter(workId: number, chapterNumber: number): Promise<void> {
     logger.info(`[ContentCraftAutoService] 润色章节内容 (workId: ${workId}, chapterNumber: ${chapterNumber})`);
+    this.activityLog.log('polishing', `开始润色第 ${chapterNumber} 章内容`);
     
     const db = getDatabaseManager();
     
@@ -323,6 +332,9 @@ export class ContentCraftAutoService {
       settings: configManager.getSettings()
     }, (progress: any) => {
       logger.info(`[ContentCraftAutoService] [润色进度] ${progress.currentStep || 'processing'}: ${progress.message} (${progress.progress}%)`);
+      if (progress.message) {
+        this.activityLog.log('progress', `[润色] ${progress.message}`);
+      }
     });
 
     // 3. 保存润色后的内容并更新状态
@@ -377,6 +389,7 @@ export class ContentCraftAutoService {
     }
     
     logger.info(`[ContentCraftAutoService] 章节润色完成 (workId: ${workId}, chapterNumber: ${chapterNumber})`);
+    this.activityLog.log('completed', `第 ${chapterNumber} 章润色完成`);
   }
 }
 

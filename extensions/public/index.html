@@ -833,6 +833,34 @@
           <div id="contentCraftAutoSubPage" class="subtab-content" style="flex: 1; display: none; overflow: hidden;">
             <div class="content" style="padding: 16px; overflow-y: auto;">
               
+              <!-- 智能调度器总开关 -->
+              <div style="margin-bottom: 16px; padding: 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: 1px solid var(--border); border-radius: 8px; color: white;">
+                <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                  <h3 style="font-size: 16px; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <span>🤖 智能调度器</span>
+                    <span id="smartSchedulerStatusBadge" style="font-size: 10px; padding: 2px 8px; border-radius: 10px; background: rgba(255,255,255,0.2); color: white;">已关闭</span>
+                  </h3>
+                  <button id="smartSchedulerToggleBtn" class="btn" style="background: white; color: #764ba2; border: none; font-weight: 600;" onclick="toggleSmartScheduler()">▶️ 启动调度器</button>
+                </div>
+                <div style="font-size: 11px; opacity: 0.9;">统一管理 Content Craft 和审核自动处理服务，智能调度任务执行</div>
+              </div>
+              
+              <!-- 弹幕式实时日志显示 -->
+              <div style="margin-bottom: 16px; padding: 16px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px;">
+                <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                  <h3 style="font-size: 14px; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <span>📺 实时活动日志</span>
+                  </h3>
+                  <button class="btn btn-sm" onclick="clearActivityLog()">🗑️ 清空日志</button>
+                </div>
+                <!-- 弹幕式日志显示区 -->
+                <div id="activityLogContainer" style="height: 150px; background: #1a1a2e; border-radius: 6px; overflow: hidden; position: relative;">
+                  <div id="activityLogStream" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; padding: 8px; overflow-y: auto; font-family: monospace;">
+                    <!-- 日志消息会在这里动态添加 -->
+                  </div>
+                </div>
+              </div>
+              
               <!-- Content Craft 自动处理服务控制面板 -->
               <div style="margin-bottom: 16px; padding: 16px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px;">
                 <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
@@ -2994,12 +3022,18 @@
       if (subtab === 'content-craft-auto') {
         await loadContentCraftAutoData();
         await loadAuditAutoData();
+        await loadSmartSchedulerData();
+        await loadActivityLog();
         startContentCraftAutoRefresh();
         startAuditAutoRefresh();
+        startSmartSchedulerRefresh();
+        startActivityLogRefresh();
       } else {
         // 离开 AI自动处理页面时停止自动刷新
         stopContentCraftAutoRefresh();
         stopAuditAutoRefresh();
+        stopSmartSchedulerRefresh();
+        stopActivityLogRefresh();
       }
     }
     
@@ -3476,6 +3510,180 @@
       if (auditAutoRefreshTimer) {
         clearInterval(auditAutoRefreshTimer);
         auditAutoRefreshTimer = null;
+      }
+    }
+
+    // ========== 智能调度器相关函数 ==========
+    const SMART_SCHEDULER_REFRESH_INTERVAL = 2000; // 2秒刷新一次
+    let smartSchedulerRefreshTimer = null;
+
+    // 加载智能调度器数据
+    async function loadSmartSchedulerData() {
+      try {
+        const statusResult = await api('/smart-scheduler/status');
+        if (statusResult.success) {
+          updateSmartSchedulerStatus(statusResult.data);
+        }
+      } catch (e) {
+        console.error('[SmartScheduler] 加载数据失败:', e);
+      }
+    }
+
+    // 更新智能调度器状态显示
+    function updateSmartSchedulerStatus(status) {
+      const statusBadge = document.getElementById('smartSchedulerStatusBadge');
+      const toggleBtn = document.getElementById('smartSchedulerToggleBtn');
+
+      if (statusBadge) {
+        if (status.running) {
+          statusBadge.textContent = '运行中';
+          statusBadge.style.background = 'rgba(26, 127, 55, 0.2)';
+          statusBadge.style.color = '#1a7f37';
+        } else {
+          statusBadge.textContent = '已关闭';
+          statusBadge.style.background = 'rgba(255,255,255,0.2)';
+          statusBadge.style.color = 'white';
+        }
+      }
+
+      if (toggleBtn) {
+        toggleBtn.textContent = status.running ? '⏹️ 停止调度器' : '▶️ 启动调度器';
+      }
+    }
+
+    // 切换智能调度器状态
+    async function toggleSmartScheduler() {
+      try {
+        const statusResult = await api('/smart-scheduler/status');
+        if (!statusResult.success) {
+          showToast('❌ 获取状态失败', 'error');
+          return;
+        }
+
+        const isRunning = statusResult.data.running;
+        const endpoint = isRunning ? '/smart-scheduler/stop' : '/smart-scheduler/start';
+        
+        const result = await api(endpoint, { method: 'POST' });
+        
+        if (result.success) {
+          updateSmartSchedulerStatus(result.data);
+          showToast(isRunning ? '⏹️ 调度器已停止' : '▶️ 调度器已启动', 'success');
+        } else {
+          showToast('❌ 操作失败: ' + result.error, 'error');
+        }
+      } catch (e) {
+        console.error('[SmartScheduler] 切换状态失败:', e);
+        showToast('❌ 操作失败', 'error');
+      }
+    }
+
+    // 启动智能调度器自动刷新
+    function startSmartSchedulerRefresh() {
+      stopSmartSchedulerRefresh();
+      smartSchedulerRefreshTimer = setInterval(() => {
+        loadSmartSchedulerData();
+      }, SMART_SCHEDULER_REFRESH_INTERVAL);
+    }
+
+    // 停止智能调度器自动刷新
+    function stopSmartSchedulerRefresh() {
+      if (smartSchedulerRefreshTimer) {
+        clearInterval(smartSchedulerRefreshTimer);
+        smartSchedulerRefreshTimer = null;
+      }
+    }
+
+    // ========== 活动日志相关函数 ==========
+    const ACTIVITY_LOG_REFRESH_INTERVAL = 1000; // 1秒刷新一次
+    let activityLogRefreshTimer = null;
+    let lastLogId = 0;
+
+    // 加载活动日志
+    async function loadActivityLog() {
+      try {
+        const result = await api('/activity-log?limit=100');
+        if (result.success) {
+          updateActivityLog(result.data);
+        }
+      } catch (e) {
+        console.error('[ActivityLog] 加载日志失败:', e);
+      }
+    }
+
+    // 更新活动日志显示
+    function updateActivityLog(logs) {
+      const streamEl = document.getElementById('activityLogStream');
+      if (!streamEl) return;
+
+      // 只添加新的日志
+      const newLogs = logs.filter(log => log.id > lastLogId);
+      if (newLogs.length === 0) return;
+
+      newLogs.forEach(log => {
+        const logEl = document.createElement('div');
+        logEl.style.marginBottom = '4px';
+        logEl.style.fontSize = '11px';
+        
+        // 根据类型设置颜色
+        let color = '#ffffff';
+        switch(log.type) {
+          case 'generating': color = '#74b9ff'; break;
+          case 'polishing': color = '#a29bfe'; break;
+          case 'auditing': color = '#fd79a8'; break;
+          case 'fixing': color = '#fdcb6e'; break;
+          case 'progress': color = '#81ecec'; break;
+          case 'completed': color = '#55efc4'; break;
+          case 'error': color = '#ff7675'; break;
+          default: color = '#dfe6e9'; break;
+        }
+        
+        logEl.style.color = color;
+        logEl.innerHTML = `<span style="color: #636e72;">[${new Date(log.timestamp).toLocaleTimeString()}]</span> ${log.message}`;
+        
+        streamEl.appendChild(logEl);
+        lastLogId = log.id;
+      });
+
+      // 自动滚动到底部
+      streamEl.scrollTop = streamEl.scrollHeight;
+
+      // 限制显示的日志数量，防止内存占用过高
+      while (streamEl.children.length > 100) {
+        streamEl.removeChild(streamEl.firstChild);
+      }
+    }
+
+    // 清空活动日志
+    async function clearActivityLog() {
+      try {
+        const result = await api('/activity-log/clear', { method: 'POST' });
+        if (result.success) {
+          const streamEl = document.getElementById('activityLogStream');
+          if (streamEl) {
+            streamEl.innerHTML = '';
+            lastLogId = 0;
+          }
+          showToast('🗑️ 日志已清空', 'success');
+        }
+      } catch (e) {
+        console.error('[ActivityLog] 清空日志失败:', e);
+        showToast('❌ 清空失败', 'error');
+      }
+    }
+
+    // 启动活动日志自动刷新
+    function startActivityLogRefresh() {
+      stopActivityLogRefresh();
+      activityLogRefreshTimer = setInterval(() => {
+        loadActivityLog();
+      }, ACTIVITY_LOG_REFRESH_INTERVAL);
+    }
+
+    // 停止活动日志自动刷新
+    function stopActivityLogRefresh() {
+      if (activityLogRefreshTimer) {
+        clearInterval(activityLogRefreshTimer);
+        activityLogRefreshTimer = null;
       }
     }
     

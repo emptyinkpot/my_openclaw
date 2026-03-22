@@ -16,6 +16,7 @@ import { ChapterStatus } from '../state-machine';
 import { auditChapter, autoFixChapter } from './service';
 import { updateChapterContent, updateChapterStatus } from './repository';
 import { autoFixAll } from './rules';
+import { getActivityLog, ActivityLog } from '../smart-scheduler';
 
 export interface AuditAutoServiceStatus {
   running: boolean;
@@ -34,6 +35,7 @@ export interface AuditAutoServiceConfig {
 
 export class AuditAutoService {
   private novelService: NovelService;
+  private activityLog: ActivityLog;
   
   private running = false;
   private timer: NodeJS.Timeout | null = null;
@@ -50,6 +52,7 @@ export class AuditAutoService {
 
   constructor() {
     this.novelService = new NovelService();
+    this.activityLog = getActivityLog();
   }
 
   /**
@@ -249,11 +252,13 @@ export class AuditAutoService {
    */
   private async auditChapter(workId: number, chapterNumber: number): Promise<void> {
     logger.info(`[AuditAutoService] 审核章节 (workId: ${workId}, chapterNumber: ${chapterNumber})`);
+    this.activityLog.log('auditing', `开始审核第 ${chapterNumber} 章内容`);
     
     const db = getDatabaseManager();
     
     // 1. 执行审核
     const auditResult = await auditChapter(workId, chapterNumber);
+    this.activityLog.log('progress', `审核发现 ${auditResult.issues.length} 个问题`);
     
     let finalContent: string | null = null;
     let auditPassed = auditResult.status === 'passed';
@@ -261,6 +266,7 @@ export class AuditAutoService {
     // 2. 如果开启了自动修复，并且审核失败或有问题，执行完整自动修复
     if (this.config.autoFix && (!auditPassed || auditResult.issues.length > 0)) {
       logger.info(`[AuditAutoService] 自动修复章节 (workId: ${workId}, chapterNumber: ${chapterNumber})`);
+      this.activityLog.log('fixing', `开始自动修复第 ${chapterNumber} 章内容`);
       
       // 获取原始内容
       const chapter = await db.queryOne(
@@ -277,6 +283,7 @@ export class AuditAutoService {
           await updateChapterContent(workId, chapterNumber, finalContent);
           logger.info(`[AuditAutoService] 审核后内容已替换到 MySQL (workId: ${workId}, chapterNumber: ${chapterNumber})`);
           auditPassed = true; // 修复后视为审核通过
+          this.activityLog.log('progress', `第 ${chapterNumber} 章自动修复完成`);
         }
       }
     }
@@ -285,6 +292,7 @@ export class AuditAutoService {
     if (auditPassed) {
       logger.info(`[AuditAutoService] 审核通过，更新状态为 audited (workId: ${workId}, chapterNumber: ${chapterNumber})`);
       await updateChapterStatus(workId, chapterNumber, 'audited');
+      this.activityLog.log('completed', `第 ${chapterNumber} 章审核通过，状态更新为 audited`);
     }
     
     logger.info(`[AuditAutoService] 章节审核完成 (workId: ${workId}, chapterNumber: ${chapterNumber})`);
