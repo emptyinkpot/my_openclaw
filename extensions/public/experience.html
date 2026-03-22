@@ -1306,39 +1306,7 @@
       loadData();
     }
     
-    // 显示详情
-    function showDetail(id) {
-      const exp = expData.find(e => e.id === id);
-      if (!exp) return;
-      
-      let message = `📌 标题: ${exp.title}\n\n`;
-      
-      if (exp.problem) {
-        message += `❓ 问题:\n${exp.problem}\n\n`;
-      } else if (exp.description) {
-        message += `📝 描述:\n${exp.description}\n\n`;
-      } else if (exp.userQuery) {
-        message += `💬 查询:\n${exp.userQuery}\n\n`;
-      }
-      
-      if (exp.solution) {
-        message += `✅ 解决方案:\n${exp.solution}\n\n`;
-      }
-      
-      if (exp.steps && exp.steps.length > 0) {
-        message += `📋 解决步骤:\n`;
-        exp.steps.forEach((step, index) => {
-          message += `${index + 1}. ${step}\n`;
-        });
-        message += '\n';
-      }
-      
-      if (exp.tags && exp.tags.length > 0) {
-        message += `🏷️ 标签: ${exp.tags.join(', ')}\n\n`;
-      }
-      
-      alert(message);
-    }
+
     
     // 搜索
     document.getElementById('searchInput')?.addEventListener('input', (e) => {
