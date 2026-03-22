@@ -34,10 +34,18 @@ export class ChapterStateMachine {
    * 确保章节状态是合理的（转换前的前置检查）
    */
   private async ensureChapterStateValid(chapter: any): Promise<void> {
+    // 合法状态列表（确保所有章节都在这个列表中）
+    const LEGAL_STATUSES = ['outline', 'first_draft', 'polished', 'audited', 'published'];
+    
     let newStatus = chapter.status;
     let needFix = false;
     
     try {
+      // 规则0：确保状态在合法列表中，如果不在，强制归入正确状态
+      if (!LEGAL_STATUSES.includes(chapter.status)) {
+        logger.warn(`[StateMachine] 章节 ${chapter.work_id}-${chapter.chapter_number} 状态不在合法列表: ${chapter.status}，将强制修正`);
+      }
+      
       // 严格判断：是否有内容
       const hasContent = !!(
         chapter.content && 
@@ -61,41 +69,33 @@ export class ChapterStateMachine {
         hasBeenPolished = false;
       }
       
-      // 规则1：如果没有内容，必须是 outline
-      if (!hasContent && chapter.status !== 'outline') {
-        newStatus = 'outline';
-        needFix = true;
-        logger.info(`[StateMachine] 章节 ${chapter.work_id}-${chapter.chapter_number} 无内容，状态修正: ${chapter.status} → outline`);
+      // ========== 强制归入正确状态（确保 100% 覆盖）==========
+      
+      // 情况 A：没有内容 → 必须是 outline
+      if (!hasContent) {
+        if (chapter.status !== 'outline') {
+          newStatus = 'outline';
+          needFix = true;
+          logger.info(`[StateMachine] 章节 ${chapter.work_id}-${chapter.chapter_number} 无内容，强制修正: ${chapter.status} → outline`);
+        }
       }
       
-      // 规则2：如果有内容且状态是 outline → 改为 first_draft
-      else if (hasContent && chapter.status === 'outline') {
-        newStatus = 'first_draft';
-        needFix = true;
-        logger.info(`[StateMachine] 章节 ${chapter.work_id}-${chapter.chapter_number} 有内容但状态是 outline，修正: outline → first_draft`);
+      // 情况 B：有内容但未经过润色 → 必须是 first_draft
+      else if (hasContent && !hasBeenPolished) {
+        if (!['first_draft'].includes(chapter.status)) {
+          newStatus = 'first_draft';
+          needFix = true;
+          logger.info(`[StateMachine] 章节 ${chapter.work_id}-${chapter.chapter_number} 有内容但未润色，强制修正: ${chapter.status} → first_draft`);
+        }
       }
       
-      // 规则3：如果有内容、未经过润色，但状态是 polished/audited/published → 改为 first_draft
-      else if (hasContent && !hasBeenPolished && 
-               ['polished', 'audited', 'published'].includes(chapter.status)) {
-        newStatus = 'first_draft';
-        needFix = true;
-        logger.info(`[StateMachine] 章节 ${chapter.work_id}-${chapter.chapter_number} 有内容但未润色，状态修正: ${chapter.status} → first_draft`);
-      }
-      
-      // 规则4：如果有内容且经过润色，但状态是 outline/first_draft → 改为 polished
-      else if (hasContent && hasBeenPolished && 
-               ['outline', 'first_draft'].includes(chapter.status)) {
-        newStatus = 'polished';
-        needFix = true;
-        logger.info(`[StateMachine] 章节 ${chapter.work_id}-${chapter.chapter_number} 已润色但状态不正确，修正: ${chapter.status} → polished`);
-      }
-      
-      // 规则5：清理旧状态 pending
-      if (chapter.status === 'pending') {
-        newStatus = hasContent ? 'first_draft' : 'outline';
-        needFix = true;
-        logger.info(`[StateMachine] 章节 ${chapter.work_id}-${chapter.chapter_number} 旧状态 pending，修正: pending → ${newStatus}`);
+      // 情况 C：有内容且经过润色 → 必须是 polished/audited/published 中的一个
+      else if (hasContent && hasBeenPolished) {
+        if (!['polished', 'audited', 'published'].includes(chapter.status)) {
+          newStatus = 'polished'; // 默认归到 polished
+          needFix = true;
+          logger.info(`[StateMachine] 章节 ${chapter.work_id}-${chapter.chapter_number} 已润色但状态不正确，强制修正: ${chapter.status} → polished`);
+        }
       }
       
       // 如果需要修复，执行更新

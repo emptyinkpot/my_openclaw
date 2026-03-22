@@ -2013,7 +2013,7 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
           details: []
         };
         
-        // 2. 逐个诊断和修复（使用严格规则）
+        // 2. 逐个诊断和修复（使用严格规则，确保 100% 覆盖）
         for (const chapter of allChapters) {
           const originalStatus = chapter.status;
           let newStatus = originalStatus;
@@ -2021,6 +2021,14 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
           let error = null;
           
           try {
+            // 合法状态列表（确保所有章节都在这个列表中）
+            const LEGAL_STATUSES = ['outline', 'first_draft', 'polished', 'audited', 'published'];
+            
+            // 规则0：确保状态在合法列表中
+            if (!LEGAL_STATUSES.includes(chapter.status)) {
+              console.warn(`[StateMachineAPI] 章节 ${chapter.work_id}-${chapter.chapter_number} 状态不在合法列表: ${chapter.status}，将强制修正`);
+            }
+            
             // 严格判断：是否有内容
             const hasContent = !!(
               chapter.content && 
@@ -2044,41 +2052,33 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
               hasBeenPolished = false;
             }
             
-            // 规则1：如果没有内容，必须是 outline
-            if (!hasContent && chapter.status !== 'outline') {
-              newStatus = 'outline';
-              fixed = true;
-              console.log(`[StateMachineAPI] 修复章节 ${chapter.work_id}-${chapter.chapter_number}: ${originalStatus} → outline（无内容）`);
+            // ========== 强制归入正确状态（确保 100% 覆盖，没有任何章节不在状态机范畴内）==========
+            
+            // 情况 A：没有内容 → 必须是 outline
+            if (!hasContent) {
+              if (chapter.status !== 'outline') {
+                newStatus = 'outline';
+                fixed = true;
+                console.log(`[StateMachineAPI] 章节 ${chapter.work_id}-${chapter.chapter_number} 无内容，强制修正: ${originalStatus} → outline`);
+              }
             }
             
-            // 规则2：如果有内容且状态是 outline → 改为 first_draft
-            else if (hasContent && chapter.status === 'outline') {
-              newStatus = 'first_draft';
-              fixed = true;
-              console.log(`[StateMachineAPI] 修复章节 ${chapter.work_id}-${chapter.chapter_number}: outline → first_draft（有内容但未润色）`);
+            // 情况 B：有内容但未经过润色 → 必须是 first_draft
+            else if (hasContent && !hasBeenPolished) {
+              if (chapter.status !== 'first_draft') {
+                newStatus = 'first_draft';
+                fixed = true;
+                console.log(`[StateMachineAPI] 章节 ${chapter.work_id}-${chapter.chapter_number} 有内容但未润色，强制修正: ${originalStatus} → first_draft`);
+              }
             }
             
-            // 规则3：如果有内容、未经过润色，但状态是 polished/audited/published → 改为 first_draft
-            else if (hasContent && !hasBeenPolished && 
-                     ['polished', 'audited', 'published'].includes(chapter.status)) {
-              newStatus = 'first_draft';
-              fixed = true;
-              console.log(`[StateMachineAPI] 修复章节 ${chapter.work_id}-${chapter.chapter_number}: ${originalStatus} → first_draft（有内容但未润色）`);
-            }
-            
-            // 规则4：如果有内容且经过润色，但状态是 outline/first_draft → 改为 polished
-            else if (hasContent && hasBeenPolished && 
-                     ['outline', 'first_draft'].includes(chapter.status)) {
-              newStatus = 'polished';
-              fixed = true;
-              console.log(`[StateMachineAPI] 修复章节 ${chapter.work_id}-${chapter.chapter_number}: ${originalStatus} → polished（已润色）`);
-            }
-            
-            // 规则5：清理旧状态 pending
-            if (chapter.status === 'pending') {
-              newStatus = hasContent ? 'first_draft' : 'outline';
-              fixed = true;
-              console.log(`[StateMachineAPI] 修复章节 ${chapter.work_id}-${chapter.chapter_number}: pending → ${newStatus}（清理旧状态）`);
+            // 情况 C：有内容且经过润色 → 必须是 polished/audited/published 中的一个
+            else if (hasContent && hasBeenPolished) {
+              if (!['polished', 'audited', 'published'].includes(chapter.status)) {
+                newStatus = 'polished'; // 默认归到 polished
+                fixed = true;
+                console.log(`[StateMachineAPI] 章节 ${chapter.work_id}-${chapter.chapter_number} 已润色但状态不正确，强制修正: ${originalStatus} → polished`);
+              }
             }
             
             // 如果需要修复，执行更新

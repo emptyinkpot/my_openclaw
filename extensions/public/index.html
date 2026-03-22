@@ -1544,9 +1544,17 @@
       return statusColor[status] || 'var(--text-muted)';
     }
     
-    // 修正章节状态（确保状态逻辑正确，与后端保持一致）
+    // 修正章节状态（确保状态逻辑正确，与后端保持一致，100% 覆盖所有章节）
     function fixChapterStatus(chapter) {
       if (!chapter) return chapter;
+      
+      // 合法状态列表（确保所有章节都在这个列表中）
+      const LEGAL_STATUSES = ['outline', 'first_draft', 'polished', 'audited', 'published'];
+      
+      // 规则0：确保状态在合法列表中
+      if (!LEGAL_STATUSES.includes(chapter.status)) {
+        console.warn('⚠️ 章节状态不在合法列表:', chapter.id, chapter.status, '将强制修正');
+      }
       
       // 严格判断：是否有内容
       const hasContent = !!(
@@ -1574,41 +1582,33 @@
       let originalStatus = chapter.status;
       let modified = false;
       
-      // 规则1：如果没有内容，必须是 outline
-      if (!hasContent && chapter.status !== 'outline') {
-        console.warn('⚠️ 修正章节状态:', chapter.id, '从', chapter.status, '到 outline（无内容）');
-        chapter.status = 'outline';
-        modified = true;
+      // ========== 强制归入正确状态（确保 100% 覆盖，没有任何章节不在状态机范畴内）==========
+      
+      // 情况 A：没有内容 → 必须是 outline
+      if (!hasContent) {
+        if (chapter.status !== 'outline') {
+          console.warn('⚠️ 修正章节状态:', chapter.id, '从', chapter.status, '到 outline（无内容）');
+          chapter.status = 'outline';
+          modified = true;
+        }
       }
       
-      // 规则2：如果有内容且状态是 outline → 改为 first_draft
-      else if (hasContent && chapter.status === 'outline') {
-        console.warn('⚠️ 修正章节状态:', chapter.id, '从 outline 到 first_draft（有内容但未润色）');
-        chapter.status = 'first_draft';
-        modified = true;
+      // 情况 B：有内容但未经过润色 → 必须是 first_draft
+      else if (hasContent && !hasBeenPolished) {
+        if (chapter.status !== 'first_draft') {
+          console.warn('⚠️ 修正章节状态:', chapter.id, '从', chapter.status, '到 first_draft（有内容但未润色）');
+          chapter.status = 'first_draft';
+          modified = true;
+        }
       }
       
-      // 规则3：如果有内容、未经过润色，但状态是 polished/audited/published → 改为 first_draft
-      else if (hasContent && !hasBeenPolished && 
-               ['polished', 'audited', 'published'].includes(chapter.status)) {
-        console.warn('⚠️ 修正章节状态:', chapter.id, '从', chapter.status, '到 first_draft（有内容但未润色）');
-        chapter.status = 'first_draft';
-        modified = true;
-      }
-      
-      // 规则4：如果有内容且经过润色，但状态是 outline/first_draft → 改为 polished
-      else if (hasContent && hasBeenPolished && 
-               ['outline', 'first_draft'].includes(chapter.status)) {
-        console.warn('⚠️ 修正章节状态:', chapter.id, '从', chapter.status, '到 polished（已润色）');
-        chapter.status = 'polished';
-        modified = true;
-      }
-      
-      // 规则5：清理旧状态 pending
-      if (chapter.status === 'pending') {
-        chapter.status = hasContent ? 'first_draft' : 'outline';
-        console.warn('⚠️ 修正章节状态:', chapter.id, '从 pending 到', chapter.status);
-        modified = true;
+      // 情况 C：有内容且经过润色 → 必须是 polished/audited/published 中的一个
+      else if (hasContent && hasBeenPolished) {
+        if (!['polished', 'audited', 'published'].includes(chapter.status)) {
+          console.warn('⚠️ 修正章节状态:', chapter.id, '从', chapter.status, '到 polished（已润色）');
+          chapter.status = 'polished'; // 默认归到 polished
+          modified = true;
+        }
       }
       
       if (modified && originalStatus !== chapter.status) {
