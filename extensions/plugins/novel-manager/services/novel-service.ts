@@ -326,11 +326,17 @@ export class NovelService {
       SELECT * FROM volume_outlines WHERE work_id = ? ORDER BY volume_number
     `, [id]);
     
+    // 获取章节细纲
+    const outlines = await this.db.query(`
+      SELECT * FROM chapter_outlines WHERE work_id = ? ORDER BY chapter_number
+    `, [id]);
+    
     return {
       ...work,
       chapters,
       characters,
       volumes,
+      outlines,
     };
   }
   

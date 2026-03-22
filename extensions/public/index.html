@@ -2832,6 +2832,8 @@
     // 渲染标签数据
     function renderTabData(tab, data) {
       outlinesData = data.outlines || [];
+      console.log('📊 renderTabData data:', data);
+      console.log('📋 outlinesData:', outlinesData);
       if (tab === 'chapters') {
         chaptersData = data.chapters || [];
         renderChapters(chaptersData);
@@ -2856,13 +2858,24 @@
       const container = document.getElementById('contentArea');
       const filtered = filterData(data);
       
+      console.log('📖 renderChapters data:', data);
+      console.log('📋 outlinesData in renderChapters:', outlinesData);
+      
       // 数据量大时使用分片渲染
       const CHUNK_SIZE = 100;
       const shouldChunk = filtered.length > CHUNK_SIZE;
       
       // 检查章节是否有大纲
-      const hasOutline = (chapterNumber) => {
-        return outlinesData.some(o => o.chapter_number === chapterNumber);
+      const hasOutline = (chapter) => {
+        const chapterNum = chapter.chapter_number || chapter.chapterNumber;
+        console.log('🔍 Checking chapter:', chapter, 'chapterNum:', chapterNum);
+        const found = outlinesData.some(o => {
+          const outlineNum = o.chapter_number || o.chapterNumber;
+          console.log('  - outline:', o, 'outlineNum:', outlineNum);
+          return outlineNum === chapterNum;
+        });
+        console.log('  → hasOutline:', found);
+        return found;
       };
       
       if (viewMode === 'grid') {
@@ -2878,7 +2891,7 @@
               <span>${ch.updated_at ? new Date(ch.updated_at).toLocaleDateString() : '-'}</span>
             </div>
             <div class="card-tags">
-              ${hasOutline(ch.chapter_number) ? '<span class="tag" style="background: var(--accent); color: white;">📋 大纲</span>' : ''}
+              ${hasOutline(ch) ? '<span class="tag" style="background: var(--accent); color: white;">📋 大纲</span>' : ''}
               ${ch.word_count > 3000 ? '<span class="tag">✓ 完</span>' : ''}
             </div>
           </div>`;
@@ -3282,10 +3295,17 @@
       
       currentEditingChapter = ch;
       
-      // 从 outlinesData 中获取大纲
-      const outline = outlinesData.find(o => o.chapter_number === ch.chapter_number);
+      const chapterNum = ch.chapter_number || ch.chapterNumber;
       
-      document.getElementById('chapterModalTitle').textContent = `编辑第${ch.chapter_number}章`;
+      // 从 outlinesData 中获取大纲
+      const outline = outlinesData.find(o => {
+        const outlineNum = o.chapter_number || o.chapterNumber;
+        return outlineNum === chapterNum;
+      });
+      
+      console.log('✏️ editChapter:', ch, 'chapterNum:', chapterNum, 'outline:', outline);
+      
+      document.getElementById('chapterModalTitle').textContent = `编辑第${chapterNum}章`;
       document.getElementById('chapterModalMeta').textContent = `${ch.word_count || 0}字 | 创建于 ${ch.created_at ? new Date(ch.created_at).toLocaleDateString() : '-'}`;
       document.getElementById('editChapterId').value = ch.id;
       document.getElementById('editTitle').value = ch.title || '';
