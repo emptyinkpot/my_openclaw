@@ -35,85 +35,7 @@ try {
   console.log('[novel-manager] 无法加载 plugin-sdk，将使用备用方案');
 }
 
-// ==================== 可复用的内容处理函数 ====================
 
-/**
- * 从数据库生成章节内容（完整流程：生成 + 润色）
- */
-async function generateChapterFromDb(workId: number, chapterNumber: number): Promise<any> {
-  console.log('[ContentCraft] 从数据库生成，workId:', workId, 'chapter:', chapterNumber);
-
-  const generator = new GenerationPipeline();
-  const result = await generator.generateFromDatabase({
-    workId,
-    chapterNumber,
-    relatedChapterCount: 2
-  }, (progress) => {
-    console.log(`[ContentCraft] [生成进度] ${progress.phase || 'generating'}: ${progress.message} (${progress.progress}%)`);
-  });
-
-  // 保存生成后的内容并更新状态
-  if (result.finalText) {
-    // 先获取章节ID
-    const db = getDatabaseManager();
-    const chapter = await db.queryOne(
-      'SELECT * FROM chapters WHERE work_id = ? AND chapter_number = ?', 
-      [workId, chapterNumber]
-    );
-    if (chapter) {
-      // 直接更新内容、字数和状态
-      const wordCount = result.finalText.length;
-      await db.execute(
-        'UPDATE chapters SET content = ?, word_count = ?, status = ?, updated_at = NOW() WHERE id = ?',
-        [result.finalText, wordCount, 'polished', chapter.id]
-      );
-    }
-  }
-  
-  return result;
-}
-
-/**
- * 从数据库读取章节内容并润色
- */
-async function polishChapterFromDb(workId: number, chapterNumber: number): Promise<any> {
-  console.log('[ContentCraft] 从数据库读取并润色，workId:', workId, 'chapter:', chapterNumber);
-
-  // 1. 从数据库读取章节内容
-  const db = getDatabaseManager();
-  const chapter = await db.queryOne(
-    'SELECT * FROM chapters WHERE work_id = ? AND chapter_number = ?', 
-    [workId, chapterNumber]
-  );
-  
-  if (!chapter || !chapter.content) {
-    throw new Error('未找到章节内容');
-  }
-
-  // 2. 使用 PolishPipeline 润色
-  const polishPipeline = new PolishPipeline();
-  const result = await polishPipeline.execute({
-    text: chapter.content,
-    settings: configManager.getSettings()
-  }, (progress) => {
-    console.log(`[ContentCraft] [润色进度] ${progress.currentStep || 'processing'}: ${progress.message} (${progress.progress}%)`);
-  });
-
-  // 3. 保存润色后的内容并更新状态
-  if (result.text) {    
-    // 直接更新内容、字数和状态
-    const wordCount = result.text.length;
-    await db.execute(
-      'UPDATE chapters SET content = ?, word_count = ?, status = ?, updated_at = NOW() WHERE id = ?',
-      [result.text, wordCount, 'polished', chapter.id]
-    );
-  }
-  
-  return result;
-}
-
-// 导出这些函数供 ContentCraftAutoService 使用
-export { generateChapterFromDb, polishChapterFromDb };
 
 // 服务实例
 let novelService: NovelService | null = null;
@@ -1415,54 +1337,10 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
 
         // 3. 保存润色后的内容并更新状态
         if (result.text) {
-          const db = getDatabaseManager();
-          
-          // 先更新内容
-          await getNovelService().updateChapter(chapter.id, {
-            content: result.text
-          });
-          
-          // 记录润色信息到 polish_info 字段（先尝试添加字段）
-          try {
-            // 检查 polish_info 字段是否存在
-            const [colCheck] = await db.query(`
-              SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
-              WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'chapters' AND COLUMN_NAME = 'polish_info'
-            `);
-            
-            if (colCheck[0].cnt === 0) {
-              // 字段不存在，添加它
-              await db.execute(`
-                ALTER TABLE chapters ADD COLUMN polish_info JSON COMMENT '润色信息（是否经过润色流程、步骤等）' AFTER status
-              `);
-              console.log('[PolishAPI] 已添加 polish_info 字段');
-            }
-            
-            // 更新 polish_info 字段
-            const polishInfo = {
-              hasBeenPolished: true,
-              polishedAt: new Date().toISOString(),
-              stepsExecuted: result.metadata?.stepsExecuted || 0,
-              totalSteps: result.metadata?.totalSteps || 0,
-              processingTime: result.metadata?.processingTime || 0
-            };
-            
-            await db.execute(`
-              UPDATE chapters SET polish_info = ? WHERE id = ?
-            `, [JSON.stringify(polishInfo), chapter.id]);
-            
-          } catch (e) {
-            console.warn('[PolishAPI] 更新 polish_info 失败（可能字段不存在）:', e);
-          }
-          
-          // 使用状态机服务更新状态
-          const { getChapterStateMachine } = require('../../core/state-machine');
-          const stateMachine = getChapterStateMachine();
-          await stateMachine.transition(
-            chapter.id,
-            'polished',
-            'content_polished',
-            { metadata: { polishResult: 'success' } }
+          const wordCount = result.text.length;
+          await db.execute(
+            'UPDATE chapters SET content = ?, word_count = ?, status = ?, updated_at = NOW() WHERE id = ?',
+            [result.text, wordCount, 'polished', chapter.id]
           );
         }
         
@@ -1502,7 +1380,7 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
         });
 
         // 保存生成后的内容并更新状态
-        if (result.text) {
+        if (result.finalText) {
           // 先获取章节ID
           const db = getDatabaseManager();
           const chapter = await db.queryOne(
@@ -1510,17 +1388,10 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
             [workId, chapterNumber]
           );
           if (chapter) {
-            await getNovelService().updateChapter(chapter.id, {
-              content: result.text
-            });
-            // 使用状态机服务更新状态
-            const { getChapterStateMachine } = require('../../core/state-machine');
-            const stateMachine = getChapterStateMachine();
-            await stateMachine.transition(
-              chapter.id,
-              'first_draft',
-              'content_generated',
-              { metadata: { generationResult: 'success' } }
+            const wordCount = result.finalText.length;
+            await db.execute(
+              'UPDATE chapters SET content = ?, word_count = ?, status = ?, updated_at = NOW() WHERE id = ?',
+              [result.finalText, wordCount, 'polished', chapter.id]
             );
           }
         }
