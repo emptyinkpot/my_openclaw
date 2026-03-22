@@ -43,6 +43,7 @@ export class AuditAutoService {
   private currentTask: string | null = null;
   private processedCount = 0;
   private errorCount = 0;
+  private isProcessing = false; // 并发锁：防止同时执行多个处理流程
   private config: AuditAutoServiceConfig = {
     enabled: false,
     processInterval: 60, // 默认 60 秒
@@ -106,15 +107,16 @@ export class AuditAutoService {
 
     this.running = true;
     this.config.enabled = true;
+    this.isProcessing = false; // 重置处理标志
     logger.info('[AuditAutoService] 自动审核服务已启动');
     
-    // 立即执行一次处理
+    // 启动定时处理（不立即执行，避免重复）
+    this.startTimer();
+    
+    // 延迟一小会儿后执行第一次处理
     setTimeout(() => {
       this.processChapters();
-    }, 1000);
-    
-    // 启动定时处理
-    this.startTimer();
+    }, 2000);
   }
 
   /**
@@ -169,9 +171,19 @@ export class AuditAutoService {
    * 处理章节
    */
   private async processChapters(): Promise<void> {
+    // 检查是否正在运行
     if (!this.running) {
       return;
     }
+
+    // 检查是否已经在处理中（并发锁）
+    if (this.isProcessing) {
+      logger.info('[AuditAutoService] 上一次处理尚未完成，跳过本次执行');
+      return;
+    }
+
+    // 加锁
+    this.isProcessing = true;
 
     try {
       this.lastRunTime = new Date();
@@ -191,26 +203,23 @@ export class AuditAutoService {
       logger.info(`[AuditAutoService] 找到 ${chaptersToProcess.length} 个需要审核的章节`);
       this.activityLog.log('progress', `找到 ${chaptersToProcess.length} 个需要审核的章节`);
       
-      // 限制每次处理的数量
-      const chaptersToProcessNow = chaptersToProcess.slice(0, this.config.maxChaptersPerRun);
+      // 只处理第一个章节（确保串行，避免并发问题）
+      const chapter = chaptersToProcess[0];
       
-      for (const chapter of chaptersToProcessNow) {
-        if (!this.running) {
-          break;
-        }
+      try {
+        this.currentTask = `正在审核章节: ${chapter.title || chapter.chapter_number}`;
+        logger.info(`[AuditAutoService] ${this.currentTask}`);
+        this.activityLog.log('progress', `开始审核第 ${chapter.chapter_number} 章: ${chapter.title || '无标题'}`);
         
-        try {
-          this.currentTask = `正在审核章节: ${chapter.title || chapter.chapter_number}`;
-          logger.info(`[AuditAutoService] ${this.currentTask}`);
-          
-          await this.auditChapter(chapter.work_id, chapter.chapter_number);
-          
-          this.processedCount++;
-          logger.info(`[AuditAutoService] 章节审核完成: ${chapter.title || chapter.chapter_number}`);
-        } catch (error: any) {
-          this.errorCount++;
-          logger.error(`[AuditAutoService] 章节审核失败: ${chapter.title || chapter.chapter_number}`, error.message);
-        }
+        await this.auditChapter(chapter.work_id, chapter.chapter_number);
+        
+        this.processedCount++;
+        logger.info(`[AuditAutoService] 章节审核完成: ${chapter.title || chapter.chapter_number}`);
+        this.activityLog.log('completed', `第 ${chapter.chapter_number} 章审核完成`);
+      } catch (error: any) {
+        this.errorCount++;
+        logger.error(`[AuditAutoService] 章节审核失败: ${chapter.title || chapter.chapter_number}`, error.message);
+        this.activityLog.log('error', `第 ${chapter.chapter_number} 章审核失败: ${error.message}`);
       }
       
       this.currentTask = null;
@@ -218,7 +227,11 @@ export class AuditAutoService {
     } catch (error: any) {
       this.errorCount++;
       logger.error('[AuditAutoService] 审核处理过程出错:', error.message);
+      this.activityLog.log('error', `审核处理过程出错: ${error.message}`);
       this.currentTask = null;
+    } finally {
+      // 释放锁
+      this.isProcessing = false;
     }
   }
 

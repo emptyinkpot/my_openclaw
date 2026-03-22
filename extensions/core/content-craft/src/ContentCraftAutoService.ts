@@ -43,6 +43,7 @@ export class ContentCraftAutoService {
   private currentTask: string | null = null;
   private processedCount = 0;
   private errorCount = 0;
+  private isProcessing = false; // 并发锁：防止同时执行多个处理流程
   private config: AutoServiceConfig = {
     enabled: false,
     processInterval: 60, // 默认 60 秒
@@ -107,15 +108,16 @@ export class ContentCraftAutoService {
 
     this.running = true;
     this.config.enabled = true;
+    this.isProcessing = false; // 重置处理标志
     logger.info('[ContentCraftAutoService] 自动处理服务已启动');
     
-    // 立即执行一次处理
+    // 启动定时处理（不立即执行，避免重复）
+    this.startTimer();
+    
+    // 延迟一小会儿后执行第一次处理
     setTimeout(() => {
       this.processChapters();
-    }, 1000);
-    
-    // 启动定时处理
-    this.startTimer();
+    }, 2000);
   }
 
   /**
@@ -170,9 +172,19 @@ export class ContentCraftAutoService {
    * 处理章节
    */
   private async processChapters(): Promise<void> {
+    // 检查是否正在运行
     if (!this.running) {
       return;
     }
+
+    // 检查是否已经在处理中（并发锁）
+    if (this.isProcessing) {
+      logger.info('[ContentCraftAutoService] 上一次处理尚未完成，跳过本次执行');
+      return;
+    }
+
+    // 加锁
+    this.isProcessing = true;
 
     try {
       this.lastRunTime = new Date();
@@ -192,32 +204,29 @@ export class ContentCraftAutoService {
       logger.info(`[ContentCraftAutoService] 找到 ${chaptersToProcess.length} 个需要处理的章节`);
       this.activityLog.log('progress', `找到 ${chaptersToProcess.length} 个需要处理的章节`);
       
-      // 限制每次处理的数量
-      const chaptersToProcessNow = chaptersToProcess.slice(0, this.config.maxChaptersPerRun);
+      // 只处理第一个章节（确保串行，避免并发问题）
+      const chapter = chaptersToProcess[0];
       
-      for (const chapter of chaptersToProcessNow) {
-        if (!this.running) {
-          break;
+      try {
+        this.currentTask = `正在处理章节: ${chapter.title || chapter.chapter_number}`;
+        logger.info(`[ContentCraftAutoService] ${this.currentTask}`);
+        this.activityLog.log('progress', `开始处理第 ${chapter.chapter_number} 章: ${chapter.title || '无标题'}`);
+        
+        if ((chapter.state || chapter.status) === 'outline') {
+          // 生成章节内容（完整流程：生成+润色）
+          await this.generateChapter(chapter.work_id, chapter.chapter_number);
+        } else if ((chapter.state || chapter.status) === 'first_draft') {
+          // 润色章节内容
+          await this.polishChapter(chapter.work_id, chapter.chapter_number);
         }
         
-        try {
-          this.currentTask = `正在处理章节: ${chapter.title || chapter.chapter_number}`;
-          logger.info(`[ContentCraftAutoService] ${this.currentTask}`);
-          
-          if ((chapter.state || chapter.status) === 'outline') {
-            // 生成章节内容（完整流程：生成+润色）
-            await this.generateChapter(chapter.work_id, chapter.chapter_number);
-          } else if ((chapter.state || chapter.status) === 'first_draft') {
-            // 润色章节内容
-            await this.polishChapter(chapter.work_id, chapter.chapter_number);
-          }
-          
-          this.processedCount++;
-          logger.info(`[ContentCraftAutoService] 章节处理成功: ${chapter.title || chapter.chapter_number}`);
-        } catch (error: any) {
-          this.errorCount++;
-          logger.error(`[ContentCraftAutoService] 章节处理失败: ${chapter.title || chapter.chapter_number}`, error.message);
-        }
+        this.processedCount++;
+        logger.info(`[ContentCraftAutoService] 章节处理成功: ${chapter.title || chapter.chapter_number}`);
+        this.activityLog.log('completed', `第 ${chapter.chapter_number} 章处理完成`);
+      } catch (error: any) {
+        this.errorCount++;
+        logger.error(`[ContentCraftAutoService] 章节处理失败: ${chapter.title || chapter.chapter_number}`, error.message);
+        this.activityLog.log('error', `第 ${chapter.chapter_number} 章处理失败: ${error.message}`);
       }
       
       this.currentTask = null;
@@ -225,7 +234,11 @@ export class ContentCraftAutoService {
     } catch (error: any) {
       this.errorCount++;
       logger.error('[ContentCraftAutoService] 处理过程出错:', error.message);
+      this.activityLog.log('error', `处理过程出错: ${error.message}`);
       this.currentTask = null;
+    } finally {
+      // 释放锁
+      this.isProcessing = false;
     }
   }
 
