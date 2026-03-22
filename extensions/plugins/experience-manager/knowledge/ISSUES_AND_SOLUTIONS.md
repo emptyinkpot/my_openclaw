@@ -379,9 +379,80 @@ await publishToFanqie(title);
 
 ---
 
-## 九、经验积累机制（重要！）
+## 九、OpenClaw 配置与重构问题（2026.03 新增）
 
-### 9.1 经验存储位置
+### 9.1 OpenClaw 预览服务一直"预览准备中"
+
+| 项目 | 内容 |
+|------|------|
+| **问题** | OpenClaw 预览服务一直显示"预览准备中"，无法正常使用 |
+| **原因** | 新创建的 `extensions/database/` 目录被 OpenClaw 误认为是插件目录，导致找不到 `openclaw.plugin.json` 文件而报错，配置验证失败 |
+| **错误信息** | `plugin manifest not found: /workspace/projects/extensions/database/openclaw.plugin.json` |
+| **解决方案** | 将 `extensions/database/` 移动到 `extensions/core/database/`，避免被当成插件扫描 |
+| **修复位置** | 目录结构调整 + 所有引用路径更新 |
+
+```bash
+# 1. 移动目录
+mv extensions/database extensions/core/
+
+# 2. 更新所有相关文件的引用路径
+#    - 从 core/*/ 下的文件：from '../../database' → from '../database'
+#    - 从 plugins/*/ 下的文件：from '../../database' → from '../../../core/database'
+```
+
+**关键文件更新清单**：
+- `extensions/core/audit/repository.ts`
+- `extensions/core/content-craft/src/generation-pipeline.ts`
+- `extensions/core/content-pipeline/AuditService.ts`
+- `extensions/core/content-pipeline/ChapterRepository.ts`
+- `extensions/core/content-pipeline/ContentPipeline.ts`
+- `extensions/core/publishing/ChapterRepository.ts`
+- `extensions/core/storage/database.ts` (兼容层)
+- `extensions/core/database/manager.ts`
+- `extensions/plugins/novel-manager/index.ts`
+- `extensions/plugins/novel-manager/services/novel-service.ts`
+
+**验证步骤**：
+```bash
+# 1. 验证配置
+openclaw config validate
+
+# 2. 重启服务
+./scripts/restart.sh
+
+# 3. 探测 Gateway
+openclaw gateway probe
+```
+
+**教训**：
+- OpenClaw 会扫描 `extensions/` 下的所有目录作为插件候选
+- 非插件代码应该放在 `extensions/core/` 或其他子目录下
+- 目录结构变更后一定要检查所有相对路径引用
+
+---
+
+### 9.2 OpenClaw 数据库模块集中化重构
+
+| 项目 | 内容 |
+|------|------|
+| **目标** | 将数据库相关代码从 `extensions/core/storage/database.ts` 集中到独立目录 |
+| **策略** | 备份优先、兼容层保障、渐进式迁移 |
+| **新目录结构** | `extensions/core/database/` |
+| **兼容层设计** | 旧位置 `extensions/core/storage/database.ts` 保留，从新位置重新导出 |
+
+**重构步骤**：
+1. 完整备份 `extensions/` 目录
+2. 创建新目录 `extensions/core/database/`
+3. 移动并重构数据库核心文件
+4. 创建兼容层保持旧引用可用
+5. 逐步迁移所有引用到新路径
+6. 验证并重启服务
+
+---
+
+## 十、经验积累机制（重要！）
+
+### 10.1 经验存储位置
 
 | 类型 | 路径 |
 |------|------|
