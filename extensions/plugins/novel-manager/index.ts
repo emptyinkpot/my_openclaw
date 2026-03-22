@@ -1803,7 +1803,7 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
 
     // ====== 番茄账号相关API ======
     if (path === '/api/novel/fanqie/accounts' && method === 'GET') {
-      const { getConfig } = require('./core/config');
+      const { getConfig } = require('../../core/config');
       const config = getConfig();
       const accounts = config.scheduler.fanqieAccounts || [];
       jsonRes(res, { success: true, data: accounts });
