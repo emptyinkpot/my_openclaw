@@ -2,7 +2,7 @@
  * 小说数据服务
  */
 
-import { getDatabaseManager, withTransaction } from '../../../core/database';
+import { getDatabaseManager, withTransaction, getChapterTitleManager } from '../../../core/database';
 import { ContentPipeline, PipelineProgressEvent } from '../../../core/content-pipeline/ContentPipeline';
 import { FanqieSimplePipeline } from '../../../core/publishing/FanqieSimplePipeline';
 import { broadcastProgress } from '../../../core/pipeline/ProgressManager';
@@ -241,6 +241,16 @@ export class NovelService {
           INDEX idx_chapter_number (chapter_number)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
       `).catch(() => {});
+      
+      // 自动补充缺失的章节标题
+      try {
+        console.log('[NovelService] 开始自动补充章节标题...');
+        const titleManager = getChapterTitleManager();
+        const result = await titleManager.autoFillAllMissingTitles();
+        console.log(`[NovelService] 章节标题补充完成：总计 ${result.total}, 更新 ${result.updated}, 失败 ${result.failed}`);
+      } catch (e) {
+        console.warn('[NovelService] 自动补充章节标题失败（不影响启动）:', e);
+      }
       
       this.initialized = true;
     } catch (e) {
