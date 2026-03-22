@@ -1142,6 +1142,79 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
       return true;
     }
 
+    // ====== 每日计划API ======
+    // 同步每日计划到数据库
+    if (path === '/api/novel/daily-plans/sync' && method === 'POST') {
+      try {
+        const body = await parseBody(req);
+        const { plannedChapters, completedChapters, lastPlanDate } = body;
+        const db = getDatabaseManager();
+        
+        // 计算今日日期（SQL格式）
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayStr = today.toISOString().split('T')[0];
+        
+        // 先删除今天的旧计划
+        await db.execute('DELETE FROM daily_plans WHERE plan_date = ?', [todayStr]);
+        
+        // 插入新计划
+        if (plannedChapters && typeof plannedChapters === 'object') {
+          for (const [workIdStr, chapters] of Object.entries(plannedChapters)) {
+            const workId = parseInt(workIdStr);
+            if (Array.isArray(chapters)) {
+              for (const chapterNum of chapters) {
+                try {
+                  await db.execute(
+                    'INSERT INTO daily_plans (work_id, chapter_number, plan_date) VALUES (?, ?, ?)',
+                    [workId, chapterNum, todayStr]
+                  );
+                } catch (e) {
+                  // 忽略重复插入错误
+                }
+              }
+            }
+          }
+        }
+        
+        jsonRes(res, { success: true, message: '每日计划已同步' });
+      } catch (error) {
+        console.error('[DailyPlanAPI] 同步失败:', error);
+        jsonRes(res, { success: false, error: '同步失败' }, 500);
+      }
+      return true;
+    }
+    
+    // 获取今日计划
+    if (path === '/api/novel/daily-plans' && method === 'GET') {
+      try {
+        const db = getDatabaseManager();
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayStr = today.toISOString().split('T')[0];
+        
+        const plans = await db.query(
+          'SELECT work_id, chapter_number FROM daily_plans WHERE plan_date = ?',
+          [todayStr]
+        );
+        
+        // 转换格式
+        const plannedChapters: Record<number, number[]> = {};
+        plans.forEach((plan: any) => {
+          if (!plannedChapters[plan.work_id]) {
+            plannedChapters[plan.work_id] = [];
+          }
+          plannedChapters[plan.work_id].push(plan.chapter_number);
+        });
+        
+        jsonRes(res, { success: true, data: { plannedChapters, planDate: todayStr } });
+      } catch (error) {
+        console.error('[DailyPlanAPI] 获取失败:', error);
+        jsonRes(res, { success: false, error: '获取失败' }, 500);
+      }
+      return true;
+    }
+
     // ====== 配置管理API ======
     // 获取配置
     if (path === '/api/novel/config' && method === 'GET') {

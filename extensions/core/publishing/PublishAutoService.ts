@@ -338,12 +338,44 @@ export class PublishAutoService {
   }
 
   /**
+   * 获取今日计划
+   */
+  private async getTodayPlan(): Promise<Map<number, Set<number>>> {
+    const db = getDatabaseManager();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStr = today.toISOString().split('T')[0];
+    
+    const plan = new Map<number, Set<number>>();
+    
+    try {
+      const plans = await db.query(
+        'SELECT work_id, chapter_number FROM daily_plans WHERE plan_date = ?',
+        [todayStr]
+      );
+      
+      plans.forEach((p: any) => {
+        if (!plan.has(p.work_id)) {
+          plan.set(p.work_id, new Set());
+        }
+        plan.get(p.work_id)!.add(p.chapter_number);
+      });
+      
+      logger.info(`[PublishAutoService] 今日计划: ${plan.size} 个作品`);
+    } catch (e) {
+      logger.warn('[PublishAutoService] 获取今日计划失败:', e);
+    }
+    
+    return plan;
+  }
+
+  /**
    * 处理章节（正确逻辑）
    * 
    * 1. 先去番茄获取所有作品及最新章节
-   * 2. 对每个作品，计算下一章（最新章节 + 1）
-   * 3. 去数据库查该章节是否存在且状态为 'audited'
-   * 4. 满足条件才执行发布
+   * 2. 获取今日计划
+   * 3. 对每个作品，检查今日计划中的章节
+   * 4. 只有在今日计划中、且状态为 'audited' 的章节才发布
    */
   private async processChapters(): Promise<void> {
     // 检查是否正在运行
@@ -364,6 +396,9 @@ export class PublishAutoService {
       this.lastRunTime = new Date();
       logger.info('[PublishAutoService] 开始处理发布...');
       this.activityLog.log('progress', '🚀 自动发布开始检查...');
+      
+      // 获取今日计划
+      const todayPlan = await this.getTodayPlan();
       
       // 获取配置
       const config = getConfig();
@@ -397,7 +432,7 @@ export class PublishAutoService {
       logger.info(`[PublishAutoService] 从番茄获取到 ${fanqieWorks.length} 个作品`);
       this.activityLog.log('progress', `✅ 从番茄获取到 ${fanqieWorks.length} 个作品`);
       
-      // 步骤2: 对每个番茄作品，查找本地匹配并检查下一章
+      // 步骤2: 对每个番茄作品，查找本地匹配并检查今日计划中的章节
       const chaptersToPublish: any[] = [];
       
       for (const fanqieWork of fanqieWorks) {
@@ -425,27 +460,41 @@ export class PublishAutoService {
         logger.info(`[PublishAutoService] 本地找到匹配作品: ${localWork.title} (ID: ${localWork.id})`);
         this.activityLog.log('progress', `✅ 本地找到匹配作品: ${localWork.title}`);
         
-        // 计算下一章
-        const nextChapterNumber = fanqieWork.latestChapter + 1;
-        logger.info(`[PublishAutoService] 番茄最新章节: ${fanqieWork.latestChapter}，下一章: ${nextChapterNumber}`);
-        this.activityLog.log('progress', `番茄最新章节: ${fanqieWork.latestChapter}，下一章: ${nextChapterNumber}`);
+        // 获取这个作品的今日计划
+        const workPlan = todayPlan.get(localWork.id);
+        if (!workPlan || workPlan.size === 0) {
+          logger.info(`[PublishAutoService] 作品「${localWork.title}」今日无计划章节`);
+          this.activityLog.log('progress', `作品「${localWork.title}」今日无计划章节，跳过`);
+          continue;
+        }
         
-        // 检查本地是否有这一章且状态为 audited
-        const chapter = await this.checkLocalChapter(localWork.id, nextChapterNumber);
+        logger.info(`[PublishAutoService] 作品「${localWork.title}」今日计划章节: ${Array.from(workPlan).join(', ')}`);
+        this.activityLog.log('progress', `今日计划章节: ${Array.from(workPlan).join(', ')}`);
         
-        if (chapter) {
-          logger.info(`[PublishAutoService] 找到待发布章节: 第${nextChapterNumber}章「${chapter.title}」`);
-          this.activityLog.log('progress', `✅ 找到待发布章节: 第${nextChapterNumber}章「${chapter.title}」`);
-          chaptersToPublish.push(chapter);
-        } else {
-          logger.info(`[PublishAutoService] 本地没有第${nextChapterNumber}章，或状态不是 audited`);
-          this.activityLog.log('progress', `本地没有第${nextChapterNumber}章，或状态不是 audited，跳过`);
+        // 检查今日计划中的每个章节
+        for (const chapterNumber of workPlan) {
+          // 检查本地是否有这一章且状态为 audited
+          const chapter = await this.checkLocalChapter(localWork.id, chapterNumber);
+          
+          if (chapter) {
+            logger.info(`[PublishAutoService] 找到待发布章节: 第${chapterNumber}章「${chapter.title}」`);
+            this.activityLog.log('progress', `✅ 找到待发布章节: 第${chapterNumber}章「${chapter.title}」`);
+            chaptersToPublish.push(chapter);
+          } else {
+            logger.info(`[PublishAutoService] 本地没有第${chapterNumber}章，或状态不是 audited`);
+            this.activityLog.log('progress', `本地没有第${chapterNumber}章，或状态不是 audited，跳过`);
+          }
+          
+          // 限制每次处理的章节数
+          if (chaptersToPublish.length >= this.config.maxChaptersPerRun) {
+            logger.info(`[PublishAutoService] 已达到最大处理数 ${this.config.maxChaptersPerRun}`);
+            this.activityLog.log('progress', `已达到最大处理数 ${this.config.maxChaptersPerRun}`);
+            break;
+          }
         }
         
         // 限制每次处理的章节数
         if (chaptersToPublish.length >= this.config.maxChaptersPerRun) {
-          logger.info(`[PublishAutoService] 已达到最大处理数 ${this.config.maxChaptersPerRun}`);
-          this.activityLog.log('progress', `已达到最大处理数 ${this.config.maxChaptersPerRun}`);
           break;
         }
       }

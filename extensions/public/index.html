@@ -2211,7 +2211,7 @@
 
     // ====== 今日计划功能 ======
     // 加载每日设置
-    function loadDailySettings() {
+    async function loadDailySettings() {
       try {
         const saved = localStorage.getItem('fanqieDailySettings');
         if (saved) {
@@ -2228,7 +2228,7 @@
             completedChapters = {};
             plannedChapters = {};
             lastPlanDate = today;
-            saveDailySettings();
+            await saveDailySettings();
           }
         }
       } catch (e) {
@@ -2237,7 +2237,7 @@
     }
     
     // 保存每日设置
-    function saveDailySettings() {
+    async function saveDailySettings() {
       try {
         const data = {
           dailyChaptersPerWork,
@@ -2246,6 +2246,17 @@
           lastPlanDate: lastPlanDate || new Date().toDateString()
         };
         localStorage.setItem('fanqieDailySettings', JSON.stringify(data));
+        
+        // 同时保存到数据库
+        try {
+          await api('/api/novel/daily-plans/sync', {
+            method: 'POST',
+            body: JSON.stringify(data)
+          });
+          console.log('[DailyPlan] 已同步到数据库');
+        } catch (dbErr) {
+          console.warn('[DailyPlan] 同步到数据库失败:', dbErr);
+        }
         
         // 重新渲染
         if (lastScanData) {
@@ -2268,7 +2279,7 @@
         }
         plannedChapters[workId] = plan;
         lastPlanDate = today;
-        saveDailySettings();
+        saveDailySettings(); // 虽然是 async，但不需要 await，让它后台执行
         console.log(`[DailyPlan] 为作品 ${workId} 生成今日计划:`, plan);
       }
       
@@ -7080,21 +7091,36 @@
         const result = await api(`/works/${workId}`);
         const chapters = result.data?.chapters || [];
         
+        // 获取今日计划章节
+        const plan = plannedChapters[workId] || [];
+        const planSet = new Set(plan);
+        
         const listEl = document.getElementById('publishChapterList');
         if (!chapters.length) {
           listEl.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-muted);">该作品暂无章节</div>';
           return;
         }
         
-        listEl.innerHTML = chapters.map((chapter, index) => `
-          <div class="chapter-item" data-chapter-index="${index}">
-            <input type="checkbox" class="chapter-checkbox" id="chapter-${index}" checked>
+        listEl.innerHTML = chapters.map((chapter, index) => {
+          const chapterNumber = chapter.chapter_number || (index + 1);
+          const isInPlan = planSet.has(chapterNumber);
+          const isAudited = chapter.status === 'audited';
+          
+          return `
+          <div class="chapter-item" data-chapter-index="${index}" style="opacity: ${isInPlan && isAudited ? 1 : 0.5};">
+            <input type="checkbox" class="chapter-checkbox" id="chapter-${index}" 
+                   ${isInPlan && isAudited ? 'checked' : ''}
+                   ${!isInPlan || !isAudited ? 'disabled' : ''}>
             <label for="chapter-${index}">
-              <span class="chapter-title">${chapter.title || `第 ${index + 1} 章`}</span>
-              <span class="chapter-meta">字数: ${chapter.word_count || 0}</span>
+              <span class="chapter-title">${chapter.title || `第 ${chapterNumber} 章`}</span>
+              <span class="chapter-meta">
+                字数: ${chapter.word_count || 0}
+                ${isInPlan ? '<span style="color:var(--accent);">📋 今日计划</span>' : ''}
+                ${isAudited ? '<span style="color:var(--success);">✅ 已审核</span>' : '<span style="color:var(--warning);">⏳ 未审核</span>'}
+              </span>
             </label>
           </div>
-        `).join('');
+        `}).join('');
       } catch (err) {
         console.error('加载章节失败:', err);
         showToast('❌ 加载章节失败', 'error');
@@ -7162,10 +7188,45 @@
         return;
       }
       
+      // 获取今日计划章节
+      const plan = plannedChapters[workId] || [];
+      const planSet = new Set(plan);
+      
       // 获取选中的章节
       const checkboxes = document.querySelectorAll('.chapter-checkbox:checked');
       if (!checkboxes.length) {
         showToast('⚠️ 请选择要发布的章节', 'warning');
+        return;
+      }
+      
+      // 验证选中的章节是否在今日计划中
+      try {
+        const result = await api(`/works/${workId}`);
+        const allChapters = result.data?.chapters || [];
+        
+        const selectedIndices = Array.from(checkboxes).map(cb => 
+          parseInt(cb.closest('.chapter-item').dataset.chapterIndex)
+        );
+        
+        for (const index of selectedIndices) {
+          const chapter = allChapters[index];
+          const chapterNumber = chapter.chapter_number || (index + 1);
+          
+          // 检查是否在今日计划中
+          if (!planSet.has(chapterNumber)) {
+            showToast(`⚠️ 第${chapterNumber}章不在今日计划中，不能发布`, 'warning');
+            return;
+          }
+          
+          // 检查是否已审核
+          if (chapter.status !== 'audited') {
+            showToast(`⚠️ 第${chapterNumber}章未审核通过，不能发布`, 'warning');
+            return;
+          }
+        }
+      } catch (err) {
+        console.error('验证章节失败:', err);
+        showToast('❌ 验证章节失败', 'error');
         return;
       }
       
