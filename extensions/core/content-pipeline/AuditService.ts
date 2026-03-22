@@ -3,7 +3,7 @@
  * 负责章节审核状态检查、自动修复
  */
 
-import { getDatabaseManager } from '../storage/database';
+import { getDatabaseManager } from '../../database';
 import { logger } from '../../plugins/novel-manager/utils/logger';
 
 export type AuditStatus = 'pending' | 'passed' | 'failed';

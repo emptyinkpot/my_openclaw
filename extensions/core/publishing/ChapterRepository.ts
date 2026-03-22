@@ -5,7 +5,7 @@
  * 职责：封装所有章节相关的数据库操作
  */
 
-import { getDatabaseManager } from '../storage/database';
+import { getDatabaseManager } from '../../database';
 
 export interface ChapterFilter {
   workId?: number;

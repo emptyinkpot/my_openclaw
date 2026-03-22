@@ -5,7 +5,7 @@ import { IncomingMessage, ServerResponse } from 'http';
 import * as fs from 'fs';
 import * as path from 'path';
 import { NovelService } from './services/novel-service';
-import { getDatabaseManager } from '../../../core/storage/database';
+import { getDatabaseManager } from '../../database';
 
 // 导入禁用词处理步骤
 import { BannedWordsStep } from '../../../core/content-craft/src/steps/process/banned-words';

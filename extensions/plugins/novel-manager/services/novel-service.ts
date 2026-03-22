@@ -2,7 +2,7 @@
  * 小说数据服务
  */
 
-import { getDatabaseManager, withTransaction } from '../../../core/storage/database';
+import { getDatabaseManager, withTransaction } from '../../database';
 import { ContentPipeline, PipelineProgressEvent } from '../../../core/content-pipeline/ContentPipeline';
 import { FanqieSimplePipeline } from '../../../core/publishing/FanqieSimplePipeline';
 import { broadcastProgress } from '../../../core/pipeline/ProgressManager';

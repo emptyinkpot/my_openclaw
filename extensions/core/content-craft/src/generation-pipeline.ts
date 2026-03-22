@@ -7,7 +7,7 @@
  */
 
 import { LLMClient, Config } from 'coze-coding-dev-sdk';
-import { getDatabaseManager } from '../../storage/database';
+import { getDatabaseManager } from '../../../database';
 import type { 
   GenerationInput, 
   GenerationOutput, 
