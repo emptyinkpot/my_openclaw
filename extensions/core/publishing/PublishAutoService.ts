@@ -1,7 +1,11 @@
 /**
  * PublishAutoService - 自动发布服务
  * 
- * 自动发布状态为 `audited`（已审核）的章节到番茄小说
+ * 正确的发布逻辑：
+ * 1. 先去番茄获取所有作品及最新章节
+ * 2. 对每个作品，计算下一章（最新章节 + 1）
+ * 3. 去数据库查该章节是否存在且状态为 'audited'
+ * 4. 满足条件才执行发布
  * 
  * @module publish-auto
  */
@@ -12,6 +16,7 @@ import { getActivityLog, ActivityLog } from '../smart-scheduler';
 import { FanqieSimplePipeline } from './FanqieSimplePipeline';
 import { getChapterRepository } from './ChapterRepository';
 import { getConfig } from '../config';
+import { FanqiePublisher, FanqieAccount } from './FanqiePublisher';
 
 export interface PublishAutoServiceStatus {
   running: boolean;
@@ -19,6 +24,7 @@ export interface PublishAutoServiceStatus {
   currentTask: string | null;
   processedCount: number;
   errorCount: number;
+  missingWorksCount: number;
 }
 
 export interface PublishAutoServiceConfig {
@@ -41,8 +47,8 @@ export class PublishAutoService {
   private errorCount = 0;
   private isProcessing = false; // 并发锁：防止同时执行多个处理流程
   private chapterLocks = new Set<number>(); // 章节级别的锁
-  private readonly MAX_PARALLEL_WORKS = 1; // 发布服务一次只处理一个作品
   private missingWorksCache = new Set<string>(); // 缓存番茄中不存在的作品，避免重复检查
+  private readonly MAX_PARALLEL_WORKS = 1; // 发布服务一次只处理一个作品
   private config: PublishAutoServiceConfig = {
     enabled: false,
     processInterval: 300, // 默认 5 分钟
@@ -59,7 +65,7 @@ export class PublishAutoService {
   /**
    * 获取当前状态
    */
-  getStatus(): PublishAutoServiceStatus & { missingWorksCount: number } {
+  getStatus(): PublishAutoServiceStatus {
     return {
       running: this.running,
       lastRunTime: this.lastRunTime?.toISOString() || null,
@@ -68,17 +74,6 @@ export class PublishAutoService {
       errorCount: this.errorCount,
       missingWorksCount: this.missingWorksCache.size
     };
-  }
-
-  /**
-   * 清除不存在作品的缓存
-   * 让用户可以手动刷新，重新检查作品是否存在
-   */
-  clearMissingWorksCache(): void {
-    const count = this.missingWorksCache.size;
-    this.missingWorksCache.clear();
-    logger.info(`[PublishAutoService] 已清除 ${count} 个不存在作品的缓存`);
-    this.activityLog.log('system', `已清除 ${count} 个不存在作品的缓存，将重新检查`);
   }
 
   /**
@@ -106,6 +101,17 @@ export class PublishAutoService {
       // 如果只是间隔改变，重启定时器
       this.restartTimer();
     }
+  }
+
+  /**
+   * 清除不存在作品的缓存
+   * 让用户可以手动刷新，重新检查作品是否存在
+   */
+  clearMissingWorksCache(): void {
+    const count = this.missingWorksCache.size;
+    this.missingWorksCache.clear();
+    logger.info(`[PublishAutoService] 已清除 ${count} 个不存在作品的缓存`);
+    this.activityLog.log('system', `已清除 ${count} 个不存在作品的缓存，将重新检查`);
   }
 
   /**
@@ -182,23 +188,83 @@ export class PublishAutoService {
   }
 
   /**
-   * 辅助函数：按属性分组
+   * 在本地数据库中查找匹配的作品
    */
-  private groupBy<T>(array: T[], key: keyof T): Record<string, T[]> {
-    return array.reduce((result, item) => {
-      const groupKey = String(item[key]);
-      if (!result[groupKey]) {
-        result[groupKey] = [];
+  private async findLocalWorkByTitle(fanqieTitle: string): Promise<any> {
+    try {
+      const db = getDatabaseManager();
+      
+      // 先尝试精确匹配
+      let works = await db.query(`
+        SELECT id, title FROM works WHERE title = ?
+      `, [fanqieTitle]);
+      
+      if (works && works.length > 0) {
+        return works[0];
       }
-      result[groupKey].push(item);
-      return result;
-    }, {} as Record<string, T[]>);
+      
+      // 尝试包含匹配
+      works = await db.query(`
+        SELECT id, title FROM works WHERE title LIKE ? OR ? LIKE CONCAT('%', title, '%')
+      `, [`%${fanqieTitle}%`, fanqieTitle]);
+      
+      if (works && works.length > 0) {
+        return works[0];
+      }
+      
+      // 清理标点符号后匹配
+      const cleanFanqieTitle = fanqieTitle.replace(/[？?！!。，,、]/g, '');
+      works = await db.query(`
+        SELECT id, title FROM works 
+        WHERE REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(title, '？', ''), '?', ''), '！', ''), '!', ''), '。', ''), '，', '') = ?
+      `, [cleanFanqieTitle]);
+      
+      if (works && works.length > 0) {
+        return works[0];
+      }
+      
+      return null;
+    } catch (error: any) {
+      logger.error('[PublishAutoService] 查找本地作品失败:', error.message);
+      return null;
+    }
+  }
+
+  /**
+   * 检查本地数据库中是否有特定章节且状态为 audited
+   */
+  private async checkLocalChapter(workId: number, chapterNumber: number): Promise<any> {
+    try {
+      const db = getDatabaseManager();
+      
+      const chapters = await db.query(`
+        SELECT 
+          c.id,
+          c.work_id,
+          w.title as work_title,
+          c.chapter_number,
+          c.title,
+          c.status
+        FROM chapters c
+        JOIN works w ON c.work_id = w.id
+        WHERE c.work_id = ? AND c.chapter_number = ? AND c.status = 'audited'
+      `, [workId, chapterNumber]);
+      
+      if (chapters && chapters.length > 0) {
+        return chapters[0];
+      }
+      
+      return null;
+    } catch (error: any) {
+      logger.error('[PublishAutoService] 检查本地章节失败:', error.message);
+      return null;
+    }
   }
 
   /**
    * 处理单个章节
    */
-  private async processSingleChapter(chapter: any): Promise<void> {
+  private async processSingleChapter(chapter: any, fanqieAccount: FanqieAccount): Promise<void> {
     // 检查章节锁
     if (this.chapterLocks.has(chapter.id)) {
       logger.info(`[PublishAutoService] 章节 ${chapter.id} 已在处理中，跳过`);
@@ -250,17 +316,7 @@ export class PublishAutoService {
           '自动'
         );
       } else {
-        const errorMsg = results.length > 0 ? results[0].error || '发布失败' : '发布失败';
-        
-        // 检查是否是作品不存在的错误
-        if (errorMsg.includes('未在番茄找到对应作品') || errorMsg.includes('WORK_NOT_FOUND')) {
-          const cacheKey = `${chapter.work_id}-${chapter.work_title || '未知作品'}`;
-          this.missingWorksCache.add(cacheKey);
-          logger.warn(`[PublishAutoService] 作品 "${chapter.work_title || '未知作品'}" 在番茄中不存在，已加入跳过缓存`);
-          this.activityLog.log('warn', `作品 "${chapter.work_title || '未知作品'}" 在番茄中不存在，后续将自动跳过`);
-        }
-        
-        throw new Error(errorMsg);
+        throw new Error(results.length > 0 ? results[0].error || '发布失败' : '发布失败');
       }
       
     } catch (error: any) {
@@ -282,25 +338,12 @@ export class PublishAutoService {
   }
 
   /**
-   * 检查作品在番茄中是否存在
-   * 这个方法会先检查缓存，如果缓存中不存在，才会真正去番茄检查
-   */
-  private async isWorkExistInFanqie(workTitle: string, workId: number): Promise<boolean> {
-    // 先检查缓存
-    const cacheKey = `${workId}-${workTitle}`;
-    if (this.missingWorksCache.has(cacheKey)) {
-      logger.info(`[PublishAutoService] 作品 "${workTitle}" (ID: ${workId}) 在缓存中标记为不存在，跳过`);
-      return false;
-    }
-    
-    // 这里我们不实际去番茄检查（因为太耗时）
-    // 而是依赖 processSingleChapter() 中的失败来标记
-    // 这样可以避免频繁启动浏览器
-    return true;
-  }
-
-  /**
-   * 处理章节
+   * 处理章节（正确逻辑）
+   * 
+   * 1. 先去番茄获取所有作品及最新章节
+   * 2. 对每个作品，计算下一章（最新章节 + 1）
+   * 3. 去数据库查该章节是否存在且状态为 'audited'
+   * 4. 满足条件才执行发布
    */
   private async processChapters(): Promise<void> {
     // 检查是否正在运行
@@ -320,10 +363,82 @@ export class PublishAutoService {
     try {
       this.lastRunTime = new Date();
       logger.info('[PublishAutoService] 开始处理发布...');
-      this.activityLog.log('progress', '自动发布开始检查待发布章节...');
+      this.activityLog.log('progress', '自动发布开始检查...');
       
-      // 获取需要发布的章节
-      const chaptersToPublish = await this.getChaptersToPublish();
+      // 获取配置
+      const config = getConfig();
+      const accounts = config.scheduler.fanqieAccounts;
+      
+      if (!accounts || accounts.length === 0) {
+        logger.warn('[PublishAutoService] 未配置番茄账号');
+        this.activityLog.log('warn', '未配置番茄账号');
+        this.currentTask = null;
+        return;
+      }
+      
+      // 使用第一个账号
+      const account = accounts[0];
+      logger.info(`[PublishAutoService] 使用账号: ${account.name}`);
+      
+      // 步骤1: 从番茄获取所有作品及最新章节
+      this.currentTask = '正在从番茄获取作品列表...';
+      const fanqiePublisher = new FanqiePublisher();
+      const fanqieWorks = await fanqiePublisher.getAllFanqieWorksWithLatestChapters(account, this.config.headless);
+      
+      if (!fanqieWorks || fanqieWorks.length === 0) {
+        logger.info('[PublishAutoService] 番茄中没有作品');
+        this.activityLog.log('progress', '番茄中没有作品');
+        this.currentTask = null;
+        return;
+      }
+      
+      logger.info(`[PublishAutoService] 从番茄获取到 ${fanqieWorks.length} 个作品`);
+      this.activityLog.log('progress', `从番茄获取到 ${fanqieWorks.length} 个作品`);
+      
+      // 步骤2: 对每个番茄作品，查找本地匹配并检查下一章
+      const chaptersToPublish: any[] = [];
+      
+      for (const fanqieWork of fanqieWorks) {
+        // 检查是否在缓存中标记为不存在
+        const cacheKey = `fanqie-${fanqieWork.title}`;
+        if (this.missingWorksCache.has(cacheKey)) {
+          logger.info(`[PublishAutoService] 作品「${fanqieWork.title}」在缓存中，跳过`);
+          continue;
+        }
+        
+        this.currentTask = `正在检查作品「${fanqieWork.title}」...`;
+        
+        // 查找本地匹配的作品
+        const localWork = await this.findLocalWorkByTitle(fanqieWork.title);
+        
+        if (!localWork) {
+          logger.info(`[PublishAutoService] 本地没有找到匹配作品「${fanqieWork.title}」`);
+          this.missingWorksCache.add(cacheKey);
+          continue;
+        }
+        
+        logger.info(`[PublishAutoService] 本地找到匹配作品: ${localWork.title} (ID: ${localWork.id})`);
+        
+        // 计算下一章
+        const nextChapterNumber = fanqieWork.latestChapter + 1;
+        logger.info(`[PublishAutoService] 番茄最新章节: ${fanqieWork.latestChapter}，下一章: ${nextChapterNumber}`);
+        
+        // 检查本地是否有这一章且状态为 audited
+        const chapter = await this.checkLocalChapter(localWork.id, nextChapterNumber);
+        
+        if (chapter) {
+          logger.info(`[PublishAutoService] 找到待发布章节: 第${nextChapterNumber}章「${chapter.title}」`);
+          chaptersToPublish.push(chapter);
+        } else {
+          logger.info(`[PublishAutoService] 本地没有第${nextChapterNumber}章，或状态不是 audited`);
+        }
+        
+        // 限制每次处理的章节数
+        if (chaptersToPublish.length >= this.config.maxChaptersPerRun) {
+          logger.info(`[PublishAutoService] 已达到最大处理数 ${this.config.maxChaptersPerRun}`);
+          break;
+        }
+      }
       
       if (chaptersToPublish.length === 0) {
         logger.info('[PublishAutoService] 没有需要发布的章节');
@@ -331,33 +446,13 @@ export class PublishAutoService {
         this.currentTask = null;
         return;
       }
-
+      
       logger.info(`[PublishAutoService] 找到 ${chaptersToPublish.length} 个需要发布的章节`);
       this.activityLog.log('progress', `找到 ${chaptersToPublish.length} 个需要发布的章节`);
       
-      // 按作品分组
-      const chaptersByWork = this.groupBy(chaptersToPublish, 'work_id');
-      const workIds = Object.keys(chaptersByWork);
-      
-      logger.info(`[PublishAutoService] 涉及 ${workIds.length} 个作品，将逐个处理`);
-      
-      // 逐个作品处理，确保顺序
-      for (const workId of workIds) {
-        const chapters = chaptersByWork[workId];
-        const workTitle = chapters[0].work_title || '未知作品';
-        
-        // 检查作品是否在缓存中标记为不存在
-        const cacheKey = `${workId}-${workTitle}`;
-        if (this.missingWorksCache.has(cacheKey)) {
-          logger.info(`[PublishAutoService] 跳过作品 "${workTitle}" (ID: ${workId})，番茄中不存在`);
-          this.activityLog.log('progress', `跳过作品 "${workTitle}"，番茄中不存在`);
-          continue;
-        }
-        
-        // 单个作品内的章节串行处理
-        for (const chapter of chapters) {
-          await this.processSingleChapter(chapter);
-        }
+      // 步骤3: 发布章节
+      for (const chapter of chaptersToPublish) {
+        await this.processSingleChapter(chapter, account);
       }
       
       this.currentTask = null;
@@ -370,38 +465,6 @@ export class PublishAutoService {
     } finally {
       // 释放锁
       this.isProcessing = false;
-    }
-  }
-
-  /**
-   * 获取需要发布的章节
-   */
-  private async getChaptersToPublish(): Promise<any[]> {
-    try {
-      const db = getDatabaseManager();
-      
-      // 查询状态为 audited 的章节
-      // 优先按作品序号（work_id）升序，再按章节序号（chapter_number）升序
-      const limit = Math.max(1, Math.min(10, this.config.maxChaptersPerRun));
-      const chapters = await db.query(`
-        SELECT 
-          c.id,
-          c.work_id,
-          w.title as work_title,
-          c.chapter_number,
-          c.title
-        FROM chapters c
-        JOIN works w ON c.work_id = w.id
-        WHERE c.status = 'audited'
-        ORDER BY c.work_id ASC, c.chapter_number ASC
-        LIMIT ${limit}
-      `);
-      
-      return chapters;
-    } catch (error: any) {
-      logger.error('[PublishAutoService] 获取需要发布的章节失败:', error.message);
-      this.activityLog.log('error', `获取章节失败: ${error.message}`);
-      return [];
     }
   }
 }

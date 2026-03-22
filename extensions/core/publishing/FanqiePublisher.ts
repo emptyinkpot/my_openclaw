@@ -367,6 +367,123 @@ export class FanqiePublisher {
   }
 
   /**
+   * 公开方法：获取番茄所有作品列表（独立调用）
+   */
+  async getAllFanqieWorks(account: FanqieAccount, headless: boolean = true): Promise<Array<{ id: string; title: string }> | null> {
+    try {
+      // 初始化浏览器
+      logger.info(`[FanqiePublisher] 获取番茄所有作品`);
+      await this.initBrowser(account, headless);
+
+      // 访问作品管理页面
+      if (!this.page) {
+        throw new Error('浏览器页面未初始化');
+      }
+
+      await this.page.goto('https://fanqienovel.com/main/writer/book-manage', {
+        waitUntil: 'domcontentloaded',
+      });
+
+      // 等待作品列表加载
+      await this.page.waitForSelector('[id^="long-article-table-item-"]', {
+        state: 'visible',
+        timeout: 10000,
+      });
+
+      // 关闭弹窗
+      await this.closePopups();
+
+      // 获取所有作品
+      const works = await this.page.evaluate(() => {
+        const items = document.querySelectorAll('[id^="long-article-table-item-"]');
+        return Array.from(items).map(item => {
+          const id = item.id.replace('long-article-table-item-', '');
+          const titleEl = item.querySelector('.hoverup');
+          const title = titleEl ? (titleEl.textContent?.split('\\n')[0].trim() || '') : '';
+          return { id, title };
+        });
+      });
+
+      logger.info(`[FanqiePublisher] 获取到 ${works.length} 个作品`);
+      
+      return works;
+    } catch (error: any) {
+      logger.error('获取番茄作品列表失败:', error);
+      return null;
+    } finally {
+      await this.closeBrowser();
+    }
+  }
+
+  /**
+   * 公开方法：获取番茄所有作品及最新章节（独立调用）
+   */
+  async getAllFanqieWorksWithLatestChapters(account: FanqieAccount, headless: boolean = true): Promise<Array<{ id: string; title: string; latestChapter: number }> | null> {
+    try {
+      // 初始化浏览器
+      logger.info(`[FanqiePublisher] 获取番茄所有作品及最新章节`);
+      await this.initBrowser(account, headless);
+
+      // 访问作品管理页面
+      if (!this.page) {
+        throw new Error('浏览器页面未初始化');
+      }
+
+      await this.page.goto('https://fanqienovel.com/main/writer/book-manage', {
+        waitUntil: 'domcontentloaded',
+      });
+
+      // 等待作品列表加载
+      await this.page.waitForSelector('[id^="long-article-table-item-"]', {
+        state: 'visible',
+        timeout: 10000,
+      });
+
+      // 关闭弹窗
+      await this.closePopups();
+
+      // 获取所有作品
+      const fanqieWorks = await this.page.evaluate(() => {
+        const items = document.querySelectorAll('[id^="long-article-table-item-"]');
+        return Array.from(items).map(item => {
+          const id = item.id.replace('long-article-table-item-', '');
+          const titleEl = item.querySelector('.hoverup');
+          const title = titleEl ? (titleEl.textContent?.split('\\n')[0].trim() || '') : '';
+          return { id, title };
+        });
+      });
+
+      logger.info(`[FanqiePublisher] 获取到 ${fanqieWorks.length} 个作品`);
+
+      // 对每个作品，获取最新章节号
+      const worksWithChapters: Array<{ id: string; title: string; latestChapter: number }> = [];
+
+      for (const fanqieWork of fanqieWorks) {
+        try {
+          logger.info(`[FanqiePublisher] 获取作品「${fanqieWork.title}」的最新章节...`);
+          const latestChapter = await this.getFanqieLatestChapter(fanqieWork.id);
+          worksWithChapters.push({
+            id: fanqieWork.id,
+            title: fanqieWork.title,
+            latestChapter
+          });
+          logger.info(`[FanqiePublisher] 作品「${fanqieWork.title}」最新章节: ${latestChapter}`);
+        } catch (error: any) {
+          logger.warn(`[FanqiePublisher] 获取作品「${fanqieWork.title}」最新章节失败: ${error.message}`);
+          // 跳过这个作品，继续下一个
+        }
+      }
+
+      return worksWithChapters;
+    } catch (error: any) {
+      logger.error('获取番茄作品及章节失败:', error);
+      return null;
+    } finally {
+      await this.closeBrowser();
+    }
+  }
+
+  /**
    * 执行发布
    */
   private async doPublishToFanqie(
