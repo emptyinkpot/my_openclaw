@@ -4,85 +4,76 @@
       "enabled": true,
       "order": 0
     },
-    "properNounCheck": {
-      "enabled": false,
-      "order": 3
-    },
-    "narrativePerspective": {
-      "enabled": false,
-      "order": 4
-    },
-    "classicalApply": {
-      "enabled": false,
-      "order": 5
-    },
-    "citationApply": {
-      "enabled": false,
-      "order": 6
-    },
-    "particleApply": {
-      "enabled": true,
-      "order": 7
-    },
     "punctuationApply": {
-      "enabled": true,
-      "order": 8
-    },
-    "quoteProtect": {
       "enabled": true,
       "order": 1
     },
-    "titleExtract": {
-      "enabled": false,
+    "quoteProtect": {
+      "enabled": true,
       "order": 2
     },
-    "polish": {
+    "titleExtract": {
+      "enabled": false,
+      "order": 3
+    },
+    "properNounCheck": {
+      "enabled": false,
+      "order": 4
+    },
+    "narrativePerspective": {
+      "enabled": false,
+      "order": 5
+    },
+    "classicalApply": {
+      "enabled": false,
+      "order": 6
+    },
+    "citationApply": {
+      "enabled": false,
+      "order": 7
+    },
+    "particleApply": {
       "enabled": true,
-      "order": 9
+      "order": 8
+    },
+    "polish": {
+      "enabled": true
     },
     "bannedWords": {
-      "enabled": true,
-      "order": 10
+      "enabled": true
     },
     "preferredWords": {
-      "enabled": true,
-      "order": 11
+      "enabled": true
     },
     "sentencePatterns": {
-      "enabled": true,
-      "order": 12
+      "enabled": true
     },
     "memeFuse": {
-      "enabled": false,
-      "order": 13
+      "enabled": false
     },
     "styleForge": {
-      "enabled": true,
-      "order": 14
+      "enabled": true
     },
     "markdownClean": {
-      "enabled": true,
-      "order": 15
+      "enabled": true
     },
     "semanticCheck": {
-      "enabled": true,
-      "order": 16
+      "enabled": true
     },
     "wordUsageCheck": {
-      "enabled": true,
-      "order": 17
+      "enabled": true
     },
     "smartFix": {
-      "enabled": true,
-      "order": 18
+      "enabled": true
     },
     "finalReview": {
-      "enabled": true,
-      "order": 19
+      "enabled": true
     },
     "breathSegment": {
-      "enabled": false,
-      "order": 20
+      "enabled": false
+    },
+    "quoteRestore": {
+      "enabled": true
     }
   },
   "global": {

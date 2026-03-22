@@ -140,13 +140,10 @@ export class PolishPipeline {
     StepRegistry.initialize();
     
     // ========================================
-    // 2. 引用保护
+    // 2. 初始化步骤注册表
     // ========================================
-    const { protectedText, quoteMap } = this.protectQuotes(text);
-    this.reportProgress(
-      onProgress, 3, 
-      `引用保护完成（${quoteMap.size} 处）`
-    );
+    // 注意：不再在开头调用 protectQuotes，而是把 quoteProtect 作为一个普通步骤执行
+    StepRegistry.initialize();
     
     // ========================================
     // 3. 获取启用的步骤
@@ -172,12 +169,14 @@ export class PolishPipeline {
     // 4. 执行各步骤
     // ========================================
     const context: StepContext = {
-      text: protectedText,
+      text: text, // 直接使用原始文本，不再使用 protectedText
       settings,
       completedSteps: [],
       replacements: [],
       reports: [],
       resources,
+      // 用于在步骤之间传递数据（比如 quoteMap）
+      data: {}
     };
     
     let currentProgress = 5;
@@ -233,14 +232,11 @@ export class PolishPipeline {
     }
     
     // ========================================
-    // 5. 恢复引用
+    // 5. 生成最终报告
     // ========================================
-    const finalText = this.restoreQuotes(context.text, quoteMap);
-    this.reportProgress(onProgress, 92, '引用恢复完成');
+    // 注意：不再调用 restoreQuotes，而是通过 quoteRestore 步骤来恢复引用
+    const finalText = context.text;
     
-    // ========================================
-    // 6. 生成最终报告
-    // ========================================
     const output: PolishOutput = {
       text: finalText,
       title: this.extractTitle(context.reports),
@@ -278,26 +274,43 @@ export class PolishPipeline {
   // ==========================================
   
   /**
-   * 保护引用内容（修改版：不保护引号和书名号，因为 punctuationApply 步骤需要处理它们）
+   * 保护引用内容
    */
   private protectQuotes(text: string): {
     protectedText: string;
     quoteMap: Map<string, string>;
   } {
-    // 注意：不再保护引号和书名号，因为 punctuationApply 步骤需要处理它们
-    // 只保护其他可能需要保护的内容（如果有的话）
+    // 使用内置保护逻辑
     const quoteMap = new Map<string, string>();
-    const protectedText = text;
+    let protectedText = text;
+    let counter = 0;
+    
+    // 保护双引号内容
+    protectedText = protectedText.replace(/"([^"]+)"/g, (match) => {
+      const key = `__QUOTE_${++counter}__`;
+      quoteMap.set(key, match);
+      return key;
+    });
+    
+    // 保护书名号内容
+    protectedText = protectedText.replace(/《([^》]+)》/g, (match) => {
+      const key = `__BOOK_${++counter}__`;
+      quoteMap.set(key, match);
+      return key;
+    });
     
     return { protectedText, quoteMap };
   }
   
   /**
-   * 恢复引用内容（修改版：因为不再保护引号和书名号，所以直接返回原文）
+   * 恢复引用内容
    */
   private restoreQuotes(text: string, map: Map<string, string>): string {
-    // 注意：因为不再保护引号和书名号，所以直接返回原文
-    return text;
+    let result = text;
+    map.forEach((original, key) => {
+      result = result.replace(new RegExp(key, 'g'), original);
+    });
+    return result;
   }
   
   /**

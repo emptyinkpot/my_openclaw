@@ -20,6 +20,7 @@ import { CitationApplyStep } from './config/citation';
 import { ParticleApplyStep } from './config/particle';
 import { PunctuationApplyStep } from './config/punctuation';
 import { QuoteProtectStep } from './config/quote-protect';
+import { QuoteRestoreStep } from './config/quote-restore';
 import { TitleExtractStep } from './config/title-extract';
 import { PolishStep } from './process/polish';
 import { SentencePatternsStep } from './process/sentence-patterns';
@@ -73,6 +74,7 @@ export class StepRegistry {
     this.register(new ParticleApplyStep());
     this.register(new PunctuationApplyStep());
     this.register(new QuoteProtectStep());
+    this.register(new QuoteRestoreStep());
     this.register(new TitleExtractStep());
     
     // process 阶段

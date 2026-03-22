@@ -147,6 +147,8 @@ export interface StepContext {
   reportProgress?: (message: string) => void;
   /** 流式输出回调 */
   streamChunk?: (chunk: string) => void;
+  /** 用于在步骤之间传递数据的字段 */
+  data: Record<string, any>;
 }
 
 /**
