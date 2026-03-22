@@ -219,7 +219,7 @@ export class ContentPipeline {
       SELECT c.id, c.work_id, c.chapter_number, c.title, c.content, w.title as work_title
       FROM chapters c
       LEFT JOIN works w ON c.work_id = w.id
-      WHERE c.status = 'pending'
+      WHERE c.status = 'polished'
     `;
     const params: any[] = [];
 

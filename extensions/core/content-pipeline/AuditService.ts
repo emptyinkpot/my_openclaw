@@ -60,40 +60,13 @@ export class AuditService {
   }
 
   async initializeTables(): Promise<void> {
-    try {
-      const columns = await this.db.query("PRAGMA table_info(chapters)");
-      const columnNames = columns.map((c: any) => c.name);
-      
-      if (!columnNames.includes('audit_status')) {
-        await this.db.execute(`ALTER TABLE chapters ADD COLUMN audit_status TEXT DEFAULT 'pending'`);
-        logger.info('已添加 audit_status 列');
-      }
-      
-      if (!columnNames.includes('audit_issues')) {
-        await this.db.execute(`ALTER TABLE chapters ADD COLUMN audit_issues TEXT DEFAULT '[]'`);
-      }
-      
-      if (!columnNames.includes('audit_score')) {
-        await this.db.execute(`ALTER TABLE chapters ADD COLUMN audit_score INTEGER DEFAULT 0`);
-      }
-      
-      if (!columnNames.includes('suggested_action')) {
-        await this.db.execute(`ALTER TABLE chapters ADD COLUMN suggested_action TEXT DEFAULT 'none'`);
-      }
-      
-      if (!columnNames.includes('audited_at')) {
-        await this.db.execute(`ALTER TABLE chapters ADD COLUMN audited_at TEXT`);
-      }
-      
-      logger.info('审核表结构初始化完成');
-    } catch (error: any) {
-      logger.warn('审核表结构初始化警告:', error.message);
-    }
+    // 不再添加旧字段，统一使用 status 字段
+    logger.info('审核服务初始化完成（使用统一 status 字段）');
   }
 
   async getChapterAuditStatus(workId: number, chapterNumber: number): Promise<ChapterAuditStatus> {
     const row = await this.db.queryOne(`
-      SELECT status, audit_status, audit_issues, suggested_action
+      SELECT status
       FROM chapters WHERE work_id = ? AND chapter_number = ?
     `, [workId, chapterNumber]);
 
@@ -104,14 +77,14 @@ export class AuditService {
       };
     }
 
-    const auditStatus = row.audit_status as AuditStatus || 'pending';
-    const auditIssues = this.parseAuditIssues(row.audit_issues);
-    const suggestedAction = row.suggested_action as SuggestedAction || 'none';
+    // 基于 status 字段判断审核状态
+    const auditStatus: AuditStatus = row.status === 'audited' || row.status === 'published' ? 'passed' : 'pending';
+    const canPublish = row.status === 'audited' || row.status === 'published';
 
     return {
       workId, chapterNumber, exists: true, status: row.status,
-      auditStatus, auditIssues, suggestedAction,
-      canPublish: row.status === 'polished' && auditStatus === 'passed',
+      auditStatus, auditIssues: [], suggestedAction: 'none',
+      canPublish,
     };
   }
 
@@ -252,7 +225,15 @@ export class AuditService {
       status, issues, score: Math.max(0, score), suggestedAction, canAutoFix,
     };
 
-    await this.saveAuditResult(workId, chapterNumber, result);
+    // 如果审核通过，直接更新 status 到 audited
+    if (status === 'passed') {
+      await this.db.execute(`
+        UPDATE chapters SET status = ?, updated_at = NOW()
+        WHERE work_id = ? AND chapter_number = ?
+      `, ['audited', workId, chapterNumber]);
+      logger.info(`审核通过: workId=${workId}, chapter=${chapterNumber}, 状态已更新为 audited`);
+    }
+
     logger.info(`审核完成: status=${status}, score=${score}, issues=${issues.length}`);
 
     return result;
@@ -269,13 +250,14 @@ export class AuditService {
       params.push(workId);
     }
 
+    // 基于 status 字段统计
     const stats = await this.db.queryOne(`
       SELECT 
         COUNT(*) as total,
-        SUM(CASE WHEN audit_status IS NULL OR audit_status = 'pending' THEN 1 ELSE 0 END) as pending,
-        SUM(CASE WHEN audit_status = 'passed' THEN 1 ELSE 0 END) as passed,
-        SUM(CASE WHEN audit_status = 'failed' THEN 1 ELSE 0 END) as failed,
-        SUM(CASE WHEN audit_status = 'failed' AND suggested_action = 'autofix' THEN 1 ELSE 0 END) as auto_fixable
+        SUM(CASE WHEN status = 'polished' THEN 1 ELSE 0 END) as pending,
+        SUM(CASE WHEN status IN ('audited', 'published') THEN 1 ELSE 0 END) as passed,
+        0 as failed,
+        0 as auto_fixable
       FROM chapters ${whereClause}
     `, params);
 
@@ -293,9 +275,9 @@ export class AuditService {
    */
   async getPendingAuditChapters(workId?: number): Promise<ChapterAuditStatus[]> {
     let sql = `
-      SELECT work_id, chapter_number, status, audit_status, audit_issues, suggested_action
+      SELECT work_id, chapter_number, status
       FROM chapters 
-      WHERE status = 'polished' AND (audit_status IS NULL OR audit_status = 'pending')
+      WHERE status = 'polished'
     `;
     const params: any[] = [];
 
@@ -310,37 +292,17 @@ export class AuditService {
     
     return rows.map((row: any) => ({
       workId: row.work_id, chapterNumber: row.chapter_number, exists: true,
-      status: row.status, auditStatus: row.audit_status || 'pending',
-      auditIssues: this.parseAuditIssues(row.audit_issues),
-      suggestedAction: row.suggested_action || 'none', canPublish: false,
+      status: row.status, auditStatus: 'pending',
+      auditIssues: [],
+      suggestedAction: 'none', canPublish: false,
     }));
   }
 
   /**
-   * 获取审核失败的章节
+   * 获取审核失败的章节（暂时返回空，因为不再使用旧字段）
    */
   async getFailedAuditChapters(workId?: number): Promise<ChapterAuditStatus[]> {
-    let sql = `
-      SELECT work_id, chapter_number, status, audit_status, audit_issues, suggested_action
-      FROM chapters WHERE audit_status = 'failed'
-    `;
-    const params: any[] = [];
-
-    if (workId) {
-      sql += ' AND work_id = ?';
-      params.push(workId);
-    }
-
-    sql += " AND suggested_action = 'autofix' ORDER BY work_id, chapter_number";
-
-    const rows = await this.db.query(sql, params);
-    
-    return rows.map((row: any) => ({
-      workId: row.work_id, chapterNumber: row.chapter_number, exists: true,
-      status: row.status, auditStatus: row.audit_status,
-      auditIssues: this.parseAuditIssues(row.audit_issues),
-      suggestedAction: row.suggested_action, canPublish: false,
-    }));
+    return [];
   }
 
   /**
@@ -364,7 +326,7 @@ export class AuditService {
     }
 
     if (options?.onlyPending) {
-      sql += " AND (audit_status IS NULL OR audit_status = 'pending')";
+      sql += " AND status = 'polished'";
     }
 
     const chapters = await this.db.query(sql, params);
@@ -383,33 +345,16 @@ export class AuditService {
   }
 
   /**
-   * 重置审核状态
+   * 重置审核状态（将状态改回 polished）
    */
   async resetAuditStatus(workId: number, chapterNumber: number): Promise<void> {
     await this.db.execute(`
       UPDATE chapters 
-      SET audit_status = 'pending', audit_issues = '[]', audit_score = 0,
-        suggested_action = 'none', audited_at = NULL
+      SET status = 'polished', updated_at = NOW()
       WHERE work_id = ? AND chapter_number = ?
     `, [workId, chapterNumber]);
     
-    logger.info(`已重置审核状态: workId=${workId}, chapter=${chapterNumber}`);
-  }
-
-  private async saveAuditResult(workId: number, chapterNumber: number, result: AuditResult): Promise<void> {
-    await this.db.execute(`
-      UPDATE chapters 
-      SET audit_status = ?, audit_issues = ?, audit_score = ?, suggested_action = ?, audited_at = ?
-      WHERE work_id = ? AND chapter_number = ?
-    `, [
-      result.status, JSON.stringify(result.issues), result.score, result.suggestedAction,
-      new Date().toISOString(), workId, chapterNumber,
-    ]);
-  }
-
-  private parseAuditIssues(issuesJson: string | null): AuditIssue[] {
-    if (!issuesJson) return [];
-    try { return JSON.parse(issuesJson); } catch { return []; }
+    logger.info(`已重置审核状态: workId=${workId}, chapter=${chapterNumber}, 状态已改回 polished`);
   }
 
   private countWords(text: string): number {
