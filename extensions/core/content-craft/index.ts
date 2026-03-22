@@ -5,4 +5,4 @@
  */
 
 // 引用数据扫描存储模块的数据库
-export { getDatabaseManager, getPool, getConnection, withTransaction } from '../data-scan-storage';
+export { getDatabaseManager, getPool, getConnection, withTransaction } from '../storage';

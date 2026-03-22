@@ -427,11 +427,11 @@
     ],
     "load": {
       "paths": [
-        "/workspace/projects/extensions/apps/novel-manager",
-        "/workspace/projects/extensions/apps/experience-manager",
-        "/workspace/projects/extensions/apps/memory-lancedb-pro",
-        "/workspace/projects/extensions/apps/feishu-openclaw-plugin",
-        "/workspace/projects/extensions/apps/automation-hub"
+        "/workspace/projects/extensions/plugins/novel-manager",
+        "/workspace/projects/extensions/plugins/experience-manager",
+        "/workspace/projects/extensions/plugins/memory-lancedb-pro",
+        "/workspace/projects/extensions/plugins/feishu-openclaw-plugin",
+        "/workspace/projects/extensions/plugins/automation-hub"
       ]
     },
     "entries": {
@@ -455,7 +455,7 @@
       "feishu-openclaw-plugin": {
         "source": "npm",
         "spec": "@larksuiteoapi/feishu-openclaw-plugin",
-        "installPath": "/workspace/projects/extensions/apps/feishu-openclaw-plugin",
+        "installPath": "/workspace/projects/extensions/plugins/feishu-openclaw-plugin",
         "version": "2026.3.7-beta.0",
         "resolvedName": "@larksuiteoapi/feishu-openclaw-plugin",
         "resolvedVersion": "2026.3.7-beta.0",

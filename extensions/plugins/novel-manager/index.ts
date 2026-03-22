@@ -5,18 +5,18 @@ import { IncomingMessage, ServerResponse } from 'http';
 import * as fs from 'fs';
 import * as path from 'path';
 import { NovelService } from './services/novel-service';
-import { getDatabaseManager } from './core/data-scan-storage/database';
+import { getDatabaseManager } from '../../core/storage/database';
 
 // 导入禁用词处理步骤
-import { BannedWordsStep } from './core/content-craft/src/steps/process/banned-words';
+import { BannedWordsStep } from '../../core/content-craft/src/steps/process/banned-words';
 // 导入配置管理器
-import { configManager } from './core/content-craft/src/config-manager';
+import { configManager } from '../../core/content-craft/src/config-manager';
 // 导入文本生成功能
-import { GenerationPipeline } from './core/content-craft/src/generation-pipeline';
+import { GenerationPipeline } from '../../core/content-craft/src/generation-pipeline';
 // 导入文本润色功能
-import { PolishPipeline } from './core/content-craft/src/pipeline';
+import { PolishPipeline } from '../../core/content-craft/src/pipeline';
 // 导入番茄发布功能
-import { FanqieSimplePipeline } from './core/fanqie-simple-pipeline/FanqieSimplePipeline';
+import { FanqieSimplePipeline } from '../../core/publishing/FanqieSimplePipeline';
 
 // 尝试导入 registerPluginHttpRoute
 let registerPluginHttpRoute: any;
@@ -43,7 +43,7 @@ async function getProjectStructure() {
   const projectRoot = path.join(__dirname, '..', '..', '..');
   
   // 获取插件列表
-  const pluginsDir = path.join(projectRoot, 'extensions', 'apps');
+  const pluginsDir = path.join(projectRoot, 'extensions', 'plugins');
   const plugins: string[] = [];
   try {
     const entries = fs.readdirSync(pluginsDir, { withFileTypes: true });
@@ -76,7 +76,7 @@ async function getProjectStructure() {
   // 获取内容工艺模块的步骤
   const contentCraftSteps: string[] = [];
   try {
-    const stepsDir = path.join(__dirname, 'core', 'content-craft', 'src', 'steps');
+    const stepsDir = path.join(__dirname, '..', '..', 'core', 'content-craft', 'src', 'steps');
     if (fs.existsSync(stepsDir)) {
       const entries = fs.readdirSync(stepsDir, { withFileTypes: true });
       for (const entry of entries) {
@@ -2318,8 +2318,8 @@ export const register = plugin.register;
 export const activate = plugin.activate;
 
 // 导出 content-craft 模块的主要类和函数
-export { configManager, PolishPipeline } from './core/content-craft/src';
-export { GenerationPipeline } from './core/content-craft/src/generation-pipeline';
+export { configManager, PolishPipeline } from '../../core/content-craft/src';
+export { GenerationPipeline } from '../../core/content-craft/src/generation-pipeline';
 export type { 
   GenerationInput, 
   GenerationOutput, 
@@ -2329,9 +2329,9 @@ export type {
   StoryBackground,
   ChapterOutline,
   RelatedChapter
-} from './core/content-craft/src/generation-types';
+} from '../../core/content-craft/src/generation-types';
 export type { 
   PolishInput, 
   PolishOutput, 
   PolishSettings 
-} from './core/content-craft/src/types';
+} from '../../core/content-craft/src/types';

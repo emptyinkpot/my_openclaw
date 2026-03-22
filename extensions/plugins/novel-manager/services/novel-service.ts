@@ -2,10 +2,10 @@
  * 小说数据服务
  */
 
-import { getDatabaseManager, withTransaction } from '../core/data-scan-storage/database';
-import { ContentPipeline, PipelineProgressEvent } from '../core/content-pipeline/ContentPipeline';
-import { FanqieSimplePipeline } from '../core/fanqie-simple-pipeline/FanqieSimplePipeline';
-import { broadcastProgress } from '../core/pipeline/ProgressManager';
+import { getDatabaseManager, withTransaction } from '../../core/storage/database';
+import { ContentPipeline, PipelineProgressEvent } from '../../core/content-pipeline/ContentPipeline';
+import { FanqieSimplePipeline } from '../../core/publishing/FanqieSimplePipeline';
+import { broadcastProgress } from '../../core/pipeline/ProgressManager';
 
 export interface NovelFilter {
   status?: string;
@@ -634,7 +634,7 @@ export class NovelService {
     
     try {
       // 动态导入 FanqieScanner
-      const { getFanqieScanner } = require('../core/data-scan-storage/FanqieScanner');
+      const { getFanqieScanner } = require('../../core/storage/FanqieScanner');
       const scanner = getFanqieScanner();
       
       // 调用真实扫描
@@ -683,7 +683,7 @@ export class NovelService {
       
       // 尝试读取缓存
       try {
-        const { getFanqieScanner } = require('../core/data-scan-storage/FanqieScanner');
+        const { getFanqieScanner } = require('../../core/storage/FanqieScanner');
         const scanner = getFanqieScanner();
         const cachedWorks = scanner.readCache(accountId);
         

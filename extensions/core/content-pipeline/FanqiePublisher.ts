@@ -6,7 +6,7 @@
  */
 
 import { getConfig } from '../config';
-import { logger } from '../../utils/logger';
+import { logger } from '../plugins/novel-manager/utils/logger';
 import { extractChapterNumber } from '../utils/text';
 import { chromium, BrowserContext, Page } from 'playwright';
 import * as fs from 'fs';
@@ -487,24 +487,16 @@ export class FanqiePublisher {
       throw new Error('无法点击"新建章节"按钮');
     }
 
-    // 等待页面变化（条件等待：等待输入框/编辑器/URL变化）
+    // 等待页面变化（条件等待：等待输入框或编辑器出现）
     logger.info('    等待页面响应...');
     try {
-      // 优化：多种条件等待，哪个先满足就继续
-      await Promise.race([
-        // 等待输入框或编辑器出现
-        this.page.waitForSelector('input[type="text"], [contenteditable="true"], textarea', {
-          state: 'visible',
-          timeout: 8000,
-        }),
-        // 等待 URL 变化（如果 URL 变了也认为成功
-        this.page.waitForFunction(() => {
-          return !window.location.href.includes('book-manage');
-        }, { timeout: 8000 }).catch(() => {})
-      ]);
-      logger.debug('    页面响应条件满足（输入框/URL变化）');
+      await this.page.waitForSelector('input[type="text"], [contenteditable="true"]', {
+        state: 'visible',
+        timeout: 5000,
+      });
     } catch (e) {
-      logger.debug('    条件等待超时，继续执行');
+      // 如果超时，使用短延时
+      await this.page.waitForTimeout(1000);
     }
     
     // 保存点击后截图
@@ -754,34 +746,16 @@ export class FanqiePublisher {
       logger.warn(`    点击"下一步"失败或不存在: ${e.message}`);
     }
     
-    // Step 2: 点击"提交"（优化：多按钮策略，重试
-    let submitClicked = false;
-    const submitPatterns = [/^提交$/, /^下一步$/, /^确认$/, /^发布$/, /^发布章节$/];
-    
-    for (let attempt = 0; attempt < 2 && !submitClicked; attempt++) {
-      for (const pattern of submitPatterns) {
-        try {
-          const submitBtn = this.page.locator('button').filter({ hasText: pattern }).first();
-          if (await submitBtn.count() > 0 && await submitBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-            await submitBtn.click({ timeout: 10000 });
-            logger.debug(`    点击匹配按钮成功 (${pattern.toString()}`);
-            submitClicked = true;
-            break;
-          }
-        } catch (e: any) {
-          logger.debug(`    尝试按钮${pattern}失败: ${e.message}`);
-        }
-      }
+    // Step 2: 点击"提交"
+    try {
+      const submitBtn = this.page.locator('button').filter({ hasText: /^提交$/ }).first();
+      await submitBtn.click({ timeout: 5000 });
+      logger.debug('    点击"提交"成功');
+      // 条件等待：等待弹窗或"确认发布"按钮出现
+      await this.page.locator('button').filter({ hasText: /^确认发布$/ }).first().waitFor({ state: 'visible', timeout: 3000 }).catch(() => {});
+    } catch (e: any) {
+      logger.warn(`    点击"提交"失败: ${e.message}`);
     }
-    
-    if (!submitClicked) {
-      logger.debug('    至少有一个提交按钮被点击');
-    } else {
-      logger.warn('    所有提交按钮尝试失败');
-    }
-    
-    // 条件等待：等待弹窗或"确认发布"按钮出现
-    await this.page.locator('button').filter({ hasText: /^确认发布$/ }).first().waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
     
     // Step 3: 处理弹窗（取消/我知道了）- 使用条件等待
     const hasDialog = await this.waitForDialog(5000);
@@ -887,28 +861,7 @@ export class FanqiePublisher {
     });
 
     if (success) {
-      logger.info('  ✓ 发布成功提示已出现');
-      
-      // 增强验证：回到章节管理页，检查最新章节号是否真的更新为 chapter.chapterNumber
-      logger.info('  → 验证发布结果：回到章节管理页检查...');
-      try {
-        await this.page.goto('https://fanqienovel.com/main/writer/book-manage', { waitUntil: 'domcontentloaded' });
-        await this.page.waitForSelector('[id^="long-article-table-item-"]', { state: 'visible', timeout: 10000 });
-        
-        // 重新找到作品并进入章节管理
-        const verifyFanqieWork = await this.findFanqieWork(chapter.workTitle);
-        if (verifyFanqieWork) {
-          const verifyLatest = await this.getFanqieLatestChapter(verifyFanqieWork.id);
-          if (verifyLatest === chapter.chapterNumber) {
-            logger.info(`  ✓ 验证成功：最新章节号确实是 ${verifyLatest}`);
-          } else {
-            logger.warn(`  ⚠ 验证结果：最新章节号是 ${verifyLatest}，期望 ${chapter.chapterNumber}`);
-          }
-        }
-      } catch (verifyErr: any) {
-        logger.warn(`  ⚠ 验证步骤失败，不影响发布结果: ${verifyErr.message}`);
-      }
-      
+      logger.info('  ✓ 发布成功');
       return {
         success: true,
         workId: chapter.workId,
@@ -927,54 +880,43 @@ export class FanqiePublisher {
   }
 
   /**
-   * 条件等待：等待自动保存完成（优化版）
-   * 更快的检测，更短的超时
+   * 条件等待：等待自动保存完成
+   * 通过检测保存状态文本或超时
    */
-  private async waitForAutoSave(timeout: number = 6000): Promise<void> {
+  private async waitForAutoSave(timeout: number = 10000): Promise<void> {
     if (!this.page) return;
     
     const startTime = Date.now();
-    const checkInterval = 200; // 更快的检查间隔：200ms
-    let firstSuccessTime: number | null = null;
-    const requiredSuccessDuration = 500; // 需要连续500ms都认为已保存
+    const checkInterval = 500; // 每500ms检查一次
     
     while (Date.now() - startTime < timeout) {
+      // 检查是否已保存（多种可能的提示文本）
       const isSaved = await this.page.evaluate(() => {
         const pageText = document.body.textContent || '';
-        // 保存成功的明确提示
-        if (pageText.includes('已保存') || pageText.includes('保存成功')) {
-          return 'explicit_success';
+        // 检查保存完成提示
+        if (pageText.includes('已保存') || 
+            pageText.includes('保存成功') || 
+            pageText.includes('自动保存')) {
+          return true;
         }
-        // 没有保存中提示了
+        // 检查保存中提示是否消失
         const savingIndicator = document.querySelector('[class*="saving"], [class*="Saving"]');
         if (!savingIndicator) {
-          return 'no_indicator';
+          // 如果没有保存中指示器，也认为保存完成
+          return true;
         }
-        // 还在保存中
-        return 'saving';
+        return false;
       });
       
-      if (isSaved === 'explicit_success') {
-        logger.debug('    自动保存完成（明确成功提示）');
+      if (isSaved) {
+        logger.debug('    自动保存完成（条件检测）');
         return;
-      }
-      
-      if (isSaved === 'no_indicator') {
-        if (!firstSuccessTime) {
-          firstSuccessTime = Date.now();
-        } else if (Date.now() - firstSuccessTime >= requiredSuccessDuration) {
-          logger.debug('    自动保存完成（无保存指示器）');
-          return;
-        }
-      } else {
-        // 还在保存中，重置时间
-        firstSuccessTime = null;
       }
       
       await this.page.waitForTimeout(checkInterval);
     }
     
-    logger.debug('    等待自动保存超时，继续执行（优化版）');
+    logger.warn('    等待自动保存超时，继续执行');
   }
 
   /**

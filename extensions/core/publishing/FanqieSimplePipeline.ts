@@ -5,8 +5,8 @@
  * 这是简化版本，只做用户需要的事！
  */
 
-import { delay } from '../../utils/helpers';
-import { logger } from '../../utils/logger';
+import { delay } from '../plugins/novel-manager/utils/helpers';
+import { logger } from '../plugins/novel-manager/utils/logger';
 import { getConfig } from '../config';
 import { FanqiePublisher, FanqieAccount, ChapterToPublish, PublishProgress } from './FanqiePublisher';
 import { getChapterRepository } from './ChapterRepository';

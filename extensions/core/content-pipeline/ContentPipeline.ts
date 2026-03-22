@@ -9,10 +9,10 @@ import { StateService } from './StateService';
 import { TaskMonitor } from './TaskMonitor';
 import { AuditService, AuditResult } from './AuditService';
 import { getChapterRepository, ChapterData } from './ChapterRepository';
-import { logger } from '../../utils/logger';
+import { logger } from '../plugins/novel-manager/utils/logger';
 import { getConfig } from '../config';
-import { delay } from '../../utils/helpers';
-import { getDatabaseManager } from '../data-scan-storage/database';
+import { delay } from '../plugins/novel-manager/utils/helpers';
+import { getDatabaseManager } from '../storage/database';
 
 // 流水线步骤定义
 export type PipelineStep = 
