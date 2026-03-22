@@ -363,7 +363,7 @@ export class PublishAutoService {
     try {
       this.lastRunTime = new Date();
       logger.info('[PublishAutoService] 开始处理发布...');
-      this.activityLog.log('progress', '自动发布开始检查...');
+      this.activityLog.log('progress', '🚀 自动发布开始检查...');
       
       // 获取配置
       const config = getConfig();
@@ -379,9 +379,11 @@ export class PublishAutoService {
       // 使用第一个账号
       const account = accounts[0];
       logger.info(`[PublishAutoService] 使用账号: ${account.name}`);
+      this.activityLog.log('progress', `使用账号: ${account.name}`);
       
       // 步骤1: 从番茄获取所有作品及最新章节
       this.currentTask = '正在从番茄获取作品列表...';
+      this.activityLog.log('progress', '正在登录番茄，获取作品列表...');
       const fanqiePublisher = new FanqiePublisher();
       const fanqieWorks = await fanqiePublisher.getAllFanqieWorksWithLatestChapters(account, this.config.headless);
       
@@ -393,7 +395,7 @@ export class PublishAutoService {
       }
       
       logger.info(`[PublishAutoService] 从番茄获取到 ${fanqieWorks.length} 个作品`);
-      this.activityLog.log('progress', `从番茄获取到 ${fanqieWorks.length} 个作品`);
+      this.activityLog.log('progress', `✅ 从番茄获取到 ${fanqieWorks.length} 个作品`);
       
       // 步骤2: 对每个番茄作品，查找本地匹配并检查下一章
       const chaptersToPublish: any[] = [];
@@ -403,10 +405,12 @@ export class PublishAutoService {
         const cacheKey = `fanqie-${fanqieWork.title}`;
         if (this.missingWorksCache.has(cacheKey)) {
           logger.info(`[PublishAutoService] 作品「${fanqieWork.title}」在缓存中，跳过`);
+          this.activityLog.log('progress', `跳过作品「${fanqieWork.title}」（缓存中标记为不存在）`);
           continue;
         }
         
         this.currentTask = `正在检查作品「${fanqieWork.title}」...`;
+        this.activityLog.log('progress', `正在检查作品「${fanqieWork.title}」...`);
         
         // 查找本地匹配的作品
         const localWork = await this.findLocalWorkByTitle(fanqieWork.title);
@@ -414,28 +418,34 @@ export class PublishAutoService {
         if (!localWork) {
           logger.info(`[PublishAutoService] 本地没有找到匹配作品「${fanqieWork.title}」`);
           this.missingWorksCache.add(cacheKey);
+          this.activityLog.log('warn', `作品「${fanqieWork.title}」本地无匹配，已加入跳过缓存`);
           continue;
         }
         
         logger.info(`[PublishAutoService] 本地找到匹配作品: ${localWork.title} (ID: ${localWork.id})`);
+        this.activityLog.log('progress', `✅ 本地找到匹配作品: ${localWork.title}`);
         
         // 计算下一章
         const nextChapterNumber = fanqieWork.latestChapter + 1;
         logger.info(`[PublishAutoService] 番茄最新章节: ${fanqieWork.latestChapter}，下一章: ${nextChapterNumber}`);
+        this.activityLog.log('progress', `番茄最新章节: ${fanqieWork.latestChapter}，下一章: ${nextChapterNumber}`);
         
         // 检查本地是否有这一章且状态为 audited
         const chapter = await this.checkLocalChapter(localWork.id, nextChapterNumber);
         
         if (chapter) {
           logger.info(`[PublishAutoService] 找到待发布章节: 第${nextChapterNumber}章「${chapter.title}」`);
+          this.activityLog.log('progress', `✅ 找到待发布章节: 第${nextChapterNumber}章「${chapter.title}」`);
           chaptersToPublish.push(chapter);
         } else {
           logger.info(`[PublishAutoService] 本地没有第${nextChapterNumber}章，或状态不是 audited`);
+          this.activityLog.log('progress', `本地没有第${nextChapterNumber}章，或状态不是 audited，跳过`);
         }
         
         // 限制每次处理的章节数
         if (chaptersToPublish.length >= this.config.maxChaptersPerRun) {
           logger.info(`[PublishAutoService] 已达到最大处理数 ${this.config.maxChaptersPerRun}`);
+          this.activityLog.log('progress', `已达到最大处理数 ${this.config.maxChaptersPerRun}`);
           break;
         }
       }
@@ -448,7 +458,7 @@ export class PublishAutoService {
       }
       
       logger.info(`[PublishAutoService] 找到 ${chaptersToPublish.length} 个需要发布的章节`);
-      this.activityLog.log('progress', `找到 ${chaptersToPublish.length} 个需要发布的章节`);
+      this.activityLog.log('progress', `🚀 找到 ${chaptersToPublish.length} 个需要发布的章节，开始发布...`);
       
       // 步骤3: 发布章节
       for (const chapter of chaptersToPublish) {
@@ -457,10 +467,11 @@ export class PublishAutoService {
       
       this.currentTask = null;
       logger.info('[PublishAutoService] 发布处理完成');
+      this.activityLog.log('progress', '✅ 发布处理完成');
     } catch (error: any) {
       this.errorCount++;
       logger.error('[PublishAutoService] 处理过程出错:', error.message);
-      this.activityLog.log('error', `处理过程出错: ${error.message}`);
+      this.activityLog.log('error', `❌ 处理过程出错: ${error.message}`);
       this.currentTask = null;
     } finally {
       // 释放锁
