@@ -35,8 +35,8 @@ export const STATE_TRANSITION_RULES: StateTransitionRule[] = [
   },
   {
     from: 'published',
-    to: ['audited'],
-    description: '已发布 → 只能回已审核'
+    to: [],
+    description: '已发布 → 终态，无法撤回'
   }
 ];
 
