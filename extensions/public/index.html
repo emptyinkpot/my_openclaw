@@ -2078,6 +2078,7 @@
     // ====== 今日计划 ======
     let dailyChaptersPerWork = 1;
     let completedChapters = {}; // { workId: { chapterNumber: true } }
+    let plannedChapters = {}; // { workId: [chapterNumber, ...] } - 今日计划章节列表
     let lastPlanDate = null;
 
     // 切换自动扫描
@@ -2217,13 +2218,15 @@
           const data = JSON.parse(saved);
           dailyChaptersPerWork = data.dailyChaptersPerWork || 1;
           completedChapters = data.completedChapters || {};
+          plannedChapters = data.plannedChapters || {};
           lastPlanDate = data.lastPlanDate;
           
           // 检查是否是新的一天
           const today = new Date().toDateString();
           if (lastPlanDate !== today) {
-            // 新的一天，重置完成状态
+            // 新的一天，重置所有
             completedChapters = {};
+            plannedChapters = {};
             lastPlanDate = today;
             saveDailySettings();
           }
@@ -2239,6 +2242,7 @@
         const data = {
           dailyChaptersPerWork,
           completedChapters,
+          plannedChapters,
           lastPlanDate: lastPlanDate || new Date().toDateString()
         };
         localStorage.setItem('fanqieDailySettings', JSON.stringify(data));
@@ -2250,6 +2254,25 @@
       } catch (e) {
         console.error('[DailyPlan] 保存设置失败:', e);
       }
+    }
+    
+    // 获取或生成今日计划章节列表
+    function getOrCreatePlanForWork(workId, fanqieLatest) {
+      const today = new Date().toDateString();
+      
+      // 如果今天还没有计划，或者是新的一天，生成计划
+      if (!plannedChapters[workId] || lastPlanDate !== today) {
+        const plan = [];
+        for (let i = 0; i < dailyChaptersPerWork; i++) {
+          plan.push(fanqieLatest + i + 1);
+        }
+        plannedChapters[workId] = plan;
+        lastPlanDate = today;
+        saveDailySettings();
+        console.log(`[DailyPlan] 为作品 ${workId} 生成今日计划:`, plan);
+      }
+      
+      return plannedChapters[workId];
     }
 
     // 加载自动设置
@@ -2800,9 +2823,10 @@
             <div style="display: flex; flex-wrap: wrap; gap: 6px;">
               ${(() => {
                 const workCompletes = completedChapters[workId] || {};
+                const plan = getOrCreatePlanForWork(workId, fanqieLatest);
                 let listHtml = '';
-                for (let i = 0; i < dailyChaptersPerWork; i++) {
-                  const chapterNum = fanqieLatest + i + 1;
+                
+                for (const chapterNum of plan) {
                   const isDone = workCompletes[chapterNum];
                   listHtml += `<span style="
                     display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;
