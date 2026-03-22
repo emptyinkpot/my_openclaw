@@ -28,6 +28,8 @@ export interface AutoServiceConfig {
   enabled: boolean;
   processInterval: number; // 处理间隔（秒）
   maxChaptersPerRun: number; // 每次最多处理的章节数
+  relatedChapterCount: number; // 生成时关联章节数量
+  autoPolish: boolean; // 生成后自动润色
 }
 
 export class ContentCraftAutoService {
@@ -42,7 +44,9 @@ export class ContentCraftAutoService {
   private config: AutoServiceConfig = {
     enabled: false,
     processInterval: 60, // 默认 60 秒
-    maxChaptersPerRun: 3
+    maxChaptersPerRun: 3,
+    relatedChapterCount: 3, // 默认关联前3章
+    autoPolish: true // 默认自动润色
   };
 
   constructor() {
@@ -260,7 +264,10 @@ export class ContentCraftAutoService {
     const result = await generationPipeline.generateFromDatabase({
       workId,
       chapterNumber,
-      relatedChapterCount: 2
+      relatedChapterCount: this.config.relatedChapterCount, // 使用配置的关联章节数
+      settings: {
+        autoPolish: this.config.autoPolish // 使用配置的自动润色选项
+      }
     }, (progress: any) => {
       logger.info(`[ContentCraftAutoService] [生成进度] ${progress.phase || 'generating'}: ${progress.message} (${progress.progress}%)`);
     });

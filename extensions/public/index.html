@@ -760,7 +760,7 @@
                 <div style="padding: 12px; background: var(--bg-tertiary); border-radius: 6px;">
                   <div style="font-size: 11px; font-weight: 600; margin-bottom: 12px;">⚙️ 服务配置</div>
                   
-                  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 12px;">
                     <div>
                       <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 6px;">处理间隔（秒）</label>
                       <input type="number" id="contentCraftAutoInterval" value="60" min="10" max="3600" style="width: 100%; padding: 6px 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px;" onchange="saveContentCraftAutoConfig()">
@@ -768,6 +768,23 @@
                     <div>
                       <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 6px;">每次最多处理章节数</label>
                       <input type="number" id="contentCraftAutoMaxChapters" value="3" min="1" max="10" style="width: 100%; padding: 6px 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px;" onchange="saveContentCraftAutoConfig()">
+                    </div>
+                  </div>
+                  
+                  <div style="font-size: 11px; font-weight: 600; margin-bottom: 12px; margin-top: 16px;">📝 生成配置</div>
+                  
+                  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                    <div>
+                      <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 6px;">关联章节数量</label>
+                      <input type="number" id="contentCraftAutoRelatedChapters" value="3" min="1" max="10" style="width: 100%; padding: 6px 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px;" onchange="saveContentCraftAutoConfig()">
+                      <div style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">生成时关联前面多少章节</div>
+                    </div>
+                    <div>
+                      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin-bottom: 6px;">
+                        <input type="checkbox" id="contentCraftAutoAutoPolish" checked style="width: 16px; height: 16px; cursor: pointer;" onchange="saveContentCraftAutoConfig()">
+                        <span style="font-size: 11px; color: var(--text);">生成后自动润色</span>
+                      </label>
+                      <div style="font-size: 10px; color: var(--text-muted); margin-top: 4px;">生成完成后自动执行润色流程</div>
                     </div>
                   </div>
                 </div>
@@ -2963,6 +2980,8 @@
     function updateContentCraftAutoConfig(config) {
       const intervalInput = document.getElementById('contentCraftAutoInterval');
       const maxChaptersInput = document.getElementById('contentCraftAutoMaxChapters');
+      const relatedChaptersInput = document.getElementById('contentCraftAutoRelatedChapters');
+      const autoPolishInput = document.getElementById('contentCraftAutoAutoPolish');
 
       if (intervalInput) {
         intervalInput.value = config.processInterval || 60;
@@ -2970,6 +2989,14 @@
 
       if (maxChaptersInput) {
         maxChaptersInput.value = config.maxChaptersPerRun || 3;
+      }
+
+      if (relatedChaptersInput) {
+        relatedChaptersInput.value = config.relatedChapterCount || 3;
+      }
+
+      if (autoPolishInput) {
+        autoPolishInput.checked = config.autoPolish !== false;
       }
     }
 
@@ -3004,10 +3031,14 @@
       try {
         const intervalInput = document.getElementById('contentCraftAutoInterval');
         const maxChaptersInput = document.getElementById('contentCraftAutoMaxChapters');
+        const relatedChaptersInput = document.getElementById('contentCraftAutoRelatedChapters');
+        const autoPolishInput = document.getElementById('contentCraftAutoAutoPolish');
         
         const config = {
           processInterval: parseInt(intervalInput?.value) || 60,
-          maxChaptersPerRun: parseInt(maxChaptersInput?.value) || 3
+          maxChaptersPerRun: parseInt(maxChaptersInput?.value) || 3,
+          relatedChapterCount: parseInt(relatedChaptersInput?.value) || 3,
+          autoPolish: autoPolishInput?.checked !== false
         };
         
         const result = await api('/content-craft-auto/config', {
