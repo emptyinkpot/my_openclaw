@@ -278,43 +278,26 @@ export class PolishPipeline {
   // ==========================================
   
   /**
-   * 保护引用内容
+   * 保护引用内容（修改版：不保护引号和书名号，因为 punctuationApply 步骤需要处理它们）
    */
   private protectQuotes(text: string): {
     protectedText: string;
     quoteMap: Map<string, string>;
   } {
-    // 使用内置保护逻辑
+    // 注意：不再保护引号和书名号，因为 punctuationApply 步骤需要处理它们
+    // 只保护其他可能需要保护的内容（如果有的话）
     const quoteMap = new Map<string, string>();
-    let protectedText = text;
-    let counter = 0;
-    
-    // 保护双引号内容
-    protectedText = protectedText.replace(/"([^"]+)"/g, (match) => {
-      const key = `__QUOTE_${++counter}__`;
-      quoteMap.set(key, match);
-      return key;
-    });
-    
-    // 保护书名号内容
-    protectedText = protectedText.replace(/《([^》]+)》/g, (match) => {
-      const key = `__BOOK_${++counter}__`;
-      quoteMap.set(key, match);
-      return key;
-    });
+    const protectedText = text;
     
     return { protectedText, quoteMap };
   }
   
   /**
-   * 恢复引用内容
+   * 恢复引用内容（修改版：因为不再保护引号和书名号，所以直接返回原文）
    */
   private restoreQuotes(text: string, map: Map<string, string>): string {
-    let result = text;
-    map.forEach((original, key) => {
-      result = result.replace(new RegExp(key, 'g'), original);
-    });
-    return result;
+    // 注意：因为不再保护引号和书名号，所以直接返回原文
+    return text;
   }
   
   /**
