@@ -2676,6 +2676,40 @@
       ],
       "difficulty": 2,
       "xpGained": 150
+    },
+    {
+      "id": "exp_1774150000000_js_debugging",
+      "timestamp": 1774150000000,
+      "type": "problem_solving",
+      "title": "经验积累中心页面 JavaScript 错误完整修复实战",
+      "description": "用户反馈经验积累中心页面卡住，所有按钮无法点击。通过完整的排查，发现并修复了三大问题：重复的函数定义、使用 event.target 但没有传 event 参数、JavaScript 模板字符串中的反引号没有转义。",
+      "userQuery": "经验积累中心页面还是卡着的，没法点击笔记和专栏按钮和页面的其他按钮",
+      "solution": "## 问题现象：经验积累中心页面完全卡住，所有按钮无法点击，控制台报出多个 JavaScript 错误。\n\n## 排查过程：\n1. 发现有重复的 showDetail 函数定义；2. 发现多个函数使用了 event.target 但没有传 event 参数；3. 发现专栏内容的 JavaScript 模板字符串中的反引号没有转义，导致 SyntaxError: Unexpected identifier 'mermaid'。\n\n## 修复步骤：\n1. 删除重复的 showDetail 函数；2. 修复所有使用 event.target 但没有传 event 参数的函数（switchTab、filterExp、filterNotes、filterColumns）；3. 手动逐个替换所有专栏内容中的 ``` 为 \\\`\\\`\\\`。",
+      "experienceApplied": [
+        "JavaScript 调试",
+        "错误排查",
+        "代码审查",
+        "问题定位方法论"
+      ],
+      "experienceGained": [
+        "JavaScript 模板字符串中的反引号必须转义",
+        "语法错误会导致后续代码无法执行",
+        "重复的函数定义会导致冲突",
+        "事件处理函数要避免依赖未传入的 event 参数",
+        "先看第一个错误，后面的错误往往是第一个错误的连锁反应",
+        "数据与代码分离可以避免很多问题",
+        "手动逐个替换反引号要非常小心"
+      ],
+      "tags": [
+        "JavaScript",
+        "调试",
+        "错误修复",
+        "语法错误",
+        "OpenClaw",
+        "经验积累中心"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
     }
   ],
   "version": "1.0"
