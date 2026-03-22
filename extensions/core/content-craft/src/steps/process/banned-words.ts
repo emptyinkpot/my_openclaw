@@ -107,7 +107,7 @@ ${bannedWords.map((w: any) => `- ${w.word}`).join('\n')}
           if (text.includes(w.word) && !resultText.includes(w.word)) {
             replacements.push({
               original: w.word,
-              replaced: '(智能替换)',
+              replaced: w.replacement || '(智能替换)',
               reason: w.reason || '禁用词替换',
               source: 'MySQL禁用词库+LLM智能评估'
             });

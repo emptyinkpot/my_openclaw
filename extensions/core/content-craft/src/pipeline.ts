@@ -78,6 +78,13 @@ export class PolishPipeline {
       try {
         vocabulary = await db.query('SELECT * FROM vocabulary ORDER BY category, id');
         console.log(`[PolishPipeline] 加载了 ${vocabulary.length} 个优选词`);
+        // 转换字段名：content -> word
+        vocabulary = vocabulary.map(w => ({
+          word: w.content,
+          category: w.category,
+          tags: w.tags,
+          note: w.note
+        }));
       } catch (e) {
         console.warn('[PolishPipeline] 加载优选词库失败:', e.message);
       }
@@ -87,6 +94,13 @@ export class PolishPipeline {
       try {
         bannedWords = await db.query('SELECT * FROM banned_words ORDER BY category, id');
         console.log(`[PolishPipeline] 加载了 ${bannedWords.length} 个禁用词`);
+        // 转换字段名：content -> word, alternative -> replacement
+        bannedWords = bannedWords.map(w => ({
+          word: w.content,
+          replacement: w.alternative,
+          reason: w.reason,
+          category: w.category
+        }));
       } catch (e) {
         console.warn('[PolishPipeline] 加载禁用词库失败:', e.message);
       }
