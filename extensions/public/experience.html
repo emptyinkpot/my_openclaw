@@ -545,6 +545,94 @@
       color: var(--text-muted);
     }
     
+    /* 专栏列表 */
+    .column-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      display: none;
+    }
+    
+    .column-list.active {
+      display: block;
+    }
+    
+    .column-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    
+    .column-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    
+    .column-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    
+    .column-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #8250df20, #bf398920);
+      color: #8250df;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    
+    .column-meta {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .column-title {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    
+    .column-category {
+      display: inline-block;
+      padding: 2px 8px;
+      background: var(--bg-tertiary);
+      border-radius: 10px;
+      font-size: 10px;
+      color: var(--text-secondary);
+      margin-right: 6px;
+    }
+    
+    .column-description {
+      font-size: 11px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-bottom: 8px;
+    }
+    
+    .column-footer {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+    
+    .column-stats {
+      display: flex;
+      gap: 12px;
+    }
+    
     /* 空状态 */
     .empty-state {
       text-align: center;
@@ -698,6 +786,7 @@
     <div class="tabs">
       <div class="tab active" onclick="switchTab('experience')">📝 经验</div>
       <div class="tab" onclick="switchTab('notes')">📒 笔记</div>
+      <div class="tab" onclick="switchTab('columns')">📚 专栏</div>
     </div>
   </div>
   
@@ -769,6 +858,18 @@
         <button class="btn" onclick="refreshNotes()">🔄 刷新</button>
       </div>
       
+      <!-- 专栏工具栏 -->
+      <div class="toolbar" id="columnsToolbar" style="display: none;">
+        <div class="filter-tabs" id="columnCategoryTabs">
+          <div class="filter-tab active" onclick="filterColumns('all')">全部</div>
+          <div class="filter-tab" onclick="filterColumns('dev_flow')">🔧 开发流程</div>
+          <div class="filter-tab" onclick="filterColumns('tech_stack')">💻 技术栈</div>
+          <div class="filter-tab" onclick="filterColumns('best_practices')">✨ 最佳实践</div>
+        </div>
+        <div class="toolbar-spacer"></div>
+        <button class="btn" onclick="refreshColumns()">🔄 刷新</button>
+      </div>
+      
       <!-- 经验列表 -->
       <div class="exp-list active" id="expList">
         <div class="empty-state">
@@ -784,6 +885,15 @@
           <div class="empty-icon">📒</div>
           <div class="empty-text">暂无笔记</div>
           <div class="empty-hint">点击"新建笔记"添加第一条笔记</div>
+        </div>
+      </div>
+      
+      <!-- 专栏列表 -->
+      <div class="column-list" id="columnList">
+        <div class="empty-state">
+          <div class="empty-icon">📚</div>
+          <div class="empty-text">暂无专栏</div>
+          <div class="empty-hint">专栏正在整理中...</div>
         </div>
       </div>
     </div>
@@ -987,7 +1097,7 @@
       
       // 根据 tab 值找到对应的元素并添加 active 类
       tabs.forEach(t => {
-        if (t.textContent.includes(tab === 'experience' ? '经验' : '笔记')) {
+        if (t.textContent.includes(tab === 'experience' ? '经验' : tab === 'notes' ? '笔记' : '专栏')) {
           t.classList.add('active');
         }
       });
@@ -998,10 +1108,17 @@
       // 更新工具栏
       document.getElementById('experienceToolbar').style.display = tab === 'experience' ? 'flex' : 'none';
       document.getElementById('notesToolbar').style.display = tab === 'notes' ? 'flex' : 'none';
+      document.getElementById('columnsToolbar').style.display = tab === 'columns' ? 'flex' : 'none';
       
       // 更新列表
       document.getElementById('expList').classList.toggle('active', tab === 'experience');
       document.getElementById('noteList').classList.toggle('active', tab === 'notes');
+      document.getElementById('columnList').classList.toggle('active', tab === 'columns');
+      
+      // 如果是专栏标签，加载专栏数据
+      if (tab === 'columns') {
+        renderColumnList();
+      }
     }
     
     // ========== 经验相关 ==========
@@ -1210,39 +1327,7 @@
       loadData();
     }
     
-    // 显示详情
-    function showDetail(id) {
-      const exp = expData.find(e => e.id === id);
-      if (!exp) return;
-      
-      let message = `📌 标题: ${exp.title}\n\n`;
-      
-      if (exp.problem) {
-        message += `❓ 问题:\n${exp.problem}\n\n`;
-      } else if (exp.description) {
-        message += `📝 描述:\n${exp.description}\n\n`;
-      } else if (exp.userQuery) {
-        message += `💬 查询:\n${exp.userQuery}\n\n`;
-      }
-      
-      if (exp.solution) {
-        message += `✅ 解决方案:\n${exp.solution}\n\n`;
-      }
-      
-      if (exp.steps && exp.steps.length > 0) {
-        message += `📋 解决步骤:\n`;
-        exp.steps.forEach((step, index) => {
-          message += `${index + 1}. ${step}\n`;
-        });
-        message += '\n';
-      }
-      
-      if (exp.tags && exp.tags.length > 0) {
-        message += `🏷️ 标签: ${exp.tags.join(', ')}\n\n`;
-      }
-      
-      alert(message);
-    }
+
     
     // 搜索
     document.getElementById('searchInput')?.addEventListener('input', (e) => {
@@ -1443,12 +1528,890 @@
       loadNotes();
     }
     
+    // 关闭详情模态框
+    function closeDetailModal() {
+      document.getElementById('detailModal').classList.remove('show');
+    }
+    
+    // 简单的 Markdown 转 HTML 函数
+    function simpleMarkdownToHtml(md) {
+      if (!md) return '';
+      
+      let html = md;
+      
+      // 代码块
+      html = html.replace(/```([\s\S]*?)```/g, function(match, code) {
+        return '<pre><code>' + code.trim() + '</code></pre>';
+      });
+      
+      // 行内代码
+      html = html.replace(/`([^`]+)`/g, function(match, code) {
+        return '<code>' + code + '</code>';
+      });
+      
+      // 标题
+      html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+      html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+      html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+      html = html.replace(/^#### (.*$)/gim, '<h4>$1</h4>');
+      
+      // 引用
+      html = html.replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>');
+      
+      // 无序列表
+      html = html.replace(/^- (.*$)/gim, '<li>$1</li>');
+      html = html.replace(/(<li>.*<\/li>\n?)+/g, function(match) {
+        return '<ul>' + match + '</ul>';
+      });
+      
+      // 有序列表
+      html = html.replace(/^\d+\. (.*$)/gim, '<li>$1</li>');
+      
+      // 分隔线
+      html = html.replace(/^\*\*\*$/gim, '<hr>');
+      html = html.replace(/^---$/gim, '<hr>');
+      
+      // 段落（处理换行）
+      html = html.replace(/\n\n/g, '</p><p>');
+      html = '<p>' + html + '</p>';
+      html = html.replace(/<p><\/p>/g, '');
+      
+      return html;
+    }
+    
+    // 显示经验详情
+    function showDetail(id) {
+      const exp = expData.find(e => e.id === id);
+      if (!exp) return;
+      
+      const typeInfo = expTypeMap[exp.type] || { label: exp.type || '未知', icon: '📌', color: '#666', bg: '#f0f0f0' };
+      const stars = '⭐'.repeat(exp.difficulty || 1);
+      const date = exp.timestamp ? new Date(exp.timestamp).toLocaleDateString() : '未知日期';
+      const tags = exp.tags || [];
+      
+      let content = '';
+      
+      // 问题/描述
+      const problem = exp.problem || exp.description || exp.userQuery || '';
+      if (problem) {
+        content += '<h3>📋 问题描述</h3>';
+        content += '<div class="markdown-content">' + simpleMarkdownToHtml(problem) + '</div>';
+      }
+      
+      // 解决方案
+      const solution = exp.solution || '';
+      if (solution) {
+        content += '<h3>🔧 解决方案</h3>';
+        content += '<div class="markdown-content">' + simpleMarkdownToHtml(solution) + '</div>';
+      }
+      
+      // 应用的经验
+      const applied = exp.experienceApplied || [];
+      if (applied.length > 0) {
+        content += '<h3>📚 应用的经验</h3>';
+        content += '<ul>';
+        applied.forEach(a => {
+          content += '<li>' + a + '</li>';
+        });
+        content += '</ul>';
+      }
+      
+      // 获得的经验
+      const gained = exp.experienceGained || [];
+      if (gained.length > 0) {
+        content += '<h3>💡 获得的经验</h3>';
+        content += '<ul>';
+        gained.forEach(g => {
+          content += '<li>' + g + '</li>';
+        });
+        content += '</ul>';
+      }
+      
+      // 更新模态框
+      document.getElementById('detailModalTitle').textContent = exp.title || '无标题';
+      document.getElementById('detailModalMeta').innerHTML = `
+        <span class="detail-tag" style="background: ${typeInfo.bg}; color: ${typeInfo.color}">${typeInfo.icon} ${typeInfo.label}</span>
+        <span class="detail-tag difficulty">${stars}</span>
+        <span class="detail-tag">📅 ${date}</span>
+        <span class="detail-tag xp">+${exp.xpGained || (exp.difficulty * 50) || 50} XP</span>
+        ${tags.map(t => `<span class="detail-tag">${t}</span>`).join('')}
+      `;
+      document.getElementById('detailModalBody').innerHTML = content;
+      document.getElementById('detailModal').classList.add('show');
+    }
+    
     // 显示笔记详情
     function showNoteDetail(id) {
       const note = noteData.find(n => n.id === id);
       if (!note) return;
-      alert(`标题: ${note.title}\n\n内容: ${note.content || '无'}`);
+      
+      const categoryInfo = noteCategoryMap[note.category] || { label: note.category || '其他', icon: '📦' };
+      const date = note.updated_at ? new Date(note.updated_at).toLocaleDateString() : '未知日期';
+      const tags = note.tags ? (Array.isArray(note.tags) ? note.tags : JSON.parse(note.tags)) : [];
+      
+      let content = '';
+      
+      // 笔记内容
+      const noteContent = note.content || '';
+      if (noteContent) {
+        content += '<div class="markdown-content">' + simpleMarkdownToHtml(noteContent) + '</div>';
+      }
+      
+      // 更新模态框
+      document.getElementById('detailModalTitle').textContent = note.title || '无标题';
+      document.getElementById('detailModalMeta').innerHTML = `
+        <span class="detail-tag">${categoryInfo.icon} ${categoryInfo.label}</span>
+        <span class="detail-tag">📅 ${date}</span>
+        ${tags.map(t => `<span class="detail-tag">${t}</span>`).join('')}
+      `;
+      document.getElementById('detailModalBody').innerHTML = content;
+      document.getElementById('detailModal').classList.add('show');
     }
+    
+    // ========== 专栏相关 ==========
+    
+    // 专栏数据（内置，从经验和笔记中整理）
+    const columnData = [
+      {
+        id: 'dev_flow_1',
+        title: '如何条理前端和后端开发流程',
+        icon: '🔧',
+        category: 'dev_flow',
+        categoryLabel: '开发流程',
+        description: '从需求分析到部署上线，完整的前后端开发流程梳理，包括项目规划、任务拆解、编码规范、测试验证等关键环节。',
+        content: `# 如何条理前端和后端开发流程
+
+## 1. 项目规划阶段
+
+### 1.1 需求分析
+- 明确用户需求和目标
+- 梳理功能模块和优先级
+- 确定技术栈和架构方案
+
+### 1.2 任务拆解
+- 将大功能拆分为可执行的小任务
+- 为每个任务设定明确的验收标准
+- 预估开发时间和依赖关系
+
+## 2. 开发阶段
+
+### 2.1 前端开发流程
+1. **页面结构设计**
+   - 设计页面布局和组件结构
+   - 确定页面路由和导航
+   - 规划状态管理方案
+
+2. **组件开发**
+   - 先开发基础组件（UI 组件库）
+   - 再开发业务组件
+   - 注意组件的复用性和可维护性
+
+3. **接口对接**
+   - 先定义接口文档（API 规范）
+   - 前端可以先使用 Mock 数据开发
+   - 后端接口完成后进行联调
+
+### 2.2 后端开发流程
+1. **数据库设计**
+   - 设计数据表结构
+   - 确定索引和关联关系
+   - 考虑数据迁移方案
+
+2. **API 设计**
+   - 遵循 RESTful 或 GraphQL 规范
+   - 定义请求/响应格式
+   - 考虑错误处理和版本管理
+
+3. **业务逻辑开发**
+   - 分层架构（Controller/Service/DAO）
+   - 编写单元测试
+   - 注意性能优化
+
+## 3. 协作规范
+
+### 3.1 代码规范
+- 前端：ESLint + Prettier
+- 后端：遵循语言特定规范（如 PEP8、Airbnb）
+- 统一的 Git 提交信息格式
+
+### 3.2 分支管理
+- main：生产环境代码
+- develop：开发环境代码
+- feature/*：功能开发分支
+- fix/*：bug 修复分支
+
+### 3.3 代码审查
+- 每一个 PR 都需要至少一人审查
+- 关注代码质量、可维护性、安全性
+- 给出具体的改进建议
+
+## 4. 测试与部署
+
+### 4.1 测试流程
+- 单元测试：覆盖核心业务逻辑
+- 集成测试：测试模块间交互
+- E2E 测试：关键用户流程自动化
+- 手动测试：UI/UX 和边缘场景
+
+### 4.2 部署流程
+- 开发环境：自动部署，用于联调
+- 测试环境：手动触发，用于 QA 测试
+- 生产环境：审批后部署，灰度发布
+
+## 5. 经验总结
+
+### 5.1 从经验记录中提炼
+- 每次遇到问题都记录下来
+- 定期复盘和总结
+- 形成团队的最佳实践
+
+### 5.2 持续改进
+- 定期回顾开发流程
+- 收集反馈和建议
+- 优化工具和规范`,
+        readTime: 15,
+        articles: 1,
+        createdAt: '2025-01-15',
+        tags: ['开发流程', '前端', '后端', '最佳实践']
+      },
+      {
+        id: 'openclaw_plugin_guide',
+        title: 'OpenClaw 插件开发完全指南',
+        icon: '🦞',
+        category: 'tech_stack',
+        categoryLabel: '技术栈',
+        description: '从零开始学习 OpenClaw 插件开发，包括插件结构、路由注册、导航栏注入、API 设计等核心概念。',
+        content: `# OpenClaw 插件开发完全指南
+
+## 1. OpenClaw 插件架构
+
+### 1.1 插件基本结构
+\`\`\`
+extensions/apps/your-plugin/
+├── index.ts          # 插件入口文件
+├── src/              # 源代码目录
+│   ├── core/         # 核心业务逻辑
+│   └── routes.ts     # 路由定义（可选）
+├── data/             # 数据文件目录
+└── package.json      # 插件配置
+\`\`\`
+
+### 1.2 插件生命周期
+\`\`\`mermaid
+graph TD
+    A[register] --> B[activate]
+    B --> C[runtime]
+    C --> D[deactivate]
+    
+    style A fill:#ddf4ff
+    style B fill:#e8f5e9
+    style C fill:#fff3cd
+    style D fill:#ffebee
+\`\`\`
+
+## 2. 路由注册
+
+### 2.1 双路由配置原则
+> **重要**：OpenClaw 插件路由注册必须同时修改两处：
+> 1. \`pageMap\` - URL 到文件名的映射
+> 2. \`routes\` 数组 - 插件的路由注册
+
+### 2.2 示例代码
+\`\`\`typescript
+const pageMap = {
+  '/your-page.html': 'your-page.html',
+  '/api/your-plugin': 'api'
+};
+
+const routes = [
+  { path: '/your-page.html', match: 'exact', handler: handlePage, auth: 'plugin' },
+  { path: '/api/your-plugin', match: 'prefix', handler: handleApi, auth: 'gateway' }
+];
+\`\`\`
+
+## 3. 导航栏统一架构
+
+### 3.1 导航栏注入流程
+\`\`\`mermaid
+graph LR
+    A[nav-bar.html] --> B[插件读取]
+    B --> C[注入到页面]
+    C --> D[高亮当前页面]
+    D --> E[动态调整高度]
+    
+    style A fill:#ddf4ff
+    style E fill:#e8f5e9
+\`\`\`
+
+### 3.2 实现要点
+1. **统一 nav-bar.html** - 所有插件共享同一套导航栏
+2. **当前页面高亮** - 根据当前页面给对应链接添加 \`class="on"\`
+3. **动态高度调整** - 使用 JavaScript 动态计算导航栏高度，设置 \`--nav-height\` CSS 变量
+
+## 4. API 认证
+
+### 4.1 认证模式
+- \`auth: 'plugin'\` - 无需认证，公开访问
+- \`auth: 'gateway'\` - 需要 Bearer Token 认证
+
+### 4.2 前端封装
+\`\`\`javascript
+const GATEWAY_TOKEN = 'your-token-here';
+
+async function api(endpoint, options = {}) {
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': \`Bearer \${GATEWAY_TOKEN}\`,
+    ...options.headers
+  };
+  
+  const res = await fetch(API_BASE + endpoint, { ...options, headers });
+  return res.json();
+}
+\`\`\`
+
+## 5. 问题排查方法论
+
+### 5.1 排查步骤
+1. **先看状态** - \`openclaw status --all\`
+2. **再看日志** - \`tail -n 200 /app/work/logs/bypass/dev.log\`
+3. **检查配置** - \`openclaw config validate\`
+4. **验证连通性** - \`openclaw gateway probe\`
+
+### 5.2 常见问题
+| 问题 | 可能原因 | 排查方向 |
+|------|----------|----------|
+| 页面加载失败 | 路由未注册 | 检查 pageMap 和 routes |
+| 插件加载失败 | TypeScript 语法错误 | 检查语法，避免重复声明 |
+| API 返回 401 | 认证缺失 | 检查 Authorization header |
+| 导航栏重叠 | fetch 动态加载 | 硬编码到 nav-bar.html |
+
+## 6. 最佳实践
+
+### 6.1 开发规范
+1. **修改前先读取** - 编辑文件前先读取确认内容
+2. **最小改动原则** - 只修改必要的部分，避免大面积重构
+3. **及时记录经验** - 遇到问题立即记录，形成知识库
+4. **验证后再交付** - 修改后运行 \`openclaw config validate\` 和 \`openclaw doctor\`
+
+### 6.2 维护建议
+- 定期清理不再需要的文件和路由
+- 保持 nav-bar.html 单一数据源
+- 使用 TypeScript 时注意语法检查
+- 利用经验积累中心持续改进`,
+        readTime: 20,
+        articles: 1,
+        createdAt: '2025-01-20',
+        tags: ['OpenClaw', '插件开发', '路由', '导航栏']
+      },
+      {
+        id: 'problem_solving_guide',
+        title: '问题排查与调试方法论',
+        icon: '🔍',
+        category: 'best_practices',
+        categoryLabel: '最佳实践',
+        description: '系统化的问题排查方法论，从日志分析到问题定位，再到修复验证，帮助你高效解决开发中的各种问题。',
+        content: `# 问题排查与调试方法论
+
+## 1. 问题定位
+
+### 1.1 先收集事实，再下结论
+> **重要原则**：不要凭猜测下结论，先收集足够的事实证据。
+
+\`\`\`mermaid
+graph TD
+    A[问题发生] --> B[收集事实]
+    B --> C[分析日志]
+    C --> D[检查状态]
+    D --> E[定位根因]
+    E --> F[验证假设]
+    
+    style A fill:#ffebee
+    style F fill:#e8f5e9
+\`\`\`
+
+### 1.2 事实收集清单
+- [ ] 问题现象的详细描述
+- [ ] 复现步骤
+- [ ] 错误信息和堆栈跟踪
+- [ ] 相关日志文件
+- [ ] 系统状态信息
+- [ ] 最近的代码变更
+
+## 2. 日志分析
+
+### 2.1 关键日志文件
+| 日志文件 | 用途 | 查看命令 |
+|----------|------|----------|
+| /app/work/logs/bypass/dev.log | OpenClaw 主日志 | \`tail -n 200 /app/work/logs/bypass/dev.log\` |
+| /tmp/openclaw/*.log | 临时日志 | \`ls -lt /tmp/openclaw/\` |
+
+### 2.2 日志分析技巧
+1. **搜索关键词** - \`grep "ERROR" /app/work/logs/bypass/dev.log\`
+2. **查看上下文** - 使用 \`grep -A 20 -B 5\` 查看前后行
+3. **时间范围** - 关注问题发生时间附近的日志
+4. **console.log 调试** - 在关键节点添加日志输出
+
+### 2.3 前端调试
+\`\`\`javascript
+// 在关键函数开头添加
+console.log("[模块名] 函数名 被调用");
+
+// 网络请求前
+console.log("[模块名] 开始请求", url);
+
+// 网络请求响应后
+console.log("[模块名] 收到响应", response);
+\`\`\`
+
+## 3. 系统状态检查
+
+### 3.1 OpenClaw 状态命令
+| 命令 | 用途 |
+|------|------|
+| \`openclaw status --all\` | 查看完整状态快照 |
+| \`openclaw gateway probe\` | 探测 Gateway 连通性 |
+| \`openclaw health\` | 查看健康状态 |
+| \`openclaw config validate\` | 校验配置合法性 |
+| \`openclaw doctor\` | 执行诊断检查 |
+
+### 3.2 系统级检查
+\`\`\`bash
+# 检查端口占用
+netstat -tlnp | grep 5000
+
+# 检查进程
+ps aux | grep openclaw
+
+# 检查磁盘空间
+df -h
+
+# 检查内存使用
+free -h
+\`\`\`
+
+## 4. 常见问题模式
+
+### 4.1 退出码 1 不一定是崩溃
+> **经验**：退出码 1 可能来自多种原因，不一定是服务崩溃。
+
+| 现象 | 可能原因 | 验证方法 |
+|------|----------|----------|
+| 退出码 1 | SIGTERM 信号 | 检查是否有外部进程发送终止信号 |
+| 服务反复重启 | crontab 定时任务 | \`crontab -l\` 检查定时任务 |
+| 端口被占用 | 服务实际在运行 | \`openclaw gateway probe\` 验证 |
+
+### 4.2 导航栏重叠问题
+> **根因**：fetch 动态加载 HTML 时，错误地返回了原生界面 HTML。
+
+**解决方案树：**
+\`\`\`
+导航栏重叠
+├── 检查是否有 fetch 调用
+│   ├── 有 → 移除 fetch，硬编码内容
+│   └── 无 → 继续检查
+├── 检查 nav-bar.html 是否已包含所需内容
+│   ├── 否 → 将内容硬编码到 nav-bar.html
+│   └── 是 → 继续检查
+└── 清理不再需要的文件和路由
+    ├── 删除单独的 HTML 文件
+    └── 移除对应的路由配置
+\`\`\`
+
+## 5. 修复与验证
+
+### 5.1 修复原则
+1. **最小改动** - 只修改必要的部分
+2. **先备份** - 修改前先备份原文件
+3. **分步验证** - 每修改一步都验证效果
+4. **回滚准备** - 准备好回滚方案
+
+### 5.2 验证清单
+- [ ] 配置校验通过 - \`openclaw config validate\`
+- [ ] 诊断检查通过 - \`openclaw doctor\`
+- [ ] Gateway 可达 - \`openclaw gateway probe\`
+- [ ] 功能测试通过 - 手动验证核心功能
+- [ ] 日志无错误 - 检查最新日志
+
+## 6. 经验积累
+
+### 6.1 记录模板
+\`\`\`markdown
+## 问题描述
+（详细描述问题现象）
+
+## 排查过程
+1. 第一步...
+2. 第二步...
+3. ...
+
+## 根因分析
+（找到的根本原因）
+
+## 解决方案
+（具体的修复步骤）
+
+## 获得的经验
+- 经验1
+- 经验2
+- ...
+\`\`\`
+
+### 6.2 持续改进
+- 定期回顾经验记录
+- 提炼可复用的模式
+- 形成团队的最佳实践库
+- 培训新成员时使用历史案例`,
+        readTime: 18,
+        articles: 1,
+        createdAt: '2025-01-22',
+        tags: ['问题排查', '调试', '日志分析', '最佳实践']
+      },
+      {
+        id: 'column_writing_rules',
+        title: '专栏撰写规范与最佳实践',
+        icon: '📝',
+        category: 'best_practices',
+        categoryLabel: '最佳实践',
+        description: '专栏内容撰写的详细规范，要求内容完整、图文并茂、结构清晰，确保读者能够获得全面且有深度的知识。',
+        content: `# 专栏撰写规范与最佳实践
+
+## 1. 专栏撰写基本原则
+
+### 1.1 内容完整性
+> **核心要求**：不遗漏关键信息，详细周到，确保读者能够完整理解。
+
+| 检查项 | 要求 |
+|--------|------|
+| 背景介绍 | 说明问题的来龙去脉 |
+| 原理讲解 | 解释背后的技术原理 |
+| 操作步骤 | 提供详细的可执行步骤 |
+| 代码示例 | 包含完整的代码片段 |
+| 常见问题 | 列出可能遇到的问题及解决 |
+| 最佳实践 | 给出实用的建议和注意事项 |
+
+### 1.2 结构清晰性
+\`\`\`mermaid
+graph TD
+    A[标题] --> B[引言]
+    B --> C[主体内容]
+    C --> D[总结]
+    D --> E[参考资料]
+    
+    C --> C1[第一部分]
+    C --> C2[第二部分]
+    C --> C3[第三部分]
+    
+    style A fill:#ddf4ff
+    style D fill:#fff3cd
+\`\`\`
+
+## 2. 图文并茂要求
+
+### 2.1 使用 Mermaid 图表
+> **推荐**：使用 Mermaid 语法绘制流程图、时序图、架构图等。
+
+#### 流程图示例
+\`\`\`mermaid
+graph TD
+    A[开始] --> B{判断}
+    B -->|是| C[处理1]
+    B -->|否| D[处理2]
+    C --> E[结束]
+    D --> E
+\`\`\`
+
+#### 时序图示例
+\`\`\`mermaid
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant Backend
+    participant Database
+    
+    User->>Frontend: 点击按钮
+    Frontend->>Backend: API 请求
+    Backend->>Database: 查询数据
+    Database-->>Backend: 返回结果
+    Backend-->>Frontend: JSON 响应
+    Frontend-->>User: 显示结果
+\`\`\`
+
+#### 架构图示例
+\`\`\`mermaid
+graph TB
+    subgraph 前端层
+        A[浏览器]
+        B[移动端]
+    end
+    
+    subgraph 网关层
+        C[OpenClaw Gateway]
+    end
+    
+    subgraph 插件层
+        D[novel-manager]
+        E[experience-manager]
+        F[automation-hub]
+    end
+    
+    subgraph 数据层
+        G[(MySQL)]
+        H[(JSON文件)]
+    end
+    
+    A --> C
+    B --> C
+    C --> D
+    C --> E
+    C --> F
+    D --> G
+    E --> H
+\`\`\`
+
+### 2.2 使用表格整理信息
+> **技巧**：复杂信息用表格展示，清晰易读。
+
+| 功能模块 | 负责插件 | 路由前缀 | 认证模式 |
+|----------|----------|----------|----------|
+| 小说管理 | novel-manager | /novel/ | plugin |
+| 经验积累 | experience-manager | /experience | plugin |
+| 自动化 | automation-hub | /automation | plugin |
+| 系统 API | Gateway | /api/ | gateway |
+
+### 2.3 使用代码块展示代码
+> **规范**：代码块指定语言，包含完整上下文，添加注释说明。
+
+\`\`\`typescript
+// 注册 HTTP 路由
+if (api?.registerHttpRoute) {
+  console.log(\`[\${PLUGIN_ID}] 注册 HTTP 路由...\`);
+  
+  // 页面路由 - 无需认证
+  api.registerHttpRoute({
+    path: '/your-page.html',
+    match: 'exact',
+    handler: handlePage,
+    auth: 'plugin'
+  });
+  
+  // API 路由 - 需要 Gateway 认证
+  api.registerHttpRoute({
+    path: '/api/your-plugin',
+    match: 'prefix',
+    handler: handleApi,
+    auth: 'gateway'
+  });
+}
+\`\`\`
+
+## 3. Markdown 格式规范
+
+### 3.1 标题层级
+\`\`\`markdown
+# 一级标题（专栏标题）
+## 二级标题（主要章节）
+### 三级标题（子章节）
+#### 四级标题（小节）
+\`\`\`
+
+### 3.2 列表使用
+- **无序列表**：用于并列项
+- **有序列表**：用于步骤序列
+- **任务列表**：用于检查清单
+
+### 3.3 引用和强调
+> **重要提示**：使用引用块突出重要信息
+
+\`\`\`markdown
+> **核心原则**：先收集事实，再下结论
+
+**加粗文本** - 强调关键词
+\`行内代码\` - 突出代码片段
+\`\`\`
+
+## 4. 内容深度要求
+
+### 4.1 不仅是"怎么做"，还要"为什么"
+| 层面 | 内容要求 |
+|------|----------|
+| 操作层 | 具体的步骤和命令 |
+| 原理层 | 背后的技术原理 |
+| 设计层 | 为什么这样设计 |
+| 最佳实践层 | 什么情况下用什么方案 |
+
+### 4.2 包含正反案例
+- ✅ **正确做法**：展示推荐的方案
+- ❌ **错误做法**：指出常见的陷阱
+- ⚠️ **注意事项**：提醒需要注意的地方
+
+## 5. 从经验和笔记中整合
+
+### 5.1 整合流程
+\`\`\`mermaid
+graph LR
+    A[收集经验记录] --> B[分类整理]
+    B --> C[提取关键点]
+    C --> D[结构化呈现]
+    D --> E[补充深度内容]
+    E --> F[添加图表示例]
+    
+    style A fill:#ddf4ff
+    style F fill:#e8f5e9
+\`\`\`
+
+### 5.2 整合检查清单
+- [ ] 是否覆盖了相关的所有经验记录？
+- [ ] 是否提取了核心的经验点？
+- [ ] 是否形成了完整的知识体系？
+- [ ] 是否添加了图表和示例？
+- [ ] 是否包含了最佳实践和注意事项？
+- [ ] 语言是否流畅易懂？
+
+## 6. 最终审查
+
+### 6.1 发布前检查
+- [ ] 内容完整，没有遗漏
+- [ ] 结构清晰，逻辑连贯
+- [ ] 图文并茂，图表清晰
+- [ ] 代码正确，可运行
+- [ ] 语言通顺，无错别字
+- [ ] 格式规范，统一美观
+
+### 6.2 读者视角验证
+> **问自己**：如果我是第一次接触这个主题的读者，能通过这篇专栏完全理解吗？`,
+        readTime: 12,
+        articles: 1,
+        createdAt: '2025-01-22',
+        tags: ['专栏规范', '写作指南', 'Markdown', '最佳实践']
+      }
+    ];
+    
+    // 专栏分类映射
+    const columnCategoryMap = {
+      dev_flow: { label: '开发流程', icon: '🔧' },
+      tech_stack: { label: '技术栈', icon: '💻' },
+      best_practices: { label: '最佳实践', icon: '✨' }
+    };
+    
+    // 当前专栏过滤
+    let currentColumnFilter = 'all';
+    
+    // 渲染专栏列表
+    function renderColumnList() {
+      const list = document.getElementById('columnList');
+      let filtered = columnData;
+      if (currentColumnFilter !== 'all') {
+        filtered = columnData.filter(c => c.category === currentColumnFilter);
+      }
+      
+      if (filtered.length === 0) {
+        list.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">📚</div>
+            <div class="empty-text">暂无专栏</div>
+            <div class="empty-hint">专栏正在整理中...</div>
+          </div>
+        `;
+        return;
+      }
+      
+      list.innerHTML = filtered.map(column => {
+        const categoryInfo = columnCategoryMap[column.category] || { label: column.categoryLabel || '其他', icon: '📦' };
+        return `
+          <div class="column-card" onclick="showColumnDetail('${column.id}')">
+            <div class="column-header">
+              <div class="column-icon">${column.icon}</div>
+              <div class="column-meta">
+                <div class="column-title">${column.title}</div>
+                <div>
+                  <span class="column-category">${categoryInfo.icon} ${categoryInfo.label}</span>
+                  ${column.tags.slice(0, 3).map(t => `<span class="column-category">${t}</span>`).join('')}
+                </div>
+              </div>
+            </div>
+            <div class="column-description">${column.description}</div>
+            <div class="column-footer">
+              <span>📅 ${column.createdAt}</span>
+              <div class="column-stats">
+                <span>📖 ${column.readTime} 分钟阅读</span>
+                <span>📄 ${column.articles} 篇文章</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+    
+    // 过滤专栏
+    function filterColumns(category) {
+      currentColumnFilter = category;
+      const tabs = document.querySelectorAll('#columnsToolbar .filter-tab');
+      tabs.forEach(t => t.classList.remove('active'));
+      
+      // 根据 category 值找到对应的元素并添加 active 类
+      const categoryLabels = {
+        'all': '全部',
+        'dev_flow': '开发流程',
+        'tech_stack': '技术栈',
+        'best_practices': '最佳实践'
+      };
+      tabs.forEach(t => {
+        if (t.textContent.includes(categoryLabels[category] || category)) {
+          t.classList.add('active');
+        }
+      });
+      
+      renderColumnList();
+    }
+    
+    // 刷新专栏
+    function refreshColumns() {
+      renderColumnList();
+    }
+    
+    // 显示专栏详情
+    function showColumnDetail(id) {
+      const column = columnData.find(c => c.id === id);
+      if (!column) return;
+      
+      const categoryInfo = columnCategoryMap[column.category] || { label: column.categoryLabel || '其他', icon: '📦' };
+      
+      let content = '';
+      
+      // 专栏内容
+      const columnContent = column.content || '';
+      if (columnContent) {
+        content += '<div class="markdown-content">' + simpleMarkdownToHtml(columnContent) + '</div>';
+      }
+      
+      // 更新模态框
+      document.getElementById('detailModalTitle').textContent = column.title;
+      document.getElementById('detailModalMeta').innerHTML = `
+        <span class="detail-tag">${column.icon} ${column.categoryLabel}</span>
+        <span class="detail-tag">📖 ${column.readTime} 分钟阅读</span>
+        <span class="detail-tag">📄 ${column.articles} 篇文章</span>
+        <span class="detail-tag">📅 ${column.createdAt}</span>
+        ${(column.tags || []).map(t => `<span class="detail-tag">${t}</span>`).join('')}
+      `;
+      document.getElementById('detailModalBody').innerHTML = content;
+      document.getElementById('detailModal').classList.add('show');
+    }
+    
+    // 点击详情模态框外部关闭
+    document.addEventListener('click', function(e) {
+      const modal = document.getElementById('detailModal');
+      if (modal && e.target === modal) {
+        closeDetailModal();
+      }
+    });
+    
+    // ESC 键关闭详情模态框
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeDetailModal();
+      }
+    });
     
     // 初始化
     init();
@@ -1675,6 +2638,242 @@
         <button class="btn" onclick="closeGlobalSettingsModal()">取消</button>
         <button class="btn" onclick="resetGlobalSettings()">🔄 重置</button>
         <button class="btn primary" onclick="saveGlobalSettings()">💾 保存设置</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 详情模态框样式 -->
+  <style>
+  /* 详情模态框样式 */
+  #detailModal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 2147483647;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  #detailModal.show {
+    display: flex;
+  }
+  #detailModal * {
+    box-sizing: border-box;
+  }
+  #detailModal .modal-content {
+    background: #ffffff;
+    border: 1px solid #d0d7de;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 900px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    position: relative;
+    z-index: 2147483647;
+  }
+  #detailModal .modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #d0d7de;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    background: #ffffff;
+    flex-shrink: 0;
+  }
+  #detailModal .modal-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #24292f;
+    margin: 0;
+    line-height: 1.4;
+  }
+  #detailModal .modal-meta {
+    font-size: 12px;
+    color: #57606a;
+    margin-top: 6px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  #detailModal .modal-body {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+    background: #f6f8fa;
+  }
+  #detailModal .modal-footer {
+    padding: 12px 20px;
+    border-top: 1px solid #d0d7de;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    background: #ffffff;
+    flex-shrink: 0;
+  }
+  #detailModal .btn {
+    padding: 6px 14px;
+    border: 1px solid #d0d7de;
+    background: #f6f8fa;
+    color: #24292f;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  #detailModal .btn:hover {
+    border-color: #0969da;
+    background: #f3f4f6;
+  }
+  #detailModal .btn.primary {
+    background: #0969da;
+    border-color: #0969da;
+    color: #fff;
+  }
+  #detailModal .btn.primary:hover {
+    background: #0550ae;
+  }
+  
+  /* Markdown 内容样式 */
+  .markdown-content {
+    font-size: 14px;
+    line-height: 1.7;
+    color: #24292f;
+  }
+  .markdown-content h1 {
+    font-size: 22px;
+    font-weight: 600;
+    margin: 24px 0 12px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #d0d7de;
+    color: #24292f;
+  }
+  .markdown-content h2 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 20px 0 10px 0;
+    color: #24292f;
+  }
+  .markdown-content h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 16px 0 8px 0;
+    color: #24292f;
+  }
+  .markdown-content h4 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 14px 0 6px 0;
+    color: #24292f;
+  }
+  .markdown-content p {
+    margin: 10px 0;
+  }
+  .markdown-content ul, .markdown-content ol {
+    margin: 10px 0;
+    padding-left: 24px;
+  }
+  .markdown-content li {
+    margin: 4px 0;
+  }
+  .markdown-content code {
+    background: #f3f4f6;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 13px;
+    color: #cf222e;
+  }
+  .markdown-content pre {
+    background: #24292f;
+    color: #e6edf3;
+    padding: 16px;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin: 12px 0;
+  }
+  .markdown-content pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+  }
+  .markdown-content blockquote {
+    border-left: 4px solid #0969da;
+    padding-left: 16px;
+    margin: 12px 0;
+    color: #57606a;
+    background: #ddf4ff;
+    padding: 12px 16px;
+    border-radius: 0 6px 6px 0;
+  }
+  .markdown-content table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 12px 0;
+  }
+  .markdown-content th, .markdown-content td {
+    border: 1px solid #d0d7de;
+    padding: 8px 12px;
+    text-align: left;
+  }
+  .markdown-content th {
+    background: #f6f8fa;
+    font-weight: 600;
+  }
+  .markdown-content a {
+    color: #0969da;
+    text-decoration: none;
+  }
+  .markdown-content a:hover {
+    text-decoration: underline;
+  }
+  .markdown-content hr {
+    border: none;
+    border-top: 1px solid #d0d7de;
+    margin: 20px 0;
+  }
+  
+  /* 详情页标签样式 */
+  .detail-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    background: #f3f4f6;
+    color: #57606a;
+  }
+  .detail-tag.xp {
+    background: #fff3cd;
+    color: #9a6700;
+  }
+  .detail-tag.difficulty {
+    background: #e8f5e9;
+    color: #1a7f37;
+  }
+  </style>
+  
+  <!-- 详情模态框 -->
+  <div id="detailModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title" id="detailModalTitle"></h3>
+          <div class="modal-meta" id="detailModalMeta"></div>
+        </div>
+        <button class="btn" onclick="closeDetailModal()">✕</button>
+      </div>
+      <div class="modal-body" id="detailModalBody">
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeDetailModal()">关闭</button>
       </div>
     </div>
   </div>
