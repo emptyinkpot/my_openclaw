@@ -38,6 +38,7 @@ export class ContentCraftAutoService {
   private activityLog: ActivityLog;
   
   private running = false;
+  private isProcessing = false; // 防重入标志位
   private timer: NodeJS.Timeout | null = null;
   private lastRunTime: Date | null = null;
   private currentTask: string | null = null;
@@ -173,8 +174,15 @@ export class ContentCraftAutoService {
     if (!this.running) {
       return;
     }
+    
+    // 防重入检查
+    if (this.isProcessing) {
+      logger.info('[ContentCraftAutoService] 上次处理尚未完成，跳过本次执行');
+      return;
+    }
 
     try {
+      this.isProcessing = true; // 标记开始处理
       this.lastRunTime = new Date();
       logger.info('[ContentCraftAutoService] 开始处理章节...');
       this.activityLog.log('progress', 'Content Craft 开始检查待处理章节...');
@@ -226,6 +234,8 @@ export class ContentCraftAutoService {
       this.errorCount++;
       logger.error('[ContentCraftAutoService] 处理过程出错:', error.message);
       this.currentTask = null;
+    } finally {
+      this.isProcessing = false; // 确保总是重置标志位
     }
   }
 
