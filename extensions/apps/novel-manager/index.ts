@@ -948,7 +948,6 @@ async function handleNovelPage(req: IncomingMessage, res: ServerResponse): Promi
     '/publish.html': 'publish.html',
     '/feishu.html': 'feishu.html',
     // 静态资源文件
-    '/settings-modal.html': 'settings-modal.html',
     '/nav-bar.html': 'nav-bar.html',
     '/nav-bar.js': 'nav-bar.js'
   };
