@@ -269,7 +269,7 @@ export class ContentCraftAutoService {
    * 生成章节内容（完整流程：生成 + 润色）
    */
   private async generateChapter(workId: number, chapterNumber: number): Promise<void> {
-    logger.info(`[ContentCraftAutoService] 生成章节内容 (workId: ${workId}, chapterNumber: ${chapterNumber})`);
+    logger.info(`[ContentCraftAutoService] ===== 开始生成第 ${chapterNumber} 章 =====`);
     this.activityLog.log('generating', `开始生成第 ${chapterNumber} 章内容`);
     
     const db = getDatabaseManager();
@@ -306,7 +306,7 @@ export class ContentCraftAutoService {
       }
     }
     
-    logger.info(`[ContentCraftAutoService] 章节生成完成 (workId: ${workId}, chapterNumber: ${chapterNumber})`);
+    logger.info(`[ContentCraftAutoService] ===== 第 ${chapterNumber} 章生成完成 =====`);
     this.activityLog.log('completed', `第 ${chapterNumber} 章生成完成`);
   }
 
