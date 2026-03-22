@@ -10,9 +10,11 @@
 
 import { logger } from '../../../plugins/novel-manager/utils/logger';
 import { NovelService } from '../../../plugins/novel-manager/services/novel-service';
+import { getDatabaseManager } from '../../../core/database';
+import { ChapterState } from '../../../core/state-machine';
 import { PolishPipeline } from './pipeline';
 import { GenerationPipeline } from './generation-pipeline';
-import { chapterStateMachine, ChapterState } from '../../../core/state-machine';
+import { configManager } from './config-manager';
 
 export interface AutoServiceStatus {
   running: boolean;
@@ -30,8 +32,6 @@ export interface AutoServiceConfig {
 
 export class ContentCraftAutoService {
   private novelService: NovelService;
-  private polishPipeline: PolishPipeline;
-  private generationPipeline: GenerationPipeline;
   
   private running = false;
   private timer: NodeJS.Timeout | null = null;
@@ -47,8 +47,6 @@ export class ContentCraftAutoService {
 
   constructor() {
     this.novelService = new NovelService();
-    this.polishPipeline = new PolishPipeline();
-    this.generationPipeline = new GenerationPipeline();
   }
 
   /**
@@ -197,11 +195,11 @@ export class ContentCraftAutoService {
           logger.info(`[ContentCraftAutoService] ${this.currentTask}`);
           
           if (chapter.state === ChapterState.OUTLINE) {
-            // 生成章节内容
-            await this.generateChapter(chapter.id);
+            // 生成章节内容（完整流程：生成+润色）
+            await this.generateChapter(chapter.work_id, chapter.chapter_number);
           } else if (chapter.state === ChapterState.FIRST_DRAFT) {
             // 润色章节内容
-            await this.polishChapter(chapter.id);
+            await this.polishChapter(chapter.work_id, chapter.chapter_number);
           }
           
           this.processedCount++;
@@ -251,41 +249,127 @@ export class ContentCraftAutoService {
   }
 
   /**
-   * 生成章节内容
+   * 生成章节内容（完整流程：生成 + 润色）
    */
-  private async generateChapter(chapterId: number): Promise<void> {
-    // TODO: 实现章节生成逻辑
-    // 这里需要调用 GenerationPipeline 来生成章节内容
-    // 生成完成后，通过状态机将状态更新为 polished
-    logger.info(`[ContentCraftAutoService] 生成章节内容 (ID: ${chapterId})`);
+  private async generateChapter(workId: number, chapterNumber: number): Promise<void> {
+    logger.info(`[ContentCraftAutoService] 生成章节内容 (workId: ${workId}, chapterNumber: ${chapterNumber})`);
     
-    // 临时实现：模拟生成过程
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    const db = getDatabaseManager();
+    const generationPipeline = new GenerationPipeline();
     
-    // 更新状态为 polished
-    await chapterStateMachine.transition(chapterId, ChapterState.POLISHED, {
-      reason: '自动生成完成',
-      operator: 'content-craft-auto'
+    const result = await generationPipeline.generateFromDatabase({
+      workId,
+      chapterNumber,
+      relatedChapterCount: 2
+    }, (progress: any) => {
+      logger.info(`[ContentCraftAutoService] [生成进度] ${progress.phase || 'generating'}: ${progress.message} (${progress.progress}%)`);
     });
+
+    // 保存生成后的内容并更新状态
+    if (result.text) {
+      // 先获取章节ID
+      const chapter = await db.queryOne(
+        'SELECT * FROM chapters WHERE work_id = ? AND chapter_number = ?', 
+        [workId, chapterNumber]
+      );
+      if (chapter) {
+        await this.novelService.updateChapter(chapter.id, {
+          content: result.text
+        });
+        // 使用状态机服务更新状态
+        const { getChapterStateMachine } = require('../../../core/state-machine');
+        const stateMachine = getChapterStateMachine();
+        await stateMachine.transition(
+          chapter.id,
+          'first_draft',
+          'content_generated',
+          { metadata: { generationResult: 'success' } }
+        );
+      }
+    }
+    
+    logger.info(`[ContentCraftAutoService] 章节生成完成 (workId: ${workId}, chapterNumber: ${chapterNumber})`);
   }
 
   /**
    * 润色章节内容
    */
-  private async polishChapter(chapterId: number): Promise<void> {
-    // TODO: 实现章节润色逻辑
-    // 这里需要调用 PolishPipeline 来润色章节内容
-    // 润色完成后，通过状态机将状态更新为 polished
-    logger.info(`[ContentCraftAutoService] 润色章节内容 (ID: ${chapterId})`);
+  private async polishChapter(workId: number, chapterNumber: number): Promise<void> {
+    logger.info(`[ContentCraftAutoService] 润色章节内容 (workId: ${workId}, chapterNumber: ${chapterNumber})`);
     
-    // 临时实现：模拟润色过程
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    const db = getDatabaseManager();
     
-    // 更新状态为 polished
-    await chapterStateMachine.transition(chapterId, ChapterState.POLISHED, {
-      reason: '自动润色完成',
-      operator: 'content-craft-auto'
+    // 1. 从数据库读取章节内容
+    const chapter = await db.queryOne(
+      'SELECT * FROM chapters WHERE work_id = ? AND chapter_number = ?', 
+      [workId, chapterNumber]
+    );
+    
+    if (!chapter || !chapter.content) {
+      throw new Error('未找到章节内容');
+    }
+
+    // 2. 使用 PolishPipeline 润色
+    const polishPipeline = new PolishPipeline();
+    const result = await polishPipeline.execute({
+      text: chapter.content,
+      settings: configManager.getSettings()
+    }, (progress: any) => {
+      logger.info(`[ContentCraftAutoService] [润色进度] ${progress.currentStep || 'processing'}: ${progress.message} (${progress.progress}%)`);
     });
+
+    // 3. 保存润色后的内容并更新状态
+    if (result.text) {    
+      // 先更新内容
+      await this.novelService.updateChapter(chapter.id, {
+        content: result.text
+      });
+      
+      // 记录润色信息到 polish_info 字段（先尝试添加字段）
+      try {
+        // 检查 polish_info 字段是否存在
+        const [colCheck] = await db.query(`
+          SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'chapters' AND COLUMN_NAME = 'polish_info'
+        `);
+        
+        if (colCheck[0].cnt === 0) {
+          // 字段不存在，添加它
+          await db.execute(`
+            ALTER TABLE chapters ADD COLUMN polish_info JSON COMMENT '润色信息（是否经过润色流程、步骤等）' AFTER status
+          `);
+          logger.info('[ContentCraftAutoService] 已添加 polish_info 字段');
+        }
+        
+        // 更新 polish_info 字段
+        const polishInfo = {
+          hasBeenPolished: true,
+          polishedAt: new Date().toISOString(),
+          stepsExecuted: result.metadata?.stepsExecuted || 0,
+          totalSteps: result.metadata?.totalSteps || 0,
+          processingTime: result.metadata?.processingTime || 0
+        };
+        
+        await db.execute(`
+          UPDATE chapters SET polish_info = ? WHERE id = ?
+        `, [JSON.stringify(polishInfo), chapter.id]);
+        
+      } catch (e) {
+        logger.warn('[ContentCraftAutoService] 更新 polish_info 失败:', e);
+      }
+      
+      // 使用状态机服务更新状态
+      const { getChapterStateMachine } = require('../../../core/state-machine');
+      const stateMachine = getChapterStateMachine();
+      await stateMachine.transition(
+        chapter.id,
+        'polished',
+        'content_polished',
+        { metadata: { polishResult: 'success' } }
+      );
+    }
+    
+    logger.info(`[ContentCraftAutoService] 章节润色完成 (workId: ${workId}, chapterNumber: ${chapterNumber})`);
   }
 }
 
