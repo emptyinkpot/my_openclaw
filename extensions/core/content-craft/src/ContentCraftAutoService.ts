@@ -234,26 +234,24 @@ export class ContentCraftAutoService {
    */
   private async getChaptersToProcess(): Promise<any[]> {
     try {
-      // 获取所有章节
-      const result = await this.novelService.getChapters({});
-      const chapters = result.data || [];
+      // 直接查询数据库，不依赖 novelService
+      const db = getDatabaseManager();
       
-      // 筛选出状态为 outline 或 first_draft 的章节
-      const chaptersToProcess = chapters.filter((chapter: any) => 
-        (chapter.state || chapter.status) === 'outline' || 
-        (chapter.state || chapter.status) === 'first_draft'
-      );
+      // 直接查询状态为 outline 或 first_draft 的章节
+      const chapters = await db.query(`
+        SELECT * FROM chapters 
+        WHERE status IN ('outline', 'first_draft')
+        ORDER BY updated_at ASC
+        LIMIT ?
+      `, [this.config.maxChaptersPerRun]);
       
-      // 按更新时间排序，优先处理较早的
-      chaptersToProcess.sort((a: any, b: any) => {
-        const timeA = new Date(a.updated_at || a.created_at || 0).getTime();
-        const timeB = new Date(b.updated_at || b.created_at || 0).getTime();
-        return timeA - timeB;
-      });
+      logger.info(`[ContentCraftAutoService] 找到 ${chapters.length} 个需要处理的章节`);
+      this.activityLog.log('progress', `找到 ${chapters.length} 个需要处理的章节`);
       
-      return chaptersToProcess;
+      return chapters;
     } catch (error: any) {
       logger.error('[ContentCraftAutoService] 获取需要处理的章节失败:', error.message);
+      this.activityLog.log('error', `获取章节失败: ${error.message}`);
       return [];
     }
   }
