@@ -1,7 +1,7 @@
 {
   "agent:main:main": {
     "sessionId": "69335c48-3f72-418d-8b91-38162f949eca",
-    "updatedAt": 1774238110070,
+    "updatedAt": 1774238147293,
     "systemSent": true,
     "abortedLastRun": false,
     "chatType": "direct",
@@ -494,9 +494,8 @@
     "inputTokens": 6434,
     "outputTokens": 12880,
     "totalTokens": 87434,
-    "modelProvider": "deepseek",
-    "model": "deepseek-chat",
-    "contextTokens": 128000
+    "providerOverride": "coze",
+    "modelOverride": "doubao-seed-1-8-251228"
   },
   "agent:main:cron:6782e7b2-978f-47bc-b76d-462f7001d863": {
     "sessionId": "579ef1fd-46ae-4955-8042-4d47ba37f730",
