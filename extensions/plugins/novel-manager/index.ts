@@ -1006,6 +1006,9 @@ async function handleNovelPage(req: IncomingMessage, res: ServerResponse): Promi
     '/cache-manage.html': 'cache-manage.html',
     '/publish.html': 'publish.html',
     '/feishu.html': 'feishu.html',
+    '/automation': 'auto.html',
+    '/automation.html': 'auto.html',
+    '/experience.html': 'experience.html',
     // 静态资源文件
     '/nav-bar.html': 'nav-bar.html',
     '/nav-bar.js': 'nav-bar.js'
@@ -1151,7 +1154,7 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
         const dailyPlanRepo = getDailyPlanRepository();
         
         // 转换格式
-        const plans: Array&lt;{ work_id: number; chapter_number: number; plan_date: string | Date }&gt; = [];
+        const plans: Array<{ work_id: number; chapter_number: number; plan_date: string | Date }> = [];
         if (plannedChapters && typeof plannedChapters === 'object') {
           for (const [workIdStr, chapters] of Object.entries(plannedChapters)) {
             const workId = parseInt(workIdStr);
@@ -1182,12 +1185,12 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
         const todayPlans = await dailyPlanRepo.getToday();
         
         // 转换格式
-        const plannedChapters: Record&lt;number, number[]&gt; = {};
+        const plannedChapters: Record<number, number[]> = {};
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const todayStr = today.toISOString().split('T')[0];
         
-        todayPlans.forEach((plan: any) =&gt; {
+        todayPlans.forEach((plan: any) => {
           if (!plannedChapters[plan.work_id]) {
             plannedChapters[plan.work_id] = [];
           }
@@ -2899,11 +2902,16 @@ const plugin = {
     const pageRoutes = [
       { path: '/', match: 'exact' as const },
       { path: '/novel', match: 'exact' as const },
+      { path: '/novel/', match: 'exact' as const },
       { path: '/cache.html', match: 'exact' as const },
       { path: '/project-structure.html', match: 'exact' as const },
       { path: '/logs.html', match: 'exact' as const },
       { path: '/cache-manage.html', match: 'exact' as const },
-      { path: '/publish.html', match: 'exact' as const }
+      { path: '/publish.html', match: 'exact' as const },
+      { path: '/feishu.html', match: 'exact' as const },
+      { path: '/automation', match: 'exact' as const },
+      { path: '/automation.html', match: 'exact' as const },
+      { path: '/experience.html', match: 'exact' as const }
     ];
     
     // 注册页面路由 - 不需要认证

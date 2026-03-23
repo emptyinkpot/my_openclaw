@@ -1,7 +1,7 @@
 {
   "agent:main:main": {
     "sessionId": "69335c48-3f72-418d-8b91-38162f949eca",
-    "updatedAt": 1774236387454,
+    "updatedAt": 1774236601073,
     "systemSent": true,
     "abortedLastRun": false,
     "chatType": "direct",
@@ -181,12 +181,12 @@
     },
     "systemPromptReport": {
       "source": "run",
-      "generatedAt": 1774236172384,
+      "generatedAt": 1774236535048,
       "sessionId": "69335c48-3f72-418d-8b91-38162f949eca",
       "sessionKey": "agent:main:main",
       "provider": "deepseek",
       "model": "deepseek-chat",
-      "workspaceDir": "/workspace/projects/workspace",
+      "workspaceDir": "/workspace",
       "bootstrapMaxChars": 20000,
       "bootstrapTotalMaxChars": 150000,
       "bootstrapTruncation": {
@@ -201,14 +201,14 @@
         "sandboxed": false
       },
       "systemPrompt": {
-        "chars": 31460,
-        "projectContextChars": 13872,
-        "nonProjectContextChars": 17588
+        "chars": 30997,
+        "projectContextChars": 13447,
+        "nonProjectContextChars": 17550
       },
       "injectedWorkspaceFiles": [
         {
           "name": "AGENTS.md",
-          "path": "/workspace/projects/workspace/AGENTS.md",
+          "path": "/workspace/AGENTS.md",
           "missing": false,
           "rawChars": 7809,
           "injectedChars": 7809,
@@ -216,7 +216,7 @@
         },
         {
           "name": "SOUL.md",
-          "path": "/workspace/projects/workspace/SOUL.md",
+          "path": "/workspace/SOUL.md",
           "missing": false,
           "rawChars": 1664,
           "injectedChars": 1664,
@@ -224,7 +224,7 @@
         },
         {
           "name": "TOOLS.md",
-          "path": "/workspace/projects/workspace/TOOLS.md",
+          "path": "/workspace/TOOLS.md",
           "missing": false,
           "rawChars": 850,
           "injectedChars": 850,
@@ -232,7 +232,7 @@
         },
         {
           "name": "IDENTITY.md",
-          "path": "/workspace/projects/workspace/IDENTITY.md",
+          "path": "/workspace/IDENTITY.md",
           "missing": false,
           "rawChars": 633,
           "injectedChars": 633,
@@ -240,7 +240,7 @@
         },
         {
           "name": "USER.md",
-          "path": "/workspace/projects/workspace/USER.md",
+          "path": "/workspace/USER.md",
           "missing": false,
           "rawChars": 474,
           "injectedChars": 474,
@@ -248,7 +248,7 @@
         },
         {
           "name": "HEARTBEAT.md",
-          "path": "/workspace/projects/workspace/HEARTBEAT.md",
+          "path": "/workspace/HEARTBEAT.md",
           "missing": false,
           "rawChars": 167,
           "injectedChars": 167,
@@ -256,18 +256,10 @@
         },
         {
           "name": "BOOTSTRAP.md",
-          "path": "/workspace/projects/workspace/BOOTSTRAP.md",
+          "path": "/workspace/BOOTSTRAP.md",
           "missing": false,
           "rawChars": 1449,
           "injectedChars": 1449,
-          "truncated": false
-        },
-        {
-          "name": "MEMORY.md",
-          "path": "/workspace/projects/workspace/MEMORY.md",
-          "missing": false,
-          "rawChars": 248,
-          "injectedChars": 248,
           "truncated": false
         }
       ],
@@ -495,13 +487,16 @@
         ]
       }
     },
-    "cacheRead": 51776,
+    "cacheRead": 56384,
     "cacheWrite": 0,
     "totalTokensFresh": true,
     "lastChannel": "webchat",
-    "inputTokens": 804,
-    "outputTokens": 885,
-    "totalTokens": 52089
+    "inputTokens": 53074,
+    "outputTokens": 1082,
+    "totalTokens": 56824,
+    "modelProvider": "deepseek",
+    "model": "deepseek-chat",
+    "contextTokens": 128000
   },
   "agent:main:cron:6782e7b2-978f-47bc-b76d-462f7001d863": {
     "sessionId": "579ef1fd-46ae-4955-8042-4d47ba37f730",
