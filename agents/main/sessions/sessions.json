@@ -1,7 +1,7 @@
 {
   "agent:main:main": {
     "sessionId": "69335c48-3f72-418d-8b91-38162f949eca",
-    "updatedAt": 1774229229295,
+    "updatedAt": 1774229663426,
     "systemSent": true,
     "abortedLastRun": false,
     "chatType": "direct",
@@ -179,15 +179,15 @@
       ],
       "version": 0
     },
-    "modelProvider": "coze",
-    "model": "auto",
+    "modelProvider": "deepseek",
+    "model": "deepseek-chat",
     "systemPromptReport": {
       "source": "run",
-      "generatedAt": 1774229205428,
+      "generatedAt": 1774229662599,
       "sessionId": "69335c48-3f72-418d-8b91-38162f949eca",
       "sessionKey": "agent:main:main",
-      "provider": "coze",
-      "model": "auto",
+      "provider": "deepseek",
+      "model": "deepseek-chat",
       "workspaceDir": "/workspace/projects/workspace",
       "bootstrapMaxChars": 20000,
       "bootstrapTotalMaxChars": 150000,
@@ -203,9 +203,9 @@
         "sandboxed": false
       },
       "systemPrompt": {
-        "chars": 31660,
+        "chars": 31686,
         "projectContextChars": 13872,
-        "nonProjectContextChars": 17788
+        "nonProjectContextChars": 17814
       },
       "injectedWorkspaceFiles": [
         {
@@ -487,12 +487,11 @@
     },
     "cacheRead": 23808,
     "cacheWrite": 0,
-    "totalTokensFresh": true,
+    "totalTokensFresh": false,
     "lastChannel": "webchat",
-    "contextTokens": 204800,
+    "contextTokens": 128000,
     "inputTokens": 353,
-    "outputTokens": 786,
-    "totalTokens": 24161
+    "outputTokens": 786
   },
   "agent:main:cron:6782e7b2-978f-47bc-b76d-462f7001d863": {
     "sessionId": "579ef1fd-46ae-4955-8042-4d47ba37f730",
