@@ -331,7 +331,7 @@
     "bind": "loopback",
     "controlUi": {
       "enabled": true,
-      "root": "/usr/lib/node_modules/openclaw/dist/control-ui",
+      "root": "/workspace/projects/control-ui-custom",
       "allowedOrigins": [
         "http://172.30.24.228:5000",
         "http://localhost:5000",

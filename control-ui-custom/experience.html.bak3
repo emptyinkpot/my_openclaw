@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🧠 经验积累中心</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    :root {
+      --bg: #f6f8fa;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #f3f4f6;
+      --border: #d0d7de;
+      --text: #24292f;
+      --text-secondary: #57606a;
+      --text-muted: #6e7781;
+      --accent: #0969da;
+      --accent-hover: #0550ae;
+      --success: #1a7f37;
+      --warning: #9a6700;
+      --danger: #cf222e;
+      --purple: #8250df;
+      --pink: #bf3989;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 13px;
+      height: 100vh;
+      overflow: hidden;
+    }
+    
+    /* 导航栏 */
+    .nav-bar{position:fixed;top:0;left:0;right:0;height:40px;background:#24292f;display:flex;align-items:center;padding:0 16px;gap:4px;z-index:9999}
+    .nav-bar span{color:#fff;font-weight:600;font-size:14px;margin-right:16px}
+    .nav-bar a{color:#8b949e;font-size:13px;padding:6px 14px;border-radius:4px;text-decoration:none}
+    .nav-bar a:hover{background:rgba(255,255,255,0.1);color:#fff}
+    .nav-bar a.on{background:#0969da;color:#fff}
+    
+    /* 头部 */
+    .header {
+      height: 56px;
+      background: linear-gradient(135deg, #8250df 0%, #bf3989 100%);
+      color: white;
+      margin-top: 40px;
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 16px;
+    }
+    
+    .header-title {
+      font-size: 18px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .header-subtitle {
+      font-size: 12px;
+      opacity: 0.9;
+    }
+    
+    .header-stats {
+      margin-left: auto;
+      display: flex;
+      gap: 20px;
+      font-size: 12px;
+    }
+    
+    .header-stat {
+      text-align: center;
+    }
+    
+    .header-stat-value {
+      font-size: 20px;
+      font-weight: 700;
+    }
+    
+    .header-stat-label {
+      font-size: 10px;
+      opacity: 0.8;
+    }
+    
+    /* 主布局 */
+    .main {
+      display: flex;
+      height: calc(100vh - 56px);
+    }
+    
+    /* 左侧等级面板 */
+    .sidebar {
+      width: 280px;
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    
+    .level-card {
+      padding: 24px;
+      background: linear-gradient(135deg, #8250df 0%, #bf3989 100%);
+      color: white;
+      text-align: center;
+    }
+    
+    .level-badge {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      margin: 0 auto 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      border: 3px solid rgba(255,255,255,0.3);
+    }
+    
+    .level-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    
+    .level-num {
+      font-size: 14px;
+      opacity: 0.9;
+      margin-bottom: 16px;
+    }
+    
+    .xp-bar {
+      background: rgba(255,255,255,0.2);
+      border-radius: 10px;
+      height: 10px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+    
+    .xp-fill {
+      background: white;
+      height: 100%;
+      border-radius: 10px;
+      transition: width 0.5s;
+    }
+    
+    .xp-text {
+      font-size: 11px;
+      opacity: 0.9;
+    }
+    
+    /* 统计区域 */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .stat-box {
+      background: var(--bg-tertiary);
+      padding: 12px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    
+    .stat-box-value {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+    
+    .stat-box-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    
+    /* 类型分布 */
+    .type-distribution {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .type-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }
+    
+    .type-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+    
+    .type-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    
+    .type-name {
+      flex: 1;
+    }
+    
+    .type-count {
+      color: var(--text-muted);
+    }
+    
+    .type-bar {
+      width: 60px;
+      height: 4px;
+      background: var(--bg-tertiary);
+      border-radius: 2px;
+    }
+    
+    .type-fill {
+      height: 100%;
+      border-radius: 2px;
+    }
+    
+    /* 搜索 */
+    .search-area {
+      padding: 12px;
+      border-top: 1px solid var(--border);
+      margin-top: auto;
+    }
+    
+    .search-input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 12px;
+      outline: none;
+    }
+    
+    .search-input:focus {
+      border-color: var(--accent);
+    }
+    
+    /* 右侧内容区 */
+    .content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    
+    /* 工具栏 */
+    .toolbar {
+      padding: 12px 16px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    
+    .btn {
+      padding: 6px 14px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s;
+    }
+    
+    .btn:hover {
+      border-color: var(--accent);
+      background: var(--bg-tertiary);
+    }
+    
+    .btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: var(--accent-hover);
+    }
+    
+    .filter-tabs {
+      display: flex;
+      gap: 4px;
+    }
+    
+    .filter-tab {
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+    
+    .filter-tab:hover {
+      background: var(--bg-tertiary);
+    }
+    
+    .filter-tab.active {
+      background: var(--accent);
+      color: white;
+    }
+    
+    .toolbar-spacer {
+      flex: 1;
+    }
+    
+    /* 经验列表 */
+    .exp-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+    
+    .exp-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    
+    .exp-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    
+    .exp-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    
+    .exp-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    
+    .exp-meta {
+      flex: 1;
+    }
+    
+    .exp-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    
+    .exp-tags {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    
+    .exp-tag {
+      padding: 2px 8px;
+      background: var(--bg-tertiary);
+      border-radius: 10px;
+      font-size: 10px;
+      color: var(--text-secondary);
+    }
+    
+    .exp-type-tag {
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 10px;
+    }
+    
+    .exp-desc {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-bottom: 10px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+    
+    .exp-footer {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    
+    .exp-xp {
+      margin-left: auto;
+      padding: 2px 10px;
+      background: linear-gradient(135deg, #8250df20, #bf398920);
+      border-radius: 10px;
+      color: #8250df;
+      font-weight: 600;
+    }
+    
+    /* 空状态 */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+    
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+    
+    .empty-text {
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+    
+    .empty-hint {
+      font-size: 12px;
+    }
+    
+    /* 模态框 */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal.show {
+      display: flex;
+    }
+    
+    .modal-content {
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      width: 90%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .modal-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .modal-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+    
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: var(--text-muted);
+    }
+    
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      flex: 1;
+    }
+    
+    .form-group {
+      margin-bottom: 16px;
+    }
+    
+    .form-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: var(--text-secondary);
+    }
+    
+    .form-input,
+    .form-textarea,
+    .form-select {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
+      outline: none;
+      font-family: inherit;
+    }
+    
+    .form-input:focus,
+    .form-textarea:focus,
+    .form-select:focus {
+      border-color: var(--accent);
+    }
+    
+    .form-textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+    
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    
+    .modal-footer {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body>
+<div class="nav-bar"><a href="/novel/" style="padding: 6px 14px; border-radius: 4px; color: #8b949e; text-decoration: none;">⚙️ 设置</a><a href="/novel/">📚 小说管理</a><a href="/auto.html">⚙️ 自动化</a><a href="/experience.html" class="on">🧠 经验</a><a href="/cache.html">💾 缓存</a><a href="/">🎯 原生界面</a></div>
+  <!-- 头部 -->
+  <div class="header">
+    <div class="header-title">
+      🧠 经验积累中心
+      <span class="header-subtitle">记录成长，积累智慧</span>
+    </div>
+    <div class="header-stats">
+      <div class="header-stat">
+        <div class="header-stat-value" id="headerLevel">1</div>
+        <div class="header-stat-label">等级</div>
+      </div>
+      <div class="header-stat">
+        <div class="header-stat-value" id="headerXP">0</div>
+        <div class="header-stat-label">总经验</div>
+      </div>
+      <div class="header-stat">
+        <div class="header-stat-value" id="headerRecords">0</div>
+        <div class="header-stat-label">记录数</div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 主布局 -->
+  <div class="main">
+    <!-- 左侧边栏 -->
+    <div class="sidebar">
+      <div class="level-card">
+        <div class="level-badge" id="levelBadge">🌱</div>
+        <div class="level-title" id="levelTitle">新手</div>
+        <div class="level-num">Level <span id="levelNum">1</span></div>
+        <div class="xp-bar">
+          <div class="xp-fill" id="xpFill" style="width: 0%"></div>
+        </div>
+        <div class="xp-text"><span id="currentXP">0</span> / <span id="nextXP">1000</span> XP</div>
+      </div>
+      
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-box-value" id="statTotalXP" style="color: var(--purple)">0</div>
+          <div class="stat-box-label">总经验</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-value" id="statRecords" style="color: var(--success)">0</div>
+          <div class="stat-box-label">记录数</div>
+        </div>
+      </div>
+      
+      <div class="type-distribution">
+        <div class="type-title">📊 经验类型分布</div>
+        <div id="typeList">
+          <div class="type-item">
+            <span style="color: var(--text-muted); font-size: 12px;">暂无数据</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="search-area">
+        <input type="text" class="search-input" id="searchInput" placeholder="🔍 搜索经验...">
+      </div>
+    </div>
+    
+    <!-- 右侧内容 -->
+    <div class="content">
+      <div class="toolbar">
+        <button class="btn btn-primary" onclick="showAddModal()">
+          ➕ 记录新经验
+        </button>
+        <div class="filter-tabs">
+          <div class="filter-tab active" onclick="filterExp('all')">全部</div>
+          <div class="filter-tab" onclick="filterExp('problem_solving')">🎯 问题解决</div>
+          <div class="filter-tab" onclick="filterExp('bug_fix')">🐛 Bug修复</div>
+          <div class="filter-tab" onclick="filterExp('feature_dev')">✨ 功能开发</div>
+        </div>
+        <div class="toolbar-spacer"></div>
+        <button class="btn" onclick="refreshData()">🔄 刷新</button>
+      </div>
+      
+      <div class="exp-list" id="expList">
+        <div class="empty-state">
+          <div class="empty-icon">📝</div>
+          <div class="empty-text">暂无经验记录</div>
+          <div class="empty-hint">点击"记录新经验"添加第一条记录</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 添加经验模态框 -->
+  <div class="modal" id="addModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">➕ 记录新经验</div>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="expForm">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">经验类型</label>
+              <select class="form-select" id="expType">
+                <option value="problem_solving">🎯 问题解决</option>
+                <option value="bug_fix">🐛 Bug修复</option>
+                <option value="feature_dev">✨ 功能开发</option>
+                <option value="optimization">⚡ 性能优化</option>
+                <option value="refactoring">🔧 代码重构</option>
+                <option value="learning">📚 学习成长</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">难度等级</label>
+              <select class="form-select" id="expDifficulty">
+                <option value="1">⭐ 简单</option>
+                <option value="2" selected>⭐⭐ 中等</option>
+                <option value="3">⭐⭐⭐ 困难</option>
+                <option value="4">⭐⭐⭐⭐ 专家</option>
+                <option value="5">⭐⭐⭐⭐⭐ 史诗</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">标题 *</label>
+            <input type="text" class="form-input" id="expTitle" placeholder="简短描述这次经验..." required>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">详细描述</label>
+            <textarea class="form-textarea" id="expDesc" placeholder="详细描述这次经验的背景、过程..."></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">用户问题 / 需求</label>
+            <textarea class="form-textarea" id="expQuery" placeholder="用户提出了什么问题或需求？"></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">解决方案</label>
+            <textarea class="form-textarea" id="expSolution" placeholder="你是如何解决这个问题的？"></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">运用的经验（逗号分隔）</label>
+            <input type="text" class="form-input" id="expApplied" placeholder="例如：JS语法检查, 错误定位技巧">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">新积累的经验（逗号分隔）</label>
+            <input type="text" class="form-input" id="expGained" placeholder="例如：模块化设计, 正则表达式优化">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">标签（逗号分隔）</label>
+            <input type="text" class="form-input" id="expTags" placeholder="例如：javascript, debug, ui">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveExp()">💾 保存经验</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 配置
+    const API_BASE = '/novel/api';
+    
+    // 经验类型映射
+    const expTypeMap = {
+      problem_solving: { label: '问题解决', icon: '🎯', color: '#0969da', bg: '#ddf4ff' },
+      bug_fix: { label: 'Bug修复', icon: '🐛', color: '#cf222e', bg: '#ffebe9' },
+      feature_dev: { label: '功能开发', icon: '✨', color: '#1a7f37', bg: '#dafbe1' },
+      optimization: { label: '性能优化', icon: '⚡', color: '#9a6700', bg: '#fff8c5' },
+      refactoring: { label: '代码重构', icon: '🔧', color: '#8250df', bg: '#fbefff' },
+      learning: { label: '学习成长', icon: '📚', color: '#bf3989', bg: '#ffeff7' }
+    };
+    
+    // 等级配置
+    const levelTitles = ['🌱 新手', '🔰 学徒', '🎯 助手', '💎 专家', '👑 大师', '🔮 宗师', '⭐ 传奇'];
+    const levelEmojis = ['🌱', '🔰', '🎯', '💎', '👑', '🔮', '⭐'];
+    
+    // 状态
+    let expData = [];
+    let currentFilter = 'all';
+    
+    // 初始化
+    async function init() {
+      await loadData();
+    }
+    
+    // 加载数据
+    async function loadData() {
+      try {
+        const [statsRes, recordsRes] = await Promise.all([
+          fetch(`${API_BASE}/experience/stats`).then(r => r.json()),
+          fetch(`${API_BASE}/experience/records`).then(r => r.json())
+        ]);
+        
+        if (statsRes.success) {
+          updateStats(statsRes.data);
+        }
+        if (recordsRes.success) {
+          expData = recordsRes.data;
+          renderList();
+        }
+      } catch (err) {
+        console.error('加载失败:', err);
+      }
+    }
+    
+    // 更新统计
+    function updateStats(stats) {
+      document.getElementById('headerLevel').textContent = stats.level;
+      document.getElementById('headerXP').textContent = stats.totalXP;
+      document.getElementById('headerRecords').textContent = stats.totalRecords;
+      document.getElementById('levelBadge').textContent = levelEmojis[Math.min(stats.level - 1, 6)];
+      document.getElementById('levelTitle').textContent = levelTitles[Math.min(stats.level - 1, 6)].split(' ')[1];
+      document.getElementById('levelNum').textContent = stats.level;
+      document.getElementById('currentXP').textContent = stats.totalXP % 1000;
+      document.getElementById('nextXP').textContent = 1000;
+      document.getElementById('xpFill').style.width = ((stats.totalXP % 1000) / 1000 * 100) + '%';
+      document.getElementById('statTotalXP').textContent = stats.totalXP;
+      document.getElementById('statRecords').textContent = stats.totalRecords;
+      
+      // 类型分布
+      const typeList = document.getElementById('typeList');
+      const types = Object.entries(stats.typeDistribution || {}).sort((a, b) => b[1] - a[1]);
+      if (types.length === 0) {
+        typeList.innerHTML = '<div class="type-item"><span style="color: var(--text-muted); font-size: 12px;">暂无数据</span></div>';
+      } else {
+        typeList.innerHTML = types.map(([type, count]) => {
+          const info = expTypeMap[type];
+          const percent = stats.totalRecords ? (count / stats.totalRecords * 100) : 0;
+          return `
+            <div class="type-item">
+              <div class="type-dot" style="background: ${info.color}"></div>
+              <span class="type-name">${info.icon} ${info.label}</span>
+              <span class="type-count">${count}</span>
+              <div class="type-bar"><div class="type-fill" style="width: ${percent}%; background: ${info.color}"></div></div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+    
+    // 渲染列表
+    function renderList() {
+      const list = document.getElementById('expList');
+      let filtered = expData;
+      if (currentFilter !== 'all') {
+        filtered = expData.filter(e => e.type === currentFilter);
+      }
+      
+      if (filtered.length === 0) {
+        list.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">📝</div>
+            <div class="empty-text">暂无经验记录</div>
+            <div class="empty-hint">点击"记录新经验"添加第一条记录</div>
+          </div>
+        `;
+        return;
+      }
+      
+      list.innerHTML = filtered.map(exp => {
+        const typeInfo = expTypeMap[exp.type];
+        const stars = '⭐'.repeat(exp.difficulty);
+        const date = new Date(exp.timestamp).toLocaleDateString();
+        return `
+          <div class="exp-card" onclick="showDetail('${exp.id}')">
+            <div class="exp-header">
+              <div class="exp-icon" style="background: ${typeInfo.bg}; color: ${typeInfo.color}">${typeInfo.icon}</div>
+              <div class="exp-meta">
+                <div class="exp-title">${exp.title}</div>
+                <div class="exp-tags">
+                  <span class="exp-type-tag" style="background: ${typeInfo.bg}; color: ${typeInfo.color}">${typeInfo.label}</span>
+                  <span class="exp-tag">${stars}</span>
+                  ${exp.tags.slice(0, 3).map(t => `<span class="exp-tag">${t}</span>`).join('')}
+                </div>
+              </div>
+            </div>
+            <div class="exp-desc">${exp.description || exp.userQuery || '无描述'}</div>
+            <div class="exp-footer">
+              <span>📅 ${date}</span>
+              ${exp.experienceGained?.length ? `<span>💡 ${exp.experienceGained.length}项新经验</span>` : ''}
+              <span class="exp-xp">+${exp.xpGained || (exp.difficulty * 50)} XP</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+    
+    // 过滤
+    function filterExp(type) {
+      currentFilter = type;
+      document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+      renderList();
+    }
+    
+    // 显示添加模态框
+    function showAddModal() {
+      document.getElementById('addModal').classList.add('show');
+    }
+    
+    // 关闭模态框
+    function closeModal() {
+      document.getElementById('addModal').classList.remove('show');
+      document.getElementById('expForm').reset();
+    }
+    
+    // 保存经验
+    async function saveExp() {
+      const difficulty = parseInt(document.getElementById('expDifficulty').value);
+      const xp = difficulty * 50 + Math.floor(Math.random() * 20);
+      
+      const data = {
+        type: document.getElementById('expType').value,
+        title: document.getElementById('expTitle').value,
+        description: document.getElementById('expDesc').value,
+        userQuery: document.getElementById('expQuery').value,
+        solution: document.getElementById('expSolution').value,
+        experienceApplied: document.getElementById('expApplied').value.split(',').map(s => s.trim()).filter(Boolean),
+        experienceGained: document.getElementById('expGained').value.split(',').map(s => s.trim()).filter(Boolean),
+        tags: document.getElementById('expTags').value.split(',').map(s => s.trim()).filter(Boolean),
+        difficulty: difficulty,
+        xpGained: xp
+      };
+      
+      try {
+        const res = await fetch(`${API_BASE}/experience/records`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        if (result.success) {
+          closeModal();
+          await loadData();
+          alert(`✅ 经验已记录！获得 ${xp} XP`);
+        } else {
+          alert('❌ 保存失败: ' + (result.error || '未知错误'));
+        }
+      } catch (err) {
+        alert('❌ 保存失败: ' + err.message);
+      }
+    }
+    
+    // 刷新
+    function refreshData() {
+      loadData();
+    }
+    
+    // 显示详情
+    function showDetail(id) {
+      const exp = expData.find(e => e.id === id);
+      if (!exp) return;
+      alert(`标题: ${exp.title}\n\n描述: ${exp.description || '无'}\n\n解决方案: ${exp.solution || '无'}`);
+    }
+    
+    // 搜索
+    document.getElementById('searchInput')?.addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase();
+      if (!q) {
+        renderList();
+        return;
+      }
+      expData = expData.filter(exp => 
+        exp.title.toLowerCase().includes(q) ||
+        (exp.description && exp.description.toLowerCase().includes(q)) ||
+        exp.tags.some(t => t.toLowerCase().includes(q))
+      );
+      renderList();
+    });
+    
+    // 初始化
+    init();
+  </script>
+</body>
+</html>

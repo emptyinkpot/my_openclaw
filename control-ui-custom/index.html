@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OpenClaw Control</title>
+    <meta name="color-scheme" content="dark light" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+    <script type="module" crossorigin src="./assets/index-UvgeZ3yV.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/lit-BZwq2xLD.js">
+    <link rel="modulepreload" crossorigin href="./assets/format-DeRVtGzv.js">
+    <link rel="stylesheet" crossorigin href="./assets/index-DmrclaY-.css">
+    <style>
+      /* 保留原来的 margin-top，给导航栏留出空间 */
+      openclaw-app{display:block;margin-top:40px;height:calc(100vh - 40px)}
+    </style>
+  </head>
+  <body>
+    <!-- 使用项目的导航栏！ -->
+    <div id="navbar-container"></div>
+    <openclaw-app></openclaw-app>
+    
+    <script>
+      // Fetch 项目的 nav-bar.html
+      fetch('/nav-bar.html')
+        .then(res => {
+          if (!res.ok) {
+            throw new Error('Failed to load nav-bar.html');
+          }
+          return res.text();
+        })
+        .then(html => {
+          document.getElementById('navbar-container').innerHTML = html;
+          console.log('[Control UI] 成功加载项目导航栏！');
+        })
+        .catch(err => {
+          console.error('[Control UI] 加载导航栏失败:', err);
+          // 失败时显示一个简单的 fallback
+          document.getElementById('navbar-container').innerHTML = `
+            <div style="position:fixed;top:0;left:0;right:0;height:40px;background:#24292f;display:flex;align-items:center;padding:0 16px;z-index:9999;">
+              <span style="color:#fff;font-weight:600;">OpenClaw Control</span>
+            </div>
+          `;
+        });
+    </script>
+  </body>
+</html>
