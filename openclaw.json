@@ -23,6 +23,47 @@
   },
   "models": {
     "providers": {
+      "deepseek": {
+        "baseUrl": "https://api.deepseek.com",
+        "apiKey": "sk-43b967b613014838bf40b8ffa8910e13",
+        "api": "openai-completions",
+        "models": [
+          {
+            "id": "deepseek-chat",
+            "name": "DeepSeek Chat",
+            "api": "openai-completions",
+            "reasoning": false,
+            "input": [
+              "text"
+            ],
+            "cost": {
+              "input": 0,
+              "output": 0,
+              "cacheRead": 0,
+              "cacheWrite": 0
+            },
+            "contextWindow": 128000,
+            "maxTokens": 8192
+          },
+          {
+            "id": "deepseek-reasoner",
+            "name": "DeepSeek Reasoner",
+            "api": "openai-completions",
+            "reasoning": true,
+            "input": [
+              "text"
+            ],
+            "cost": {
+              "input": 0,
+              "output": 0,
+              "cacheRead": 0,
+              "cacheWrite": 0
+            },
+            "contextWindow": 64000,
+            "maxTokens": 8192
+          }
+        ]
+      },
       "coze": {
         "baseUrl": "${COZE_INTEGRATION_MODEL_BASE_URL}",
         "apiKey": "${COZE_WORKLOAD_IDENTITY_API_KEY}",
@@ -176,7 +217,7 @@
   "agents": {
     "defaults": {
       "model": {
-        "primary": "coze/auto"
+        "primary": "deepseek/deepseek-chat"
       },
       "imageModel": {
         "primary": "coze/doubao-seed-1-8-251228"
