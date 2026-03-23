@@ -1009,21 +1009,9 @@ async function handleNovelPage(req: IncomingMessage, res: ServerResponse): Promi
     '/automation': 'auto.html',
     '/automation.html': 'auto.html',
     '/experience.html': 'experience.html',
-    // /novel/ 开头的路径
-    '/novel/cache.html': 'cache.html',
-    '/novel/project-structure.html': 'project-structure.html',
-    '/novel/logs.html': 'logs.html',
-    '/novel/cache-manage.html': 'cache-manage.html',
-    '/novel/publish.html': 'publish.html',
-    '/novel/feishu.html': 'feishu.html',
-    '/novel/automation': 'auto.html',
-    '/novel/automation.html': 'auto.html',
-    '/novel/experience.html': 'experience.html',
     // 静态资源文件
     '/nav-bar.html': 'nav-bar.html',
-    '/nav-bar.js': 'nav-bar.js',
-    '/novel/nav-bar.html': 'nav-bar.html',
-    '/novel/nav-bar.js': 'nav-bar.js'
+    '/nav-bar.js': 'nav-bar.js'
   };
 
 
@@ -2923,17 +2911,7 @@ const plugin = {
       { path: '/feishu.html', match: 'exact' as const },
       { path: '/automation', match: 'exact' as const },
       { path: '/automation.html', match: 'exact' as const },
-      { path: '/experience.html', match: 'exact' as const },
-      // /novel/ 开头的路径
-      { path: '/novel/cache.html', match: 'exact' as const },
-      { path: '/novel/project-structure.html', match: 'exact' as const },
-      { path: '/novel/logs.html', match: 'exact' as const },
-      { path: '/novel/cache-manage.html', match: 'exact' as const },
-      { path: '/novel/publish.html', match: 'exact' as const },
-      { path: '/novel/feishu.html', match: 'exact' as const },
-      { path: '/novel/automation', match: 'exact' as const },
-      { path: '/novel/automation.html', match: 'exact' as const },
-      { path: '/novel/experience.html', match: 'exact' as const }
+      { path: '/experience.html', match: 'exact' as const }
     ];
     
     // 注册页面路由 - 不需要认证

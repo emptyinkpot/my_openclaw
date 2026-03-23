@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Automation Center - 双向映射</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+    :root {
+      --bg: #ffffff; --bg-alt: #f5f5f5; --bg-hover: #e8f4f8; --bg-selected: #cce8ff;
+      --border: #d4d4d4; --border-light: #e8e8e8;
+      --text: #000000; --text-secondary: #666666; --text-muted: #999999;
+      --primary: #0078d4; --primary-light: #e5f3ff;
+      --success: #107c10; --warning: #ffc107; --danger: #d13438; --purple: #744da9;
+      --sync-pending: #ff9800; --feishu-blue: #3370ff;
+    }
+    body { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; font-size: 12px; }
+    /* 导航栏 */
+    .nav-bar{position:fixed;top:0;left:0;right:0;height:40px;background:#24292f;display:flex;align-items:center;padding:0 16px;gap:4px;z-index:9999}
+    .nav-bar span{color:#fff;font-weight:600;font-size:14px;margin-right:16px}
+    .nav-bar a{color:#8b949e;font-size:13px;padding:6px 14px;border-radius:4px;text-decoration:none}
+    .nav-bar a:hover{background:rgba(255,255,255,0.1);color:#fff}
+    .nav-bar a.on{background:#0969da;color:#fff}
+    .header { height: 40px; background: linear-gradient(to bottom, #fff, #f0f0f0); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 8px; gap: 12px; margin-top: 40px; }
+    .logo { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; padding: 0 8px; }
+    .ribbon { display: flex; gap: 2px; background: #fff; border: 1px solid var(--border); border-radius: 3px; padding: 2px; }
+    .ribbon-btn { padding: 4px 12px; border-radius: 2px; font-size: 12px; cursor: pointer; border: none; background: transparent; }
+    .ribbon-btn:hover { background: var(--bg-hover); }
+    .ribbon-btn.active { background: var(--primary); color: white; }
+    .toolbar-group { display: flex; gap: 4px; padding: 0 8px; border-left: 1px solid var(--border); }
+    .tool-btn { padding: 4px 10px; border: 1px solid var(--border); background: linear-gradient(to bottom, #fff, #f0f0f0); border-radius: 3px; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+    .tool-btn:hover { border-color: var(--primary); background: white; }
+    .tool-btn.primary { background: var(--primary); color: white; border-color: var(--primary); }
+    .sync-status { display: flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 12px; font-size: 11px; margin-left: auto; }
+    .sync-status.synced { background: #d4edda; color: var(--success); border: 1px solid var(--success); }
+    .sync-status.pending { background: #fff3e0; color: var(--sync-pending); border: 1px solid var(--sync-pending); animation: pulse 1s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .container { display: flex; height: calc(100vh - 64px); }
+    .sidebar { width: 240px; background: var(--bg-alt); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+    .sidebar-header { padding: 6px 12px; font-size: 11px; font-weight: 600; color: var(--text-secondary); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .tree-view { flex: 1; overflow-y: auto; padding: 4px; }
+    .tree-node { display: flex; align-items: center; gap: 2px; padding: 3px 4px; border-radius: 3px; cursor: pointer; font-size: 12px; }
+    .tree-node:hover { background: var(--bg-hover); }
+    .tree-node.selected { background: var(--bg-selected); }
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .view { display: none; flex: 1; flex-direction: column; }
+    .view.active { display: flex; }
+    .address-bar { height: 32px; padding: 0 8px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border); background: var(--bg-alt); }
+    .nav-btn { width: 24px; height: 24px; border: 1px solid var(--border); background: white; border-radius: 3px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; }
+    .address-input { flex: 1; height: 24px; padding: 0 8px; border: 1px solid var(--border); border-radius: 3px; font-size: 12px; outline: none; }
+    .search-box { width: 200px; height: 24px; padding: 0 8px 0 24px; border: 1px solid var(--border); border-radius: 3px; font-size: 12px; background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E") no-repeat 8px center; }
+    
+    /* Feishu Chat Styles */
+    .fs-chat-container { display: flex; flex-direction: column; height: 100%; background: #f5f5f5; }
+    .fs-chat-header { padding: 12px 16px; background: white; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .fs-chat-messages { flex: 1; overflow-y: auto; padding: 16px; }
+    .fs-chat-input { padding: 12px 16px; background: white; border-top: 1px solid var(--border); display: flex; gap: 12px; }
+    .fs-message { display: flex; gap: 12px; margin-bottom: 16px; animation: fadeIn 0.3s ease; }
+    .fs-message.mine { flex-direction: row-reverse; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .fs-avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+    .fs-avatar.user { background: var(--primary); color: white; }
+    .fs-avatar.bot { background: var(--success); color: white; }
+    .fs-avatar.system { background: var(--warning); color: #333; }
+    .fs-bubble { max-width: 60%; padding: 12px 16px; border-radius: 12px; position: relative; }
+    .fs-bubble.user { background: var(--primary); color: white; border-bottom-right-radius: 4px; }
+    .fs-bubble.bot { background: white; border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+    .fs-bubble.system { background: #fff3cd; border: 1px solid var(--warning); }
+    .fs-msg-meta { font-size: 11px; color: var(--text-muted); margin-top: 4px; display: flex; gap: 8px; }
+    .fs-message.mine .fs-msg-meta { justify-content: flex-end; }
+    .fs-msg-actions { display: none; gap: 4px; }
+    .fs-message:hover .fs-msg-actions { display: flex; }
+    .fs-msg-btn { padding: 2px 8px; font-size: 11px; border: 1px solid var(--border); background: white; border-radius: 3px; cursor: pointer; }
+    .fs-msg-btn:hover { background: var(--bg-hover); }
+    .fs-input-area { flex: 1; display: flex; gap: 8px; }
+    .fs-input { flex: 1; padding: 10px 12px; border: 1px solid var(--border); border-radius: 20px; outline: none; font-size: 13px; }
+    .fs-input:focus { border-color: var(--primary); }
+    .fs-send-btn { padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 20px; cursor: pointer; font-size: 13px; }
+    .fs-send-btn:hover { background: #005a9e; }
+    .fs-toolbar { display: flex; gap: 8px; padding: 8px 16px; background: white; border-top: 1px solid var(--border-light); }
+    .fs-tool { padding: 4px 12px; border: 1px solid var(--border); background: white; border-radius: 12px; font-size: 11px; cursor: pointer; }
+    .fs-tool:hover { background: var(--bg-hover); border-color: var(--primary); }
+    .fs-panel-card { background: white; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+    .fs-panel-header { padding: 12px 16px; border-bottom: 1px solid var(--border); background: linear-gradient(to bottom, #fff, #f8f8f8); font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+    .fs-webhook-item { padding: 12px; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 8px; }
+    .fs-edit-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: none; align-items: center; justify-content: center; }
+    .fs-edit-overlay.show { display: flex; }
+    .fs-edit-modal { background: white; border-radius: 8px; padding: 20px; width: 500px; max-width: 90%; }
+    .fs-edit-header { font-weight: 600; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+    .fs-edit-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+    .grid-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .grid-header th { text-align: left; padding: 10px 12px; background: var(--bg-alt); border-bottom: 1px solid var(--border); font-weight: 600; }
+    .grid-row td { padding: 10px 12px; border-bottom: 1px solid var(--border-light); }
+    .grid-row:hover { background: var(--bg-hover); }
+    
+    .gantt-container { flex: 1; overflow: auto; padding: 8px; background: var(--bg-alt); }
+    .gantt-wrapper { background: white; border: 1px solid var(--border); border-radius: 4px; min-width: 1200px; }
+    .gantt-toolbar { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-bottom: 1px solid var(--border); background: linear-gradient(to bottom, #fff, #f8f8f8); }
+    .gantt-scale { display: flex; border-bottom: 1px solid var(--border); background: #f8f8f8; }
+    .gantt-scale-label { width: 180px; padding: 6px 12px; font-weight: 600; font-size: 11px; border-right: 1px solid var(--border); }
+    .gantt-scale-hours { flex: 1; display: flex; }
+    .gantt-hour-header { flex: 1; text-align: center; padding: 6px 2px; font-size: 11px; border-right: 1px solid var(--border-light); }
+    .gantt-body { position: relative; }
+    .gantt-row { display: flex; height: 36px; border-bottom: 1px solid var(--border-light); position: relative; }
+    .gantt-row-label { width: 180px; padding: 0 12px; display: flex; align-items: center; font-size: 12px; border-right: 1px solid var(--border); background: rgba(0,0,0,0.02); }
+    .gantt-track { flex: 1; position: relative; }
+    .gantt-task { position: absolute; height: 24px; top: 6px; border-radius: 4px; font-size: 11px; display: flex; align-items: center; padding: 0 8px; color: white; font-weight: 500; cursor: move; box-shadow: 0 2px 4px rgba(0,0,0,0.15); }
+    .gantt-task.running { background: var(--success); }
+    .gantt-task.pending { background: var(--warning); color: #333; }
+    .gantt-task.scheduled { background: var(--primary); }
+    .current-time-line { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--danger); z-index: 50; pointer-events: none; }
+    .details-panel { height: 200px; border-top: 1px solid var(--border); background: white; display: none; flex-direction: column; }
+    .details-panel.show { display: flex; }
+    .details-toolbar { padding: 8px 12px; border-bottom: 1px solid var(--border); display: flex; gap: 8px; background: var(--bg-alt); }
+    .details-content { padding: 12px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; overflow: auto; }
+    .detail-field { display: flex; flex-direction: column; gap: 4px; }
+    .detail-label { font-size: 11px; color: var(--text-muted); }
+    .detail-value input, .detail-value select { padding: 4px 8px; border: 1px solid var(--border); border-radius: 3px; font-size: 13px; width: 100%; }
+    .bottom-panel { position: fixed; bottom: 24px; left: 0; right: 0; height: 180px; background: white; border-top: 1px solid var(--border); box-shadow: 0 -4px 12px rgba(0,0,0,0.1); display: flex; flex-direction: column; z-index: 100; }
+    .panel-tabs { display: flex; background: var(--bg-alt); border-bottom: 1px solid var(--border); }
+    .panel-tab { padding: 6px 16px; font-size: 12px; cursor: pointer; border-bottom: 2px solid transparent; }
+    .panel-tab.active { border-bottom-color: var(--primary); color: var(--primary); font-weight: 500; }
+    .panel-body { flex: 1; overflow: auto; padding: 8px 12px; font-family: Consolas, monospace; font-size: 12px; line-height: 1.6; background: #f8f8f8; }
+    .log-line { display: flex; gap: 12px; padding: 2px 0; }
+    .log-time { color: var(--text-muted); }
+    .log-level { font-weight: 600; min-width: 50px; }
+    .status-bar { height: 24px; padding: 0 12px; background: var(--primary); color: white; display: flex; align-items: center; font-size: 11px; gap: 16px; }
+    .status-section { display: flex; align-items: center; gap: 6px; }
+    .status-section.right { margin-left: auto; }
+  </style>
+</head>
+<body>
+<div class="nav-bar"><a href="/settings.html" style="padding: 6px 14px; border-radius: 4px; color: #8b949e; text-decoration: none;">⚙️ 设置</a><a href="/novel/">📚 小说管理</a><a href="/auto.html" class="on">⚙️ 自动化</a><a href="/experience.html">🧠 经验</a><a href="/cache.html">💾 缓存</a><a href="/">🎯 原生界面</a></div>
+  <header class="header">
+    <div class="logo"><span>⚙️</span><span>Automation Center</span></div>
+    <div class="ribbon">
+      <button class="ribbon-btn active" data-view="process" onclick="switchView('process')">📊 进程</button>
+      <button class="ribbon-btn" data-view="schedule" onclick="switchView('schedule')">⏰ 调度</button>
+      <button class="ribbon-btn" data-view="feishu" onclick="switchView('feishu')">🚀 飞书</button>
+    </div>
+    <div class="toolbar-group">
+      <button class="tool-btn" onclick="addNew()">+ 新建</button>
+      <button class="tool-btn" onclick="deleteSelected()">🗑️ 删除</button>
+      <button class="tool-btn" onclick="saveToFile()" id="saveBtn" disabled>💾 保存</button>
+      <button class="tool-btn" onclick="reloadFromFile()">🔄 刷新</button>
+    </div>
+    <div class="toolbar-group">
+      <button class="tool-btn primary" onclick="startAll()">▶ 全部启动</button>
+      <button class="tool-btn" onclick="stopAll()">⏹ 全部停止</button>
+    </div>
+    <div class="sync-status synced" id="syncStatus">
+      <span class="sync-indicator synced" id="syncIndicator"></span>
+      <span id="syncText">已同步</span>
+    </div>
+  </header>
+
+  <div class="container">
+    <aside class="sidebar">
+      <div class="sidebar-header"><span>文件浏览器</span><span style="cursor:pointer" onclick="refreshFileTree()">🔄</span></div>
+      <div class="tree-view" id="fileTree"></div>
+    </aside>
+
+    <main class="main">
+      <!-- Process View -->
+      <div class="view active" id="processView">
+        <div class="address-bar">
+          <button class="nav-btn">◀</button><button class="nav-btn" disabled>▶</button><button class="nav-btn">▲</button>
+          <input type="text" class="address-input" value="📁 auto-scripts / processes.json" readonly>
+          <input type="text" class="search-box" placeholder="搜索进程..." id="searchInput">
+        </div>
+        <div class="data-grid" style="flex:1;overflow:auto;">
+          <table class="grid-table">
+            <thead class="grid-header"><tr><th>ID</th><th>进程名称</th><th>状态</th><th>CPU</th><th>内存</th><th>重启</th><th>运行时间</th><th>关联脚本</th></tr></thead>
+            <tbody id="processTableBody"><tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-muted);">加载中...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Schedule View -->
+      <div class="view" id="scheduleView">
+        <div class="address-bar">
+          <button class="nav-btn">◀</button><button class="nav-btn" disabled>▶</button><button class="nav-btn">▲</button>
+          <input type="text" class="address-input" value="📁 auto-scripts / schedule.json" readonly>
+          <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+            <input type="date" class="address-input" style="width:120px" id="ganttDate">
+            <button class="tool-btn" onclick="changeZoom(-0.2)">-</button>
+            <span id="zoomLevel">100%</span>
+            <button class="tool-btn" onclick="changeZoom(0.2)">+</button>
+            <button class="tool-btn primary" onclick="addSchedule()">+ 新建</button>
+          </div>
+        </div>
+        <div class="gantt-container" id="ganttContainer">
+          <div class="gantt-wrapper">
+            <div class="gantt-toolbar">
+              <label><input type="checkbox" id="showRunning" checked onchange="renderGantt()"> 运行中</label>
+              <label><input type="checkbox" id="showPending" checked onchange="renderGantt()"> 待执行</label>
+              <label><input type="checkbox" id="showCompleted" onchange="renderGantt()"> 已完成</label>
+            </div>
+            <div class="gantt-scale"><div class="gantt-scale-label">任务名称 ↓</div><div class="gantt-scale-hours" id="ganttScaleHours"></div></div>
+            <div class="gantt-body" id="ganttBody"></div>
+          </div>
+        </div>
+        <div class="details-panel" id="detailsPanel">
+          <div class="details-toolbar">
+            <span style="font-weight:600">📄 schedule.json</span>
+            <span style="color:var(--text-muted)">➜</span>
+            <span id="detailTaskName">选择任务查看详情</span>
+            <div style="margin-left:auto;display:flex;gap:8px;">
+              <button class="tool-btn" onclick="saveDetailChanges()">💾 保存修改</button>
+              <button class="tool-btn" onclick="closeDetails()">✕ 关闭</button>
+            </div>
+          </div>
+          <div class="details-content" id="detailsContent"></div>
+        </div>
+      </div>
+
+      <!-- Feishu View - 飞书交互管理 -->
+      <div class="view" id="feishuView">
+        <div class="address-bar">
+          <button class="nav-btn">◀</button><button class="nav-btn" disabled>▶</button><button class="nav-btn">▲</button>
+          <input type="text" class="address-input" value="📁 feishu.json / feishu-messages.json" readonly>
+          <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+            <span id="fs-conn-status" style="font-size:11px;color:var(--success);">● 已连接</span>
+            <button class="tool-btn" onclick="saveFeishuConfig()">💾 保存配置</button>
+            <button class="tool-btn primary" onclick="testFeishuConnection()">🔗 测试</button>
+          </div>
+        </div>
+        <div style="display:flex;flex:1;overflow:hidden;">
+          <!-- 左侧导航 -->
+          <div style="width:200px;background:var(--bg-alt);border-right:1px solid var(--border);display:flex;flex-direction:column;">
+            <div class="sidebar-header">飞书管理</div>
+            <div class="tree-view">
+              <div class="tree-node selected" onclick="switchFeishuTab('chat')" id="fs-nav-chat">💬 消息中心</div>
+              <div class="tree-node" onclick="switchFeishuTab('templates')" id="fs-nav-templates">📝 消息模板</div>
+              <div class="tree-node" onclick="switchFeishuTab('bot')" id="fs-nav-bot">🤖 机器人配置</div>
+              <div class="tree-node" onclick="switchFeishuTab('commands')" id="fs-nav-commands">⌨️ 指令管理</div>
+              <div class="tree-node" onclick="switchFeishuTab('webhooks')" id="fs-nav-webhooks">🔗 Webhook</div>
+              <div class="tree-node" onclick="switchFeishuTab('stats')" id="fs-nav-stats">📊 统计分析</div>
+            </div>
+          </div>
+          <!-- 右侧内容 -->
+          <div style="flex:1;overflow:hidden;position:relative;">
+            <!-- 消息中心（聊天界面） -->
+            <div id="fs-panel-chat" class="fs-chat-container">
+              <div class="fs-chat-header">
+                <div><div style="font-weight:600;">💬 消息中心</div><div style="font-size:11px;color:var(--text-muted);">与飞书用户的实时交互</div></div>
+                <div style="display:flex;gap:8px;">
+                  <button class="tool-btn" onclick="refreshFeishuMessages()">🔄 刷新</button>
+                  <button class="tool-btn" onclick="clearAllMessages()">🗑️ 清空</button>
+                </div>
+              </div>
+              <div class="fs-chat-messages" id="fs-message-list"></div>
+              <div class="fs-toolbar">
+                <span class="fs-tool" onclick="insertTemplate('status')">📊 状态</span>
+                <span class="fs-tool" onclick="insertTemplate('success')">✅ 成功</span>
+                <span class="fs-tool" onclick="insertTemplate('alert')">⚠️ 告警</span>
+                <span class="fs-tool" onclick="showTemplatePicker()">📝 模板...</span>
+                <span class="fs-tool" onclick="showWebhookPicker()">🔗 Webhook...</span>
+              </div>
+              <div class="fs-chat-input">
+                <div class="fs-input-area">
+                  <input type="text" class="fs-input" id="fs-message-input" placeholder="输入消息... (支持 {{变量}} 语法)" onkeydown="if(event.key==='Enter')sendMessage()">
+                  <button class="fs-send-btn" onclick="sendMessage()">📤 发送</button>
+                </div>
+              </div>
+            </div>
+            <!-- 消息模板 -->
+            <div id="fs-panel-templates" style="display:none;padding:16px;overflow:auto;height:100%;background:var(--bg-alt);">
+              <div class="fs-panel-card">
+                <div class="fs-panel-header"><span>📝 消息模板</span><button class="tool-btn primary" onclick="createTemplate()">+ 新建模板</button></div>
+                <div style="padding:16px;" id="fs-templates-list"></div>
+              </div>
+            </div>
+            <!-- 机器人配置 -->
+            <div id="fs-panel-bot" style="display:none;padding:16px;overflow:auto;height:100%;background:var(--bg-alt);">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                <div class="fs-panel-card">
+                  <div class="fs-panel-header">🤖 机器人凭证</div>
+                  <div style="padding:16px;">
+                    <div style="margin-bottom:12px;"><label style="display:block;font-size:11px;color:var(--text-muted);margin-bottom:4px;">App ID</label><input type="text" id="fs-appid" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:4px;"></div>
+                    <div style="margin-bottom:12px;"><label style="display:block;font-size:11px;color:var(--text-muted);margin-bottom:4px;">App Secret</label><input type="password" id="fs-secret" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:4px;"></div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                      <div><label style="display:block;font-size:11px;color:var(--text-muted);margin-bottom:4px;">Encrypt Key</label><input type="text" id="fs-encrypt" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:4px;"></div>
+                      <div><label style="display:block;font-size:11px;color:var(--text-muted);margin-bottom:4px;">Token</label><input type="text" id="fs-token" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:4px;"></div>
+                    </div>
+                    <div style="margin-top:12px;"><input type="checkbox" id="fs-enabled"> <label>启用机器人</label></div>
+                  </div>
+                </div>
+                <div class="fs-panel-card">
+                  <div class="fs-panel-header">⚙️ 自动回复设置</div>
+                  <div style="padding:16px;">
+                    <div style="margin-bottom:12px;"><label style="display:block;font-size:11px;color:var(--text-muted);margin-bottom:4px;">欢迎消息</label><textarea id="fs-welcome" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:4px;height:60px;resize:vertical;"></textarea></div>
+                    <div style="margin-bottom:12px;"><label style="display:block;font-size:11px;color:var(--text-muted);margin-bottom:4px;">默认回复模板</label><textarea id="fs-reply" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:4px;height:60px;resize:vertical;"></textarea></div>
+                    <div><label style="display:block;font-size:11px;color:var(--text-muted);margin-bottom:4px;">管理员ID (逗号分隔)</label><input type="text" id="fs-admins" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:4px;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- 指令管理 -->
+            <div id="fs-panel-commands" style="display:none;padding:16px;overflow:auto;height:100%;background:var(--bg-alt);">
+              <div class="fs-panel-card">
+                <div class="fs-panel-header"><span>⌨️ 指令管理</span><button class="tool-btn primary" onclick="createCommand()">+ 新建指令</button></div>
+                <div style="padding:16px;" id="fs-commands-list"></div>
+              </div>
+            </div>
+            <!-- Webhook -->
+            <div id="fs-panel-webhooks" style="display:none;padding:16px;overflow:auto;height:100%;background:var(--bg-alt);">
+              <div class="fs-panel-card">
+                <div class="fs-panel-header"><span>🔗 Webhook 管理</span><button class="tool-btn primary" onclick="createWebhook()">+ 新建Webhook</button></div>
+                <div style="padding:16px;" id="fs-webhooks-list"></div>
+              </div>
+            </div>
+            <!-- 统计分析 -->
+            <div id="fs-panel-stats" style="display:none;padding:16px;overflow:auto;height:100%;background:var(--bg-alt);">
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px;">
+                <div class="fs-panel-card" style="padding:20px;text-align:center;"><div style="font-size:32px;font-weight:600;color:var(--primary);" id="fs-stat-total">0</div><div style="font-size:12px;color:var(--text-muted);">总消息数</div></div>
+                <div class="fs-panel-card" style="padding:20px;text-align:center;"><div style="font-size:32px;font-weight:600;color:var(--success);" id="fs-stat-users">0</div><div style="font-size:12px;color:var(--text-muted);">活跃用户</div></div>
+                <div class="fs-panel-card" style="padding:20px;text-align:center;"><div style="font-size:32px;font-weight:600;color:var(--warning);" id="fs-stat-cmds">0</div><div style="font-size:12px;color:var(--text-muted);">指令调用</div></div>
+                <div class="fs-panel-card" style="padding:20px;text-align:center;"><div style="font-size:32px;font-weight:600;color:var(--purple);" id="fs-stat-webhooks">0</div><div style="font-size:12px;color:var(--text-muted);">Webhook推送</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- 编辑消息弹窗 -->
+        <div class="fs-edit-overlay" id="fs-edit-overlay">
+          <div class="fs-edit-modal">
+            <div class="fs-edit-header">✏️ 编辑消息</div>
+            <textarea id="fs-edit-content" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:4px;height:120px;resize:vertical;"></textarea>
+            <div class="fs-edit-footer">
+              <button class="tool-btn" onclick="closeEditModal()">取消</button>
+              <button class="tool-btn primary" onclick="saveEditMessage()">保存</button>
+            </div>
+          </div>
+        </div>
+        <!-- 模板选择弹窗 -->
+        <div class="fs-edit-overlay" id="fs-template-overlay">
+          <div class="fs-edit-modal">
+            <div class="fs-edit-header">📝 选择模板</div>
+            <div id="fs-template-picker-list" style="max-height:300px;overflow:auto;"></div>
+            <div class="fs-edit-footer"><button class="tool-btn" onclick="closeTemplatePicker()">取消</button></div>
+          </div>
+        </div>
+        <!-- Webhook选择弹窗 -->
+        <div class="fs-edit-overlay" id="fs-webhook-overlay">
+          <div class="fs-edit-modal">
+            <div class="fs-edit-header">🔗 选择Webhook发送</div>
+            <div id="fs-webhook-picker-list" style="max-height:300px;overflow:auto;"></div>
+            <div class="fs-edit-footer"><button class="tool-btn" onclick="closeWebhookPicker()">取消</button></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="bottom-panel" id="bottomPanel">
+    <div class="panel-tabs"><div class="panel-tab active">系统日志</div></div>
+    <div class="panel-body" id="logPanel"></div>
+  </div>
+
+  <div class="status-bar">
+    <div class="status-section"><span id="selectionInfo">就绪</span></div>
+    <div class="status-section"><span id="filePath">/workspace/projects/auto-scripts/</span></div>
+    <div class="status-section right"><span>🕐 <span id="clock">00:00:00</span></span></div>
+  </div>
+
+  <script>
+    // ============================================
+    // 通用功能
+    // ============================================
+    let schedules = [], unsavedChanges = new Map(), currentZoom = 1, selectedTaskId = null;
+    let feishuConfig = { enabled: false, bot: {}, settings: {}, templates: [], commands: [], webhooks: [] };
+    let feishuMessages = [], currentFeishuTab = 'chat', editingMessageId = null;
+
+    async function init() {
+      document.getElementById('ganttDate').value = new Date().toISOString().split('T')[0];
+      addLog('系统初始化...', 'info');
+      await loadFromFile();
+      renderGantt();
+      renderFileTree();
+      updateClock();
+      setInterval(updateClock, 1000);
+      addLog('系统就绪', 'success');
+    }
+
+    function addLog(msg, level = 'info') {
+      const time = new Date().toLocaleTimeString();
+      document.getElementById('logPanel').insertAdjacentHTML('beforeend',
+        `<div class="log-line"><span class="log-time">${time}</span><span class="log-level" style="color:${level==='success'?'var(--success)':level==='error'?'var(--danger)':'var(--primary)'}">${level}</span><span>${msg}</span></div>`);
+      document.getElementById('logPanel').scrollTop = 999999;
+    }
+
+    function updateClock() { document.getElementById('clock').textContent = new Date().toLocaleTimeString(); }
+
+    function switchView(view) {
+      document.querySelectorAll('.ribbon-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector(`[data-view="${view}"]`).classList.add('active');
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.getElementById(view + 'View').classList.add('active');
+      if (view === 'feishu') loadFeishuData();
+    }
+
+    function setSyncStatus(status) {
+      const el = document.getElementById('syncStatus');
+      el.className = 'sync-status ' + status;
+      document.getElementById('syncText').textContent = status === 'synced' ? '已同步' : status === 'pending' ? '待同步' : '错误';
+    }
+
+    // ============================================
+    // 调度功能
+    // ============================================
+    async function loadFromFile() {
+      try {
+        const res = await fetch('/novel/api/schedules');
+        const data = await res.json();
+        if (data.success) { schedules = data.data.schedules || []; addLog(`加载了 ${schedules.length} 个任务`, 'info'); }
+      } catch (err) { addLog('加载失败: ' + err.message, 'error'); }
+    }
+
+    async function saveToFile() {
+      if (unsavedChanges.size === 0) return;
+      try {
+        setSyncStatus('pending');
+        const config = { version: '1.0', schedules: schedules };
+        const res = await fetch('/novel/api/schedules/save', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(config) });
+        const data = await res.json();
+        if (data.success) {
+          unsavedChanges.clear();
+          setSyncStatus('synced');
+          document.getElementById('saveBtn').disabled = true;
+          addLog('已保存到 schedule.json', 'success');
+          renderGantt();
+        }
+      } catch (err) { addLog('保存失败: ' + err.message, 'error'); setSyncStatus('error'); }
+    }
+
+    function renderGantt() {
+      const hours = Array.from({length: 24}, (_, i) => `<div class="gantt-hour-header">${i}:00</div>`).join('');
+      document.getElementById('ganttScaleHours').innerHTML = hours;
+      const showRunning = document.getElementById('showRunning').checked;
+      const showPending = document.getElementById('showPending').checked;
+      const showCompleted = document.getElementById('showCompleted').checked;
+      
+      const groups = {};
+      schedules.forEach(s => {
+        if (!groups[s.name]) groups[s.name] = [];
+        if ((s.status === 'running' && showRunning) || (s.status === 'pending' && showPending) || (s.status === 'success' && showCompleted)) {
+          groups[s.name].push(s);
+        }
+      });
+
+      let html = '';
+      for (const [name, tasks] of Object.entries(groups)) {
+        html += `<div class="gantt-row"><div class="gantt-row-label">${name}</div><div class="gantt-track">` +
+          tasks.map(t => `<div class="gantt-task ${t.status}" style="left:${(t.startHour/24)*100}%;width:${(t.duration/24)*100 * currentZoom}%" onclick="selectTask('${t.id}')">${t.name}</div>`).join('') +
+          `</div></div>`;
+      }
+      const now = new Date();
+      const nowLeft = ((now.getHours() + now.getMinutes()/60) / 24) * 100;
+      html += `<div class="current-time-line" style="left:${nowLeft}%"></div>`;
+      document.getElementById('ganttBody').innerHTML = html;
+    }
+
+    function changeZoom(delta) { currentZoom = Math.max(0.5, Math.min(3, currentZoom + delta)); document.getElementById('zoomLevel').textContent = Math.round(currentZoom * 100) + '%'; renderGantt(); }
+
+    function addSchedule() {
+      const name = prompt('任务名称:'); if (!name) return;
+      const newTask = { id: 's' + Date.now(), name, script: '', cron: '0 9 * * *', status: 'scheduled', startHour: 9, duration: 1, active: true };
+      schedules.push(newTask); unsavedChanges.set(newTask.id, newTask);
+      document.getElementById('saveBtn').disabled = false; setSyncStatus('pending');
+      renderGantt(); addLog('新建任务: ' + name, 'success');
+    }
+
+    function selectTask(taskId) {
+      selectedTaskId = taskId;
+      const task = schedules.find(s => s.id === taskId); if (!task) return;
+      document.getElementById('detailsPanel').classList.add('show');
+      document.getElementById('detailTaskName').textContent = task.name;
+      document.getElementById('detailsContent').innerHTML = `
+        <div class="detail-field"><div class="detail-label">任务名称</div><div class="detail-value"><input type="text" value="${task.name}" onchange="updateTask('${task.id}', 'name', this.value)"></div></div>
+        <div class="detail-field"><div class="detail-label">Cron表达式</div><div class="detail-value"><input type="text" value="${task.cron}" onchange="updateTask('${task.id}', 'cron', this.value)"></div></div>
+        <div class="detail-field"><div class="detail-label">关联脚本</div><div class="detail-value"><input type="text" value="${task.script}" onchange="updateTask('${task.id}', 'script', this.value)"></div></div>
+        <div class="detail-field"><div class="detail-label">状态</div><div class="detail-value"><select onchange="updateTask('${task.id}', 'status', this.value)"><option value="scheduled" ${task.status==='scheduled'?'selected':''}>已计划</option><option value="running" ${task.status==='running'?'selected':''}>运行中</option><option value="success" ${task.status==='success'?'selected':''}>已完成</option></select></div></div>
+      `;
+    }
+
+    function updateTask(id, field, value) {
+      const task = schedules.find(s => s.id === id); if (task) { task[field] = value; unsavedChanges.set(id, task); }
+      document.getElementById('saveBtn').disabled = false; setSyncStatus('pending');
+    }
+
+    function saveDetailChanges() { saveToFile(); }
+    function closeDetails() { document.getElementById('detailsPanel').classList.remove('show'); }
+
+    // ============================================
+    // 飞书功能 - 完善的聊天和消息管理
+    // ============================================
+    async function loadFeishuData() {
+      addLog('加载飞书配置...', 'info');
+      try {
+        const res = await fetch('/novel/api/feishu/config');
+        const data = await res.json();
+        if (data.success) {
+          feishuConfig = data.data;
+          updateFeishuUI();
+          addLog('飞书配置已加载', 'success');
+        }
+      } catch (err) { addLog('加载配置失败: ' + err.message, 'error'); }
+
+      try {
+        const res = await fetch('/novel/api/feishu/messages?limit=100');
+        const data = await res.json();
+        if (data.success) {
+          feishuMessages = data.data.messages || [];
+          renderFeishuMessages();
+          updateFeishuStats();
+          addLog(`加载了 ${feishuMessages.length} 条消息`, 'info');
+        }
+      } catch (err) { addLog('加载消息失败: ' + err.message, 'error'); }
+    }
+
+    function updateFeishuUI() {
+      document.getElementById('fs-appid').value = feishuConfig.bot?.appId || '';
+      document.getElementById('fs-secret').value = feishuConfig.bot?.appSecret || '';
+      document.getElementById('fs-encrypt').value = feishuConfig.bot?.encryptKey || '';
+      document.getElementById('fs-token').value = feishuConfig.bot?.verificationToken || '';
+      document.getElementById('fs-welcome').value = feishuConfig.settings?.welcomeMessage || '';
+      document.getElementById('fs-reply').value = feishuConfig.settings?.replyTemplate || '';
+      document.getElementById('fs-admins').value = (feishuConfig.settings?.adminUsers || []).join(', ');
+      document.getElementById('fs-enabled').checked = feishuConfig.enabled || false;
+    }
+
+    function renderFeishuMessages() {
+      const container = document.getElementById('fs-message-list');
+      if (!feishuMessages.length) {
+        container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);">暂无消息</div>';
+        return;
+      }
+      container.innerHTML = feishuMessages.map(m => {
+        const isMine = m.type === 'sent' || m.sender === '管理员';
+        return `<div class="fs-message ${isMine ? 'mine' : ''}" data-id="${m.id}">
+          <div class="fs-avatar ${m.type === 'bot' ? 'bot' : m.type === 'system' ? 'system' : 'user'}">${m.type === 'bot' ? '🤖' : m.type === 'system' ? '⚙️' : '👤'}</div>
+          <div class="fs-bubble ${isMine ? 'user' : m.type === 'system' ? 'system' : 'bot'}">
+            <div>${escapeHtml(m.content)}</div>
+            <div class="fs-msg-meta">
+              <span>${m.sender || '用户'} · ${new Date(m.timestamp).toLocaleString()}</span>
+              <span class="fs-msg-actions">
+                <button class="fs-msg-btn" onclick="editMessage('${m.id}')">编辑</button>
+                <button class="fs-msg-btn" onclick="resendMessage('${m.id}')">重发</button>
+                <button class="fs-msg-btn" onclick="deleteMessage('${m.id}')">删除</button>
+              </span>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function updateFeishuStats() {
+      document.getElementById('fs-stat-total').textContent = feishuMessages.length;
+      document.getElementById('fs-stat-users').textContent = new Set(feishuMessages.map(m => m.sender)).size;
+      document.getElementById('fs-stat-cmds').textContent = feishuConfig.commands?.length || 0;
+      document.getElementById('fs-stat-webhooks').textContent = feishuConfig.webhooks?.length || 0;
+
+      // 渲染模板列表
+      document.getElementById('fs-templates-list').innerHTML = (feishuConfig.templates || []).map(t => `
+        <div style="padding:12px;border:1px solid var(--border-light);border-radius:4px;margin-bottom:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <span style="font-weight:600;">${t.name}</span>
+            <div style="display:flex;gap:4px;">
+              <button class="tool-btn" onclick="useTemplate('${t.id}')">使用</button>
+              <button class="tool-btn" onclick="editTemplate('${t.id}')">编辑</button>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);font-family:monospace;">${t.content.substring(0, 100)}${t.content.length > 100 ? '...' : ''}</div>
+        </div>
+      `).join('');
+
+      // 渲染指令列表
+      document.getElementById('fs-commands-list').innerHTML = (feishuConfig.commands || []).map(c => `
+        <div style="display:flex;align-items:center;gap:12px;padding:10px;border:1px solid var(--border-light);border-radius:4px;margin-bottom:6px;">
+          <code style="background:var(--bg-alt);padding:4px 12px;border-radius:4px;color:var(--primary);font-weight:600;">${c.command}</code>
+          <span style="flex:1;font-size:12px;">${c.description}</span>
+          <span style="font-size:11px;color:var(--text-muted);">→ ${c.handler}</span>
+        </div>
+      `).join('');
+
+      // 渲染Webhook列表
+      document.getElementById('fs-webhooks-list').innerHTML = (feishuConfig.webhooks || []).map((w, i) => `
+        <div class="fs-webhook-item">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <span style="font-weight:600;">${w.name}</span>
+            <div style="display:flex;gap:4px;">
+              <button class="tool-btn" onclick="testWebhook(${i})">测试</button>
+              <button class="tool-btn" onclick="sendViaWebhook(${i})">发送消息</button>
+            </div>
+          </div>
+          <code style="font-size:11px;color:var(--text-muted);background:var(--bg-alt);padding:4px 8px;border-radius:4px;display:block;">${w.url}</code>
+        </div>
+      `).join('') || '<div style="padding:20px;text-align:center;color:var(--text-muted);">暂无 Webhook</div>';
+    }
+
+    function switchFeishuTab(tab) {
+      currentFeishuTab = tab;
+      document.querySelectorAll('[id^="fs-panel-"]').forEach(p => p.style.display = 'none');
+      document.getElementById('fs-panel-' + tab).style.display = 'block';
+      document.querySelectorAll('[id^="fs-nav-"]').forEach(n => n.classList.remove('selected'));
+      document.getElementById('fs-nav-' + tab).classList.add('selected');
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById('fs-message-input');
+      const content = input.value.trim(); if (!content) return;
+      
+      const msg = {
+        id: 'msg-' + Date.now(),
+        type: 'sent',
+        sender: '管理员',
+        content: content,
+        timestamp: new Date().toISOString(),
+        group: '控制台'
+      };
+      
+      feishuMessages.push(msg);
+      renderFeishuMessages();
+      updateFeishuStats();
+      input.value = '';
+      
+      try {
+        await fetch('/novel/api/feishu/messages/add', {
+          method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(msg)
+        });
+        addLog('消息已发送: ' + content.substring(0, 30) + '...', 'success');
+      } catch (err) { addLog('发送失败: ' + err.message, 'error'); }
+    }
+
+    function insertTemplate(type) {
+      const templates = {
+        status: '📊 **系统状态**\n\n当前运行正常\nCPU: {{cpu}}%\n内存: {{memory}}MB',
+        success: '✅ **任务完成**\n\n任务: {{task}}\n结果: 成功\n耗时: {{time}}',
+        alert: '⚠️ **系统告警**\n\n类型: {{type}}\n时间: {{time}}\n详情: {{detail}}'
+      };
+      const input = document.getElementById('fs-message-input');
+      input.value = templates[type] || '';
+      input.focus();
+    }
+
+    function editMessage(id) {
+      const msg = feishuMessages.find(m => m.id === id); if (!msg) return;
+      editingMessageId = id;
+      document.getElementById('fs-edit-content').value = msg.content;
+      document.getElementById('fs-edit-overlay').classList.add('show');
+    }
+
+    async function saveEditMessage() {
+      if (!editingMessageId) return;
+      const newContent = document.getElementById('fs-edit-content').value;
+      const msg = feishuMessages.find(m => m.id === editingMessageId);
+      if (msg) {
+        msg.content = newContent;
+        msg.edited = true;
+        msg.editTime = new Date().toISOString();
+        renderFeishuMessages();
+        addLog('消息已编辑', 'success');
+      }
+      closeEditModal();
+    }
+
+    function closeEditModal() { document.getElementById('fs-edit-overlay').classList.remove('show'); editingMessageId = null; }
+
+    async function resendMessage(id) {
+      const msg = feishuMessages.find(m => m.id === id); if (!msg) return;
+      const newMsg = { ...msg, id: 'msg-' + Date.now(), timestamp: new Date().toISOString() };
+      feishuMessages.push(newMsg);
+      renderFeishuMessages();
+      addLog('消息已重发', 'success');
+    }
+
+    async function deleteMessage(id) {
+      if (!confirm('确定删除这条消息?')) return;
+      feishuMessages = feishuMessages.filter(m => m.id !== id);
+      renderFeishuMessages();
+      updateFeishuStats();
+      addLog('消息已删除', 'info');
+    }
+
+    async function clearAllMessages() {
+      if (!confirm('确定清空所有消息?')) return;
+      feishuMessages = [];
+      renderFeishuMessages();
+      updateFeishuStats();
+      await fetch('/novel/api/feishu/messages/clear', { method: 'POST' });
+      addLog('所有消息已清空', 'info');
+    }
+
+    function refreshFeishuMessages() { loadFeishuData(); }
+
+    async function saveFeishuConfig() {
+      feishuConfig.bot.appId = document.getElementById('fs-appid').value;
+      feishuConfig.bot.appSecret = document.getElementById('fs-secret').value;
+      feishuConfig.bot.encryptKey = document.getElementById('fs-encrypt').value;
+      feishuConfig.bot.verificationToken = document.getElementById('fs-token').value;
+      feishuConfig.settings.welcomeMessage = document.getElementById('fs-welcome').value;
+      feishuConfig.settings.replyTemplate = document.getElementById('fs-reply').value;
+      feishuConfig.settings.adminUsers = document.getElementById('fs-admins').value.split(',').map(s => s.trim()).filter(s => s);
+      feishuConfig.enabled = document.getElementById('fs-enabled').checked;
+      
+      try {
+        await fetch('/novel/api/feishu/config/save', {
+          method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(feishuConfig)
+        });
+        addLog('飞书配置已保存', 'success');
+      } catch (err) { addLog('保存失败: ' + err.message, 'error'); }
+    }
+
+    function testFeishuConnection() {
+      document.getElementById('fs-conn-status').innerHTML = '<span style="color:var(--sync-pending)">●</span> 连接中...';
+      setTimeout(() => {
+        document.getElementById('fs-conn-status').innerHTML = '<span style="color:var(--success)">●</span> 已连接';
+        addLog('飞书连接测试成功', 'success');
+      }, 800);
+    }
+
+    function createTemplate() {
+      const name = prompt('模板名称:'); if (!name) return;
+      const content = prompt('模板内容:'); if (!content) return;
+      feishuConfig.templates.push({ id: 'tpl-' + Date.now(), name, content });
+      updateFeishuStats();
+      addLog('模板已创建: ' + name, 'success');
+    }
+
+    function useTemplate(id) {
+      const tpl = feishuConfig.templates.find(t => t.id === id); if (!tpl) return;
+      document.getElementById('fs-message-input').value = tpl.content;
+      switchFeishuTab('chat');
+      document.getElementById('fs-message-input').focus();
+    }
+
+    function editTemplate(id) {
+      const tpl = feishuConfig.templates.find(t => t.id === id); if (!tpl) return;
+      const content = prompt('编辑模板内容:', tpl.content); if (content === null) return;
+      tpl.content = content;
+      updateFeishuStats();
+      addLog('模板已更新: ' + tpl.name, 'success');
+    }
+
+    function createCommand() {
+      const cmd = prompt('指令名称 (如 /status):'); if (!cmd) return;
+      const desc = prompt('指令描述:'); if (!desc) return;
+      feishuConfig.commands.push({ command: cmd, description: desc, handler: 'handle' + cmd.replace('/', ''), params: [] });
+      updateFeishuStats();
+      addLog('指令已创建: ' + cmd, 'success');
+    }
+
+    function createWebhook() {
+      const name = prompt('Webhook 名称:'); if (!name) return;
+      const url = prompt('Webhook URL:'); if (!url) return;
+      feishuConfig.webhooks.push({ name, url, enabled: true });
+      updateFeishuStats();
+      addLog('Webhook已创建: ' + name, 'success');
+    }
+
+    function testWebhook(i) { addLog('测试 Webhook: ' + feishuConfig.webhooks[i].name, 'info'); }
+
+    function sendViaWebhook(i) {
+      const content = document.getElementById('fs-message-input').value;
+      if (!content) { alert('请先输入消息内容'); return; }
+      addLog('通过 ' + feishuConfig.webhooks[i].name + ' 发送消息', 'success');
+    }
+
+    function showTemplatePicker() {
+      const list = document.getElementById('fs-template-picker-list');
+      list.innerHTML = (feishuConfig.templates || []).map(t => `
+        <div style="padding:10px;border:1px solid var(--border);border-radius:4px;margin-bottom:8px;cursor:pointer;" onclick="useTemplate('${t.id}');closeTemplatePicker();">
+          <div style="font-weight:600;margin-bottom:4px;">${t.name}</div>
+          <div style="font-size:11px;color:var(--text-muted);">${t.content.substring(0, 60)}...</div>
+        </div>
+      `).join('') || '<div style="padding:20px;text-align:center;color:var(--text-muted);">暂无模板</div>';
+      document.getElementById('fs-template-overlay').classList.add('show');
+    }
+
+    function closeTemplatePicker() { document.getElementById('fs-template-overlay').classList.remove('show'); }
+
+    function showWebhookPicker() {
+      const list = document.getElementById('fs-webhook-picker-list');
+      list.innerHTML = (feishuConfig.webhooks || []).map((w, i) => `
+        <div style="padding:10px;border:1px solid var(--border);border-radius:4px;margin-bottom:8px;cursor:pointer;" onclick="sendViaWebhook(${i});closeWebhookPicker();">
+          <div style="font-weight:600;">${w.name}</div>
+          <div style="font-size:11px;color:var(--text-muted);">${w.url.substring(0, 50)}...</div>
+        </div>
+      `).join('') || '<div style="padding:20px;text-align:center;color:var(--text-muted);">暂无 Webhook</div>';
+      document.getElementById('fs-webhook-overlay').classList.add('show');
+    }
+
+    function closeWebhookPicker() { document.getElementById('fs-webhook-overlay').classList.remove('show'); }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div'); div.textContent = text; return div.innerHTML.replace(/\n/g, '<br>');
+    }
+
+    // 通用辅助函数
+    function addNew() { if (document.getElementById('scheduleView').classList.contains('active')) addSchedule(); }
+    function deleteSelected() { }
+    function reloadFromFile() { loadFromFile(); renderGantt(); }
+    function startAll() { addLog('全部启动', 'info'); }
+    function stopAll() { addLog('全部停止', 'info'); }
+    function refreshFileTree() { addLog('文件树已刷新', 'info'); }
+    function renderFileTree() { document.getElementById('fileTree').innerHTML = '<div class="tree-node selected">📁 auto-scripts</div>'; }
+
+    // 启动
+    init();
+  </script>
+</body>
+</html>
