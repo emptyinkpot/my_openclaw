@@ -57,7 +57,7 @@
         "channel": "last"
       },
       "state": {
-        "nextRunAtMs": 1774227600000,
+        "nextRunAtMs": 1774314000000,
         "lastRunAtMs": 1774141478237,
         "lastRunStatus": "error",
         "lastStatus": "error",
