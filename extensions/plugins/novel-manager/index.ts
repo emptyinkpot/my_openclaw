@@ -5,7 +5,7 @@ import { IncomingMessage, ServerResponse } from 'http';
 import * as fs from 'fs';
 import * as path from 'path';
 import { NovelService } from './services/novel-service';
-import { getDatabaseManager } from '../../../core/database';
+import { getDatabaseManager, getDailyPlanRepository } from '../../../core/database';
 
 // 导入禁用词处理步骤
 import { BannedWordsStep } from '../../../core/content-craft/src/steps/process/banned-words';
@@ -1148,34 +1148,24 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
       try {
         const body = await parseBody(req);
         const { plannedChapters, completedChapters, lastPlanDate } = body;
-        const db = getDatabaseManager();
+        const dailyPlanRepo = getDailyPlanRepository();
         
-        // 计算今日日期（SQL格式）
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const todayStr = today.toISOString().split('T')[0];
-        
-        // 先删除今天的旧计划
-        await db.execute('DELETE FROM daily_plans WHERE plan_date = ?', [todayStr]);
-        
-        // 插入新计划
+        // 转换格式
+        const plans: Array&lt;{ work_id: number; chapter_number: number; plan_date: string | Date }&gt; = [];
         if (plannedChapters && typeof plannedChapters === 'object') {
           for (const [workIdStr, chapters] of Object.entries(plannedChapters)) {
             const workId = parseInt(workIdStr);
             if (Array.isArray(chapters)) {
               for (const chapterNum of chapters) {
-                try {
-                  await db.execute(
-                    'INSERT INTO daily_plans (work_id, chapter_number, plan_date) VALUES (?, ?, ?)',
-                    [workId, chapterNum, todayStr]
-                  );
-                } catch (e) {
-                  // 忽略重复插入错误
-                }
+                // 不需要传递 plan_date，save 方法会自动处理
+                plans.push({ work_id: workId, chapter_number: chapterNum, plan_date: '' });
               }
             }
           }
         }
+        
+        // 使用仓库保存
+        await dailyPlanRepo.saveToday(plans);
         
         jsonRes(res, { success: true, message: '每日计划已同步' });
       } catch (error) {
@@ -1188,19 +1178,16 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
     // 获取今日计划
     if (path === '/api/novel/daily-plans' && method === 'GET') {
       try {
-        const db = getDatabaseManager();
+        const dailyPlanRepo = getDailyPlanRepository();
+        const todayPlans = await dailyPlanRepo.getToday();
+        
+        // 转换格式
+        const plannedChapters: Record&lt;number, number[]&gt; = {};
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const todayStr = today.toISOString().split('T')[0];
         
-        const plans = await db.query(
-          'SELECT work_id, chapter_number FROM daily_plans WHERE plan_date = ?',
-          [todayStr]
-        );
-        
-        // 转换格式
-        const plannedChapters: Record<number, number[]> = {};
-        plans.forEach((plan: any) => {
+        todayPlans.forEach((plan: any) =&gt; {
           if (!plannedChapters[plan.work_id]) {
             plannedChapters[plan.work_id] = [];
           }

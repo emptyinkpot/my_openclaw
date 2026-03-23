@@ -11,8 +11,10 @@
  * - DatabaseManager - 统一数据库管理器
  * - SqliteManager - SQLite 管理器
  * - getDatabaseManager() - 获取单例数据库管理器
- * - ChapterTitleManager - 章节标题管理器（新增）
- * - getChapterTitleManager() - 获取章节标题管理器单例（新增）
+ * - ChapterTitleManager - 章节标题管理器
+ * - getChapterTitleManager() - 获取章节标题管理器单例
+ * - DailyPlanRepository - 每日计划仓库（新增）
+ * - getDailyPlanRepository() - 获取每日计划仓库单例（新增）
  */
 
 export {
@@ -32,3 +34,9 @@ export {
   ChapterOutline,
   Chapter
 } from './chapter-title-manager';
+
+export {
+  DailyPlanRepository,
+  getDailyPlanRepository,
+  DailyPlan
+} from './daily-plan';
