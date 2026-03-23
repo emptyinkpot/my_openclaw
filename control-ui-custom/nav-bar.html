@@ -1,74 +1,178 @@
 <style>
+/* 统一导航栏样式 - 与原生界面保持一致 */
 .nav-bar {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  height: 40px;
-  background: linear-gradient(135deg, #24292f 0%, #1c2128 100%);
+  height: 48px;
+  background: linear-gradient(135deg, #1a1f2e 0%, #0d1117 100%);
   display: flex;
   align-items: center;
-  padding: 0 16px;
-  gap: 4px;
+  padding: 0 20px;
+  gap: 8px;
   z-index: 9999;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
+
+/* 导航栏顶部装饰线 */
 .nav-bar::before {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  height: 2px;
+  background: linear-gradient(90deg, 
+    #ff6b6b 0%, 
+    #4ecdc4 25%, 
+    #45b7d1 50%, 
+    #96ceb4 75%, 
+    #feca57 100%
+  );
 }
-.nav-bar span {
-  color: #fff;
-  font-weight: 600;
+
+/* 品牌标识 */
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: 24px;
+}
+
+.nav-logo {
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
   font-size: 14px;
-  margin-right: 16px;
-  letter-spacing: 0.3px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
+
+.nav-title {
+  color: #fff;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.5px;
+  background: linear-gradient(135deg, #fff 0%, #a8b1ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* 导航项样式 */
 .nav-bar a {
   color: #8b949e;
   font-size: 13px;
-  padding: 6px 14px;
-  border-radius: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
   text-decoration: none;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
   user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
 }
+
+/* 底部指示线 */
 .nav-bar a::before {
   content: '';
   position: absolute;
   bottom: 0;
   left: 50%;
   width: 0;
-  height: 2px;
-  background: #0969da;
+  height: 3px;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   transform: translateX(-50%);
+  border-radius: 3px 3px 0 0;
 }
+
+/* 悬停效果 */
 .nav-bar a:hover {
   color: #fff;
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.1);
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
+
 .nav-bar a:hover::before {
-  width: 80%;
+  width: 70%;
 }
+
+/* 当前页面高亮 */
 .nav-bar a.on {
-  background: #0969da;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
   color: #fff;
-  box-shadow: 0 2px 8px rgba(9,105,218,0.3);
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
 }
+
 .nav-bar a.on::before {
   width: 100%;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+}
+
+/* 响应式调整 */
+@media (max-width: 1200px) {
+  .nav-bar {
+    padding: 0 16px;
+    gap: 6px;
+  }
+  
+  .nav-bar a {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  
+  .nav-brand {
+    margin-right: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .nav-bar {
+    height: 56px;
+    flex-wrap: wrap;
+    padding: 8px 12px;
+  }
+  
+  .nav-brand {
+    width: 100%;
+    justify-content: center;
+    margin: 0 0 8px 0;
+  }
+  
+  .nav-items {
+    display: flex;
+    width: 100%;
+    justify-content: center;
+    gap: 4px;
+  }
+  
+  .nav-bar a {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
 }
 </style>
+
 <div class="nav-bar">
+  <!-- 品牌标识 -->
+  <div class="nav-brand">
+    <div class="nav-logo">OC</div>
+    <div class="nav-title">OpenClaw</div>
+  </div>
+  
+  <!-- 导航项 -->
   <a href="javascript:void(0)" onclick="openGlobalSettingsModal();">⚙️ 设置</a>
   <a href="/novel/">📚 小说管理</a>
   <a href="/automation">🤖 自动化</a>
@@ -80,7 +184,7 @@
   <a href="/">🎯 原生界面</a>
 </div>
 
-<!-- 全局设置弹窗（直接嵌入，避免 fetch 问题） -->
+<!-- 全局设置弹窗（保持不变） -->
 <style>
 /* 独立设置弹窗样式 - 优化版 */
 #globalSettingsModal {
@@ -91,7 +195,7 @@
   right: 0;
   bottom: 0;
   background: rgba(0,0,0,0.6);
-  z-index: 2147483647; /* 最大z-index，确保在最上层 */
+  z-index: 2147483647;
   align-items: center;
   justify-content: center;
   margin: 0;
@@ -349,5 +453,29 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
     closeGlobalSettingsModal();
   }
+});
+
+// 页面加载后设置当前页面高亮
+document.addEventListener('DOMContentLoaded', function() {
+  const currentPath = window.location.pathname;
+  const navItems = document.querySelectorAll('.nav-bar a');
+  
+  navItems.forEach(item => {
+    item.classList.remove('on');
+    const href = item.getAttribute('href');
+    
+    // 特殊处理设置按钮
+    if (href === 'javascript:void(0)' && currentPath.includes('settings')) {
+      item.classList.add('on');
+    }
+    // 精确匹配其他路径
+    else if (currentPath === href || (currentPath === '/' && href === '/')) {
+      item.classList.add('on');
+    }
+    // 部分匹配（如 /novel/ 开头的路径）
+    else if (href && currentPath.startsWith(href) && href !== '/') {
+      item.classList.add('on');
+    }
+  });
 });
 </script>
