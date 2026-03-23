@@ -20,7 +20,7 @@ export class DailyPlanRepository {
   /**
    * 创建表（如果不存在）
    */
-  async createTableIfNotExists(): Promise<void> {
+  async createTableIfNotExists(): Promise&lt;void&gt; {
     const sql = `
       CREATE TABLE IF NOT EXISTS daily_plans (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -39,7 +39,7 @@ export class DailyPlanRepository {
   /**
    * 获取指定日期的计划
    */
-  async getByDate(planDate: string | Date): Promise<DailyPlan[]> {
+  async getByDate(planDate: string | Date): Promise&lt;DailyPlan[]&gt; {
     const dateStr = typeof planDate === 'string' ? planDate : planDate.toISOString().split('T')[0];
     const sql = 'SELECT * FROM daily_plans WHERE plan_date = ? ORDER BY work_id, chapter_number';
     return await this.db.query(sql, [dateStr]);
@@ -48,7 +48,7 @@ export class DailyPlanRepository {
   /**
    * 获取今日计划
    */
-  async getToday(): Promise<DailyPlan[]> {
+  async getToday(): Promise&lt;DailyPlan[]&gt; {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return await this.getByDate(today);
@@ -57,7 +57,7 @@ export class DailyPlanRepository {
   /**
    * 获取指定作品的计划
    */
-  async getByWorkId(workId: number, planDate?: string | Date): Promise<DailyPlan[]> {
+  async getByWorkId(workId: number, planDate?: string | Date): Promise&lt;DailyPlan[]&gt; {
     let sql = 'SELECT * FROM daily_plans WHERE work_id = ?';
     const params: any[] = [workId];
     
@@ -74,10 +74,10 @@ export class DailyPlanRepository {
   /**
    * 保存计划（会先删除指定日期的旧计划）
    */
-  async save(planDate: string | Date, plans: Omit<DailyPlan, 'id' | 'created_at'>[]): Promise<void> {
+  async save(planDate: string | Date, plans: Omit&lt;DailyPlan, 'id' | 'created_at'&gt;[]): Promise&lt;void&gt; {
     const dateStr = typeof planDate === 'string' ? planDate : planDate.toISOString().split('T')[0];
     
-    await this.db.transaction(async (conn) => {
+    await this.db.transaction(async (conn) =&gt; {
       // 删除旧计划
       await conn.execute('DELETE FROM daily_plans WHERE plan_date = ?', [dateStr]);
       
@@ -98,7 +98,7 @@ export class DailyPlanRepository {
   /**
    * 保存今日计划
    */
-  async saveToday(plans: Omit<DailyPlan, 'id' | 'created_at'>[]): Promise<void> {
+  async saveToday(plans: Omit&lt;DailyPlan, 'id' | 'created_at'&gt;[]): Promise&lt;void&gt; {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return await this.save(today, plans);
@@ -107,7 +107,7 @@ export class DailyPlanRepository {
   /**
    * 删除指定日期的计划
    */
-  async deleteByDate(planDate: string | Date): Promise<void> {
+  async deleteByDate(planDate: string | Date): Promise&lt;void&gt; {
     const dateStr = typeof planDate === 'string' ? planDate : planDate.toISOString().split('T')[0];
     await this.db.execute('DELETE FROM daily_plans WHERE plan_date = ?', [dateStr]);
   }
@@ -115,7 +115,7 @@ export class DailyPlanRepository {
   /**
    * 删除今日计划
    */
-  async deleteToday(): Promise<void> {
+  async deleteToday(): Promise&lt;void&gt; {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return await this.deleteByDate(today);
@@ -124,13 +124,13 @@ export class DailyPlanRepository {
   /**
    * 获取计划统计
    */
-  async getStats(): Promise<{ total: number; byDate: Record<string, number> }> {
+  async getStats(): Promise&lt;{ total: number; byDate: Record&lt;string, number&gt; }&gt; {
     const allPlans = await this.db.query('SELECT plan_date, COUNT(*) as count FROM daily_plans GROUP BY plan_date ORDER BY plan_date DESC');
     
-    const byDate: Record<string, number> = {};
+    const byDate: Record&lt;string, number&gt; = {};
     let total = 0;
     
-    allPlans.forEach((row: any) => {
+    allPlans.forEach((row: any) =&gt; {
       const dateStr = row.plan_date.toISOString ? row.plan_date.toISOString().split('T')[0] : row.plan_date;
       byDate[dateStr] = row.count;
       total += row.count;
