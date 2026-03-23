@@ -1006,6 +1006,9 @@ async function handleNovelPage(req: IncomingMessage, res: ServerResponse): Promi
     '/cache-manage.html': 'cache-manage.html',
     '/publish.html': 'publish.html',
     '/feishu.html': 'feishu.html',
+    '/automation': 'auto.html',
+    '/automation.html': 'auto.html',
+    '/experience.html': 'experience.html',
     // 静态资源文件
     '/nav-bar.html': 'nav-bar.html',
     '/nav-bar.js': 'nav-bar.js'
@@ -2899,11 +2902,16 @@ const plugin = {
     const pageRoutes = [
       { path: '/', match: 'exact' as const },
       { path: '/novel', match: 'exact' as const },
+      { path: '/novel/', match: 'exact' as const },
       { path: '/cache.html', match: 'exact' as const },
       { path: '/project-structure.html', match: 'exact' as const },
       { path: '/logs.html', match: 'exact' as const },
       { path: '/cache-manage.html', match: 'exact' as const },
-      { path: '/publish.html', match: 'exact' as const }
+      { path: '/publish.html', match: 'exact' as const },
+      { path: '/feishu.html', match: 'exact' as const },
+      { path: '/automation', match: 'exact' as const },
+      { path: '/automation.html', match: 'exact' as const },
+      { path: '/experience.html', match: 'exact' as const }
     ];
     
     // 注册页面路由 - 不需要认证
