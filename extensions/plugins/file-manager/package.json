@@ -1,0 +1,17 @@
+{
+  "name": "file-manager-plugin",
+  "version": "1.0.0",
+  "description": "OpenClaw 文件管理器 - 文件浏览 + 变化监听",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "chokidar": "^3.6.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "@types/node": "^20.10.0"
+  }
+}

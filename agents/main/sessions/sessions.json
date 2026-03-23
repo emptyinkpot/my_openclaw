@@ -1,7 +1,7 @@
 {
   "agent:main:main": {
     "sessionId": "69335c48-3f72-418d-8b91-38162f949eca",
-    "updatedAt": 1774244040320,
+    "updatedAt": 1774244987564,
     "systemSent": true,
     "abortedLastRun": false,
     "chatType": "direct",
@@ -181,7 +181,7 @@
     },
     "systemPromptReport": {
       "source": "run",
-      "generatedAt": 1774244013653,
+      "generatedAt": 1774244971186,
       "sessionId": "69335c48-3f72-418d-8b91-38162f949eca",
       "sessionKey": "agent:main:main",
       "provider": "coze",
@@ -487,13 +487,13 @@
         ]
       }
     },
-    "cacheRead": 7480,
+    "cacheRead": 198456,
     "cacheWrite": 0,
     "totalTokensFresh": true,
     "lastChannel": "webchat",
-    "inputTokens": 170499,
-    "outputTokens": 410,
-    "totalTokens": 177979,
+    "inputTokens": 1885,
+    "outputTokens": 114,
+    "totalTokens": 200341,
     "modelProvider": "coze",
     "model": "doubao-seed-2-0-lite-260215",
     "contextTokens": 262144
