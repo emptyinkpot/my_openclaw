@@ -1158,7 +1158,7 @@ async function handleNovelApi(req: IncomingMessage, res: ServerResponse): Promis
             if (Array.isArray(chapters)) {
               for (const chapterNum of chapters) {
                 // 不需要传递 plan_date，save 方法会自动处理
-                plans.push({ work_id: workId, chapter_number: chapterNum, plan_date: '' });
+                plans.push({ work_id: workId, chapter_number: chapterNum, plan_date: new Date() });
               }
             }
           }
