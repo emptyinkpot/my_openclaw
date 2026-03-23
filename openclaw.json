@@ -222,7 +222,7 @@
       "imageModel": {
         "primary": "coze/doubao-seed-1-8-251228"
       },
-      "workspace": "/workspace/projects/workspace",
+      "workspace": "/workspace/projects",
       "compaction": {
         "mode": "safeguard"
       },
