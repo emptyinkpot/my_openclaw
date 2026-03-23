@@ -252,7 +252,7 @@
     "ownerDisplay": "raw"
   },
   "hooks": {
-    "enabled": false,
+    "enabled": true,
     "token": "dev-token-for-internal-use",
     "mappings": [],
     "internal": {
@@ -281,6 +281,15 @@
         },
         "sender-trigger": {
           "enabled": true
+        },
+        "qmd-knowledge-search": {
+          "enabled": true,
+          "trigger": "pre-reply",
+          "config": {
+            "enabled": true,
+            "maxResults": 5,
+            "minScore": 0.2
+          }
         }
       },
       "load": {
@@ -294,7 +303,7 @@
           "sourcePath": "/workspace/projects/hooks-pack",
           "installPath": "/workspace/projects/hooks-pack",
           "version": "1.0.0",
-          "installedAt": "2026-03-16T05:43:57.997Z",
+          "installedAt": "2026-03-23T03:57:00.000Z",
           "hooks": [
             "code-guard",
             "knowledge-check",
@@ -303,7 +312,8 @@
             "self-heal",
             "sender-trigger",
             "storage-protect",
-            "task-logger"
+            "task-logger",
+            "qmd-knowledge-search"
           ]
         }
       }

@@ -1,7 +1,7 @@
 {
   "agent:main:main": {
     "sessionId": "69335c48-3f72-418d-8b91-38162f949eca",
-    "updatedAt": 1774238147293,
+    "updatedAt": 1774242144337,
     "systemSent": true,
     "abortedLastRun": false,
     "chatType": "direct",
@@ -181,11 +181,11 @@
     },
     "systemPromptReport": {
       "source": "run",
-      "generatedAt": 1774237666563,
+      "generatedAt": 1774242114308,
       "sessionId": "69335c48-3f72-418d-8b91-38162f949eca",
       "sessionKey": "agent:main:main",
-      "provider": "deepseek",
-      "model": "deepseek-chat",
+      "provider": "coze",
+      "model": "doubao-seed-2-0-lite-260215",
       "workspaceDir": "/workspace",
       "bootstrapMaxChars": 20000,
       "bootstrapTotalMaxChars": 150000,
@@ -201,9 +201,9 @@
         "sandboxed": false
       },
       "systemPrompt": {
-        "chars": 30997,
+        "chars": 31017,
         "projectContextChars": 13447,
-        "nonProjectContextChars": 17550
+        "nonProjectContextChars": 17570
       },
       "injectedWorkspaceFiles": [
         {
@@ -450,7 +450,7 @@
           },
           {
             "name": "image",
-            "summaryChars": 201,
+            "summaryChars": 260,
             "schemaChars": 342,
             "propertiesCount": 6
           },
@@ -487,15 +487,16 @@
         ]
       }
     },
-    "cacheRead": 87360,
+    "cacheRead": 7480,
     "cacheWrite": 0,
     "totalTokensFresh": true,
     "lastChannel": "webchat",
-    "inputTokens": 6434,
-    "outputTokens": 12880,
-    "totalTokens": 87434,
-    "providerOverride": "coze",
-    "modelOverride": "doubao-seed-1-8-251228"
+    "inputTokens": 127862,
+    "outputTokens": 463,
+    "totalTokens": 133850,
+    "modelProvider": "coze",
+    "model": "doubao-seed-2-0-lite-260215",
+    "contextTokens": 262144
   },
   "agent:main:cron:6782e7b2-978f-47bc-b76d-462f7001d863": {
     "sessionId": "579ef1fd-46ae-4955-8042-4d47ba37f730",
