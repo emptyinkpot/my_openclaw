@@ -13,64 +13,16 @@
     <link rel="modulepreload" crossorigin href="./assets/format-DeRVtGzv.js">
     <link rel="stylesheet" crossorigin href="./assets/index-DmrclaY-.css">
     <style>
-      /* 关键：防止导航栏和主页面不重叠！ */
-      * {
-        box-sizing: border-box;
-      }
-      html, body {
-        margin: 0;
-        padding: 0;
-        height: 100%;
-        overflow: hidden; /* 防止整个页面滚动 */
-      }
-      #navbar-container {
-        position: fixed; /* 导航栏固定在顶部 */
-        top: 0;
-        left: 0;
-        right: 0;
-        z-index: 2147483647; /* 确保在最上层 */
-        height: 40px; /* 明确高度 */
-      }
-      openclaw-app {
-        display: block;
-        position: fixed; /* 主页面也固定 */
-        top: 40px; /* 从导航栏下方开始 */
-        left: 0;
-        right: 0;
-        bottom: 0;
-        height: calc(100vh - 40px);
-        overflow-y: auto; /* 只让主页面滚动 */
-      }
+      .nav-bar{position:fixed;top:0;left:0;right:0;height:40px;background:#24292f;display:flex;align-items:center;padding:0 16px;gap:4px;z-index:9999}
+      .nav-bar span{color:#fff;font-weight:600;font-size:14px;margin-right:16px}
+      .nav-bar a{color:#8b949e;font-size:13px;padding:6px 14px;border-radius:4px;text-decoration:none}
+      .nav-bar a:hover{background:rgba(255,255,255,0.1);color:#fff}
+      .nav-bar a.on{background:#0969da;color:#fff}
+      openclaw-app{display:block;margin-top:40px;height:calc(100vh - 40px)}
     </style>
   </head>
   <body>
-    <div id="navbar-container"></div>
+    <div class="nav-bar"><span>🦞 OpenClaw</span><a href="/novel/">📚 小说管理</a><a href="/auto.html">⚙️ 自动化</a><a href="/experience.html">🧠 经验</a><a href="/cache.html">💾 缓存</a><a href="/" class="on">🎯 原生界面</a></div>
     <openclaw-app></openclaw-app>
-    
-    <script>
-      console.log('[Control UI] 加载本地导航栏...');
-      fetch('./nav-bar.html')
-        .then(res => {
-          if (!res.ok) throw new Error('Failed to load local nav-bar.html');
-          return res.text();
-        })
-        .then(html => {
-          document.getElementById('navbar-container').innerHTML = html;
-          console.log('[Control UI] 本地导航栏加载成功！');
-          
-          // 确保导航栏样式正确
-          const navBar = document.querySelector('.nav-bar');
-          if (navBar) {
-            navBar.style.position = 'fixed';
-            navBar.style.top = '0';
-            navBar.style.left = '0';
-            navBar.style.right = '0';
-            navBar.style.zIndex = '2147483647';
-          }
-        })
-        .catch(err => {
-          console.error('[Control UI] 加载失败:', err);
-        });
-    </script>
   </body>
 </html>
