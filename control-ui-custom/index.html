@@ -13,20 +13,37 @@
     <link rel="modulepreload" crossorigin href="./assets/format-DeRVtGzv.js">
     <link rel="stylesheet" crossorigin href="./assets/index-DmrclaY-.css">
     <style>
-      body {
+      /* 关键：防止导航栏和主页面不重叠！ */
+      * {
+        box-sizing: border-box;
+      }
+      html, body {
         margin: 0;
         padding: 0;
+        height: 100%;
+        overflow: hidden; /* 防止整个页面滚动 */
+      }
+      #navbar-container {
+        position: fixed; /* 导航栏固定在顶部 */
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 2147483647; /* 确保在最上层 */
+        height: 40px; /* 明确高度 */
       }
       openclaw-app {
         display: block;
-        margin-top: 40px;
+        position: fixed; /* 主页面也固定 */
+        top: 40px; /* 从导航栏下方开始 */
+        left: 0;
+        right: 0;
+        bottom: 0;
         height: calc(100vh - 40px);
+        overflow-y: auto; /* 只让主页面滚动 */
       }
     </style>
   </head>
   <body>
-    <!-- 直接引用本地的导航栏文件，确保能显示 -->
-    <!-- 要同步时，运行：cp extensions/public/nav-bar.html control-ui-custom/ -->
     <div id="navbar-container"></div>
     <openclaw-app></openclaw-app>
     
@@ -40,6 +57,16 @@
         .then(html => {
           document.getElementById('navbar-container').innerHTML = html;
           console.log('[Control UI] 本地导航栏加载成功！');
+          
+          // 确保导航栏样式正确
+          const navBar = document.querySelector('.nav-bar');
+          if (navBar) {
+            navBar.style.position = 'fixed';
+            navBar.style.top = '0';
+            navBar.style.left = '0';
+            navBar.style.right = '0';
+            navBar.style.zIndex = '2147483647';
+          }
         })
         .catch(err => {
           console.error('[Control UI] 加载失败:', err);
