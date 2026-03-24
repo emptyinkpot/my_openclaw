@@ -33,7 +33,7 @@ function Open-Browser {
     [string]$GatewayToken
   )
 
-  $browserUrl = "http://127.0.0.1:5000/control-ui-custom/launch.html?token=$([uri]::EscapeDataString($GatewayToken))&gatewayUrl=$([uri]::EscapeDataString('ws://127.0.0.1:5000'))"
+  $browserUrl = "http://127.0.0.1:5000/control-ui-custom/launch.html#token=$([uri]::EscapeDataString($GatewayToken))&gatewayUrl=$([uri]::EscapeDataString('ws://127.0.0.1:5000'))"
 
   $edgeCandidates = @(
     "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
