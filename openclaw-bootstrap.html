@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-store" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>OpenClaw Bootstrap</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #07111f;
+        --panel: rgba(9, 16, 29, 0.92);
+        --border: rgba(255, 255, 255, 0.08);
+        --text: #e8f0ff;
+        --muted: #96a7c6;
+        --accent: #7dd3fc;
+      }
+      html, body {
+        margin: 0;
+        min-height: 100%;
+        background:
+          radial-gradient(circle at top, rgba(125, 211, 252, 0.16), transparent 42%),
+          linear-gradient(180deg, #07111f 0%, #0b1527 100%);
+        color: var(--text);
+        font-family: "Segoe UI", system-ui, sans-serif;
+      }
+      body {
+        display: grid;
+        place-items: center;
+        padding: 16px;
+      }
+      .card {
+        width: min(640px, calc(100vw - 32px));
+        border: 1px solid var(--border);
+        background: var(--panel);
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.46);
+        border-radius: 18px;
+        padding: 28px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+      .logo {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        font-weight: 800;
+        color: #07111f;
+        background: linear-gradient(135deg, #7dd3fc, #c4b5fd);
+      }
+      h1 {
+        margin: 0;
+        font-size: 22px;
+        line-height: 1.2;
+      }
+      p {
+        margin: 8px 0 0;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+      code {
+        display: inline-block;
+        margin-top: 12px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--accent);
+      }
+      .status {
+        margin-top: 18px;
+        padding: 14px 16px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        color: var(--text);
+      }
+      .meta {
+        margin-top: 12px;
+        font-size: 12px;
+        color: var(--muted);
+        word-break: break-all;
+      }
+    </style>
+    <script>
+      (() => {
+        const params = new URLSearchParams(location.search);
+        const hashParams = new URLSearchParams((location.hash || '').replace(/^#/, ''));
+        const token = (params.get('token') || hashParams.get('token') || '').trim();
+        const gatewayUrl = (params.get('gatewayUrl') || hashParams.get('gatewayUrl') || 'ws://127.0.0.1:5000').trim().replace(/\/+$/, '');
+        const payload = {
+          token,
+          gatewayUrl,
+          source: 'openclaw-bootstrap',
+          createdAt: Date.now(),
+        };
+
+        try {
+          window.name = JSON.stringify(payload);
+        } catch (err) {
+          console.error('[OpenClaw bootstrap] failed to seed window.name:', err);
+        }
+
+        const nextUrl = 'http://127.0.0.1:5000/control-ui-custom/index.html';
+        const next = new URL(nextUrl);
+        if (token) next.searchParams.set('token', token);
+        if (gatewayUrl) next.searchParams.set('gatewayUrl', gatewayUrl);
+
+        document.addEventListener('DOMContentLoaded', () => {
+          const status = document.getElementById('status');
+          const meta = document.getElementById('meta');
+          if (status) status.textContent = 'Opening OpenClaw Control...';
+          if (meta) meta.textContent = next.toString();
+        });
+
+        location.replace(next.toString());
+      })();
+    </script>
+  </head>
+  <body>
+    <main class="card">
+      <div class="brand">
+        <div class="logo">OC</div>
+        <div>
+          <h1>OpenClaw Bootstrap</h1>
+          <p>Preparing a clean browser context for the Control UI.</p>
+        </div>
+      </div>
+      <div class="status" id="status">Seeding gateway token and redirecting...</div>
+      <div class="meta" id="meta">http://127.0.0.1:5000/control-ui-custom/index.html</div>
+      <p>
+        If this page stays visible, open the target URL shown above.
+      </p>
+    </main>
+  </body>
+</html>
