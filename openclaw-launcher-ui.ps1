@@ -16,6 +16,8 @@ $script:FallbackConfigPath = Join-Path $script:Root 'projects\openclaw.json'
 $script:StartState = 'idle'
 $script:LastStatus = ''
 $script:LaunchedBrowser = $false
+$script:PendingHealthCheck = $false
+$script:HealthJob = $null
 
 function Resolve-ConfigPath {
   if (Test-Path $script:DefaultConfigPath) {
@@ -167,6 +169,51 @@ function Set-Status {
   $script:StatusLabel.ForeColor = $Color
   $script:StatusDot.BackColor = $Color
   $script:LastStatus = $Text
+}
+
+function Invoke-Ui {
+  param(
+    [Parameter(Mandatory = $true)]
+    [scriptblock]$Action
+  )
+
+  if ($form.IsHandleCreated -and $form.InvokeRequired) {
+    [void]$form.BeginInvoke($Action)
+  } else {
+    & $Action
+  }
+}
+
+function Start-HealthCheckAsync {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$Token
+  )
+
+  if ($script:PendingHealthCheck) {
+    return
+  }
+
+  $script:PendingHealthCheck = $true
+  $startButton.Enabled = $false
+  $refreshButton.Enabled = $false
+  $progress.Visible = $true
+  Set-Status -Text 'Checking' -Color ([System.Drawing.Color]::FromArgb(245, 158, 11))
+  $healthValue.Text = 'Checking gateway health...'
+  Append-Log 'Checking gateway health in background.'
+
+  if ($script:HealthJob -and $script:HealthJob.State -in @('Running', 'NotStarted')) {
+    return
+  }
+
+  $script:HealthJob = Start-Job -ScriptBlock {
+    param($token, $gatewayUrl)
+    $resultText = & openclaw gateway status --require-rpc --timeout 3000 --url $gatewayUrl --token $token 2>&1
+    [pscustomobject]@{
+      Healthy = ($LASTEXITCODE -eq 0)
+      Output = ($resultText | Out-String)
+    }
+  } -ArgumentList $Token, $script:GatewayUrl
 }
 
 $configPath = Read-LocalSetting -Name 'OPENCLAW_CONFIG_PATH'
@@ -452,15 +499,8 @@ $browseConfig.Add_Click({
 
 $refreshButton.Add_Click({
   $currentToken = $tokenBox.Text.Trim()
-  if ($currentToken -and (Test-GatewayHealthy -Token $currentToken)) {
-    Set-Status -Text 'Healthy' -Color ([System.Drawing.Color]::FromArgb(34, 197, 94))
-    $healthValue.Text = 'Gateway healthy'
-    $openUiButton.Enabled = $true
-    $progress.Visible = $false
-  } else {
-    Set-Status -Text 'Not running' -Color ([System.Drawing.Color]::FromArgb(148, 163, 184))
-    $healthValue.Text = 'Gateway not running'
-    $openUiButton.Enabled = $false
+  if ($currentToken) {
+    Start-HealthCheckAsync -Token $currentToken
   }
 })
 
@@ -495,15 +535,6 @@ $startButton.Add_Click({
   $env:OPENCLAW_CONFIG_PATH = $currentConfig
   $env:OPENCLAW_GATEWAY_TOKEN = $currentToken
 
-  if (Test-GatewayHealthy -Token $currentToken) {
-    Set-Status -Text 'Healthy' -Color ([System.Drawing.Color]::FromArgb(34, 197, 94))
-    $healthValue.Text = 'Gateway already healthy'
-    $openUiButton.Enabled = $true
-    $progress.Visible = $false
-    Append-Log 'Gateway already healthy, reusing it.'
-    return
-  }
-
   $startButton.Enabled = $false
   $stopButton.Enabled = $true
   $openUiButton.Enabled = $false
@@ -514,6 +545,7 @@ $startButton.Add_Click({
 
   Start-GatewayBackground -ConfigPath $currentConfig -Token $currentToken
   $script:StartState = 'starting'
+  Start-HealthCheckAsync -Token $currentToken
 })
 
 $timer = New-Object System.Windows.Forms.Timer
@@ -521,26 +553,66 @@ $timer.Interval = 1000
 $timer.Add_Tick({
   $currentToken = $tokenBox.Text.Trim()
 
+  if ($script:HealthJob) {
+    switch ($script:HealthJob.State) {
+      'Completed' {
+        $result = $null
+        try {
+          $result = Receive-Job -Job $script:HealthJob -ErrorAction SilentlyContinue | Select-Object -First 1
+        } finally {
+          Remove-Job -Job $script:HealthJob -Force -ErrorAction SilentlyContinue
+          $script:HealthJob = $null
+        }
+
+        $script:PendingHealthCheck = $false
+        $refreshButton.Enabled = $true
+        $startButton.Enabled = $true
+        $progress.Visible = $false
+
+        if ($result -and $result.Healthy) {
+          $script:StartState = 'running'
+          Set-Status -Text 'Healthy' -Color ([System.Drawing.Color]::FromArgb(34, 197, 94))
+          $healthValue.Text = 'Gateway healthy'
+          $openUiButton.Enabled = $true
+          Append-Log 'Gateway health check passed.'
+        } else {
+          $script:StartState = 'idle'
+          Set-Status -Text 'Not running' -Color ([System.Drawing.Color]::FromArgb(148, 163, 184))
+          $healthValue.Text = 'Gateway not running'
+          $openUiButton.Enabled = $false
+          if ($result -and $result.Output) {
+            Append-Log $result.Output.Trim()
+          }
+          Append-Log 'Gateway health check failed.'
+        }
+      }
+      'Failed' {
+        Remove-Job -Job $script:HealthJob -Force -ErrorAction SilentlyContinue
+        $script:HealthJob = $null
+        $script:PendingHealthCheck = $false
+        $refreshButton.Enabled = $true
+        $startButton.Enabled = $true
+        $progress.Visible = $false
+        $script:StartState = 'idle'
+        Set-Status -Text 'Not running' -Color ([System.Drawing.Color]::FromArgb(148, 163, 184))
+        $healthValue.Text = 'Gateway health check failed'
+        $openUiButton.Enabled = $false
+      }
+    }
+  }
+
   if ($script:StartState -eq 'starting') {
-    if ($currentToken -and (Test-GatewayHealthy -Token $currentToken)) {
+    if ($currentToken -and -not $script:PendingHealthCheck) {
       $script:StartState = 'running'
       $progress.Visible = $false
       $startButton.Enabled = $true
       $openUiButton.Enabled = $true
-      Set-Status -Text 'Healthy' -Color ([System.Drawing.Color]::FromArgb(34, 197, 94))
-      $healthValue.Text = 'Gateway healthy'
-      Append-Log 'Gateway became healthy.'
     } else {
       $healthValue.Text = 'Waiting for RPC probe...'
     }
   } elseif ($script:StartState -eq 'running') {
-    if ($currentToken -and (Test-GatewayHealthy -Token $currentToken)) {
+    if (-not $script:PendingHealthCheck -and $currentToken) {
       $openUiButton.Enabled = $true
-    } else {
-      $script:StartState = 'idle'
-      $openUiButton.Enabled = $false
-      Set-Status -Text 'Not running' -Color ([System.Drawing.Color]::FromArgb(148, 163, 184))
-      $healthValue.Text = 'Gateway not healthy'
     }
   }
 })
@@ -556,15 +628,13 @@ if (Test-Path $configPath) {
   Append-Log "Config missing: $configPath"
 }
 
-if ($token -and (Test-GatewayHealthy -Token $token)) {
-  Set-Status -Text 'Healthy' -Color ([System.Drawing.Color]::FromArgb(34, 197, 94))
-  $healthValue.Text = 'Gateway healthy'
-  $openUiButton.Enabled = $true
-  $script:StartState = 'running'
-  Append-Log 'Gateway already healthy at launch.'
+Set-Status -Text 'Ready' -Color ([System.Drawing.Color]::FromArgb(148, 163, 184))
+$healthValue.Text = 'Idle'
+
+if ($token) {
+  Start-HealthCheckAsync -Token $token
 } else {
-  Set-Status -Text 'Ready' -Color ([System.Drawing.Color]::FromArgb(148, 163, 184))
-  $healthValue.Text = 'Idle'
+  Append-Log 'No local token configured yet.'
 }
 
 [System.Windows.Forms.Application]::Run($form)
