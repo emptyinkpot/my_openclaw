@@ -137,10 +137,20 @@ function Open-ControlUi {
   $browserUrl = '{0}#token={1}&gatewayUrl={2}' -f $script:BrowserUrlBase, (Get-TokenForBrowser -Token $Token), ([uri]::EscapeDataString($script:GatewayUrl))
 
   try {
-    Start-Process $browserUrl | Out-Null
+    Start-Process -FilePath 'cmd.exe' -ArgumentList @(
+      '/c',
+      'start',
+      '',
+      $browserUrl
+    ) -WindowStyle Hidden | Out-Null
     return $true
   } catch {
-    return $false
+    try {
+      Start-Process -FilePath 'explorer.exe' -ArgumentList $browserUrl | Out-Null
+      return $true
+    } catch {
+      return $false
+    }
   }
 }
 
