@@ -51,7 +51,9 @@ if errorlevel 1 (
 )
 
 echo Opening browser UI...
-set "BROWSER_URL=file:///E:/Auto/openclaw-bootstrap.html?token=%OPENCLAW_GATEWAY_TOKEN%&gatewayUrl=ws://127.0.0.1:5000"
+set "BOOTSTRAP_PATH=%~dp0openclaw-bootstrap.html"
+set "BOOTSTRAP_URI=%BOOTSTRAP_PATH:\=/%"
+set "BROWSER_URL=file:///%BOOTSTRAP_URI%?token=%OPENCLAW_GATEWAY_TOKEN%&gatewayUrl=ws://127.0.0.1:5000"
 set "EDGE_EXE="
 for %%P in (
   "%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe"
