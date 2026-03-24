@@ -309,6 +309,66 @@ $badge.Font = New-Object System.Drawing.Font('Segoe UI', 9)
 $badge.Text = 'local launcher'
 $header.Controls.Add($badge)
 
+$actionStrip = New-Object System.Windows.Forms.Panel
+$actionStrip.Location = New-Object System.Drawing.Point(20, 114)
+$actionStrip.Size = New-Object System.Drawing.Size(1020, 52)
+$actionStrip.BackColor = [System.Drawing.Color]::FromArgb(15, 23, 42)
+$actionStrip.BorderStyle = 'FixedSingle'
+$form.Controls.Add($actionStrip)
+
+$launchHint = New-Object System.Windows.Forms.Label
+$launchHint.AutoSize = $true
+$launchHint.Location = New-Object System.Drawing.Point(16, 16)
+$launchHint.Font = New-Object System.Drawing.Font('Segoe UI', 9)
+$launchHint.ForeColor = [System.Drawing.Color]::FromArgb(148, 163, 184)
+$launchHint.Text = 'Primary actions'
+$actionStrip.Controls.Add($launchHint)
+
+$startButton = New-Object System.Windows.Forms.Button
+$startButton.Text = 'Start Gateway'
+$startButton.Location = New-Object System.Drawing.Point(150, 10)
+$startButton.Size = New-Object System.Drawing.Size(150, 32)
+$startButton.FlatStyle = 'Flat'
+$startButton.BackColor = [System.Drawing.Color]::FromArgb(37, 99, 235)
+$startButton.ForeColor = [System.Drawing.Color]::White
+$actionStrip.Controls.Add($startButton)
+
+$openUiButton = New-Object System.Windows.Forms.Button
+$openUiButton.Text = 'Open Control UI'
+$openUiButton.Location = New-Object System.Drawing.Point(312, 10)
+$openUiButton.Size = New-Object System.Drawing.Size(160, 32)
+$openUiButton.FlatStyle = 'Flat'
+$openUiButton.BackColor = [System.Drawing.Color]::FromArgb(15, 118, 110)
+$openUiButton.ForeColor = [System.Drawing.Color]::White
+$openUiButton.Enabled = $false
+$actionStrip.Controls.Add($openUiButton)
+
+$stopButton = New-Object System.Windows.Forms.Button
+$stopButton.Text = 'Stop Gateway'
+$stopButton.Location = New-Object System.Drawing.Point(484, 10)
+$stopButton.Size = New-Object System.Drawing.Size(140, 32)
+$stopButton.FlatStyle = 'Flat'
+$stopButton.BackColor = [System.Drawing.Color]::FromArgb(127, 29, 29)
+$stopButton.ForeColor = [System.Drawing.Color]::White
+$actionStrip.Controls.Add($stopButton)
+
+$refreshButton = New-Object System.Windows.Forms.Button
+$refreshButton.Text = 'Refresh'
+$refreshButton.Location = New-Object System.Drawing.Point(636, 10)
+$refreshButton.Size = New-Object System.Drawing.Size(96, 32)
+$refreshButton.FlatStyle = 'Flat'
+$refreshButton.BackColor = [System.Drawing.Color]::FromArgb(51, 65, 85)
+$refreshButton.ForeColor = [System.Drawing.Color]::White
+$actionStrip.Controls.Add($refreshButton)
+
+$saveHint = New-Object System.Windows.Forms.Label
+$saveHint.AutoSize = $true
+$saveHint.Location = New-Object System.Drawing.Point(752, 16)
+$saveHint.Font = New-Object System.Drawing.Font('Segoe UI', 9)
+$saveHint.ForeColor = [System.Drawing.Color]::FromArgb(148, 163, 184)
+$saveHint.Text = 'Use the fields below only if you need to change token/config.'
+$actionStrip.Controls.Add($saveHint)
+
 function New-Card {
   param(
     [Parameter(Mandatory = $true)]
@@ -340,13 +400,13 @@ function New-Card {
   return [pscustomobject]@{ Panel = $card; Title = $label }
 }
 
-$leftCard = New-Card -TitleText 'Startup Settings' -Left 22 -Top 136 -Width 470 -Height 206
+$leftCard = New-Card -TitleText 'Startup Settings' -Left 22 -Top 182 -Width 470 -Height 206
 $form.Controls.Add($leftCard.Panel)
 
-$rightCard = New-Card -TitleText 'Gateway Status' -Left 512 -Top 136 -Width 542 -Height 206
+$rightCard = New-Card -TitleText 'Gateway Status' -Left 512 -Top 182 -Width 542 -Height 206
 $form.Controls.Add($rightCard.Panel)
 
-$bottomCard = New-Card -TitleText 'Live Log' -Left 22 -Top 360 -Width 1032 -Height 312
+$bottomCard = New-Card -TitleText 'Live Log' -Left 22 -Top 406 -Width 1032 -Height 266
 $form.Controls.Add($bottomCard.Panel)
 
 $cfgLabel = New-Object System.Windows.Forms.Label
@@ -435,47 +495,10 @@ $progress.MarqueeAnimationSpeed = 30
 $progress.Visible = $false
 $rightCard.Panel.Controls.Add($progress)
 
-$startButton = New-Object System.Windows.Forms.Button
-$startButton.Text = 'Start Gateway'
-$startButton.Location = New-Object System.Drawing.Point(18, 206)
-$startButton.Size = New-Object System.Drawing.Size(132, 34)
-$startButton.FlatStyle = 'Flat'
-$startButton.BackColor = [System.Drawing.Color]::FromArgb(37, 99, 235)
-$startButton.ForeColor = [System.Drawing.Color]::White
-$rightCard.Panel.Controls.Add($startButton)
-
-$openUiButton = New-Object System.Windows.Forms.Button
-$openUiButton.Text = 'Open Control UI'
-$openUiButton.Location = New-Object System.Drawing.Point(162, 206)
-$openUiButton.Size = New-Object System.Drawing.Size(140, 34)
-$openUiButton.FlatStyle = 'Flat'
-$openUiButton.BackColor = [System.Drawing.Color]::FromArgb(15, 118, 110)
-$openUiButton.ForeColor = [System.Drawing.Color]::White
-$openUiButton.Enabled = $false
-$rightCard.Panel.Controls.Add($openUiButton)
-
-$stopButton = New-Object System.Windows.Forms.Button
-$stopButton.Text = 'Stop Gateway'
-$stopButton.Location = New-Object System.Drawing.Point(314, 206)
-$stopButton.Size = New-Object System.Drawing.Size(122, 34)
-$stopButton.FlatStyle = 'Flat'
-$stopButton.BackColor = [System.Drawing.Color]::FromArgb(127, 29, 29)
-$stopButton.ForeColor = [System.Drawing.Color]::White
-$rightCard.Panel.Controls.Add($stopButton)
-
-$refreshButton = New-Object System.Windows.Forms.Button
-$refreshButton.Text = 'Refresh'
-$refreshButton.Location = New-Object System.Drawing.Point(448, 206)
-$refreshButton.Size = New-Object System.Drawing.Size(60, 34)
-$refreshButton.FlatStyle = 'Flat'
-$refreshButton.BackColor = [System.Drawing.Color]::FromArgb(51, 65, 85)
-$refreshButton.ForeColor = [System.Drawing.Color]::White
-$rightCard.Panel.Controls.Add($refreshButton)
-
 $logBox = New-Object System.Windows.Forms.RichTextBox
 $logBox.Name = 'LogBox'
 $logBox.Location = New-Object System.Drawing.Point(18, 52)
-$logBox.Size = New-Object System.Drawing.Size(996, 236)
+$logBox.Size = New-Object System.Drawing.Size(996, 188)
 $logBox.BackColor = [System.Drawing.Color]::FromArgb(15, 23, 42)
 $logBox.ForeColor = [System.Drawing.Color]::FromArgb(226, 232, 240)
 $logBox.BorderStyle = 'FixedSingle'
@@ -486,7 +509,7 @@ $script:LogBox = $logBox
 
 $footer = New-Object System.Windows.Forms.Label
 $footer.AutoSize = $true
-$footer.Location = New-Object System.Drawing.Point(24, 680)
+$footer.Location = New-Object System.Drawing.Point(24, 684)
 $footer.ForeColor = [System.Drawing.Color]::FromArgb(100, 116, 139)
 $footer.Text = 'Native launcher window. The browser control UI is opened only when you click Open Control UI.'
 $form.Controls.Add($footer)
