@@ -1,5 +1,6 @@
 projects/
 projects-gh/
+projects-note-publish/
 .local/
 gateway-start.log
 start-openclaw.local.bat

@@ -4,7 +4,8 @@ This repository is the lightweight launcher shell for the OpenClaw workspace.
 
 What is here:
 
-- `start-openclaw.bat` for local startup
+- `start-openclaw.bat` for a native launcher window
+- `openclaw-launcher-ui.ps1` for the Windows Forms launcher UI
 - `restore-from-github.ps1` for restoring the shell files from GitHub
 - `openclaw-gateway-run.ps1` and `openclaw-gateway-child.ps1` for the gateway startup flow
 - `openclaw-bootstrap.html` for seeding the browser token before the UI loads
@@ -20,5 +21,7 @@ How to start:
 2. Copy `start-openclaw.local.example.bat` to `start-openclaw.local.bat`.
 3. Edit the token in `start-openclaw.local.bat`.
 4. Double-click `start-openclaw.bat`.
+
+The launcher window is native Windows UI. It only opens the browser control UI when you click `Open Control UI`.
 
 If you want the full workspace snapshot instead of the shell, use the `codex/full-ui-template` branch.
