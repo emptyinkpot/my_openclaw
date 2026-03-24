@@ -1,0 +1,36 @@
+# 白梦写作网定时任务配置
+# 可添加到 OpenClaw 的定时任务中
+
+# 方式1: 使用 OpenClaw 内置定时任务（推荐）
+# 在 openclaw.json 中添加:
+
+{
+  "cron": {
+    "jobs": [
+      {
+        "name": "baimeng-daily-checkin",
+        "schedule": "0 9 * * *",
+        "command": "cd /workspace/projects && node scripts/baimeng_cron.js daily",
+        "enabled": true
+      },
+      {
+        "name": "baimeng-stats",
+        "schedule": "0 */6 * * *",
+        "command": "cd /workspace/projects && node scripts/baimeng_cron.js stats",
+        "enabled": true
+      }
+    ]
+  }
+}
+
+# 方式2: 使用 Linux Crontab
+# 编辑 crontab: crontab -e
+
+# 每天早上9点执行签到
+# 0 9 * * * cd /workspace/projects && node scripts/baimeng_cron.js daily >> /workspace/projects/output/baimeng_cron.log 2>&1
+
+# 每6小时获取一次统计
+# 0 */6 * * * cd /workspace/projects && node scripts/baimeng_cron.js stats >> /workspace/projects/output/baimeng_cron.log 2>&1
+
+# 方式3: 使用 systemd timer (生产环境推荐)
+# 见 scripts/baimeng-cron.service 和 scripts/baimeng-cron.timer

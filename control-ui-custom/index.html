@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OpenClaw Control</title>
+    <meta name="color-scheme" content="dark light" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+    <script type="module" crossorigin src="./assets/index-UvgeZ3yV.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/lit-BZwq2xLD.js">
+    <link rel="modulepreload" crossorigin href="./assets/format-DeRVtGzv.js">
+    <link rel="stylesheet" crossorigin href="./assets/index-DmrclaY-.css">
+    <style>
+      /* 关键：防止导航栏和主页面不重叠！ */
+      * {
+        box-sizing: border-box;
+      }
+      html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow: hidden; /* 防止整个页面滚动 */
+      }
+      #navbar-container {
+        position: fixed; /* 导航栏固定在顶部 */
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 2147483647; /* 确保在最上层 */
+        height: 40px; /* 明确高度 */
+      }
+      openclaw-app {
+        display: block;
+        position: fixed; /* 主页面也固定 */
+        top: 40px; /* 从导航栏下方开始 */
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: calc(100vh - 40px);
+        overflow-y: auto; /* 只让主页面滚动 */
+      }
+    </style>
+  </head>
+  <body>
+    <div id="navbar-container"></div>
+    <openclaw-app></openclaw-app>
+    
+    <script>
+      console.log('[Control UI] 加载本地导航栏...');
+      fetch('./nav-bar.html')
+        .then(res => {
+          if (!res.ok) throw new Error('Failed to load local nav-bar.html');
+          return res.text();
+        })
+        .then(html => {
+          document.getElementById('navbar-container').innerHTML = html;
+          console.log('[Control UI] 本地导航栏加载成功！');
+          
+          // 确保导航栏样式正确
+          const navBar = document.querySelector('.nav-bar');
+          if (navBar) {
+            navBar.style.position = 'fixed';
+            navBar.style.top = '0';
+            navBar.style.left = '0';
+            navBar.style.right = '0';
+            navBar.style.zIndex = '2147483647';
+          }
+        })
+        .catch(err => {
+          console.error('[Control UI] 加载失败:', err);
+        });
+    </script>
+  </body>
+</html>

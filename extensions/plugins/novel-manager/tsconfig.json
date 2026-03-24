@@ -1,0 +1,44 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "lib": ["ES2020", "DOM"],
+    "outDir": "./dist",
+    "rootDir": "../..",
+    "strict": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "sourceMap": true,
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
+  "include": [
+    "plugins/novel-manager/core/content-craft/**/*.ts",
+    "plugins/novel-manager/services/**/*.ts",
+    "plugins/novel-manager/utils/**/*.ts",
+    "plugins/novel-manager/index.ts",
+    "core/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "tests",
+    "test",
+    "core/cache",
+    "core/data",
+    "core/logs",
+    "core/storage",
+    "core/temp",
+    "core/pipeline",
+    "core/content-pipeline",
+    "core/audit",
+    "core/browser",
+    "core/fanqie-simple-pipeline",
+    "core/data-scan-storage"
+  ]
+}

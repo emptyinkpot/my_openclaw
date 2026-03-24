@@ -1,0 +1,371 @@
+{
+  "meta": {
+    "lastTouchedVersion": "2026.3.13",
+    "lastTouchedAt": "2026-03-21T12:30:58.021Z"
+  },
+  "wizard": {
+    "lastRunAt": "2026-03-16T00:33:13.601Z",
+    "lastRunVersion": "2026.3.7",
+    "lastRunCommand": "doctor",
+    "lastRunMode": "local"
+  },
+  "browser": {
+    "enabled": true,
+    "color": "#00AA00",
+    "executablePath": "/opt/google/chrome/chrome",
+    "headless": false,
+    "noSandbox": true,
+    "defaultProfile": "openclaw",
+    "extraArgs": [
+      "--window-size=1920,1080",
+      "--test-type"
+    ]
+  },
+  "models": {
+    "providers": {
+      "deepseek": {
+        "baseUrl": "https://api.deepseek.com",
+        "apiKey": "sk-43b967b613014838bf40b8ffa8910e13",
+        "api": "openai-completions",
+        "models": [
+          {
+            "id": "deepseek-chat",
+            "name": "DeepSeek Chat",
+            "api": "openai-completions",
+            "reasoning": false,
+            "input": [
+              "text"
+            ],
+            "cost": {
+              "input": 0,
+              "output": 0,
+              "cacheRead": 0,
+              "cacheWrite": 0
+            },
+            "contextWindow": 128000,
+            "maxTokens": 8192
+          },
+          {
+            "id": "deepseek-reasoner",
+            "name": "DeepSeek Reasoner",
+            "api": "openai-completions",
+            "reasoning": true,
+            "input": [
+              "text"
+            ],
+            "cost": {
+              "input": 0,
+              "output": 0,
+              "cacheRead": 0,
+              "cacheWrite": 0
+            },
+            "contextWindow": 64000,
+            "maxTokens": 8192
+          }
+        ]
+      },
+    }
+  },
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "deepseek/deepseek-chat"
+      },
+      "imageModel": {
+        "primary": "deepseek/deepseek-chat"
+      },
+      "workspace": "/workspace",
+      "compaction": {
+        "mode": "safeguard"
+      },
+      "maxConcurrent": 4,
+      "subagents": {
+        "maxConcurrent": 8
+      }
+    }
+  },
+  "tools": {
+    "web": {
+      "search": {
+        "enabled": false
+      },
+      "fetch": {
+        "enabled": false
+      }
+    }
+  },
+  "messages": {
+    "ackReactionScope": "group-mentions"
+  },
+  "commands": {
+    "native": "auto",
+    "nativeSkills": "auto",
+    "restart": true,
+    "ownerDisplay": "raw"
+  },
+  "hooks": {
+    "enabled": true,
+    "token": "dev-token-for-internal-use",
+    "mappings": [],
+    "internal": {
+      "enabled": true,
+      "entries": {
+        "message-received-check-state": {
+          "enabled": true
+        },
+        "task-logger": {
+          "enabled": true
+        },
+        "storage-protect": {
+          "enabled": true
+        },
+        "code-guard": {
+          "enabled": true
+        },
+        "self-heal": {
+          "enabled": true
+        },
+        "knowledge-check": {
+          "enabled": true
+        },
+        "pre-write-check": {
+          "enabled": true
+        },
+        "sender-trigger": {
+          "enabled": true
+        },
+        "qmd-knowledge-search": {
+          "enabled": true,
+          "trigger": "pre-reply",
+          "config": {
+            "enabled": true,
+            "maxResults": 5,
+            "minScore": 0.2
+          }
+        }
+      },
+      "load": {
+        "extraDirs": [
+          "/workspace/projects/hooks-pack"
+        ]
+      },
+      "installs": {
+        "workspace-hooks-pack": {
+          "source": "path",
+          "sourcePath": "/workspace/projects/hooks-pack",
+          "installPath": "/workspace/projects/hooks-pack",
+          "version": "1.0.0",
+          "installedAt": "2026-03-23T03:57:00.000Z",
+          "hooks": [
+            "code-guard",
+            "knowledge-check",
+            "message-received-check-state",
+            "pre-write-check",
+            "self-heal",
+            "sender-trigger",
+            "storage-protect",
+            "task-logger",
+            "qmd-knowledge-search"
+          ]
+        }
+      }
+    }
+  },
+  "channels": {
+    "feishu": {
+      "allowFrom": [
+        "ou_93bd3674e058889b165af2f967e545b3"
+      ],
+      "appId": "cli_a938891735f89bd1",
+      "appSecret": "mAOrEpjubQzmP7pk8uKbOczIhP757yB1",
+      "connectionMode": "websocket",
+      "dmPolicy": "allowlist",
+      "domain": "feishu",
+      "enabled": true,
+      "groupAllowFrom": [],
+      "groupPolicy": "open",
+      "requireMention": true
+    }
+  },
+  "gateway": {
+    "port": 5000,
+    "mode": "local",
+    "bind": "loopback",
+    "controlUi": {
+      "enabled": true,
+      "root": "/workspace/projects/control-ui-custom",
+      "allowedOrigins": [
+        "http://localhost:5000",
+        "http://127.0.0.1:5000"
+      ],
+      "dangerouslyDisableDeviceAuth": true
+    },
+    "auth": {
+      "mode": "token",
+      "token": "e1647cdb-1b80-4eee-a975-7599160cc89b"
+    },
+    "trustedProxies": [
+      "::1",
+      "127.0.0.1"
+    ],
+    "tailscale": {
+      "mode": "off",
+      "resetOnExit": false
+    },
+    "nodes": {
+      "browser": {
+        "mode": "off"
+      }
+    }
+  },
+  "skills": {
+    "install": {
+      "nodeManager": "npm"
+    },
+    "entries": {
+      "1password": {
+        "enabled": false
+      },
+      "apple-notes": {
+        "enabled": false
+      },
+      "apple-reminders": {
+        "enabled": false
+      },
+      "bear-notes": {
+        "enabled": false
+      },
+      "bird": {
+        "enabled": false
+      },
+      "blogwatcher": {
+        "enabled": false
+      },
+      "blucli": {
+        "enabled": false
+      },
+      "bluebubbles": {
+        "enabled": false
+      },
+      "camsnap": {
+        "enabled": false
+      },
+      "clawhub": {
+        "enabled": false
+      },
+      "eightctl": {
+        "enabled": false
+      },
+      "gemini": {
+        "enabled": false
+      },
+      "gifgrep": {
+        "enabled": false
+      },
+      "gog": {
+        "enabled": false
+      },
+      "goplaces": {
+        "enabled": false
+      },
+      "local-places": {
+        "enabled": false
+      },
+      "nano-banana-pro": {
+        "enabled": false
+      },
+      "nano-pdf": {
+        "enabled": false
+      },
+      "notion": {
+        "enabled": false
+      },
+      "obsidian": {
+        "enabled": false
+      },
+      "openai-image-gen": {
+        "enabled": false
+      },
+      "openai-whisper": {
+        "enabled": false
+      },
+      "openai-whisper-api": {
+        "enabled": false
+      },
+      "slack": {
+        "enabled": false
+      },
+      "songsee": {
+        "enabled": false
+      },
+      "sonoscli": {
+        "enabled": false
+      },
+      "spotify-player": {
+        "enabled": false
+      },
+      "things-mac": {
+        "enabled": false
+      },
+      "wacli": {
+        "enabled": false
+      },
+      "novel-status": {
+        "enabled": true
+      },
+      "bilibili-monitor": {
+        "enabled": true
+      }
+    }
+  },
+  "plugins": {
+    "slots": {},
+    "allow": [
+      "feishu-openclaw-plugin",
+      "novel-manager",
+      "experience-manager",
+      "automation-hub"
+    ],
+    "load": {
+      "paths": [
+        "/workspace/projects/extensions/plugins/novel-manager",
+        "/workspace/projects/extensions/plugins/experience-manager",
+        "/workspace/projects/extensions/plugins/feishu-openclaw-plugin",
+        "/workspace/projects/extensions/plugins/automation-hub"
+      ]
+    },
+    "entries": {
+      "feishu": {
+        "enabled": false
+      },
+      "feishu-openclaw-plugin": {
+        "enabled": true
+      },
+      "novel-manager": {
+        "enabled": true
+      },
+      "experience-manager": {
+        "enabled": true
+      },
+      "automation-hub": {
+        "enabled": true
+      },
+
+    },
+    "installs": {
+      "feishu-openclaw-plugin": {
+        "source": "npm",
+        "spec": "@larksuiteoapi/feishu-openclaw-plugin",
+        "installPath": "/workspace/projects/extensions/plugins/feishu-openclaw-plugin",
+        "version": "2026.3.7-beta.0",
+        "resolvedName": "@larksuiteoapi/feishu-openclaw-plugin",
+        "resolvedVersion": "2026.3.7-beta.0",
+        "resolvedSpec": "@larksuiteoapi/feishu-openclaw-plugin@2026.3.7-beta.0",
+        "integrity": "sha512-wbkaEvcNnq3STz4M17obXvM9Xt6htdj2a393TK65uDNvbd0NVCrJ4QEApRKb57UhT85o1ul/D8oquo0GBE552Q==",
+        "shasum": "1373c900ec62ceb6e082430aee462db926b68f7c",
+        "resolvedAt": "2026-03-06T11:48:07.767Z",
+        "installedAt": "2026-03-06T11:48:19.178Z"
+      }
+    }
+  }
+}

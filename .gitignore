@@ -1,0 +1,78 @@
+# Local runtime state
+.coze
+openclaw.json.bak*
+gateway-start.log
+*.log
+
+# Agent runtime
+agents/main/agent/auth.json
+agents/main/agent/models.json
+agents/main/sessions/
+
+# Workspace runtime
+workspace/.openclaw/
+workspace/database.sqlite
+
+# Node.js
+node_modules/
+**/node_modules/
+package-lock.json
+yarn.lock
+
+# Build artifacts
+dist/
+**/dist/
+*.js.map
+*.d.ts.map
+**/tsconfig.tsbuildinfo
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary and test files
+check-*.js
+simple-test.js
+test-*.js
+test-*.ts
+**/test-*.js
+**/test-*.ts
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Browser caches and profiles
+browser/
+cookies-accounts/
+logs/
+temp/
+storage/
+cron/runs/
+devices/paired.json
+**/Default/Cache/
+**/Default/Code Cache/
+**/Default/IndexedDB/
+**/Default/Local Storage/
+**/Default/Session Storage/
+**/Default/Sessions/
+**/Default/Site Characteristics Database/
+**/Default/Sync Data/
+**/Default/shared_proto_db/
+**/GrShaderCache/
+**/GraphiteDawnCache/
+**/ShaderCache/
+# Local helper config
+start-openclaw.local.bat
+
+
+# Backup and local state
+*.bak*
+*.backup
+identity/*.json
+cron/jobs.json
+scripts/site_config.env
+
