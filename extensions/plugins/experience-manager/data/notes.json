@@ -1,6 +1,103 @@
 {
   "notes": [
     {
+      "id": "db_note_37",
+      "title": "经验积累中心空白页排查：先看鉴权，再看 API 前缀，再看筛选状态",
+      "content": "# 经验积累中心空白页排查\n\n## 现象\n\n经验积累中心看起来是空的，records 不显示。\n\n## 真正原因\n\n1. 页面请求经验接口时没有带对的 bootstrap token，接口直接返回 401。\n2. 旧页面还在使用错误的 API 前缀或写死的 token。\n3. 搜索/筛选逻辑如果从已经过滤过的数组继续过滤，会让页面一直像“没数据”。\n\n## 修复\n\n- 统一读取 `openclaw.control.bootstrap.token.v1`。\n- 统一 API 前缀为 `/api/experience`。\n- 搜索和筛选都从完整数据源 `allExpData` 重新计算。\n- 用真实接口返回和真实 DOM 两层验证。\n\n## 验证标准\n\n- `GET /api/experience/stats` 返回 200。\n- `GET /api/experience/records` 返回 200。\n- 页面能渲染出 records，不再只是空状态。\n- 刷新或重新搜索后，列表仍然稳定。",
+      "category": "dev",
+      "tags": [
+        "OpenClaw",
+        "experience-manager",
+        "authentication",
+        "visibility",
+        "debugging",
+        "frontend"
+      ],
+      "created_at": "2026-03-24T13:30:00.000Z",
+      "updated_at": "2026-03-24T13:30:00.000Z"
+    },
+    {
+      "id": "db_note_33",
+      "title": "OpenClaw UI 设计与架构专题",
+      "content": "# OpenClaw UI 设计与架构专题\n\n将 OpenClaw UI 的共享导航、启动预热、入口分流和验证方法整理成可复用的专栏。",
+      "category": "dev",
+      "tags": [
+        "OpenClaw",
+        "Control UI",
+        "architecture",
+        "ui-design",
+        "shared-nav",
+        "bootstrap",
+        "experience"
+      ],
+      "created_at": "2026-03-24T10:29:00.426Z",
+      "updated_at": "2026-03-24T10:29:00.426Z"
+    },
+    {
+      "id": "db_note_32",
+      "title": "OpenClaw UI 导航栏统一与编码排查",
+      "content": "# OpenClaw UI 导航栏统一与编码排查\n\n导航栏的共享源、本地副本和缓存版本号必须一起对。\n\n## 检查\n\n- 看真实 DOM\n- 看 served 路径\n- 看 shared/nav-bar.html 是否被正确读取\n- 看 cache busting 版本号\n",
+      "category": "dev",
+      "tags": [
+        "OpenClaw",
+        "Control UI",
+        "encoding",
+        "cache",
+        "debug",
+        "static files"
+      ],
+      "created_at": "2026-03-24T10:30:00.000Z",
+      "updated_at": "2026-03-24T10:30:00.000Z"
+    },
+    {
+      "id": "db_note_31",
+      "title": "OpenClaw bundle 黑屏调试方法",
+      "content": "# OpenClaw bundle ??????\n\n核心观念：先看 bundle 是否能解析，再看 customElements 是否注册成功。\n\n- 先用 parser 查语法\n- 再用 customElements.get('openclaw-app') 看主组件\n- 最后才去看 token 与路由\n",
+      "category": "dev",
+      "tags": [
+        "OpenClaw",
+        "Control UI",
+        "bundle",
+        "syntax",
+        "debug",
+        "methodology"
+      ],
+      "created_at": "2026-03-24T10:00:00.000Z",
+      "updated_at": "2026-03-24T10:00:00.000Z"
+    },
+    {
+      "id": "db_note_30",
+      "title": "OpenClaw bundle 字符损坏修复",
+      "content": "# OpenClaw bundle ??????\n\n在 minified bundle 里，一个字符错了就能让 UI 直接黑屏。修复时要用 parser 定位最小修改，不要作大范围重写。",
+      "category": "dev",
+      "tags": [
+        "OpenClaw",
+        "Control UI",
+        "bundle",
+        "syntax",
+        "debug"
+      ],
+      "created_at": "2026-03-24T09:30:00.000Z",
+      "updated_at": "2026-03-24T09:30:00.000Z"
+    },
+    {
+      "id": "db_note_29",
+      "title": "OpenClaw 调试专题：启动器、登录态与运行态收口",
+      "content": "# OpenClaw 调试专题：启动器、登录态与运行态收口\n\n这次连续调试的核心不是单一 bug，而是三个相互关联的问题：\n\n1. Windows 本地 OpenClaw 启动不稳定，网关会复用失败、旧服务态会干扰新进程。\n2. Control UI 能进入主页，但登录态会在跳转链路中丢失，出现 `gateway token mismatch`。\n3. 用户目录和仓库目录同时存放运行态与模型数据，容易出现“两个 OpenClaw”“两个 Ollama”的错觉。\n\n---\n\n## 一、启动稳定化\n\n### 现象\n- 桌面快捷方式有时打开的是默认浏览器页，或者卡在登录页。\n- `openclaw gateway status` 和真正可用的网关状态不一致。\n- 旧的计划任务、残留进程或过时的兼容入口会制造假象。\n\n### 解决方式\n- 启动器先做健康检查，再决定是复用现有网关还是重新拉起。\n- 健康判据以 RPC probe 为准，而不是只看 5000 端口是否监听。\n- 真正的冷启动路径是：清理旧状态 -> 启动前台 gateway -> 等待健康 -> 打开 UI。\n\n### 经验结论\n- 网关“能连上”不等于“状态正确”。\n- 对 Windows 启动问题，最优先排查的是旧进程、计划任务、端口和 token 是否一致。\n\n---\n\n## 二、登录态修复\n\n### 现象\n- 页面标题是对的，路径也到了 `control-ui-custom`，但仍然停在登录页。\n- 前端报 `unauthorized: gateway token mismatch`。\n\n### 解决方式\n- 启动器把 token 放进 URL hash，而不是 query。\n- `launch.html` 先把 token 写入 `localStorage`、`sessionStorage`、`window.name` 和设置项，再跳转到 `index.html`。\n- `index.html` 在 bundle 加载前再做一次 bootstrap，作为二次兜底。\n- 如果前端读取 key 失败，则用本地 bootstrap token 回退。\n\n### 经验结论\n- 多段前端路由里，query 参数最容易丢。\n- 登录态要同时照顾 URL、localStorage、sessionStorage、window.name 四个面。\n- 只改一个入口页通常不够，真正稳定要在跳转前后都做预热。\n\n---\n\n## 三、运行态收口\n\n### 现象\n- 用户目录下有 `.openclaw` 和 `.ollama`，仓库里也有一份运行态。\n- 配置、模型和工作区分散，排查时很难确认“到底读的是哪一份”。\n\n### 解决方式\n- 将实际运行态统一到 `E:\\Auto\\.local`。\n- 用户目录保留 junction 兼容旧路径，但不再作为唯一真相。\n- `openclaw.json` 明确指定 workspace、control UI 根目录、插件路径和 Ollama 地址。\n\n### 经验结论\n- 运行态和源码仓库要分开，但配置入口必须统一。\n- 路径收口以后，UI、插件、模型、工作区的责任边界会清晰很多。\n\n---\n\n## 四、当前实现链路\n\n现在这套功能是这样串起来的：\n\n- [E:\\Auto\\start-openclaw.bat](E:\\Auto\\start-openclaw.bat) 负责入口。\n- [E:\\Auto\\openclaw-gateway-run.ps1](E:\\Auto\\openclaw-gateway-run.ps1) 负责健康检查、冷启动、复用网关和打开浏览器。\n- [E:\\Auto\\projects\\control-ui-custom\\launch.html](E:\\Auto\\projects\\control-ui-custom\\launch.html) 负责把 token 预热到浏览器存储里。\n- [E:\\Auto\\projects\\control-ui-custom\\index.html](E:\\Auto\\projects\\control-ui-custom\\index.html) 负责二次 bootstrap 和导航栏加载。\n- [E:\\Auto\\.local\\openclaw\\openclaw.json](E:\\Auto\\.local\\openclaw\\openclaw.json) 负责网关端口、token、control UI 根目录、插件加载路径和 Ollama 模型配置。\n- [E:\\Auto\\projects\\extensions\\plugins\\experience-manager\\data\\experiences.json](E:\\Auto\\projects\\extensions\\plugins\\experience-manager\\data\\experiences.json) 保存经验记录。\n- [E:\\Auto\\projects\\data\\memory-lancedb\\experience-sync.jsonl](E:\\Auto\\projects\\data\\memory-lancedb\\experience-sync.jsonl) 保存同步到 memory 层的经验文本。\n\n### 经验模块写入方式\n- 新经验会先写入 `experiences.json`。\n- 写入后会异步同步到 memory 队列文件。\n- 这样 UI 可以直接展示，检索层也能复用。\n\n---\n\n## 五、这次最值得保留的调试原则\n\n- 先确认“网关是否真的健康”，再判断 UI 问题。\n- token 问题要同时看 URL、浏览器存储和前端跳转链。\n- 运行态收口比到处修补路径更重要。\n- 经验记录要写成结构化条目，不要只留零散聊天结论。\n",
+      "category": "dev",
+      "tags": [
+        "OpenClaw",
+        "调试专题",
+        "Gateway",
+        "Control UI",
+        "登录态",
+        "Ollama",
+        "经验沉淀"
+      ],
+      "created_at": "2026-03-24T08:09:23.711Z",
+      "updated_at": "2026-03-24T08:09:23.711Z"
+    },
+    {
       "id": "db_note_28",
       "title": "导航栏统一管理需求",
       "content": "# 导航栏统一管理需求\n\n用户询问：这几个的导航栏能不能独立出来，统一管理？",
@@ -410,6 +507,73 @@
       ],
       "created_at": "2026-03-20T12:00:44.000Z",
       "updated_at": "2026-03-20T12:00:44.000Z"
+    },
+    {
+      "id": "db_note_34",
+      "title": "OpenClaw UI 经验专栏：共享导航、入口分流与验证",
+      "content": "# OpenClaw UI 经验专栏：共享导航、入口分流与验证\n\n## 设计原则\n\n- 共享导航只保留一份真相：`/shared/nav-bar.html`。\n- 入口要分流清楚：\n  - 文件管理 -> `/file-manager`\n  - 原生界面 -> `/control-ui-custom/launch.html`\n  - 主 UI -> `/control-ui-custom/index.html`\n- 先看真实 DOM，再看源码；以 `customElements.get('openclaw-app')` 和页面实际状态为准。\n- 静态资源一旦改动，立刻做 cache busting，避免浏览器继续吃旧导航。\n- 启动链路必须保留双重 bootstrap：`launch.html` 预热 token，`index.html` 二次兜底。\n\n## 架构图\n\n```mermaid\nflowchart LR\n  A[OpenClaw UI.lnk] --> B[start-openclaw.bat]\n  B --> C[openclaw-gateway-run.ps1]\n  C --> D[Gateway health / RPC probe]\n  D --> E[control-ui-custom/launch.html]\n  E --> F[control-ui-custom/index.html]\n  F --> G[openclaw-app]\n  H[shared/nav-bar.html] --> F\n  H --> I[extensions/public pages]\n  J[file-manager route] --> K[file-manager public index.html]\n```\n\n- `launch.html` 负责把 `token` 和 `gatewayUrl` 写入浏览器存储，再跳转到主 UI。\n- `index.html` 会在 bundle 加载前再次执行 bootstrap，避免路由切换把登录态带丢。\n- `nav-bar-behavior.js` 会把页面里的本地导航替换成共享导航源，保证入口一致。\n- `file-manager` 不是原生壳，它有独立页面和独立 API，点击后应该进入文件管理页本身。\n- `extensions/public` 与 `control-ui-custom` 共用同一份导航语义，减少页面分叉。\n\n## 验证清单\n\n1. `Test-NetConnection 127.0.0.1 -Port 5000` 必须成功。\n2. `Invoke-WebRequest http://127.0.0.1:5000/control-ui-custom/index.html` 必须返回 200。\n3. `Invoke-WebRequest http://127.0.0.1:5000/file-manager` 必须返回 200。\n4. 浏览器里 `customElements.get('openclaw-app')` 必须为 `true`。\n5. 点击“原生界面”必须进入 `/control-ui-custom/launch.html`，不能回到根路径 `/`。\n6. 点击“文件管理”必须进入 `/file-manager`，不能误跳到原生壳。\n7. 导航栏如果出现乱码，先查页面实际 served 路径，再查缓存版本号，不要先怀疑源码丢失。\n8. 共享导航、主 bundle、页面本地副本三处要同步验证，避免“改了一处，另一处还在旧版本”。\n",
+      "category": "dev",
+      "tags": [
+        "OpenClaw",
+        "Control UI",
+        "shared-nav",
+        "launcher",
+        "file-manager",
+        "architecture",
+        "experience"
+      ],
+      "created_at": "2026-03-24T00:00:00.000Z",
+      "updated_at": "2026-03-24T00:00:00.000Z"
+    },
+    {
+      "id": "db_note_35",
+      "title": "OpenClaw 云端 MySQL 读取可见化：真实 schema、真实路由、真实 token",
+      "content": "# OpenClaw 云端 MySQL 读取可见化：真实 schema、真实路由、真实 token\n\n## 问题本质\n\n这次不是“数据库根本没连上”，而是“前端没有把真实读取结果展示出来”。后端 MySQL 实际可用，但页面里存在三类误导：\n\n1. 旧主机名在本机默认 DNS 下无法解析，只有直接 IP 才稳定可连。\n2. 某些页面还在用旧路径或假按钮，点击后看起来像测试，实际上没有真正命中后端 schema 接口。\n3. 部分页面硬编码了旧 token，或者没有读取启动器注入的 bootstrap token，导致读库请求在不同入口下行为不一致。\n\n## 真实结论\n\n- 真正可用的数据库主机是 `124.220.245.121:22295`。\n- 真正应该读取的 schema 接口是 `/api/novel/db/schema`。\n- 真正应该判断健康状态的接口是 `/api/novel/db/health`。\n- 页面要让人“看见读库”，不能只靠 console log，必须在 DOM 里直接显示：\n  - 当前正在读取\n  - 已加载多少张表\n  - 失败时的错误原因\n\n## 架构思路\n\n- 启动器负责把 token 注入到浏览器可读的位置。\n- 页面负责从 bootstrap token 中取认证信息。\n- 所有 MySQL 可见性页面都走同一套后端接口：`/api/novel/db/schema`。\n- 数据库主机展示、重置、状态提示都统一成真实 IP，而不是历史域名。\n\n## 验证方法\n\n1. 用 `curl.exe` 带 `Authorization` 头请求 `/api/novel/db/health`。\n2. 用 `curl.exe` 带 `Authorization` 头请求 `/api/novel/db/schema`。\n3. 在页面中观察是否出现：\n   - “正在从 MySQL 读取 schema...”\n   - “已读取 MySQL schema，共 N 张表”\n4. 检查页面中的数据库主机是否已经统一成 `124.220.245.121`。\n5. 检查 `extensions/public` 页面是否不再依赖硬编码 token。\n\n## 经验结论\n\n> 真实可用 ≠ 界面看起来能点。\n\n云端 MySQL 的调试要同时看三层：\n\n- 网络是否能直连\n- 后端 API 是否真返回 schema\n- 前端有没有把读到的结果展示给人看\n\n只要其中任何一层仍然“假装成功”，用户就会以为数据库没读出来。\n",
+      "category": "dev",
+      "tags": [
+        "OpenClaw",
+        "MySQL",
+        "cloud database",
+        "visibility",
+        "debugging",
+        "frontend",
+        "experience"
+      ],
+      "created_at": "2026-03-24T13:00:00.000Z",
+      "updated_at": "2026-03-24T13:00:00.000Z"
+    },
+    {
+      "id": "db_note_36",
+      "title": "OpenClaw 运行态收口到项目目录：.local 真源、junction 兼容和显示/运行分离",
+      "content": "# OpenClaw 运行态收口到项目目录：.local 真源、junction 兼容和显示/运行分离\n\n## 目标\n\n把 OpenClaw 的运行态、Ollama 模型仓库和本地 AI 相关状态都收口到项目目录下，减少对用户目录的直接依赖，同时保留旧路径兼容，避免改完功能回退。\n\n## 这次的落点\n\n- 真源目录：`E:/Auto/projects/.local/openclaw`\n- Ollama 模型仓库：`E:/Auto/projects/.local/ollama`\n- 兼容入口：\n  - `C:/Users/ASUS-KL/.openclaw` -> `E:/Auto/projects/.local/openclaw`\n  - `C:/Users/ASUS-KL/.ollama` -> `E:/Auto/projects/.local/ollama`\n  - `E:/Auto/.local/openclaw` -> `E:/Auto/projects/.local/openclaw`\n  - `E:/Auto/.local/ollama` -> `E:/Auto/projects/.local/ollama`\n\n## 架构原则\n\n1. **项目内单一真源**：实际运行态和模型数据都放进项目目录，避免用户目录和项目目录双份状态互相打架。\n2. **旧路径只做兼容**：`junction` 只负责兼容老入口，不再作为长期维护目标。\n3. **UI 显示与运行连接分离**：数据库地址在页面上展示原始 hostname，但运行时继续走稳定的 IP。\n4. **启动器优先项目内路径**：`start-openclaw.bat` 先找 `projects/.local/openclaw`，再回退到旧路径。\n\n## 验证清单\n\n- `Get-Item` 检查四个 junction 的目标是否都指向项目目录。\n- `openclaw health` 能正常通过，且不再因为路径或插件发现失败。\n- `Get-NetTCPConnection -LocalPort 5000,11434` 能看到 gateway 与 Ollama 都在监听。\n- UI 中数据库输入框显示的是原始 hostname，但后端连接仍然稳定走 IP。\n\n## 经验结论\n\n当项目开始同时维护“代码”、“运行态”和“模型仓库”时，最稳的做法不是继续往用户目录堆，而是把可变状态整体收口到项目内，再用兼容链接托住旧入口。这样既能保持独立性，也能最大限度减少迁移带来的行为变化。",
+      "category": "dev",
+      "tags": [
+        "OpenClaw",
+        "architecture",
+        "runtime",
+        "ollama",
+        "junction",
+        "self-contained",
+        "frontend"
+      ],
+      "created_at": "2026-03-24T13:40:00.000Z",
+      "updated_at": "2026-03-24T13:40:00.000Z"
+    },
+    {
+      "id": "db_note_38",
+      "title": "Content Craft 章节生成故障：文本字段误当 JSON 解析",
+      "content": "# Content Craft 章节生成故障：文本字段误当 JSON 解析\n\n## 问题现象\n\n章节生成日志出现了 `Unexpected token '海'`、`Unexpected token '琼'`、`Unexpected token '满'`。\n这说明代码把数据库里的普通文本当成了 JSON 去解析。\n像“海津孝、小红”这种值并不是 JSON 数组，但生成链路里却直接执行了 `JSON.parse(...)`，于是整章失败。\n\n## 根因\n\n- 历史数据里同一字段可能同时存在 JSON 字符串和普通分隔文本。\n- 生成管线默认假设所有相关字段都一定是 JSON。\n- 相关章节、一致性检查、故事状态等辅助模块也存在同类直接解析问题，脏数据因此会在多处传播。\n\n## 处理方式\n\n1. 增加容错解析层：`safeJsonParse` 与 `parseStringList`。\n2. 对字符串列表字段做兼容：优先识别 JSON，失败后按常见分隔符切分。\n3. 对对象数组和结构化字段使用安全解析，失败时回退到空数组或默认值。\n4. 把同类修复同步到相关章节、一致性检查和故事状态模块，避免只修一处。\n\n## 经验总结\n\n- 数据库字段只要可能来自历史迁移或人工编辑，就不能默认它一定是 JSON。\n- 批处理流程最重要的是不中断整批，宁可局部降级，也不要整章失败。\n- 安全解析要尽量贴近调用点，减少脏数据从一个模块扩散到多个模块。\n- 遇到 `Unexpected token`，第一时间要看输入格式假设，而不是先怀疑模型或渲染层。\n\n## 适用场景\n\n- 章节细纲里的人物字段、人物关系、时间线字段。\n- 历史遗留的 JSON / 文本混合数据。\n- 批量生成、批量审核、批量同步等任务。\n- 任何不能因为单条脏数据而整体停摆的工作流。",
+      "category": "dev",
+      "tags": [
+        "Content Craft",
+        "JSON parse",
+        "chapter generation",
+        "debugging",
+        "database",
+        "experience"
+      ],
+      "created_at": "2026-03-24T21:50:00.000Z",
+      "updated_at": "2026-03-24T21:50:00.000Z"
     }
   ],
   "version": "1.0"

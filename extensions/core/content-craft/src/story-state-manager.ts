@@ -12,6 +12,7 @@
 
 import { getDatabaseManager } from '../../database';
 import { LLMClient, Config } from 'coze-coding-dev-sdk';
+import { safeJsonParse } from './utils/safe-parse';
 
 // ==========================================
 // 类型定义
@@ -418,7 +419,7 @@ ${content.slice(0, 8000)}
       // 尝试提取 JSON
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
+        return safeJsonParse(jsonMatch[0], { events: [], characterGrowth: [], importantItems: [] });
       }
     } catch (error) {
       console.warn('[StoryStateManager] LLM 提取失败:', error);
@@ -439,7 +440,7 @@ ${content.slice(0, 8000)}
       eventType: row.event_type,
       title: row.title,
       description: row.description,
-      charactersInvolved: row.characters_involved ? JSON.parse(row.characters_involved) : [],
+      charactersInvolved: safeJsonParse(row.characters_involved, []),
       timestamp: new Date(row.created_at),
       importance: row.importance
     };
@@ -467,9 +468,9 @@ ${content.slice(0, 8000)}
       type: row.item_type,
       description: row.description,
       currentOwner: row.current_owner,
-      acquiredAt: row.acquired_at ? JSON.parse(row.acquired_at) : { chapterNumber: 0, description: '' },
+      acquiredAt: safeJsonParse(row.acquired_at, { chapterNumber: 0, description: '' }),
       currentLocation: row.current_location,
-      properties: row.properties ? JSON.parse(row.properties) : {}
+      properties: safeJsonParse(row.properties, {})
     };
   }
 

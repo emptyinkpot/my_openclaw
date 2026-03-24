@@ -12,6 +12,7 @@
 import { getDatabaseManager } from '../../database';
 import { LLMClient, Config } from 'coze-coding-dev-sdk';
 import { StoryStateManager, getStoryStateManager } from './story-state-manager';
+import { parseStringList, safeJsonParse } from './utils/safe-parse';
 
 // ==========================================
 // 类型定义
@@ -220,7 +221,7 @@ export class RelatedChaptersManager {
     // 2. 人物重叠：如果章节包含当前章节要出场的人物
     if (currentOutline?.characters) {
       try {
-        const currentCharacters = JSON.parse(currentOutline.characters);
+        const currentCharacters = parseStringList(currentOutline.characters);
         const chapterContent = chapter.content.toLowerCase();
         
         let characterMatchCount = 0;
@@ -284,7 +285,7 @@ ${content.slice(0, 6000)}
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       
       if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
+      const parsed = safeJsonParse<any>(jsonMatch[0], { summary: '', keyPoints: [], characterActions: {} });
         return {
           chapterNumber: 0,
           title: '',

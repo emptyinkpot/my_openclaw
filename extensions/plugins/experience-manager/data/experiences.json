@@ -1,6 +1,225 @@
 {
   "records": [
     {
+      "id": "exp_1774353000000_experience_visibility_fix",
+      "timestamp": 1774353000000,
+      "type": "bug_fix",
+      "title": "经验积累中心不显示经验：认证 token 与 API 前缀不一致",
+      "description": "经验中心页面实际请求走的是 /api/experience，但旧页面还在使用写死的 gateway token 或错误前缀，导致前端加载阶段拿到 401，看起来像没有经验数据。",
+      "userQuery": "经验积累中心不显示经验啊，页面好像是空的。",
+      "solution": "1. 把 /experience.html 对应的页面和 control-ui-custom/experience.html 都改成动态读取 openclaw.control.bootstrap.token.v1。\n2. 统一 API 前缀为 /api/experience，不再使用旧的 /novel/api。\n3. 所有经验请求都带 Authorization: Bearer <bootstrap token>。\n4. 搜索/筛选基于 allExpData 重新计算，避免越搜越少。\n5. 用实际接口验证 /api/experience/records 和 /api/experience/stats 返回 200 并能看到 records。",
+      "experienceApplied": [
+        "401 鉴权排查",
+        "Bootstrap token 读取",
+        "API 路由统一",
+        "搜索筛选状态管理",
+        "实际接口验证"
+      ],
+      "experienceGained": [
+        "经验中心空白不一定是“没数据”，首先要排查前端是否带了对的 token。",
+        "同类页面必须共享同一套 API 前缀与鉴权读取逻辑，不要一个页面写死 token、另一个页面读 bootstrap。",
+        "搜索/筛选不能基于已经过滤过的数组继续过滤，否则会让数据看起来丢失。",
+        "最有效的验证方式是：接口返回 200 + 页面真正渲染出 records。"
+      ],
+      "tags": [
+        "OpenClaw",
+        "experience-manager",
+        "authentication",
+        "frontend",
+        "debugging",
+        "api",
+        "visibility"
+      ],
+      "difficulty": 4,
+      "xpGained": 210
+    },
+    {
+      "id": "exp_1774348140426_ui_architecture_note",
+      "timestamp": 1774348140426,
+      "type": "learning",
+      "title": "OpenClaw UI 设计与架构专题",
+      "description": "整理 OpenClaw UI 的共享导航、启动预热、入口分流和验证方法，形成可复用的经验专栏。",
+      "userQuery": "把 OpenClaw UI 的设计原则、架构和验证方法整理成一篇可复用的专题。",
+      "solution": "1. 启动器 -> gateway health -> launch.html 预热 token -> index.html -> openclaw-app。\n2. 导航栏统一抽到 shared/nav-bar.html，避免多份页面各改各的。\n3. UI 设计先保证主路径稳定，再谈视觉和装饰。\n4. 验证优先看真实 DOM、真实路由和 customElements 注册结果。\n5. 专题内容同步到 experiences.json，再同步到 memory-lancedb / experience-sync.jsonl。\n6. 通过专题笔记沉淀可复用的 UI 设计方法。",
+      "experienceApplied": [
+        "UI 设计",
+        "共享导航",
+        "token bootstrap",
+        "入口分流",
+        "DOM 验证",
+        "经验沉淀"
+      ],
+      "experienceGained": [
+        "UI 设计不只是视觉，而是启动链路、入口分流和验证链路一起成立。",
+        "共享导航的关键是所有页面最终都读取同一份源，而不是看起来像统一。",
+        "launch.html 与 index.html 的双重 bootstrap 可以稳住 token 与 gatewayUrl。",
+        "经验模块最适合沉淀设计原则、架构图和验证清单。",
+        "真实 DOM 与路由验证比源码肉眼检查更可靠。"
+      ],
+      "tags": [
+        "OpenClaw",
+        "UI design",
+        "architecture",
+        "launcher",
+        "shared source of truth",
+        "experience"
+      ],
+      "difficulty": 4,
+      "xpGained": 220
+    },
+    {
+      "id": "exp_1774347989433_ui_encoding_fix",
+      "timestamp": 1774347989433,
+      "type": "bug_fix",
+      "title": "Control UI 乱码修复：导航栏与正文编码恢复",
+      "description": "Control UI 的中文按钮、导航栏和部分正文在 served 页面里出现乱码，最终需要同时检查真实 DOM、共享导航源和缓存版本号。",
+      "userQuery": "为什么经验中心和 Control UI 里有些中文都变成乱码了？",
+      "solution": "1. 先看真实 DOM 里的 navbar-container 和页面正文，不只看源码文件。\n2. 让页面统一读取 /shared/nav-bar.html，避免本地副本和 shared 副本各写各的。\n3. 同步更新 index.html 里的 bootstrap.js / nav-bar-behavior.js 版本号，强制浏览器重新拉取。\n4. 只修最小字符级损坏，避免把 minified bundle 改坏。",
+      "experienceApplied": [
+        "编码排查",
+        "共享导航同步",
+        "缓存刷新",
+        "真实 DOM 验证"
+      ],
+      "experienceGained": [
+        "页面乱码不一定是源码本身坏了，很多时候是 served 副本或缓存没更新。",
+        "共享导航要同步到实际读取的页面路径，不能只改一份文件。",
+        "字符级修复后要立刻做缓存刷新，否则浏览器还是会显示旧内容。",
+        "验证 UI 文案时，浏览器里看到的 DOM 比文件内容更重要。"
+      ],
+      "tags": [
+        "OpenClaw",
+        "Control UI",
+        "UI乱码",
+        "cache busting",
+        "static assets"
+      ],
+      "difficulty": 3,
+      "xpGained": 180
+    },
+    {
+      "id": "exp_1774347225416_bundle_debug_method",
+      "timestamp": 1774347225416,
+      "type": "learning",
+      "title": "Control UI 黑屏调试方法：先查 bundle 语法再查 customElements",
+      "description": "OpenClaw Control UI 之前一度黑屏，根因在 minified bundle 语法损坏，不是缺页面文件。",
+      "userQuery": "Control UI 黑屏的时候，应该先查什么，为什么有时候页面连主组件都起不来？",
+      "solution": "1. 先检查 token 与启动链路，再检查 bundle 是否还能解析。\n2. 用 customElements.get('openclaw-app') 判断主组件是否真正注册成功。\n3. launch.html 和 index.html 都要参与 bootstrap，避免路由切换把登录态丢掉。\n4. 任何 dist 副本改动都要同步验证，不能只改源文件。\n5. 对 minified JS 的修复要尽量最小化，并及时做 parser 校验。",
+      "experienceApplied": [
+        "bundle 调试",
+        "语法检查",
+        "customElements 验证",
+        "dist 同步",
+        "token bootstrap"
+      ],
+      "experienceGained": [
+        "黑屏问题经常不是页面缺失，而是 bundle 解析阶段就失败了。",
+        "主组件是否真正起来，customElements.get('openclaw-app') 是很直接的判拣。",
+        "launch.html 与 index.html 需要双重 bootstrap，才能把 token 稳住。",
+        "修改 minified bundle 必须做 parser 校验，不能考眼勇。"
+      ],
+      "tags": [
+        "OpenClaw",
+        "Control UI",
+        "black screen",
+        "debugging",
+        "bundle",
+        "syntax"
+      ],
+      "difficulty": 4,
+      "xpGained": 240
+    },
+    {
+      "id": "exp_1774341000000_gateway_stable_startup",
+      "timestamp": 1774339464672,
+      "type": "problem_solving",
+      "title": "Windows 本地 OpenClaw 启动稳定化：复用健康网关并绕开失效服务态",
+      "description": "在 Windows 本地环境中，OpenClaw 主 UI 时好时坏，常见现象包括快捷方式打开后卡在登录页、5000 端口未真正可用、旧的 Gateway 计划任务与新进程互相干扰。通过梳理启动链路，最终将入口统一为先检查网关健康，再按需拉起前台 gateway 进程，并明确不再依赖陈旧的服务态。",
+      "userQuery": "为什么之前成功过一次，之后又变成 TCP connect failed、卡登录页、像是没开网关？",
+      "solution": "1. 用 `openclaw gateway status --require-rpc --timeout 3000 --url ws://127.0.0.1:5000 --token <token>` 作为唯一健康判据，而不是只看端口是否监听。\\n2. 启动器先复用健康网关；如果不健康，则执行 `openclaw gateway stop` 清理残留态，然后从新进程启动 `openclaw gateway run --port 5000 --force --token <token>`。\\n3. 避免把 `~/.openclaw/gateway.cmd` 对应的旧计划任务当作主启动路径；它容易留下 stale state，导致 lock timeout、already running、token mismatch 这类假状态。\\n4. 启动脚本只做三件事：装载本地配置、等待 RPC probe 成功、打开控制 UI。这样冷启动和重复启动都稳定。",
+      "experienceApplied": [
+        "Windows 进程与端口排查",
+        "OpenClaw Gateway 健康检查",
+        "启动链路最小化"
+      ],
+      "experienceGained": [
+        "判断 OpenClaw 网关是否可用，应该以 RPC probe 成功为准，而不是只看 5000 端口是否被监听。",
+        "旧的计划任务或 gateway.cmd 兼容入口容易留下脏状态，正常启动链路应尽量绕开。",
+        "稳定的 Windows 启动器应该只负责复用健康网关或拉起新网关，不要混入多套 service/uninstall 逻辑。",
+        "启动问题和 control-ui-custom 本身无关时，先把网关健康与 token 一致性确认清楚。"
+      ],
+      "tags": [
+        "OpenClaw",
+        "Gateway",
+        "Windows",
+        "启动调试",
+        "健康检查",
+        "control-ui-custom"
+      ],
+      "difficulty": 4,
+      "xpGained": 220
+    },
+    {
+      "id": "exp_1774341000001_control_ui_token_bootstrap",
+      "timestamp": 1774339464671,
+      "type": "bug_fix",
+      "title": "Control UI 登录态修复：用 URL hash 预热 token，解决 gateway token mismatch",
+      "description": "控制 UI 主页已经切到正确的 `control-ui-custom`，但仍频繁停在登录页并提示 `unauthorized: gateway token mismatch`。根因不是插件没加载，而是 token 在 `launch.html -> index.html -> chat` 的跳转链路里丢失，前端读取的 sessionStorage key 与启动器写入的 key 不一致。",
+      "userQuery": "主页是对了，但是还没登录进去；为什么总是 gateway token mismatch？",
+      "solution": "1. 启动器不再把 token 放在 query 中，而是打开 `control-ui-custom/launch.html#token=<token>&gatewayUrl=ws://127.0.0.1:5000`，用 hash 传递登录态。\\n2. `launch.html` 在跳转到 `index.html` 前，先把 token 写入 `localStorage`、`sessionStorage`、`window.name` 和 `openclaw.control.settings.v1`，并覆盖根路径、control-ui 路径、当前页面路径三类 token key。\\n3. `index.html` 在应用 bundle 加载前再次执行同样的 bootstrap，作为二次兜底；同时补一个 `Storage.getItem` fallback，当 UI 读取 `openclaw.control.token.v1:*` 失败时回退到 bootstrap token。\\n4. 跳转时保留 hash，确保 token 不会在 `launch.html -> index.html -> chat?session=main` 的路由切换中丢失。",
+      "experienceApplied": [
+        "浏览器存储调试",
+        "OpenClaw Control UI 启动链路排查",
+        "会话令牌一致性修复"
+      ],
+      "experienceGained": [
+        "OpenClaw Control UI 的登录态不只依赖一个 token 字段，而是依赖 gatewayUrl 派生出的多组 sessionStorage key。",
+        "query 参数在多段前端路由里更容易丢失，hash 作为启动桥更稳。",
+        "只改 launch 页不够，index 页在 bundle 加载前做二次 bootstrap 才能稳住登录态。",
+        "遇到 token mismatch 时，要同时检查页面最终 URL、gatewayUrl、sessionStorage key 和 window.name。"
+      ],
+      "tags": [
+        "OpenClaw",
+        "Control UI",
+        "token",
+        "sessionStorage",
+        "登录调试",
+        "gateway token mismatch"
+      ],
+      "difficulty": 5,
+      "xpGained": 260
+    },
+    {
+      "id": "exp_1774341000002_local_runtime_consolidation",
+      "timestamp": 1774339464670,
+      "type": "optimization",
+      "title": "本地运行态收口：将 OpenClaw 与 Ollama 统一到 E:\\Auto\\.local",
+      "description": "用户机器上同时存在用户目录下的 `.openclaw`、`.ollama` 和仓库内的运行目录，导致配置路径、模型目录、工作区位置和插件路径容易分叉。为避免出现“有两个 OpenClaw”“模型到底从哪里读”的问题，最终把实际运行态统一收口到 `E:\\Auto\\.local`。",
+      "userQuery": "把我本地的 OpenClaw 和 Ollama 模型都移动合并到这个文件夹下，保证只有一个 OpenClaw 和本地 AI 模型。",
+      "solution": "1. 将实际 OpenClaw 运行目录迁移到 `E:/Auto/.local/openclaw`，将 Ollama 模型目录迁移到 `E:/Auto/.local/ollama`。\\n2. 保留 `C:/Users/<user>/.openclaw` 与 `C:/Users/<user>/.ollama` 作为 junction，指向新的实际目录，兼容旧路径。\\n3. 更新 `openclaw.json`：`agents.defaults.workspace` 指向 `E:/Auto/.local/openclaw/workspace`，`models.providers.ollama.baseUrl` 保持本地 `127.0.0.1:11434`，`gateway.controlUi.root` 指向 `E:/Auto/projects/control-ui-custom`，插件路径明确指向 `E:/Auto/projects/extensions/plugins/*`。\\n4. 启动器优先从 `.local/openclaw/openclaw.json` 读配置，只在缺失时才回退到 `projects/openclaw.json`。这样主仓库、运行态和模型目录的职责边界稳定下来。",
+      "experienceApplied": [
+        "Windows 路径迁移",
+        "本地 AI 模型目录管理",
+        "OpenClaw 配置归一化"
+      ],
+      "experienceGained": [
+        "OpenClaw 代码仓库和运行态应分离，但路径要通过单一配置入口收口。",
+        "保留用户目录 junction 可以兼容依赖旧路径的软件，同时避免磁盘上出现重复副本。",
+        "统一 `openclaw.json` 的 workspace、controlUi.root、plugin path 和 Ollama baseUrl 后，定位问题会简单很多。",
+        "涉及本地模型迁移时，先保证 Ollama 服务端口与模型 manifests/blobs 路径一致，再动上层 UI。"
+      ],
+      "tags": [
+        "OpenClaw",
+        "Ollama",
+        "本地模型",
+        "路径迁移",
+        "Windows",
+        "配置统一"
+      ],
+      "difficulty": 4,
+      "xpGained": 210
+    },
+    {
       "id": "exp_1774316500000_route_fix",
       "timestamp": 1774316500000,
       "type": "problem_solving",
@@ -2833,6 +3052,140 @@
       ],
       "difficulty": 3,
       "xpGained": 150
+    },
+    {
+      "id": "exp_1774349800000_ui_experience_column",
+      "timestamp": 1774349800000,
+      "type": "learning",
+      "title": "OpenClaw UI 经验专栏：共享导航、入口分流与验证",
+      "description": "把 OpenClaw UI 的共享导航、文件管理入口、原生界面入口和验证方法整理成可复用的经验专栏。",
+      "userQuery": "把导航栏统一、入口分流和验证思路整理成一篇经验专栏，并写清楚架构和验证清单。",
+      "solution": "1. 将导航统一到 `/shared/nav-bar.html`，避免各页面各改各的。\n2. 把入口拆清楚：文件管理 -> `/file-manager`，原生界面 -> `/control-ui-custom/launch.html`，主 UI -> `/control-ui-custom/index.html`。\n3. 保留 `launch.html` 和 `index.html` 双重 bootstrap，确保 token / gatewayUrl 不丢。\n4. 用 `nav-bar-behavior.js` 做共享导航注入与 active 状态修正。\n5. 用真实页面与 RPC probe 验证，而不是只看源码。",
+      "experienceApplied": [
+        "共享导航统一",
+        "入口分流",
+        "token bootstrap",
+        "文件管理路由",
+        "实际 DOM 验证"
+      ],
+      "experienceGained": [
+        "导航栏统一管理的关键不是文件放在一起，而是所有页面最终读取同一份共享来源。",
+        "原生界面和文件管理必须分路由：一个回启动页，一个回独立文件管理页，不能都落到根路径。",
+        "静态页面最容易被缓存和旧副本误导，必须同时检查 served 资源、bundle 和真实 DOM。",
+        "双重 bootstrap 可以显著降低 token 在跳转链路中丢失的概率。",
+        "经验模块最适合记录设计原则 + 验证清单，方便下次直接复用。"
+      ],
+      "tags": [
+        "OpenClaw",
+        "Control UI",
+        "shared-nav",
+        "file-manager",
+        "launcher",
+        "architecture",
+        "debugging"
+      ],
+      "difficulty": 4,
+      "xpGained": 220
+    },
+    {
+      "id": "exp_1774350400000_mysql_visibility_read",
+      "timestamp": 1774350400000,
+      "type": "problem_solving",
+      "title": "OpenClaw 云端 MySQL 读取可见化",
+      "description": "云端 MySQL 实际可用，但前端页面需要把 schema 读取结果、认证状态和数据库主机展示出来，避免看起来像没读库。",
+      "userQuery": "为什么其他页面明明能连云端 MySQL，却看起来没在读取？",
+      "solution": "1. 统一所有 MySQL 读取都走 `/api/novel/db/schema` 和 `/api/novel/db/health`。\n2. 前端按钮不再假装测试，而是直接把 schema 数量和状态写进 DOM。\n3. 页面认证优先读取启动器注入的 bootstrap token，再回退到旧 token。\n4. 数据库主机展示统一成 `124.220.245.121`，避免旧域名误导。\n5. `extensions/public` 不再只依赖硬编码 token，SSE/API 都改为动态 token 读取。\n6. 任何 MySQL 可见性页面都要有明确的“正在读取 / 已读取 / 失败”状态。",
+      "experienceApplied": [
+        "MySQL schema 可见化",
+        "bootstrap token",
+        "统一后端路由",
+        "状态提示写入 DOM",
+        "真实 IP 代替旧域名"
+      ],
+      "experienceGained": [
+        "后端能连上不等于前端看得见，必须把 schema 数量、表名和错误写到页面上。",
+        "数据库调试时，路由、token 和主机名三者必须同时统一。",
+        "假按钮和假状态会制造最强的误判，尤其是 MySQL 这类高频入口。",
+        "云端数据库页面最好的验证不是 console 日志，而是 curl + DOM 双验证。"
+      ],
+      "tags": [
+        "OpenClaw",
+        "MySQL",
+        "cloud database",
+        "frontend",
+        "visibility",
+        "debugging",
+        "experience"
+      ],
+      "difficulty": 4,
+      "xpGained": 210
+    },
+    {
+      "id": "exp_1774352200000_runtime_project_local",
+      "timestamp": 1774352200000,
+      "type": "architecture",
+      "title": "OpenClaw 运行态收口到项目目录：project-local .local + 显示/运行分离",
+      "description": "把 OpenClaw 的运行态、Ollama 模型仓库和本地 AI 相关状态整体收口到 E:/Auto/projects/.local 下，同时保留旧用户目录的 junction 兼容入口；UI 上展示原始数据库 hostname，但实际连接继续走稳定 IP。",
+      "userQuery": "如何在不影响功能的情况下，把 OpenClaw / Ollama 迁到项目目录下，做到低耦合、自包含，并且让数据库配置在 UI 上显示原始 hostname 但运行时仍走 IP？",
+      "solution": "1. 将 OpenClaw 运行态搬到 E:/Auto/projects/.local/openclaw，Ollama 模型仓库搬到 E:/Auto/projects/.local/ollama。\n2. 用 junction 让 C:/Users/ASUS-KL/.openclaw、C:/Users/ASUS-KL/.ollama、E:/Auto/.local/openclaw、E:/Auto/.local/ollama 全部回指项目内真源。\n3. 启动器优先读 projects/.local/openclaw，再回退旧路径，保证迁移后还能启动。\n4. UI 层把数据库输入框恢复显示原始 hostname，但保持后台连接配置使用稳定 IP。\n5. 重新执行 openclaw health 和端口检查，确认 gateway、Ollama 和页面都还能跑通。",
+      "experienceApplied": [
+        "项目内单一真源",
+        "junction 兼容迁移",
+        "显示/运行分离",
+        "启动器优先项目路径",
+        "健康检查验证"
+      ],
+      "experienceGained": [
+        "运行态和模型仓库不应该继续分散在用户目录与项目目录之间，统一到项目内最容易维护。",
+        "旧路径最好只做 junction 兼容，不要再作为主路径来写新配置。",
+        "页面上展示原始 hostname 和实际连接 IP 可以同时成立，关键是把显示层和执行层分开。",
+        "迁移类改动必须用 health、端口监听、UI DOM 三类验证同时确认，避免只改配置没改链路。"
+      ],
+      "tags": [
+        "OpenClaw",
+        "architecture",
+        "runtime",
+        "ollama",
+        "junction",
+        "frontend",
+        "debugging",
+        "experience"
+      ],
+      "difficulty": 4,
+      "xpGained": 220
+    },
+    {
+      "id": "exp_1774353600000_contentcraft_json_fallback",
+      "timestamp": 1774353600000,
+      "type": "debugging",
+      "title": "Content Craft 章节生成故障：文本字段误当 JSON 解析",
+      "description": "章节生成链路在读取人物、细纲和背景字段时，默认假设数据库里存的是 JSON 数组；一旦字段里保存的是纯文本（例如“海津孝、小红”），JSON.parse 就会直接抛错，导致整章失败。",
+      "userQuery": "排查章节生成日志里 Unexpected token '海' / '琉' / '满' 的原因，并修复为可继续生成的容错逻辑。",
+      "solution": "1. 在 content-craft 中增加 safeJsonParse 与 parseStringList 两个容错工具。\n2. 人物别名、性格、章节出场人物等列表字段改为兼容 JSON 数组和分隔文本。\n3. related-chapters、consistency-checker、story-state-manager 一并改成安全解析，避免单条脏数据拖垮整章。\n4. 经验层面记录为：数据库字段格式不可信时，先做兼容解析，再逐步清洗存量数据。",
+      "experienceApplied": [
+        "容错解析",
+        "文本/JSON 双格式兼容",
+        "章节生成稳定性",
+        "数据库脏数据兜底",
+        "最小侵入式修复"
+      ],
+      "experienceGained": [
+        "生成链路里最危险的不是模型输出，而是数据库输入假设。",
+        "只要字段可能来自人工录入或历史迁移，就不能默认它一定是 JSON。",
+        "对章节生成这种批处理流程，最重要的是‘不中断整批’，次要才是单条数据的完美格式。",
+        "安全解析要尽量贴近调用点，避免某个模块修了、另一个模块还在直接 JSON.parse。",
+        "修完后应回头补一条经验，明确下次看到类似日志先查哪一层。"
+      ],
+      "tags": [
+        "Content Craft",
+        "JSON parse",
+        "debugging",
+        "database",
+        "chapter generation",
+        "experience"
+      ],
+      "difficulty": 3,
+      "xpGained": 180
     }
   ],
   "version": "1.0"

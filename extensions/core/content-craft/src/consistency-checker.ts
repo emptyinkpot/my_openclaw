@@ -11,6 +11,7 @@
 import { LLMClient, Config } from 'coze-coding-dev-sdk';
 import { getDatabaseManager } from '../../database';
 import { StoryStateManager, getStoryStateManager } from './story-state-manager';
+import { parseStringList, safeJsonParse } from './utils/safe-parse';
 
 // ==========================================
 // 类型定义
@@ -135,7 +136,7 @@ export class ConsistencyChecker {
 
       // 检查章节细纲中的角色是否都存在
       if (chapterOutline?.characters) {
-        const outlineCharacters = JSON.parse(chapterOutline.characters);
+        const outlineCharacters = parseStringList(chapterOutline.characters);
         const characterNames = characters.map((c: any) => c.name.toLowerCase());
 
         for (const charName of outlineCharacters) {
@@ -240,7 +241,7 @@ export class ConsistencyChecker {
       const prompt = `请检查以下小说章节内容是否与设定保持一致：
 
 【角色设定】
-${characters.map((c: any) => `- ${c.name}: ${c.description}，性格：${c.personality ? JSON.parse(c.personality).join('、') : '未知'}`).join('\n')}
+        ${characters.map((c: any) => `- ${c.name}: ${c.description}，性格：${parseStringList(c.personality).join('、') || '未知'}`).join('\n')}
 
 【世界观设定】
 ${background?.world_setting || '无'}
@@ -281,7 +282,7 @@ ${content.slice(0, 8000)}
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       
       if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
+        const parsed = safeJsonParse<any>(jsonMatch[0], { issues: [] });
         return parsed.issues || [];
       }
     } catch (error) {

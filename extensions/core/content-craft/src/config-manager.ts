@@ -6,6 +6,7 @@
 
 import type { PolishSettings, PolishStepConfig } from './types';
 import { StepRegistry } from './steps/registry';
+import { safeJsonParse } from './utils/safe-parse';
 
 /**
  * 默认配置
@@ -94,7 +95,7 @@ export class ConfigManager {
         // 浏览器环境
         const saved = localStorage.getItem(this.STORAGE_KEY);
         if (saved) {
-          this.settings = JSON.parse(saved);
+          this.settings = safeJsonParse(saved, this.getDefaultSettings());
           console.log('[ConfigManager] 从 localStorage 加载设置成功');
           return this.settings;
         }
@@ -108,7 +109,7 @@ export class ConfigManager {
           
           if (fs.existsSync(configPath)) {
             const saved = fs.readFileSync(configPath, 'utf8');
-            this.settings = JSON.parse(saved);
+            this.settings = safeJsonParse(saved, this.getDefaultSettings());
             console.log('[ConfigManager] 从文件加载设置成功');
             return this.settings;
           }

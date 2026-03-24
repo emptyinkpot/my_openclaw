@@ -8,6 +8,7 @@
 
 import { LLMClient, Config } from 'coze-coding-dev-sdk';
 import { getDatabaseManager } from '../../database';
+import { parseStringList, safeJsonParse } from './utils/safe-parse';
 import type { 
   GenerationInput, 
   GenerationOutput, 
@@ -99,12 +100,12 @@ export class GenerationPipeline {
     const formattedCharacters: Character[] = characters.map((char: any) => ({
       id: char.id.toString(),
       name: char.name,
-      aliases: char.aliases ? JSON.parse(char.aliases) : [],
+      aliases: parseStringList(char.aliases),
       description: char.description || '',
-      personality: char.personality ? JSON.parse(char.personality) : [],
+      personality: parseStringList(char.personality),
       appearance: char.appearance || '',
       background: char.background || '',
-      relationships: char.relationships ? JSON.parse(char.relationships) : []
+      relationships: safeJsonParse(char.relationships, [])
     }));
 
     // ========================================
@@ -119,7 +120,7 @@ export class GenerationPipeline {
       id: background?.id?.toString() || '1',
       name: background?.name || work.title || '故事背景',
       worldSetting: background?.world_setting || '',
-      timeline: background?.timeline ? JSON.parse(background.timeline) : [],
+      timeline: safeJsonParse(background?.timeline, []),
       geography: background?.geography || '',
       society: background?.society || '',
       other: background?.other || ''
@@ -143,7 +144,7 @@ export class GenerationPipeline {
       title: chapterOutline.title || '',
       summary: chapterOutline.plot_summary || '',
       keyEvents: chapterOutline.main_scenes ? [chapterOutline.main_scenes] : [],
-      characters: chapterOutline.characters ? JSON.parse(chapterOutline.characters) : [],
+      characters: parseStringList(chapterOutline.characters),
       location: '',
       time: '',
       mood: chapterOutline.emotion_tone || '',
