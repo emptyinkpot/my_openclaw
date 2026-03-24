@@ -7,6 +7,8 @@ What is here:
 - `start-openclaw.bat` for local startup
 - `restore-from-github.ps1` for restoring the shell files from GitHub
 - `workspace/`, `skills/`, `usr/` and the instruction files used by the local agent
+- local runtime data now lives under `.local/openclaw` and `.local/ollama`
+- the original `C:\Users\ASUS-KL\.openclaw` and `C:\Users\ASUS-KL\.ollama` paths are junctions to that local store
 
 How to start:
 

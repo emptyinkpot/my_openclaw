@@ -1,5 +1,6 @@
 projects/
 projects-gh/
+.local/
 gateway-start.log
 start-openclaw.local.bat
 memory/
