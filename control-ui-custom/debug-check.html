@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Control UI Check</title>
+    <style>
+      body {
+        font-family: Consolas, monospace;
+        background: #111827;
+        color: #e5e7eb;
+        padding: 16px;
+      }
+      iframe {
+        width: 100%;
+        height: 600px;
+        border: 1px solid #374151;
+        background: white;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        background: #0b1220;
+        border: 1px solid #374151;
+        padding: 12px;
+        border-radius: 8px;
+      }
+    </style>
+      <script src="/control-ui-custom/assets/nav-bar-behavior.js?v=20260324-5" defer></script>
+  </head>
+  <body>
+    <h1>Control UI Check</h1>
+    <pre id="out">loading...</pre>
+    <iframe id="frame" src="/control-ui-custom/index.html"></iframe>
+    <script>
+      const out = document.getElementById('out');
+      const frame = document.getElementById('frame');
+      const write = (value) => {
+        out.textContent = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
+      };
+      const sample = () => {
+        try {
+          const doc = frame.contentWindow.document;
+          return {
+            title: doc.title,
+            readyState: doc.readyState,
+            bodyText: (doc.body && doc.body.innerText || '').slice(0, 1000),
+            hasApp: !!doc.querySelector('openclaw-app'),
+            hasNavbar: !!doc.querySelector('#navbar-container'),
+            navbarHtmlLength: (doc.querySelector('#navbar-container')?.innerHTML || '').length,
+            customOpenClawApp: !!customElements.get('openclaw-app'),
+            navBarText: (doc.querySelector('.nav-bar')?.innerText || '').slice(0, 500),
+          };
+        } catch (err) {
+          return { error: String(err) };
+        }
+      };
+      let ticks = 0;
+      const timer = setInterval(() => {
+        ticks += 1;
+        write({ ticks, ...sample() });
+        if (ticks >= 16) clearInterval(timer);
+      }, 500);
+    </script>
+  </body>
+</html>

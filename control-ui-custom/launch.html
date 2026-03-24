@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OpenClaw Control Launcher</title>
+    <meta name="color-scheme" content="dark light" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0b1020;
+        --panel: rgba(10, 15, 30, 0.88);
+        --panel-border: rgba(255, 255, 255, 0.08);
+        --text: #e5eefb;
+        --muted: #93a4c3;
+        --accent: #7dd3fc;
+      }
+      html, body {
+        margin: 0;
+        min-height: 100%;
+        background:
+          radial-gradient(circle at top, rgba(125, 211, 252, 0.15), transparent 40%),
+          linear-gradient(180deg, #09101d 0%, #0b1020 100%);
+        color: var(--text);
+        font-family: "Segoe UI", system-ui, sans-serif;
+      }
+      body {
+        display: grid;
+        place-items: center;
+      }
+      .card {
+        width: min(560px, calc(100vw - 32px));
+        border: 1px solid var(--panel-border);
+        background: var(--panel);
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+        border-radius: 18px;
+        padding: 28px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+      .logo {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        font-weight: 800;
+        color: #07111f;
+        background: linear-gradient(135deg, #7dd3fc, #c4b5fd);
+      }
+      h1 {
+        margin: 0;
+        font-size: 22px;
+        line-height: 1.2;
+      }
+      p {
+        margin: 8px 0 0;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+      code {
+        display: inline-block;
+        margin-top: 12px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--accent);
+      }
+    </style>
+    <script src="./assets/launch.js" defer></script>
+      <script src="/control-ui-custom/assets/nav-bar-behavior.js?v=20260324-5" defer></script>
+  </head>
+  <body>
+    <main class="card">
+      <div class="brand">
+        <div class="logo">OC</div>
+        <div>
+          <h1>OpenClaw Control</h1>
+          <p>Preparing your gateway session and opening the control UI.</p>
+        </div>
+      </div>
+      <p>If this page stays visible, open <code>./index.html</code> manually.</p>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>文件管理 - OpenClaw</title>
+  <script src="/control-ui-custom/assets/nav-bar-behavior.js?v=20260324-5" defer></script>
+  <style>
+    :root {
+      --bg: #f6f8fa;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #f3f4f6;
+      --border: #d0d7de;
+      --text: #24292f;
+      --text-secondary: #57606a;
+      --accent: #0969da;
+      --success: #1a7f37;
+      --danger: #cf222e;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    .page {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 0;
+      height: 100vh;
+      padding-top: 48px;
+    }
+    .panel {
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .panel-right {
+      border-right: none;
+    }
+    .panel-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .panel-title {
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .panel-subtitle {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    .panel-body {
+      padding: 12px;
+      overflow: auto;
+      flex: 1;
+    }
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .btn {
+      border: 1px solid var(--border);
+      background: var(--bg-secondary);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .btn.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .btn:hover { background: var(--bg-tertiary); }
+    .btn.primary:hover { background: #0550ae; }
+    .tree {
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .tree-item {
+      padding: 6px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .tree-item:hover { background: var(--bg-tertiary); }
+    .tree-item.active { background: #ddf4ff; }
+    .tree-meta { color: var(--text-secondary); font-size: 11px; }
+    .content {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .editor {
+      flex: 1;
+      width: 100%;
+      border: none;
+      resize: none;
+      outline: none;
+      font-family: "Consolas", "Courier New", monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      padding: 16px;
+      background: #fff;
+      color: var(--text);
+    }
+    .status {
+      padding: 10px 16px;
+      border-top: 1px solid var(--border);
+      color: var(--text-secondary);
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .hint {
+      color: var(--text-secondary);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .error {
+      color: var(--danger);
+    }
+    .success {
+      color: var(--success);
+    }
+    .empty {
+      padding: 24px 16px;
+      color: var(--text-secondary);
+    }
+  </style>
+</head>
+<body>
+  <div class="nav-bar"></div>
+
+  <div class="page">
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">文件树</div>
+          <div class="panel-subtitle" id="rootPath">/workspace/projects</div>
+        </div>
+        <button class="btn" id="refreshBtn">刷新</button>
+      </div>
+      <div class="panel-body">
+        <div class="toolbar">
+          <button class="btn primary" id="openRootBtn">打开根目录</button>
+          <button class="btn" id="openMainUiBtn">主 UI</button>
+        </div>
+        <div class="tree" id="treeView">
+          <div class="empty">正在加载文件树...</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel panel-right">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">文件内容</div>
+          <div class="panel-subtitle" id="fileMeta">未选择文件</div>
+        </div>
+        <div class="toolbar" style="margin-top:0">
+          <button class="btn" id="reloadFileBtn">重新读取</button>
+          <button class="btn" id="copyPathBtn">复制路径</button>
+        </div>
+      </div>
+      <div class="content">
+        <textarea class="editor" id="editor" placeholder="点击左侧文件查看内容" spellcheck="false"></textarea>
+        <div class="status">
+          <span id="statusText">准备就绪</span>
+          <span id="tokenState">token: auto</span>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const ROOT_PATH = '/workspace/projects';
+    let selectedPath = '';
+
+    function getToken() {
+      const candidates = [
+        localStorage.getItem('openclaw.control.bootstrap.token.v1'),
+        localStorage.getItem('openclaw.control.token.v1'),
+        sessionStorage.getItem('openclaw.control.bootstrap.token.v1'),
+        sessionStorage.getItem('openclaw.control.token.v1'),
+      ].filter(Boolean);
+      for (const candidate of candidates) {
+        if (candidate) return candidate;
+      }
+      return '';
+    }
+
+    function authHeaders(extra = {}) {
+      const headers = { ...extra };
+      const token = getToken();
+      if (token) headers.Authorization = `Bearer ${token}`;
+      return headers;
+    }
+
+    async function api(path, options = {}) {
+      const res = await fetch(`/file-manager/api${path}`, {
+        ...options,
+        headers: authHeaders(options.headers || {})
+      });
+      const text = await res.text();
+      try {
+        return JSON.parse(text);
+      } catch {
+        return { success: false, error: text || `HTTP ${res.status}` };
+      }
+    }
+
+    function renderNode(node, depth = 0) {
+      const wrapper = document.createElement('div');
+      const item = document.createElement('div');
+      item.className = 'tree-item';
+      item.style.paddingLeft = `${8 + depth * 14}px`;
+      item.dataset.path = node.path;
+      item.innerHTML = `
+        <span>${node.type === 'directory' ? '📁' : '📄'} ${node.name}</span>
+        <span class="tree-meta">${node.type}</span>
+      `;
+      item.addEventListener('click', async () => {
+        document.querySelectorAll('.tree-item.active').forEach(el => el.classList.remove('active'));
+        item.classList.add('active');
+        selectedPath = node.path;
+        document.getElementById('fileMeta').textContent = node.path;
+        document.getElementById('statusText').textContent = node.type === 'directory' ? '已选中目录' : '已选中文件';
+        if (node.type === 'file') {
+          await loadFile(node.path);
+        }
+      });
+      wrapper.appendChild(item);
+      if (node.children && node.children.length) {
+        node.children.forEach(child => wrapper.appendChild(renderNode(child, depth + 1)));
+      }
+      return wrapper;
+    }
+
+    async function loadTree(dirPath = ROOT_PATH) {
+      document.getElementById('statusText').textContent = '正在加载文件树...';
+      const result = await api(`/tree?path=${encodeURIComponent(dirPath)}`);
+      const treeView = document.getElementById('treeView');
+      if (!result.success) {
+        treeView.innerHTML = `<div class="empty error">加载失败：${result.error || '未知错误'}</div>`;
+        document.getElementById('statusText').textContent = '文件树加载失败';
+        return;
+      }
+
+      treeView.innerHTML = '';
+      treeView.appendChild(renderNode(result.data));
+      document.getElementById('statusText').textContent = '文件树已加载';
+    }
+
+    async function loadFile(filePath) {
+      const result = await api(`/file?path=${encodeURIComponent(filePath)}`);
+      if (!result.success) {
+        document.getElementById('editor').value = '';
+        document.getElementById('statusText').textContent = `读取失败：${result.error || '未知错误'}`;
+        return;
+      }
+      document.getElementById('editor').value = result.data?.content || '';
+      document.getElementById('fileMeta').textContent = result.data?.path || filePath;
+      document.getElementById('statusText').textContent = '文件已读取';
+    }
+
+    document.getElementById('refreshBtn').addEventListener('click', () => loadTree(ROOT_PATH));
+    document.getElementById('openRootBtn').addEventListener('click', () => loadTree(ROOT_PATH));
+    document.getElementById('reloadFileBtn').addEventListener('click', () => {
+      if (selectedPath) loadFile(selectedPath);
+    });
+    document.getElementById('copyPathBtn').addEventListener('click', async () => {
+      if (!selectedPath) return;
+      await navigator.clipboard.writeText(selectedPath);
+      document.getElementById('statusText').textContent = '路径已复制';
+    });
+    document.getElementById('openMainUiBtn').addEventListener('click', () => {
+      window.location.href = '/control-ui-custom/launch.html';
+    });
+
+    document.getElementById('tokenState').textContent = getToken() ? 'token: ready' : 'token: missing';
+    loadTree(ROOT_PATH);
+  </script>
+</body>
+</html>

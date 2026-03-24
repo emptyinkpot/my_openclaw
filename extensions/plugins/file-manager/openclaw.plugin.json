@@ -1,0 +1,23 @@
+{
+  "id": "file-manager",
+  "name": "文件管理",
+  "description": "OpenClaw 本地工作区文件浏览与读写插件",
+  "version": "1.0.0",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "watchPaths": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "要监听的目录路径"
+      },
+      "rules": {
+        "type": "array",
+        "description": "文件变化处理规则"
+      }
+    }
+  }
+}
