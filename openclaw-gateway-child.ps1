@@ -13,13 +13,8 @@ $env:OPENCLAW_CONFIG_PATH = $ConfigPath
 $env:OPENCLAW_GATEWAY_TOKEN = $Token
 Set-Location -LiteralPath $Root
 
-try {
-  & openclaw gateway status --require-rpc --timeout 3000 --url "ws://127.0.0.1:5000" --token $Token *> $null
-  if ($LASTEXITCODE -eq 0) {
-    exit 0
-  }
-} catch {
-  # Fall through to a foreground start if nothing is already healthy.
+if (Get-NetTCPConnection -LocalPort 5000 -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1) {
+  exit 0
 }
 
 openclaw gateway run --port 5000 --force --token $Token *>> $LogPath

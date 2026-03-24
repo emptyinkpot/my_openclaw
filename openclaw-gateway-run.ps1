@@ -13,18 +13,8 @@ $ErrorActionPreference = "Stop"
 $env:OPENCLAW_CONFIG_PATH = $ConfigPath
 $env:OPENCLAW_GATEWAY_TOKEN = $Token
 
-function Test-GatewayHealthy {
-  param(
-    [Parameter(Mandatory = $true)]
-    [string]$GatewayToken
-  )
-
-  try {
-    & openclaw gateway status --require-rpc --timeout 3000 --url "ws://127.0.0.1:5000" --token $GatewayToken *> $null
-    return ($LASTEXITCODE -eq 0)
-  } catch {
-    return $false
-  }
+function Test-GatewayPortListening {
+  return [bool](Get-NetTCPConnection -LocalPort 5000 -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1)
 }
 
 function Open-Browser {
@@ -66,17 +56,45 @@ function Open-Browser {
   }
 }
 
-if (Test-GatewayHealthy -GatewayToken $Token) {
+function Stop-StaleGatewayListener {
+  $listener = Get-NetTCPConnection -LocalPort 5000 -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
+  if (-not $listener) {
+    return
+  }
+
+  $pid = $listener.OwningProcess
+  try {
+    Stop-Process -Id $pid -Force -ErrorAction Stop
+  } catch {
+    try {
+      & taskkill /PID $pid /T /F *> $null
+    } catch {
+      # If the listener cannot be stopped here, let the normal startup path try again.
+    }
+  }
+
+  $deadline = (Get-Date).AddSeconds(10)
+  while ((Get-Date) -lt $deadline) {
+    $stillListening = Get-NetTCPConnection -LocalPort 5000 -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
+    if (-not $stillListening) {
+      break
+    }
+    Start-Sleep -Milliseconds 250
+  }
+}
+
+if (Test-GatewayPortListening) {
   Open-Browser -GatewayToken $Token
   exit 0
 }
 
 try {
-  & openclaw gateway stop *> $null
+  & schtasks /End /TN "OpenClaw Gateway" *> $null
 } catch {
-  # A stale scheduled task may not always stop cleanly; continue with a fresh run.
+  # Ignore: if the task is already stopped or not registered, continue with the fresh launch.
 }
 
+Stop-StaleGatewayListener
 Start-Sleep -Seconds 2
 Set-Location -LiteralPath $Root
 
@@ -97,13 +115,8 @@ Start-Process -FilePath "powershell.exe" -WindowStyle Hidden -ArgumentList @(
   $LogPath
 ) | Out-Null
 
-$deadline = (Get-Date).AddSeconds(120)
-while ((Get-Date) -lt $deadline) {
-    if (Test-GatewayHealthy -GatewayToken $Token) {
-      Open-Browser -GatewayToken $Token
-      exit 0
-    }
-  Start-Sleep -Seconds 1
-}
+Start-Sleep -Seconds 2
+Open-Browser -GatewayToken $Token
+exit 0
 
-throw "Gateway did not start on 127.0.0.1:5000."
+throw "Gateway did not start listening on 127.0.0.1:5000."
