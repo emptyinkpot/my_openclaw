@@ -1,8 +1,12 @@
 @echo off
 setlocal EnableExtensions
 
-set "ROOT=%~dp0.local\openclaw"
+set "ROOT=%~dp0projects\.local\openclaw"
 set "CONFIG=%ROOT%\openclaw.json"
+if not exist "%CONFIG%" (
+  set "ROOT=%~dp0.local\openclaw"
+  set "CONFIG=%ROOT%\openclaw.json"
+)
 if not exist "%CONFIG%" (
   set "ROOT=%~dp0projects"
   set "CONFIG=%ROOT%\openclaw.json"
