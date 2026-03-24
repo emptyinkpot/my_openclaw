@@ -581,6 +581,7 @@ $startButton.Add_Click({
   Append-Log 'Starting gateway background process.'
 
   Start-GatewayBackground -ConfigPath $currentConfig -Token $currentToken
+  Open-ControlUiOnce -Token $currentToken
   $script:StartState = 'starting'
   Start-HealthCheckAsync -Token $currentToken
 })
