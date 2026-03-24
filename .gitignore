@@ -1,0 +1,10 @@
+projects/
+gateway-start.log
+start-openclaw.local.bat
+memory/
+logs/
+data/
+browser/
+node_modules/
+*.log
+*.tmp
