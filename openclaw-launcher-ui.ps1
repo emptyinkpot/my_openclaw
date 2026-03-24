@@ -144,6 +144,24 @@ function Open-ControlUi {
   }
 }
 
+function Open-ControlUiOnce {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$Token
+  )
+
+  if ($script:LaunchedBrowser) {
+    return
+  }
+
+  if (Open-ControlUi -Token $Token) {
+    $script:LaunchedBrowser = $true
+    Append-Log 'Opened Control UI in the browser.'
+  } else {
+    Append-Log 'Failed to open Control UI.'
+  }
+}
+
 function Append-Log {
   param(
     [Parameter(Mandatory = $true)]
@@ -480,11 +498,7 @@ $openUiButton.Add_Click({
     return
   }
 
-  if (Open-ControlUi -Token $currentToken) {
-    Append-Log 'Opened Control UI in the browser.'
-  } else {
-    Append-Log 'Failed to open Control UI.'
-  }
+  Open-ControlUiOnce -Token $currentToken
 })
 
 $browseConfig.Add_Click({
@@ -575,6 +589,7 @@ $timer.Add_Tick({
           $healthValue.Text = 'Gateway healthy'
           $openUiButton.Enabled = $true
           Append-Log 'Gateway health check passed.'
+          Open-ControlUiOnce -Token $tokenBox.Text.Trim()
         } else {
           $script:StartState = 'idle'
           Set-Status -Text 'Not running' -Color ([System.Drawing.Color]::FromArgb(148, 163, 184))
