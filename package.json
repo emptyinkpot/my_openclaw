@@ -1,8 +1,8 @@
 {
-  "name": "@openclaw/launcher",
+  "name": "@openclaw/startup-shell",
   "version": "1.0.0",
   "private": true,
-  "description": "Lightweight OpenClaw launcher shell",
+  "description": "Lightweight OpenClaw startup shell",
   "scripts": {
     "start": "start-openclaw.bat",
     "restore": "powershell -ExecutionPolicy Bypass -File restore-from-github.ps1"
