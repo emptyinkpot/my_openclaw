@@ -1,5 +1,10 @@
 {
-	"dependencies": {
-		"coze-coding-dev-sdk": "^0.7.17"
-	}
+  "name": "@openclaw/launcher",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Lightweight OpenClaw launcher shell",
+  "scripts": {
+    "start": "start-openclaw.bat",
+    "restore": "powershell -ExecutionPolicy Bypass -File restore-from-github.ps1"
+  }
 }

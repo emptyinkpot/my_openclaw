@@ -4,14 +4,18 @@ $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoBase = 'https://raw.githubusercontent.com/emptyinkpot/my_openclaw/main'
 
 $textFiles = @(
+  '.gitignore',
   'AGENTS.md',
   'BOOTSTRAP.md',
   'HEARTBEAT.md',
   'IDENTITY.md',
+  'README.md',
   'SOUL.md',
   'TOOLS.md',
   'USER.md',
-  'package.json'
+  'package.json',
+  'start-openclaw.bat',
+  'start-openclaw.local.example.bat'
 )
 
 foreach ($name in $textFiles) {
@@ -30,7 +34,6 @@ New-Item -ItemType Directory -Force -Path `
   (Join-Path $root 'usr\sbin') | Out-Null
 
 Invoke-WebRequest -Headers @{ 'User-Agent' = 'Codex' } -Uri "$repoBase/.openclaw/workspace-state.json" -UseBasicParsing -OutFile (Join-Path $root '.openclaw\workspace-state.json')
-Invoke-WebRequest -Headers @{ 'User-Agent' = 'Codex' } -Uri "$repoBase/pnpm-lock.yaml" -UseBasicParsing -OutFile (Join-Path $root 'pnpm-lock.yaml')
 
 Set-Content -LiteralPath (Join-Path $root 'bin') -Value 'usr/bin' -NoNewline
 Set-Content -LiteralPath (Join-Path $root 'lib') -Value 'usr/lib' -NoNewline
