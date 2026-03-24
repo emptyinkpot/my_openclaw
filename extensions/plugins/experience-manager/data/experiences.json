@@ -1,0 +1,2929 @@
+{
+  "records": [
+    {
+      "id": "exp_1774341000000_gateway_stable_startup",
+      "timestamp": 1774339464672,
+      "type": "problem_solving",
+      "title": "Windows 本地 OpenClaw 启动稳定化：复用健康网关并绕开失效服务态",
+      "description": "在 Windows 本地环境中，OpenClaw 主 UI 时好时坏，常见现象包括快捷方式打开后卡在登录页、5000 端口未真正可用、旧的 Gateway 计划任务与新进程互相干扰。通过梳理启动链路，最终将入口统一为先检查网关健康，再按需拉起前台 gateway 进程，并明确不再依赖陈旧的服务态。",
+      "userQuery": "为什么之前成功过一次，之后又变成 TCP connect failed、卡登录页、像是没开网关？",
+      "solution": "1. 用 `openclaw gateway status --require-rpc --timeout 3000 --url ws://127.0.0.1:5000 --token <token>` 作为唯一健康判据，而不是只看端口是否监听。\\n2. 启动器先复用健康网关；如果不健康，则执行 `openclaw gateway stop` 清理残留态，然后从新进程启动 `openclaw gateway run --port 5000 --force --token <token>`。\\n3. 避免把 `~/.openclaw/gateway.cmd` 对应的旧计划任务当作主启动路径；它容易留下 stale state，导致 lock timeout、already running、token mismatch 这类假状态。\\n4. 启动脚本只做三件事：装载本地配置、等待 RPC probe 成功、打开控制 UI。这样冷启动和重复启动都稳定。",
+      "experienceApplied": [
+        "Windows 进程与端口排查",
+        "OpenClaw Gateway 健康检查",
+        "启动链路最小化"
+      ],
+      "experienceGained": [
+        "判断 OpenClaw 网关是否可用，应该以 RPC probe 成功为准，而不是只看 5000 端口是否被监听。",
+        "旧的计划任务或 gateway.cmd 兼容入口容易留下脏状态，正常启动链路应尽量绕开。",
+        "稳定的 Windows 启动器应该只负责复用健康网关或拉起新网关，不要混入多套 service/uninstall 逻辑。",
+        "启动问题和 control-ui-custom 本身无关时，先把网关健康与 token 一致性确认清楚。"
+      ],
+      "tags": [
+        "OpenClaw",
+        "Gateway",
+        "Windows",
+        "启动调试",
+        "健康检查",
+        "control-ui-custom"
+      ],
+      "difficulty": 4,
+      "xpGained": 220
+    },
+    {
+      "id": "exp_1774341000001_control_ui_token_bootstrap",
+      "timestamp": 1774339464671,
+      "type": "bug_fix",
+      "title": "Control UI 登录态修复：用 URL hash 预热 token，解决 gateway token mismatch",
+      "description": "控制 UI 主页已经切到正确的 `control-ui-custom`，但仍频繁停在登录页并提示 `unauthorized: gateway token mismatch`。根因不是插件没加载，而是 token 在 `launch.html -> index.html -> chat` 的跳转链路里丢失，前端读取的 sessionStorage key 与启动器写入的 key 不一致。",
+      "userQuery": "主页是对了，但是还没登录进去；为什么总是 gateway token mismatch？",
+      "solution": "1. 启动器不再把 token 放在 query 中，而是打开 `control-ui-custom/launch.html#token=<token>&gatewayUrl=ws://127.0.0.1:5000`，用 hash 传递登录态。\\n2. `launch.html` 在跳转到 `index.html` 前，先把 token 写入 `localStorage`、`sessionStorage`、`window.name` 和 `openclaw.control.settings.v1`，并覆盖根路径、control-ui 路径、当前页面路径三类 token key。\\n3. `index.html` 在应用 bundle 加载前再次执行同样的 bootstrap，作为二次兜底；同时补一个 `Storage.getItem` fallback，当 UI 读取 `openclaw.control.token.v1:*` 失败时回退到 bootstrap token。\\n4. 跳转时保留 hash，确保 token 不会在 `launch.html -> index.html -> chat?session=main` 的路由切换中丢失。",
+      "experienceApplied": [
+        "浏览器存储调试",
+        "OpenClaw Control UI 启动链路排查",
+        "会话令牌一致性修复"
+      ],
+      "experienceGained": [
+        "OpenClaw Control UI 的登录态不只依赖一个 token 字段，而是依赖 gatewayUrl 派生出的多组 sessionStorage key。",
+        "query 参数在多段前端路由里更容易丢失，hash 作为启动桥更稳。",
+        "只改 launch 页不够，index 页在 bundle 加载前做二次 bootstrap 才能稳住登录态。",
+        "遇到 token mismatch 时，要同时检查页面最终 URL、gatewayUrl、sessionStorage key 和 window.name。"
+      ],
+      "tags": [
+        "OpenClaw",
+        "Control UI",
+        "token",
+        "sessionStorage",
+        "登录调试",
+        "gateway token mismatch"
+      ],
+      "difficulty": 5,
+      "xpGained": 260
+    },
+    {
+      "id": "exp_1774341000002_local_runtime_consolidation",
+      "timestamp": 1774339464670,
+      "type": "optimization",
+      "title": "本地运行态收口：将 OpenClaw 与 Ollama 统一到 E:\\Auto\\.local",
+      "description": "用户机器上同时存在用户目录下的 `.openclaw`、`.ollama` 和仓库内的运行目录，导致配置路径、模型目录、工作区位置和插件路径容易分叉。为避免出现“有两个 OpenClaw”“模型到底从哪里读”的问题，最终把实际运行态统一收口到 `E:\\Auto\\.local`。",
+      "userQuery": "把我本地的 OpenClaw 和 Ollama 模型都移动合并到这个文件夹下，保证只有一个 OpenClaw 和本地 AI 模型。",
+      "solution": "1. 将实际 OpenClaw 运行目录迁移到 `E:/Auto/.local/openclaw`，将 Ollama 模型目录迁移到 `E:/Auto/.local/ollama`。\\n2. 保留 `C:/Users/<user>/.openclaw` 与 `C:/Users/<user>/.ollama` 作为 junction，指向新的实际目录，兼容旧路径。\\n3. 更新 `openclaw.json`：`agents.defaults.workspace` 指向 `E:/Auto/.local/openclaw/workspace`，`models.providers.ollama.baseUrl` 保持本地 `127.0.0.1:11434`，`gateway.controlUi.root` 指向 `E:/Auto/projects/control-ui-custom`，插件路径明确指向 `E:/Auto/projects/extensions/plugins/*`。\\n4. 启动器优先从 `.local/openclaw/openclaw.json` 读配置，只在缺失时才回退到 `projects/openclaw.json`。这样主仓库、运行态和模型目录的职责边界稳定下来。",
+      "experienceApplied": [
+        "Windows 路径迁移",
+        "本地 AI 模型目录管理",
+        "OpenClaw 配置归一化"
+      ],
+      "experienceGained": [
+        "OpenClaw 代码仓库和运行态应分离，但路径要通过单一配置入口收口。",
+        "保留用户目录 junction 可以兼容依赖旧路径的软件，同时避免磁盘上出现重复副本。",
+        "统一 `openclaw.json` 的 workspace、controlUi.root、plugin path 和 Ollama baseUrl 后，定位问题会简单很多。",
+        "涉及本地模型迁移时，先保证 Ollama 服务端口与模型 manifests/blobs 路径一致，再动上层 UI。"
+      ],
+      "tags": [
+        "OpenClaw",
+        "Ollama",
+        "本地模型",
+        "路径迁移",
+        "Windows",
+        "配置统一"
+      ],
+      "difficulty": 4,
+      "xpGained": 210
+    },
+    {
+      "id": "exp_1774316500000_route_fix",
+      "timestamp": 1774316500000,
+      "type": "problem_solving",
+      "title": "修复 novel-manager 插件加载失败和导航路由问题",
+      "description": "用户反馈在原生 Control UI 点击小说管理等导航链接无法跳转，跳转到外部域名拒绝连接。通过排查发现是 novel-manager 插件加载失败导致路由未注册，最终通过恢复 git 历史版本解决问题。",
+      "userQuery": "在原生controlui页面点小说管理进去是380cdf5c-c0a6-420a-acbf-3b2e64d0d9cf.dev.coze.site 拒绝连接。你看看是不是路由的问题",
+      "solution": "## 问题排查与修复过程\n\n### 1. 问题现象\n- 点击导航栏链接（小说管理、自动化等）跳转到外部域名，拒绝连接\n- OpenClaw 状态显示 novel-manager 插件加载失败\n\n### 2. 错误信息\n```\n[plugins] novel-manager failed to load from /workspace/projects/extensions/plugins/novel-manager/index.ts: Error: ParseError: Missing initializer in const declaration.\n /workspace/projects/extensions/plugins/novel-manager/index.ts:1154:29\n```\n随后错误变为 core/database/daily-plan/index.ts 的语法错误\n\n### 3. 解决方案\n- 查看 git log，找到最近能正常工作的提交：b7ccf5c9\n- 将 extensions/plugins/novel-manager/ 恢复到该提交\n- 将 extensions/core/database/ 也恢复到该提交\n- 重启 OpenClaw Gateway 服务：./scripts/restart.sh\n- 验证插件加载成功：[novel-manager] Plugin registered\n- 验证路由正常：curl -I http://localhost:5000/novel/ 返回 HTTP/1.1 200 OK\n\n### 4. 关键经验\n- 插件加载失败会导致路由未注册，从而导航失效\n- 遇到插件语法错误时，优先从 git 历史恢复能正常工作的版本\n- 修改 TypeScript 插件代码后要立即验证插件是否加载成功\n- openclaw status --all 是快速检查插件状态的好工具\n",
+      "experienceApplied": [
+        "OpenClaw 插件加载排查",
+        "Git 历史恢复",
+        "路由验证"
+      ],
+      "experienceGained": [
+        "插件加载失败会直接导致路由未注册，导航功能失效",
+        "遇到 TypeScript 语法错误时，优先从 git 历史恢复能正常工作的版本",
+        "修改插件代码后要立即用 openclaw status --all 验证插件是否加载成功",
+        "curl -I 是快速验证 HTTP 路由是否正常的好方法",
+        "./scripts/restart.sh 是重启 OpenClaw 服务的可靠方式"
+      ],
+      "tags": [
+        "OpenClaw",
+        "插件加载",
+        "路由问题",
+        "Git 恢复",
+        "问题排查"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "exp_1774316600000_model_switch",
+      "timestamp": 1774316600000,
+      "type": "optimization",
+      "title": "优化 OpenClaw 回复动画流畅度 - 切换到更快的模型",
+      "description": "用户反馈 OpenClaw 回复时的打字机动画不流畅。通过分析发现是使用的模型响应速度较慢，切换到 coze 提供商的轻量快速模型后问题解决。",
+      "userQuery": "为什么openclaw回复我的时候的动画这么不流畅呢？",
+      "solution": "## 优化过程\n\n### 1. 问题分析\n- 当前使用的主模型：deepseek/deepseek-chat\n- 动画不流畅通常和模型响应速度有关\n- coze 提供商的模型在当前环境中响应通常更快更流畅\n\n### 2. 解决方案\n- 修改 openclaw.json 中的 agents.defaults.model.primary\n- 从 deepseek/deepseek-chat 切换到 coze/doubao-seed-2-0-lite-260215\n- 验证配置：openclaw config validate\n\n### 3. 其他可选模型\n- coze/auto - 自动选择最优模型\n- coze/doubao-seed-2-0-mini-260215 - 更轻量的版本\n- coze/kimi-k2-5-260127 - 平衡速度和能力\n\n### 4. 关键经验\n- 动画流畅度直接受模型响应速度影响\n- 在当前环境中，coze 提供商的模型通常比外部模型响应更快\n- 轻量模型（lite/mini）通常比完整版模型响应更快\n- 切换模型后要验证配置是否合法：openclaw config validate\n",
+      "experienceApplied": [
+        "模型配置优化",
+        "响应速度调优",
+        "OpenClaw 配置管理"
+      ],
+      "experienceGained": [
+        "OpenClaw 回复动画的流畅度直接受模型响应速度影响",
+        "在当前环境中，coze 提供商的模型通常比外部模型响应更快更稳定",
+        "轻量模型（如 doubao-seed-2-0-lite）通常比完整版模型响应更快",
+        "openclaw config validate 是验证配置修改是否合法的好工具",
+        "切换模型是优化响应流畅度的有效手段"
+      ],
+      "tags": [
+        "OpenClaw",
+        "模型配置",
+        "响应速度",
+        "动画优化",
+        "Coze"
+      ],
+      "difficulty": 2,
+      "xpGained": 100
+    },
+    {
+      "id": "exp_1774149411555_bbpdasy97",
+      "timestamp": 1774149411555,
+      "type": "refactoring",
+      "title": "章节状态体系重构 - 完整实施与数据库字段修改",
+      "description": "对小说管理系统进行全面重构，将章节状态从原有的 outline/pending/audited/published 扩展为 outline/first_draft/polished/audited/published 五种状态，并从根本上修改了数据库字段定义。",
+      "userQuery": "修改章节状态体系：outline（大纲）、first_draft（初稿）、polished（已润色）、audited（已审核）、published（已发布）",
+      "solution": "## 章节状态体系重构完成总结\n\n## 已完成的核心修改\n\n### 1. 状态定义更新\n- 更新了 ChapterStatus 类型，新增 first_draft、polished、audited 状态\n- 完整的状态链：outline → first_draft → polished → audited → published\n\n### 2. 核心模块更新\n- **Audit 模块：仅处理 polished 状态章节，审核通过后变更为 audited\n- **Content Pipeline：生成时 outline → polished，润色时 first_draft → polished\n- **Publishing 模块：仅发布 audited 状态章节，发布后变更为 published\n- **Novel Manager API：新建章节默认状态为 outline\n\n### 3. 数据库修改（核心）\n在 extensions/plugins/novel-manager/services/novel-service.ts 的 initTables() 方法中：\n- 更新了 works 表的 status 字段：默认值为 outline，注释包含所有新状态\n- 更新了 chapters 表的 status 字段：默认值改为 outline，注释包含所有新状态\n\n### 4. 前端显示更新\n在 extensions/public/index.html 中：\n- 更新了状态映射，支持 first_draft、polished、audited、published 状态的显示\n- 包含对应的中文文本和颜色方案\n\n## 状态流转总结\n| 操作 | 起始状态 | 目标状态 |\n|------|---------|---------|\n| 新建章节 | - | outline |\n| 生成（content-craft） | outline | polished |\n| 润色（content-craft） | first_draft | polished |\n| 审核通过（audit） | polished | audited |\n| 发布（publishing） | audited | published |\n\n## 关键文件修改清单\n- extensions/core/audit/types.ts\n- extensions/core/content-pipeline/ContentPipeline.ts\n- extensions/plugins/novel-manager/services/novel-service.ts\n- extensions/plugins/novel-manager/index.ts\n- extensions/core/publishing/ChapterRepository.ts\n- extensions/public/index.html",
+      "experienceApplied": [
+        "类型定义管理",
+        "数据库字段修改",
+        "状态机设计",
+        "模块间协作"
+      ],
+      "experienceGained": [
+        "状态体系重构需要先修改类型定义、各模块逻辑、前端显示、数据库字段，缺一不可",
+        "数据库字段修改要在初始化代码中也更新默认值和注释",
+        "渐进式重构策略：备份优先、兼容层保障",
+        "状态流转要明确，每个模块的职责要清晰"
+      ],
+      "tags": [
+        "状态体系",
+        "重构",
+        "数据库",
+        "TypeScript",
+        "前端",
+        "小说管理"
+      ],
+      "difficulty": 4,
+      "xpGained": 200
+    },
+    {
+      "id": "exp_1774147000000_openclaw_preview_fix",
+      "timestamp": 1774147000000,
+      "type": "problem_solving",
+      "title": "OpenClaw 预览服务一直\"预览准备中\"问题排查与修复",
+      "description": "用户反馈 OpenClaw 预览服务一直显示\"预览准备中\"，无法正常使用。通过深入调查，发现问题是由于新创建的 database 目录被 OpenClaw 误认为是插件目录导致的。",
+      "userQuery": "预览准备中 ... 怎么一直是这样",
+      "solution": "## 问题排查过程\n\n### 1. 初步状态检查\n- 运行 `openclaw --version` 确认版本\n- 运行 `openclaw status --all` 发现配置验证失败\n- 错误信息：`plugin manifest not found: /workspace/projects/extensions/database/openclaw.plugin.json`\n\n### 2. 问题原因定位\n- 新创建的 `extensions/database/` 目录被 OpenClaw 误认为是插件目录\n- OpenClaw 会扫描 `extensions/` 下的所有目录作为插件候选\n- 非插件代码应该放在 `extensions/core/` 或其他子目录下\n\n### 3. 解决方案\n- 将 `extensions/database/` 移动到 `extensions/core/database/`\n- 更新所有相关文件的引用路径\n- 修复兼容层的引用\n- 验证配置并重启服务\n\n### 4. 关键文件更新清单\n- `extensions/core/audit/repository.ts`\n- `extensions/core/content-craft/src/generation-pipeline.ts`\n- `extensions/core/content-pipeline/AuditService.ts`\n- `extensions/core/content-pipeline/ChapterRepository.ts`\n- `extensions/core/content-pipeline/ContentPipeline.ts`\n- `extensions/core/publishing/ChapterRepository.ts`\n- `extensions/core/storage/database.ts` (兼容层)\n- `extensions/core/database/manager.ts`\n- `extensions/plugins/novel-manager/index.ts`\n- `extensions/plugins/novel-manager/services/novel-service.ts`\n\n### 5. 验证步骤\n```bash\n# 1. 验证配置\nopenclaw config validate\n\n# 2. 重启服务\n./scripts/restart.sh\n\n# 3. 探测 Gateway\nopenclaw gateway probe\n```\n",
+      "experienceApplied": [
+        "OpenClaw 配置排查",
+        "目录结构设计",
+        "相对路径引用管理"
+      ],
+      "experienceGained": [
+        "OpenClaw 会扫描 extensions/ 下的所有目录作为插件候选",
+        "非插件代码应该放在 extensions/core/ 或其他子目录下，避免被当成插件",
+        "目录结构变更后一定要检查所有相对路径引用",
+        "兼容层设计可以保证平滑迁移",
+        "openclaw config validate 是快速验证配置的好工具",
+        "openclaw gateway probe 可以检查 Gateway 连通性"
+      ],
+      "tags": [
+        "OpenClaw",
+        "预览服务",
+        "目录结构",
+        "插件加载",
+        "配置验证",
+        "问题排查"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "exp_1774145000000_remove_settings_modal",
+      "timestamp": 1774145000000,
+      "type": "bug_fix",
+      "title": "清理不再需要的 settings-modal.html 文件和路由",
+      "description": "既然 settings-modal 的完整内容已经硬编码到 nav-bar.html 中，删除单独的 settings-modal.html 文件和对应的路由，避免任何可能的访问导致旧导航栏重叠问题。",
+      "userQuery": "经验里面的笔记栏点击之后会有旧的导航栏重叠，这个问题过往的经验里面有对应的解决方案，你去查看一下过往的经验，然后用那个方案修复这个问题",
+      "solution": "## 完成的工作\n\n### 1. 从 novel-manager 插件的 pageMap 中移除路由\n- 删除 '/settings-modal.html': 'settings-modal.html' 映射\n- 保留 nav-bar.html 和 nav-bar.js 路由\n\n### 2. 删除单独的 settings-modal.html 文件\n- 删除 extensions/public/settings-modal.html 文件\n- 该文件内容已完全硬编码到 nav-bar.html 中\n\n### 3. 确保完全避免 fetch 动态加载\n- 所有页面现在都使用 nav-bar.html 中硬编码的设置弹窗\n- 不再依赖任何网络请求或路由匹配来加载设置弹窗",
+      "experienceApplied": [
+        "过往经验 exp_1774135313784",
+        "导航栏统一管理",
+        "代码清理优化"
+      ],
+      "experienceGained": [
+        "完成硬编码后，应该及时清理不再需要的文件和路由",
+        "避免遗留代码导致潜在问题",
+        "保持项目结构简洁，减少维护成本"
+      ],
+      "tags": [
+        "代码清理",
+        "导航栏",
+        "设置弹窗",
+        "路由优化",
+        "bug 修复"
+      ],
+      "difficulty": 2,
+      "xpGained": 100
+    },
+    {
+      "id": "exp_1774144000000_ui_design_tab",
+      "timestamp": 1774144000000,
+      "type": "feature_dev",
+      "title": "项目结构页面添加二级标签导航：结构概览 + UI 设计",
+      "description": "在项目结构页面添加二级标签导航，将原有内容作为\"结构概览\"标签，新增\"UI 设计\"标签展示 UI 设计能力和规划。",
+      "userQuery": "项目结构下面加一个二级标签（UI设计）里面显示ui如何进行设计，还有你能做到哪些UI设计，可以通过这个界面对项目的整体ui进行规划，原来的页面作为一个二级标签（结构概览）",
+      "solution": "## 完成的工作\n\n### 1. 添加二级标签导航样式\n- 新增 `.sub-tabs` 样式：浅灰色背景，圆角边框，内边距\n- 新增 `.sub-tab` 样式：默认状态、hover 状态、active 状态\n- 新增 `.tab-content` 样式：控制标签内容的显示/隐藏\n\n### 2. 添加 UI 设计标签专属样式\n- `.ui-section`：UI 区域样式\n- `.ui-section-title`：区域标题样式\n- `.ui-grid`：UI 网格布局（2 列）\n- `.ui-item`：UI 项目卡片\n- `.ui-tag`：UI 标签样式\n- `.ui-progress`：进度条样式\n\n### 3. 修改 HTML 结构\n- 在 header 下方添加二级标签导航栏\n- 两个标签：📊 结构概览、🎨 UI 设计\n- 将原有内容包裹在 `.tab-content.active` 中作为结构概览\n- 新增 `.tab-content` 作为 UI 设计标签内容\n\n### 4. 实现 UI 设计标签内容\n- **我能做到的 UI 设计**（6 个卡片）：\n  - 🎨 颜色方案设计\n  - 📐 布局与间距\n  - 🖼️ 组件设计\n  - ✨ 动效与交互\n  - 📱 响应式设计\n  - 🔧 样式重构\n- **已完成的 UI 优化**（3 个卡片）：\n  - 项目结构页面（100%）\n  - 经验积累中心（100%）\n  - 导航栏统一（100%）\n- **UI 设计规范**：\n  - 配色原则\n  - 间距规范\n  - 圆角规范\n  - 字体规范\n  - 阴影规范\n\n### 5. 添加标签切换 JavaScript\n- 实现 `switchSubTab(tab)` 函数\n- 更新标签样式（添加/移除 active 类）\n- 更新内容显示（添加/移除 active 类）",
+      "experienceApplied": [
+        "二级标签导航设计",
+        "HTML 结构改造",
+        "CSS 样式开发",
+        "JavaScript 交互实现"
+      ],
+      "experienceGained": [
+        "如何在现有页面中添加二级标签导航",
+        "二级标签的样式设计：背景、圆角、hover/active 状态",
+        "如何用 JavaScript 实现标签切换功能",
+        "UI 设计能力的梳理和展示方式",
+        "进度条的样式实现",
+        "项目整体 UI 规划界面的设计思路"
+      ],
+      "tags": [
+        "UI 设计",
+        "二级标签",
+        "导航设计",
+        "样式开发",
+        "交互实现",
+        "项目规划"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "exp_1774142000000_service_troubleshooting",
+      "timestamp": 1774142000000,
+      "type": "problem_solving",
+      "title": "服务反复启动失败问题排查与修复",
+      "description": "用户反馈服务总会启动失败，进程退出码为1。通过深入调查日志和系统状态，发现了问题根源并修复。",
+      "userQuery": "服务启动失败，进程退出码: 1，为什么总会出现这个问题是架构的原因吗？修复并记录经验",
+      "solution": "## 问题排查过程\n\n### 1. 初步状态检查\n- 运行 `openclaw status --all` 查看整体状态\n- 发现 Gateway 实际上是在运行的（端口 5000 被占用）\n- 运行 `openclaw gateway probe` 显示服务可达\n\n### 2. 深入日志分析\n- 查看完整的日志文件 `/tmp/openclaw/openclaw-2026-03-22.log`\n- 发现服务实际上一直在正常启动，没有崩溃错误\n- 但服务一直在收到 `SIGTERM` 信号被关闭\n- 注意：SIGTERM 是外部终止信号，不是服务自己崩溃\n\n### 3. 系统检查\n- 检查 crontab：`crontab -l`\n- 发现有定时任务在运行不存在的脚本：\n  - `0 * * * * /workspace/projects/auto-scripts/bin/auto-health-check.sh`\n  - 这个脚本路径不存在\n- 检查进程：发现有 cloud-monitor-agent 在运行\n\n### 4. 问题修复\n- 备份当前 crontab：`crontab -l > /tmp/crontab.bak`\n- 移除引用不存在脚本的定时任务：`grep -v \"auto-scripts\" /tmp/crontab.bak | crontab -`\n- 验证服务正常运行\n\n## 关键发现\n1. **服务并没有崩溃** - 退出码 1 的说法可能来自其他地方\n2. **SIGTERM 不是崩溃** - 这是外部发送的终止信号\n3. **不要轻易假设是架构问题** - 先看日志、看状态、看事实\n4. **crontab 清理** - 定期检查定时任务，移除无效项",
+      "experienceApplied": [
+        "日志分析技巧",
+        "系统状态排查",
+        "问题定位方法论"
+      ],
+      "experienceGained": [
+        "SIGTERM 是外部终止信号，不是服务自己崩溃",
+        "排查问题的顺序：先看状态 → 再看日志 → 再猜原因",
+        "crontab 中如果有引用不存在脚本的任务，应该清理掉",
+        "退出码 1 不一定是服务崩溃，要看具体上下文",
+        "不要轻易假设是架构问题，先基于事实判断",
+        "openclaw status --all 和 openclaw gateway probe 是快速检查的好工具"
+      ],
+      "tags": [
+        "服务排查",
+        "日志分析",
+        "crontab",
+        "SIGTERM",
+        "问题定位",
+        "OpenClaw"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "exp_1774140000000_column_creation",
+      "timestamp": 1774140000000,
+      "type": "feature_dev",
+      "title": "创建专栏功能并整理第一篇开发流程专栏",
+      "description": "在经验积累中心添加专栏功能，将相关经验和笔记整理成结构化的专栏文章。第一篇专栏讲述如何条理前端和后端开发流程。",
+      "userQuery": "把相关的经验和笔记整理成一个专栏，在经验积累中心笔记旁边加一个专栏入口，你先写这一条专栏讲述怎么条理前端和后端，可以广泛参考经验和笔记",
+      "solution": "## 完成的工作\n\n### 1. 在经验积累中心添加专栏标签页\n- 修改 `extensions/public/experience.html`，在标签栏添加 \"📚 专栏\" 标签\n- 更新 `switchTab()` 函数，支持专栏标签页切换\n\n### 2. 添加专栏列表的 HTML 结构和样式\n- 添加专栏工具栏，包含分类筛选：全部、开发流程、技术栈、最佳实践\n- 添加专栏列表样式，卡片式布局\n- 每个专栏卡片显示：图标、标题、分类、描述、阅读时间、文章数、创建日期、标签\n\n### 3. 实现专栏 JavaScript 逻辑\n- 定义内置专栏数据（columnData 数组）\n- 实现 `renderColumnList()` 渲染专栏列表\n- 实现 `filterColumns()` 按分类筛选\n- 实现 `refreshColumns()` 刷新列表\n- 实现 `showColumnDetail()` 显示专栏详情\n\n### 4. 创建第一篇专栏文章\n- 标题：《如何条理前端和后端开发流程》\n- 内容包含：\n  - 项目规划阶段（需求分析、任务拆解）\n  - 开发阶段（前端流程、后端流程）\n  - 协作规范（代码规范、分支管理、代码审查）\n  - 测试与部署（测试流程、部署流程）\n  - 经验总结（从经验记录中提炼、持续改进）\n- 参考了之前积累的经验记录，特别是关于前端页面创建、后端路由注册、导航栏注入等经验",
+      "experienceApplied": [
+        "前端页面结构设计",
+        "JavaScript 交互逻辑实现",
+        "CSS 样式开发",
+        "经验内容整理"
+      ],
+      "experienceGained": [
+        "如何将零散的经验记录整理成结构化的专栏文章",
+        "专栏功能的设计思路：分类筛选、卡片式展示、详情查看",
+        "前端开发流程的完整梳理：从需求到部署",
+        "后端开发流程的关键环节：数据库设计、API 设计、业务逻辑",
+        "团队协作规范的重要性：代码规范、分支管理、代码审查",
+        "经验积累的价值：定期复盘、持续改进、形成最佳实践"
+      ],
+      "tags": [
+        "专栏功能",
+        "前端开发",
+        "后端开发",
+        "开发流程",
+        "经验整理",
+        "最佳实践"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "exp_1774138800000_nav_publish_integration",
+      "timestamp": 1774138800000,
+      "type": "feature_dev",
+      "title": "自动发布功能集成到番茄扫描页面与导航栏优化",
+      "description": "将独立的自动发布页面从一级导航栏移除，集成到番茄扫描页面的标签页系统中；同时添加自动化入口到导航栏，并修复了路由配置问题。",
+      "userQuery": "将自动发布功能从一级导航栏移除，集成到小说管理的番茄扫描页面中；页面加载失败，你是不是又犯了没有注册这个路由只修改了 novel-manager 插件的 pageMap，但是没有修改 plugin 里的 routes 数组的错误；将这个积累到经验模块里",
+      "solution": "## 完成的工作\n\n### 1. 移除导航栏中的自动发布入口\n- 修改 `extensions/public/nav-bar.html`，删除 `<a href=\"/publish.html\">🚀 自动发布</a>` 链接\n\n### 2. 在番茄扫描页面添加标签页系统\n- 修改 `extensions/public/index.html`，在番茄扫描页面添加标签页导航\n- 两个标签页：\"🍅 番茄扫描\" 和 \"🚀 自动发布\"\n- 将发布功能的 UI 集成到\"自动发布\"标签页中：发布配置、章节列表、发布控制、进度显示、日志区域\n\n### 3. 添加标签页切换和发布功能 JavaScript\n- 实现 `switchFanqieTab(tab)` 标签页切换函数\n- 实现发布功能：`loadPublishWorks()`、`onPublishWorkChange()`、`startPublish()`、`stopPublish()`、`updatePublishProgress()`、`addPublishLog()`、`toggleSelectAllChapters()`\n- 实现 `initFanqiePage()` 初始化函数\n- 在 `init()` 函数中调用 `initFanqiePage()`\n\n### 4. 导航栏添加自动化入口\n- 在 `extensions/public/nav-bar.html` 中添加 `<a href=\"/automation\">🤖 自动化</a>` 链接\n\n### 5. 修复 novel-manager 插件路由配置（并回滚）\n- 最初错误地在 novel-manager 插件中添加了 `/automation.html` 路由\n- 发现有独立的 automation-hub 插件负责自动化功能\n- 从 novel-manager 插件中移除 `/automation.html` 相关配置\n\n### 6. 正确配置导航链接到 automation-hub 插件\n- 将导航栏链接从 `/automation.html` 改为 `/automation`\n- 给 automation-hub 插件添加导航栏注入功能\n- 给 automation-hub 插件添加导航栏高亮功能\n- 给 automation-hub 插件添加动态导航栏高度调整脚本",
+      "experienceApplied": [
+        "页面功能集成",
+        "标签页系统设计",
+        "导航栏统一管理",
+        "插件路由配置",
+        "多插件协作"
+      ],
+      "experienceGained": [
+        "将独立页面功能集成到现有页面的标签页系统中，简化导航结构",
+        "OpenClaw 插件路由注册必须同时修改 pageMap 和 routes 数组，缺一不可",
+        "先检查是否已有独立插件负责某功能，不要随意在其他插件中添加",
+        "automation-hub 插件负责处理自动化功能，路由是 /automation 不是 /automation.html",
+        "给插件添加导航栏注入功能时，要同时处理高亮显示和动态高度调整",
+        "修改 TypeScript 插件代码后，要确认功能是否正常工作",
+        "导航栏统一架构：通过 nav-bar.html 注入，所有页面共享同一套导航"
+      ],
+      "tags": [
+        "OpenClaw",
+        "导航栏",
+        "标签页",
+        "功能集成",
+        "路由配置",
+        "插件开发",
+        "automation-hub",
+        "novel-manager"
+      ],
+      "difficulty": 4,
+      "xpGained": 200
+    },
+    {
+      "id": "exp_1774136462221_wea3v4szp",
+      "timestamp": 1774136462221,
+      "type": "bug_fix",
+      "title": "笔记功能不显示问题排查与修复",
+      "description": "用户反馈点击\"📒 笔记\"标签后，显示\"暂无笔记\"，但实际上数据库中有 28 条笔记数据",
+      "userQuery": "📒 暂无笔记 点击\"新建笔记\"添加第一条笔记还是这个",
+      "solution": "## 问题排查过程\n\n### 1. 第一层检查：API 路由缺失\n- 发现 experience-routes.ts 已经更新添加了笔记 API\n- 但插件入口文件 index.ts 有自己独立的 HTTP 处理逻辑 handleExperienceApi\n- 完全没有使用 experience-routes.ts，也没有笔记 API 处理\n\n### 2. 第二层修复：在 index.ts 中添加笔记 API\n- 在 handleExperienceApi 函数中添加完整的笔记 CRUD 路由\n- 更新 initializeData 函数同时初始化笔记数据\n- 重启服务\n\n### 3. 第三层问题：数据格式不匹配\n- 发现 API 请求确实到达了（日志显示）\n- 但笔记还是不显示\n- 检查 NoteRepository 发现数据格式期望：{ notes: [...], version: \"1.0\" }\n- 实际保存的是：直接是一个数组 [...]\n- 同时字段名也不匹配：createdAt/updatedAt vs created_at/updated_at\n\n### 4. 最终修复：转换数据格式\n- 将数组格式转换为 { notes: [...], version: \"1.0\" } 格式\n- 转换字段名：createdAt → created_at，updatedAt → updated_at\n- 为每条笔记添加唯一 ID：db_note_ 前缀\n- 重启服务\n\n## 关键经验点\n1. 插件入口文件可能有自己的 HTTP 处理逻辑，不依赖路由文件\n2. 数据格式必须严格匹配 Repository 期望的格式\n3. 先检查日志看 API 请求是否到达，再看数据格式是否正确\n4. 字段命名规范要统一（驼峰 vs 下划线）",
+      "experienceApplied": [
+        "日志排查技巧",
+        "API 路由调试",
+        "数据格式验证"
+      ],
+      "experienceGained": [
+        "插件入口文件可能独立实现 HTTP 处理，不使用路由文件",
+        "Repository 期望的数据格式必须严格匹配",
+        "先确认 API 请求是否到达，再检查数据格式",
+        "字段命名规范要统一（驼峰 vs 下划线）",
+        "日志是排查问题的第一手资料"
+      ],
+      "tags": [
+        "OpenClaw",
+        "笔记功能",
+        "API 路由",
+        "数据格式",
+        "bug 修复",
+        "插件开发"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "title": "使用 console.log 调试前端问题的方法",
+      "problem": "当遇到前端问题（如点击按钮无反应、显示异常）时，不知道从哪里入手定位问题",
+      "solution": "使用浏览器控制台和 console.log 语句进行调试，通过添加关键节点的日志输出，逐步定位问题所在",
+      "tags": [
+        "前端调试",
+        "console.log",
+        "浏览器控制台",
+        "调试技巧",
+        "问题定位"
+      ],
+      "difficulty": 2,
+      "type": "technique",
+      "steps": [
+        "在关键函数开头添加 console.log(\"[模块名] 函数名 被调用\")",
+        "在网络请求前添加日志：console.log(\"[模块名] 开始请求\", url)",
+        "在网络请求响应后添加日志：console.log(\"[模块名] 收到响应\", response)",
+        "在 DOM 操作前后添加日志：console.log(\"[模块名] 操作前/后的元素状态\", element)",
+        "让用户打开浏览器开发者工具（F12），切换到 Console 标签页",
+        "复现问题，观察控制台输出的日志",
+        "根据日志信息定位问题发生的具体环节",
+        "针对定位到的问题进行修复"
+      ],
+      "id": "exp_1774135443992_bzffjiwqj",
+      "timestamp": 1774135443992
+    },
+    {
+      "title": "修复点击设置按钮出现旧导航栏重叠的问题",
+      "problem": "在非小说管理页面点击\"设置\"按钮时，没有弹出设置弹窗，反而出现旧导航栏重叠在新导航栏上。通过浏览器控制台调试发现，fetch(\"/settings-modal.html\") 错误地返回了原生界面的 HTML（里面包含旧导航栏），而不是我们想要的设置弹窗内容。",
+      "solution": "将 settings-modal.html 的完整内容（包括样式、HTML结构和JavaScript函数）直接硬编码到 nav-bar.html 中，完全避免使用 fetch 动态加载。这样无论在哪个页面，点击\"设置\"按钮都能直接使用本地嵌入的设置弹窗，不再依赖网络请求和路由匹配。",
+      "tags": [
+        "导航栏",
+        "设置弹窗",
+        "fetch",
+        "路由问题",
+        "前端调试",
+        "控制台日志"
+      ],
+      "difficulty": 3,
+      "type": "bugfix",
+      "steps": [
+        "通过浏览器控制台添加 console.log 调试信息",
+        "观察到 fetch(\"/settings-modal.html\") 返回的是原生界面 HTML",
+        "决定放弃动态加载，直接嵌入内容",
+        "将 settings-modal.html 的样式、HTML 和 JS 复制到 nav-bar.html",
+        "简化 openGlobalSettingsModal 函数，直接操作 DOM 显示/隐藏弹窗",
+        "测试验证修复成功"
+      ],
+      "id": "exp_1774135313784_ptkw9icwv",
+      "timestamp": 1774135313784
+    },
+    {
+      "type": "feature_dev",
+      "difficulty": 3,
+      "title": "完整的前端与后端开发流程 - 从页面创建到路由注册",
+      "description": "总结了前端页面创建、后端路由注册、导航栏注入的完整流程，包含最佳实践和常见问题解决方案",
+      "query": "用户反馈 novel-manager 插件没有注册路由，只修改了 pageMap 但忘记修改 routes 数组。同时需要总结完整的前端与后端创建流程，包括导航栏注入等步骤。",
+      "solution": "1. 总结了前端页面创建的完整步骤\n2. 强调了后端路由注册需要同时修改 pageMap 和 routes 数组\n3. 实现了智能适应导航栏高度的功能（CSS 变量 + JavaScript 动态计算）\n4. 总结了导航栏注入的流程和注意事项\n5. 提供了完整的检查清单和常见问题解决方案",
+      "appliedExperience": [],
+      "gainedExperience": [
+        "前端页面创建流程",
+        "后端路由注册流程",
+        "导航栏注入机制",
+        "智能适应导航栏高度",
+        "完整检查清单"
+      ],
+      "tags": [
+        "前端开发",
+        "后端开发",
+        "路由注册",
+        "导航栏",
+        "最佳实践"
+      ],
+      "id": "exp_1774133617910_fn07xroli",
+      "timestamp": 1774133617910
+    },
+    {
+      "type": "bug_fix",
+      "title": "TypeScript 语法错误导致插件加载失败",
+      "description": "修改 novel-manager 插件代码时，引入了 TypeScript 语法错误：1) 变量重复声明（const repo 声明两次）；2) 未终止的字符串常量（logger.debug 的字符串少了右括号和引号）。这些错误导致 novel-manager 插件无法被 OpenClaw 加载，直接破坏了用户界面。",
+      "userQuery": "你傻逼啊，把小说管理界面搞坏了",
+      "solution": "1. 修复 FanqieSimplePipeline.ts 中的重复变量声明：删除第二次声明的 const repo 和 const workInfo\n2. 修复 FanqiePublisher.ts 中的未终止字符串：给 logger.debug 的字符串添加右括号和引号\n3. 每次修改 TypeScript 代码后，先检查语法再运行\n4. 使用 openclaw status --all 快速验证插件是否加载成功",
+      "experienceApplied": [
+        "TypeScript 语法检查",
+        "插件加载调试",
+        "错误修复规范"
+      ],
+      "experienceGained": [
+        "TypeScript 变量重复声明会导致 ParseError: Identifier 'xxx' has already been declared",
+        "未终止的字符串常量会导致 ParseError: Unterminated string constant",
+        "修改插件代码前，先确认原有的架构，不要随意创建独立服务器",
+        "openclaw status --all 可以快速检查插件是否成功加载",
+        "修改 TypeScript 后，应该先验证语法再保存，避免破坏界面"
+      ],
+      "tags": [
+        "typescript",
+        "syntax-error",
+        "openclaw",
+        "plugin",
+        "bug",
+        "novel-manager"
+      ],
+      "difficulty": 3,
+      "xpGained": 150,
+      "id": "exp_1774100000000_ts_syntax_error",
+      "timestamp": 1774100000000
+    },
+    {
+      "id": "db_64",
+      "timestamp": 1774056092000,
+      "type": "bug_fix",
+      "title": "恢复原本流水线流程，添加 SSE 实时进度支持",
+      "description": "用户反馈修改后流水线流程变了，需要恢复原本能自动找到应该发布章节的版本，同时添加 SSE 实时进度推送",
+      "userQuery": "你是不是修改这个的流程了，这个的流程不是会自动找到应该发的章节而不是一个一个试吗",
+      "solution": "## 修复内容\n\n### 1. 恢复原本的完美流程\n- 从 git 历史中恢复 ContentPipeline.ts（commit 8ec5bd79）\n- 流程：自动从番茄获取最新章节号 → 从数据库找到下一章 → 只发布下一章（不是遍历所有）\n\n### 2. 添加 SSE 实时进度支持\n- ContentPipeline.ts: \n  - 修改 emitProgress() 返回 PipelineProgressEvent\n  - 在 publishToFanqie() 和 run() 中调用 onProgress 回调\n- NovelService.ts:\n  - 在 startPipeline() 中生成 progressId\n  - 设置 onProgress 回调并调用 broadcastProgress(progressId, event)\n  - 后台异步执行，立即返回响应\n- index.ts:\n  - 注册 SSE 路由 /novel/sse/progress/:progressId\n  - handleSse() 处理连接，设置响应头\n  - 立即发送连接确认消息\n  - 心跳保活（15秒）\n- ProgressManager.ts:\n  - 管理活跃客户端\n  - 缓存最新进度\n  - 广播给所有连接的客户端\n- 前端 index.html:\n  - 点击按钮启动流水线\n  - 获取 progressId 后连接 EventSource\n  - 实时显示进度（步骤、任务、百分比）\n  - 完成/失败时自动更新状态\n\n### 3. 修复前端问题\n- 修复 'pipelineRunning' 重复声明错误\n- 移除 SSE URL 中 token 的 encodeURIComponent\n- 添加详细日志，用 ====== 标记关键节点\n\n### 关键修复点\n- ContentPipeline.emitProgress() 必须返回事件对象\n- NovelService.startPipeline() 必须设置 onProgress 回调并调用 broadcastProgress\n- handleSse() 不能是 async function\n- 前端 EventSource 默认会自动重连，无需手动处理",
+      "experienceApplied": [],
+      "experienceGained": [
+        "从 git 历史恢复代码（git restore/git show）",
+        "先最小改动，保持核心逻辑不变",
+        "emitProgress 返回事件对象供外部使用",
+        "onProgress 回调 + broadcastProgress 实现 SSE",
+        "前端 EventSource 用法"
+      ],
+      "tags": [
+        "OpenClaw",
+        "流水线",
+        "SSE",
+        "前端",
+        "后端",
+        "git"
+      ],
+      "difficulty": 4,
+      "xpGained": 200
+    },
+    {
+      "id": "db_63",
+      "timestamp": 1774055829000,
+      "type": "bug_fix",
+      "title": "SSE 连接反复断开问题排查与修复",
+      "description": "用户反馈前端点击按钮后，SSE 连接反复建立又断开，readyState 一直是 0（CONNECTING）",
+      "userQuery": "Console:[[SSE] eventSource.readyState:0\\n[SSE] 连接已建立\\n[SSE] 连接错误:Event\\n...（反复循环）",
+      "solution": "## 问题定位\n1. 先用 curl 直接测试后端 SSE 路由，验证后端是否正常\n2. 发现后端完全正常！curl -v -N <SSE_URL> 能稳定连接并接收所有进度\n3. 定位到问题出在前端\n\n## 修复内容\n### 后端\n- 修复 handleSse 函数：从 async function 改为普通 function（async function 会导致 SSE 连接异常）\n\n### 前端\n- 移除 SSE URL 中 token 的 encodeURIComponent（token 不需要编码）\n- 添加更详细的日志，用 ====== 标记关键节点\n- onerror 中不做额外操作，让 EventSource 自动处理重连\n\n## 验证\n- 强制刷新浏览器（Ctrl+Shift+R）\n- 点击按钮，SSE 连接稳定，进度实时显示",
+      "experienceApplied": [],
+      "experienceGained": [
+        "区分前端/后端问题",
+        "先验证后端再看前端",
+        "用 curl -v -N 直接测试 SSE",
+        "handleSse 不能是 async",
+        "EventSource 默认自动重连"
+      ],
+      "tags": [
+        "SSE",
+        "debug",
+        "OpenClaw",
+        "前端",
+        "后端"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "type": "bug_fix",
+      "title": "番茄扫描功能集成：调用正确的扫描器",
+      "description": "NovelService.scanFanqieWorks() 原本返回模拟数据，未调用真实的 FanqieScanner。需要动态导入 FanqieScanner 并调用 scan() 方法。",
+      "userQuery": "扫描不到作品，脚本是能用的",
+      "solution": "1. 动态导入 FanqieScanner：const { getFanqieScanner } = require('../core/pipeline/FanqieScanner')\n2. 调用 scanner.scan({ accountId, headed: false })\n3. 扫描结果保存到数据库时，将 account_1 转换为数字 1\n4. 扫描失败时尝试读取缓存文件",
+      "experienceApplied": [
+        "动态导入",
+        "Playwright 扫描",
+        "缓存机制"
+      ],
+      "experienceGained": [
+        "FanqieScanner 使用 Playwright 扫描番茄作者后台",
+        "扫描结果自动缓存到 cache/fanqie-{accountId}-works.json",
+        "数据库 account_id 是 INT 类型，需要将 account_1 转换为 1",
+        "动态导入 require() 比 import 更灵活，避免编译时依赖"
+      ],
+      "tags": [
+        "fanqie",
+        "scanner",
+        "playwright",
+        "integration"
+      ],
+      "difficulty": 4,
+      "xpGained": 200,
+      "id": "exp_1774000005_scanner_integration",
+      "timestamp": 1774000000005
+    },
+    {
+      "type": "feature_dev",
+      "title": "经验数据源迁移：从数据库到 JSON 文件",
+      "description": "经验记录原本存储在 MySQL 数据库，现在迁移到 experience-manager 插件的 JSON 文件。NovelService.getExperienceRecords() 先尝试读数据库，失败后读取 JSON 文件。",
+      "userQuery": "经验模块未调用 experience-manager 数据",
+      "solution": "1. 经验数据存储在 extensions/experience-manager/data/experiences.json\n2. NovelService.getExperienceRecords() 先尝试从数据库读取\n3. 数据库无数据或出错时，读取 JSON 文件\n4. 使用 fs.existsSync() 检查文件是否存在",
+      "experienceApplied": [
+        "数据源切换",
+        "JSON 文件存储",
+        "降级策略"
+      ],
+      "experienceGained": [
+        "JSON 文件适合小规模数据存储，无需数据库连接",
+        "降级策略：先尝试主数据源，失败后使用备用数据源",
+        "文件路径使用绝对路径避免相对路径问题",
+        "JSON.parse() 后直接访问 .records 字段"
+      ],
+      "tags": [
+        "data-migration",
+        "json",
+        "experience",
+        "fallback"
+      ],
+      "difficulty": 3,
+      "xpGained": 150,
+      "id": "exp_1774000004_exp_datasource",
+      "timestamp": 1774000000004
+    },
+    {
+      "type": "feature_dev",
+      "title": "API 认证统一：Bearer Token 封装",
+      "description": "所有 API 请求使用统一的认证方式：Authorization: Bearer <token>。前端封装 api() 函数自动携带 token，避免每次请求重复写 header。",
+      "userQuery": "API返回401 Unauthorized",
+      "solution": "1. 前端定义 GATEWAY_TOKEN 常量\n2. 封装 api(endpoint, options) 函数，自动添加 Authorization header\n3. 所有 API 调用使用 api() 函数，不直接用 fetch",
+      "experienceApplied": [
+        "API 封装",
+        "认证机制"
+      ],
+      "experienceGained": [
+        "OpenClaw Gateway 使用 Token 认证模式",
+        "Token 在 openclaw.json 的 gateway.auth.token 配置",
+        "前端请求必须携带 Authorization: Bearer <token>",
+        "封装 api() 函数可以统一处理认证、错误、超时等逻辑"
+      ],
+      "tags": [
+        "api",
+        "authentication",
+        "token",
+        "frontend"
+      ],
+      "difficulty": 2,
+      "xpGained": 100,
+      "id": "exp_1774000003_api_auth",
+      "timestamp": 1774000000003
+    },
+    {
+      "type": "feature_dev",
+      "title": "统一导航栏架构：插件化页面路由",
+      "description": "所有页面（原生界面、小说管理、自动化、经验、缓存）通过插件注册路由，统一导航栏样式和跳转逻辑。导航栏使用固定定位，当前页面高亮显示。",
+      "userQuery": "导航栏入口不统一，无法互相跳转",
+      "solution": "1. 在插件入口 index.ts 注册所有页面路由：/、/novel/、/auto.html、/experience.html、/cache.html\n2. 所有路由使用 auth: 'plugin' 模式（无需登录）\n3. 每个页面 HTML 添加统一导航栏：<div class=\"nav-bar\">...\n4. 当前页面链接添加 class=\"on\" 实现高亮\n5. 导航项使用 href 跳转，不使用 JavaScript",
+      "experienceApplied": [
+        "OpenClaw 插件架构",
+        "前端组件化",
+        "路由统一管理"
+      ],
+      "experienceGained": [
+        "OpenClaw 页面路由通过插件注册，不是静态文件服务",
+        "auth: 'plugin' 表示无需认证，auth: 'token' 需要 Bearer Token",
+        "导航栏固定定位：position:fixed; top:0; z-index:9999",
+        "页面内容需要 margin-top:40px 避开导航栏",
+        "当前页面高亮使用特定 class（如 .on），CSS 定义样式"
+      ],
+      "tags": [
+        "openclaw",
+        "plugin",
+        "navigation",
+        "ui",
+        "architecture"
+      ],
+      "difficulty": 4,
+      "xpGained": 200,
+      "id": "exp_1774000002_navbar_unify",
+      "timestamp": 1774000000002
+    },
+    {
+      "type": "bug_fix",
+      "title": "MySQL 字符集不兼容导致数据插入失败",
+      "description": "番茄扫描结果保存到数据库时报错：`Conversion from collation utf8mb4_unicode_ci into latin1_swedish_ci impossible`。原因是表创建时未显式指定字符集，导致使用默认的 latin1 字符集，无法存储中文。",
+      "userQuery": "扫描到作品但列表为空",
+      "solution": "1. 删除旧表：DROP TABLE IF EXISTS fanqie_works\n2. 创建新表时显式指定字符集：DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci\n3. 每个文本字段也要指定字符集：VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci",
+      "experienceApplied": [
+        "数据库字符集配置",
+        "MySQL 表创建规范"
+      ],
+      "experienceGained": [
+        "MySQL 默认字符集是 latin1，无法存储中文",
+        "创建表时必须显式指定 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+        "字符串字段也需单独指定字符集，避免继承表级默认值",
+        "错误信息 'Conversion from collation' 表示字符集不兼容"
+      ],
+      "tags": [
+        "mysql",
+        "charset",
+        "utf8mb4",
+        "bug",
+        "database"
+      ],
+      "difficulty": 3,
+      "xpGained": 150,
+      "id": "exp_1774000001_charset_fix",
+      "timestamp": 1774000000001
+    },
+    {
+      "id": "db_62",
+      "timestamp": 1773988886000,
+      "type": "problem_solving",
+      "title": "导航栏设置按钮集成问题排查与解决",
+      "description": "处理用户要求将设置入口集成到导航栏的需求过程中，出现理解偏差、错误修改系统文件等问题，最终通过精准沟通和及时回滚解决问题",
+      "userQuery": "让设置入口像原生界面那样集成到导航栏，所有页面点设置都能正常工作",
+      "solution": "1. 小说管理页面的设置按钮保持调用showView('settings')打开内部设置面板\n2. 其他页面的设置按钮统一跳转到/novel/，使用小说管理页面的设置功能\n3. 原生界面的设置按钮也跳转到/novel/\n4. 修改前先确认需求，修改出错后立即回滚",
+      "experienceApplied": [],
+      "experienceGained": [
+        "理解需求要精准，不要想当然",
+        "不要随意修改系统目录文件",
+        "用户说回滚时要立即回滚",
+        "能简单解决的不要复杂化",
+        "多问确认需求，少猜",
+        "功能统一可以用页面跳转方式实现"
+      ],
+      "tags": [
+        "导航栏",
+        "设置功能",
+        "需求理解",
+        "回滚策略",
+        "用户沟通"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "db_61",
+      "timestamp": 1773984926000,
+      "type": "optimization",
+      "title": "OpenClaw control-ui框架集成",
+      "description": "修改路由配置，让所有页面都嵌入到OpenClaw原生的control-ui框架中",
+      "userQuery": "OpenClaw control-ui让所有页面都嵌入到原生界面的框架里",
+      "solution": "1. 分析发现/usr/lib/node_modules/openclaw/dist/control-ui/目录已有完整框架；2. 修改novel-manager插件的getPageHtml函数；3. 建立页面映射：/→index.html, /novel/→novel-home.html等；4. 添加降级机制，control-ui读取失败时使用插件页面；5. 重启服务使配置生效",
+      "experienceApplied": [
+        "路由配置",
+        "框架集成",
+        "降级策略"
+      ],
+      "experienceGained": [
+        "OpenClaw插件架构",
+        "control-ui框架使用",
+        "路由映射设计",
+        "降级机制实现"
+      ],
+      "tags": [
+        "OpenClaw",
+        "control-ui",
+        "路由配置",
+        "框架集成",
+        "降级策略"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "db_60",
+      "timestamp": 1773984919000,
+      "type": "feature_dev",
+      "title": "AI工具面板开发与集成",
+      "description": "在小说管理页面开发了一个功能完整的AI工具面板，包含润色和生成两个子面板",
+      "userQuery": "你在导航栏里创建一个面板，里面有润色和生成的面板",
+      "solution": "1. 在导航栏添加AI工具按钮（紫色渐变）；2. 创建右侧滑入式面板（400px宽）；3. 实现双标签页切换（润色/生成）；4. 润色面板包含文本输入、文言化滑块、叙事视角选择；5. 生成面板包含4个卡片模板、生成要求输入；6. 添加完整的JavaScript交互逻辑",
+      "experienceApplied": [
+        "UI组件开发",
+        "交互设计",
+        "前端样式"
+      ],
+      "experienceGained": [
+        "滑入式面板设计",
+        "标签页切换实现",
+        "滑块控件交互",
+        "渐变按钮样式"
+      ],
+      "tags": [
+        "AI工具",
+        "UI开发",
+        "交互设计",
+        "滑入面板",
+        "标签页"
+      ],
+      "difficulty": 4,
+      "xpGained": 200
+    },
+    {
+      "id": "db_59",
+      "timestamp": 1773984912000,
+      "type": "refactoring",
+      "title": "统一多页面导航栏架构",
+      "description": "发现并解决了多个页面导航栏不统一的问题，实现了一致的用户体验",
+      "userQuery": "你是不是有两套导航栏，你为什么不统一为一个",
+      "solution": "1. 分析发现有5个HTML文件都有独立的导航栏；2. 统一导航栏顺序：设置→小说管理→自动化→经验→缓存→原生界面；3. 移除了OpenClaw死文字；4. 将设置按钮移到导航栏最前面；5. 逐个修改auto.html、cache.html、experience.html、index.html的导航栏",
+      "experienceApplied": [
+        "代码重构",
+        "用户体验优化",
+        "多文件同步修改"
+      ],
+      "experienceGained": [
+        "导航栏统一方法论",
+        "多页面同步修改策略",
+        "用户体验一致性原则"
+      ],
+      "tags": [
+        "重构",
+        "导航栏",
+        "用户体验",
+        "多页面",
+        "一致性"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "db_58",
+      "timestamp": 1773984905000,
+      "type": "feature_dev",
+      "title": "OpenClaw导航栏统一与AI工具面板开发",
+      "description": "完成了多项功能开发和界面优化工作",
+      "userQuery": "用户要求创建待办事项应用、清理番茄扫描页面、实现章节计划表、恢复表结构页面、下载项目文件、添加AI工具面板、统一导航栏",
+      "solution": "1. 清理番茄扫描页面流水线进度功能；2. 实现章节计划表（从番茄最新章节+1开始）；3. 恢复表结构页面；4. 下载并解压项目文件；5. 添加AI工具面板（润色+生成）；6. 统一所有页面导航栏；7. 修改路由配置使用control-ui框架",
+      "experienceApplied": [
+        "页面UI优化",
+        "功能开发",
+        "路由配置"
+      ],
+      "experienceGained": [
+        "OpenClaw插件开发",
+        "导航栏统一策略",
+        "control-ui框架集成",
+        "AI工具面板设计"
+      ],
+      "tags": [
+        "OpenClaw",
+        "导航栏",
+        "AI工具",
+        "界面优化",
+        "路由配置"
+      ],
+      "difficulty": 4,
+      "xpGained": 200
+    },
+    {
+      "id": "db_45",
+      "timestamp": 1773974601000,
+      "type": "learning",
+      "title": "Test",
+      "description": "Test",
+      "userQuery": "Test",
+      "solution": "Test",
+      "experienceApplied": [],
+      "experienceGained": [],
+      "tags": [],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "db_34",
+      "timestamp": 1773974601000,
+      "type": "feature_dev",
+      "title": "统一导航栏架构：插件化页面路由",
+      "description": "所有页面（原生界面、小说管理、自动化、经验、缓存）通过插件注册路由，统一导航栏样式和跳转逻辑。导航栏使用固定定位，当前页面高亮显示。",
+      "userQuery": "导航栏入口不统一，无法互相跳转",
+      "solution": "1. 在插件入口 index.ts 注册所有页面路由：/、/novel/、/auto.html、/experience.html、/cache.html\n2. 所有路由使用 auth: 'plugin' 模式（无需登录）\n3. 每个页面 HTML 添加统一导航栏：<div class=\"nav-bar\">...\n4. 当前页面链接添加 class=\"on\" 实现高亮\n5. 导航项使用 href 跳转，不使用 JavaScript",
+      "experienceApplied": [
+        "OpenClaw 插件架构",
+        "前端组件化",
+        "路由统一管理"
+      ],
+      "experienceGained": [
+        "OpenClaw 页面路由通过插件注册，不是静态文件服务",
+        "auth: 'plugin' 表示无需认证，auth: 'token' 需要 Bearer Token",
+        "导航栏固定定位：position:fixed; top:0; z-index:9999",
+        "页面内容需要 margin-top:40px 避开导航栏",
+        "当前页面高亮使用特定 class（如 .on），CSS 定义样式"
+      ],
+      "tags": [
+        "openclaw",
+        "plugin",
+        "navigation",
+        "ui",
+        "architecture"
+      ],
+      "difficulty": 4,
+      "xpGained": 200
+    },
+    {
+      "id": "db_44",
+      "timestamp": 1773974601000,
+      "type": "learning",
+      "title": "Test",
+      "description": "Test",
+      "userQuery": "Test",
+      "solution": "Test",
+      "experienceApplied": [],
+      "experienceGained": [],
+      "tags": [
+        "test"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "db_43",
+      "timestamp": 1773974601000,
+      "type": "learning",
+      "title": "Test",
+      "description": "Test",
+      "userQuery": "Test",
+      "solution": "Test",
+      "experienceApplied": [],
+      "experienceGained": [],
+      "tags": [],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "db_42",
+      "timestamp": 1773974601000,
+      "type": "learning",
+      "title": "JavaScript Experience",
+      "description": "Test",
+      "userQuery": "Test",
+      "solution": "Test",
+      "experienceApplied": [],
+      "experienceGained": [],
+      "tags": [
+        "javascript"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "db_41",
+      "timestamp": 1773974601000,
+      "type": "feature_dev",
+      "title": "在OpenClaw原生界面添加番茄扫描流水线进度UI",
+      "description": "用户要求在小说管理主界面集成番茄扫描流水线进度UI，显示发布流程进度条和实时状态。关键是需要修改正确的位置：OpenClaw原生界面是通过 extensions/ 插件机制加载的，而不是 web-ui/ 或 apps/novel-manager/views/。",
+      "userQuery": "在小说管理主界面集成番茄扫描流水线进度UI",
+      "solution": "1. 定位正确文件：extensions/novel-manager/public/index.html（OpenClaw原生界面通过插件加载）\n2. 在番茄扫描子页面添加流水线进度面板：进度条、步骤指示器（初始化→扫描→审核→发布）、任务详情、时间统计\n3. 添加流水线相关JavaScript函数：scanFanqieWorks、startPipeline、stopPipeline、subscribePipelineProgress、updatePipelineUI\n4. 修改 extensions/novel-manager/index.ts 添加 API：/fanqie/works/:accountId、/fanqie/publish、/fanqie/publish/progress/:id（SSE）\n5. 使用 EventSource 实现 SSE 实时进度推送\n6. 步骤指示器用不同背景色区分状态：active（当前）、completed（完成）、默认（未开始）",
+      "experienceApplied": [
+        "OpenClaw插件架构",
+        "HTML页面结构",
+        "SSE实时通信",
+        "进度UI设计"
+      ],
+      "experienceGained": [
+        "OpenClaw原生界面定位：extensions/{plugin}/public/index.html，不是web-ui/或views/",
+        "OpenClaw插件加载机制：通过registerHttpRoute注册路由，public目录提供静态文件",
+        "SSE进度推送：使用EventSource客户端，服务端返回text/event-stream",
+        "流水线UI设计：进度条+步骤指示器+任务详情+结果列表",
+        "子页面切换：showSubPage函数控制.display，使用.sub-page和.active类"
+      ],
+      "tags": [
+        "openclaw",
+        "plugin",
+        "ui",
+        "sse",
+        "pipeline",
+        "progress",
+        "extensions"
+      ],
+      "difficulty": 4,
+      "xpGained": 200
+    },
+    {
+      "id": "db_40",
+      "timestamp": 1773974601000,
+      "type": "refactoring",
+      "title": "番茄扫描功能自包含重构：apps/novel-manager 核心模块化",
+      "description": "将番茄扫描功能从 extensions/ 插件层移入 apps/novel-manager/core/pipeline/，实现核心业务逻辑自包含。extensions/ 只作为薄 API 层调用核心模块。",
+      "userQuery": "apps/novel-manager 这个里面的要做到自包含，core/ContentPipeline.ts 和 core/pipeline 里面要有扫描的功能",
+      "solution": "1. 创建 apps/novel-manager/core/pipeline/FanqieScanner.ts，使用 Playwright 扫描番茄作品列表\n2. ContentPipeline 添加 scanFanqieWorks() 方法，调用 FanqieScanner\n3. 简化 extensions/novel-manager/index.ts 的 FanqieScanService，改为调用 ContentPipeline\n4. 删除多余的 apps/novel-manager/views/ 目录（未被任何代码引用）\n5. 架构：用户浏览器 → extensions/(API层) → apps/novel-manager/dist/(核心逻辑)",
+      "experienceApplied": [
+        "模块化设计",
+        "关注点分离",
+        "自包含原则"
+      ],
+      "experienceGained": [
+        "OpenClaw 架构分层：extensions/ = 插件层(API+静态文件)，apps/ = 核心业务模块(可独立运行)",
+        "扫描功能位置：apps/novel-manager/core/pipeline/FanqieScanner.ts",
+        "UI 文件位置：extensions/novel-manager/public/*.html",
+        "views 目录多余：apps/novel-manager/views/ 未被引用，实际使用 extensions/novel-manager/public/",
+        "调用链：前端 → extensions API → apps/novel-manager/dist 编译产物"
+      ],
+      "tags": [
+        "openclaw",
+        "architecture",
+        "refactoring",
+        "self-contained",
+        "playwright",
+        "fanqie"
+      ],
+      "difficulty": 4,
+      "xpGained": 200
+    },
+    {
+      "id": "db_39",
+      "timestamp": 1773974601000,
+      "type": "refactoring",
+      "title": "清理 apps/novel-manager 多余文件和独立服务入口",
+      "description": "apps/novel-manager/src/ 是独立服务的入口层，与 extensions/novel-manager 的功能重复。删除后只保留核心模块，由插件层调用编译产物。",
+      "userQuery": "apps/novel-manager/src 这个用来干啥的，删除",
+      "solution": "1. 删除 apps/novel-manager/src/ 目录（独立服务入口层）\n2. 删除 apps/novel-manager/server.ts（独立服务启动脚本）\n3. 重写 index.ts，直接导出 core/services/utils\n4. 更新 tsconfig.json，移除 src 引用\n5. 更新 package.json，简化 scripts\n6. 清理 dist 目录后重新编译",
+      "experienceApplied": [
+        "模块化清理",
+        "消除重复代码"
+      ],
+      "experienceGained": [
+        "apps/novel-manager 现在只保留核心模块（core/services/utils），不再有独立服务入口",
+        "OpenClaw 架构：extensions/ 是插件层（API+UI），apps/ 是核心模块（被插件调用）",
+        "删除重复功能层，保持单一职责",
+        "编译产物位置：apps/novel-manager/dist/，被 extensions/novel-manager 导入"
+      ],
+      "tags": [
+        "refactoring",
+        "cleanup",
+        "architecture",
+        "openclaw"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "db_38",
+      "timestamp": 1773974601000,
+      "type": "refactoring",
+      "title": "合并 apps 到 extensions：简化 OpenClaw 项目结构",
+      "description": "将 apps/novel-manager 和 apps/experience-manager 合并到 extensions/，每个模块保持独立分离。删除 apps 目录，所有功能模块统一放在 extensions/ 下。",
+      "userQuery": "apps 和 extensions 这俩是不是要建一个大文件夹容纳，还是合并",
+      "solution": "1. 把 apps/novel-manager/core、services、utils、dist 移动到 extensions/novel-manager/\n2. 把 apps/experience-manager 整体移动到 extensions/experience-manager/\n3. 更新 extensions/novel-manager/index.ts 的引用路径（../../apps/novel-manager/dist → ./dist）\n4. 合并 package.json 依赖\n5. 为 experience-manager 添加 openclaw.plugin.json\n6. 更新 openclaw.json 插件配置，添加 experience-manager 加载路径\n7. 删除 apps/ 目录",
+      "experienceApplied": [
+        "项目结构简化",
+        "OpenClaw 插件架构"
+      ],
+      "experienceGained": [
+        "OpenClaw 插件完全可以包含完整功能，不需要强行分离 apps 和 extensions",
+        "每个插件独立分离：extensions/novel-manager、extensions/experience-manager",
+        "插件结构：core/（核心逻辑）+ services/（服务层）+ public/（UI）+ index.ts（入口）+ openclaw.plugin.json",
+        "减少跨目录引用，路径更清晰",
+        "openclaw.json 的 plugins.load.paths 指定插件加载路径"
+      ],
+      "tags": [
+        "refactoring",
+        "architecture",
+        "openclaw",
+        "plugin",
+        "directory-structure"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "db_37",
+      "timestamp": 1773974601000,
+      "type": "refactoring",
+      "title": "合并 knowledge 到 experience-manager",
+      "description": "将根目录的 knowledge/ 静态知识库合并到 extensions/experience-manager/knowledge/，统一管理知识与经验。",
+      "userQuery": "knowledge 这个干啥的，为啥不集成到 experience-manager 里",
+      "solution": "直接 mv knowledge/ extensions/experience-manager/knowledge/",
+      "experienceApplied": [
+        "目录结构简化"
+      ],
+      "experienceGained": [
+        "knowledge/ 是静态知识库（手写 Markdown 文档），experience-manager/data/ 是动态经验记录（JSON）",
+        "两者职责不同但可以放在同一个插件下统一管理",
+        "experience-manager 现在包含：data/experiences.json（动态经验）+ knowledge/（静态知识）"
+      ],
+      "tags": [
+        "refactoring",
+        "knowledge",
+        "experience"
+      ],
+      "difficulty": 2,
+      "xpGained": 100
+    },
+    {
+      "id": "db_36",
+      "timestamp": 1773974601000,
+      "type": "feature_dev",
+      "title": "经验数据源迁移：从数据库到 JSON 文件",
+      "description": "经验记录原本存储在 MySQL 数据库，现在迁移到 experience-manager 插件的 JSON 文件。NovelService.getExperienceRecords() 先尝试读数据库，失败后读取 JSON 文件。",
+      "userQuery": "经验模块未调用 experience-manager 数据",
+      "solution": "1. 经验数据存储在 extensions/experience-manager/data/experiences.json\n2. NovelService.getExperienceRecords() 先尝试从数据库读取\n3. 数据库无数据或出错时，读取 JSON 文件\n4. 使用 fs.existsSync() 检查文件是否存在",
+      "experienceApplied": [
+        "数据源切换",
+        "JSON 文件存储",
+        "降级策略"
+      ],
+      "experienceGained": [
+        "JSON 文件适合小规模数据存储，无需数据库连接",
+        "降级策略：先尝试主数据源，失败后使用备用数据源",
+        "文件路径使用绝对路径避免相对路径问题",
+        "JSON.parse() 后直接访问 .records 字段"
+      ],
+      "tags": [
+        "data-migration",
+        "json",
+        "experience",
+        "fallback"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "db_35",
+      "timestamp": 1773974601000,
+      "type": "bug_fix",
+      "title": "番茄扫描功能集成：调用正确的扫描器",
+      "description": "NovelService.scanFanqieWorks() 原本返回模拟数据，未调用真实的 FanqieScanner。需要动态导入 FanqieScanner 并调用 scan() 方法。",
+      "userQuery": "扫描不到作品，脚本是能用的",
+      "solution": "1. 动态导入 FanqieScanner：const { getFanqieScanner } = require('../core/pipeline/FanqieScanner')\n2. 调用 scanner.scan({ accountId, headed: false })\n3. 扫描结果保存到数据库时，将 account_1 转换为数字 1\n4. 扫描失败时尝试读取缓存文件",
+      "experienceApplied": [
+        "动态导入",
+        "Playwright 扫描",
+        "缓存机制"
+      ],
+      "experienceGained": [
+        "FanqieScanner 使用 Playwright 扫描番茄作者后台",
+        "扫描结果自动缓存到 cache/fanqie-{accountId}-works.json",
+        "数据库 account_id 是 INT 类型，需要将 account_1 转换为 1",
+        "动态导入 require() 比 import 更灵活，避免编译时依赖"
+      ],
+      "tags": [
+        "fanqie",
+        "scanner",
+        "playwright",
+        "integration"
+      ],
+      "difficulty": 4,
+      "xpGained": 200
+    },
+    {
+      "id": "db_33",
+      "timestamp": 1773974601000,
+      "type": "feature_dev",
+      "title": "API 认证统一：Bearer Token 封装",
+      "description": "所有 API 请求使用统一的认证方式：Authorization: Bearer <token>。前端封装 api() 函数自动携带 token，避免每次请求重复写 header。",
+      "userQuery": "API返回401 Unauthorized",
+      "solution": "1. 前端定义 GATEWAY_TOKEN 常量\n2. 封装 api(endpoint, options) 函数，自动添加 Authorization header\n3. 所有 API 调用使用 api() 函数，不直接用 fetch",
+      "experienceApplied": [
+        "API 封装",
+        "认证机制"
+      ],
+      "experienceGained": [
+        "OpenClaw Gateway 使用 Token 认证模式",
+        "Token 在 openclaw.json 的 gateway.auth.token 配置",
+        "前端请求必须携带 Authorization: Bearer <token>",
+        "封装 api() 函数可以统一处理认证、错误、超时等逻辑"
+      ],
+      "tags": [
+        "api",
+        "authentication",
+        "token",
+        "frontend"
+      ],
+      "difficulty": 2,
+      "xpGained": 100
+    },
+    {
+      "id": "db_46",
+      "timestamp": 1773974601000,
+      "type": "learning",
+      "title": "Test Experience",
+      "description": "Test Description",
+      "userQuery": "Test Query",
+      "solution": "Test Solution",
+      "experienceApplied": [
+        "test"
+      ],
+      "experienceGained": [
+        "test"
+      ],
+      "tags": [
+        "test"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "db_47",
+      "timestamp": 1773974601000,
+      "type": "problem_solving",
+      "title": "test: 验证Git hook更新原生UI数据",
+      "description": "Git自动记录的提交。提交者: coze_user, 文件变更: 1个",
+      "userQuery": "Git自动积累",
+      "solution": "test: 验证Git hook更新原生UI数据",
+      "experienceApplied": [
+        "Git工作流程",
+        "代码提交"
+      ],
+      "experienceGained": [
+        "版本控制",
+        "自动化记录",
+        "maintenance"
+      ],
+      "tags": [
+        "git",
+        "auto",
+        "maintenance"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "db_48",
+      "timestamp": 1773974601000,
+      "type": "problem_solving",
+      "title": "test: 验证Git hook更新原生UI数据",
+      "description": "Git自动记录的提交。提交者: coze_user, 文件变更: 1个",
+      "userQuery": "Git自动积累",
+      "solution": "test: 验证Git hook更新原生UI数据",
+      "experienceApplied": [
+        "Git工作流程",
+        "代码提交"
+      ],
+      "experienceGained": [
+        "版本控制",
+        "自动化记录",
+        "maintenance"
+      ],
+      "tags": [
+        "git",
+        "auto",
+        "maintenance"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "db_49",
+      "timestamp": 1773974601000,
+      "type": "problem_solving",
+      "title": "test: 验证Git自动积累经验完整流程",
+      "description": "Git自动记录的提交。提交者: coze_user, 文件变更: 5个",
+      "userQuery": "Git自动积累",
+      "solution": "test: 验证Git自动积累经验完整流程",
+      "experienceApplied": [
+        "Git工作流程",
+        "代码提交"
+      ],
+      "experienceGained": [
+        "版本控制",
+        "自动化记录",
+        "maintenance"
+      ],
+      "tags": [
+        "git",
+        "auto",
+        "maintenance"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "db_50",
+      "timestamp": 1773974601000,
+      "type": "problem_solving",
+      "title": "test: 验证Git自动积累经验hook",
+      "description": "Git自动记录的提交。提交者: coze_user, 文件变更: 1个",
+      "userQuery": "Git自动积累",
+      "solution": "test: 验证Git自动积累经验hook",
+      "experienceApplied": [
+        "Git工作流程",
+        "代码提交"
+      ],
+      "experienceGained": [
+        "版本控制",
+        "自动化记录",
+        "maintenance"
+      ],
+      "tags": [
+        "git",
+        "auto",
+        "maintenance"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "db_51",
+      "timestamp": 1773974601000,
+      "type": "problem_solving",
+      "title": "Git 索引与多模块架构问题排查",
+      "description": "在重构经验积累模块过程中，遇到了多个架构和配置问题：1) .gitignore 白名单模式导致新文件未被 Git 跟踪；2) OpenClaw 插件 API 路径与独立服务路径混淆；3) 数据库配置不一致导致连接失败；4) TypeScript 源码修改后未重新编译导致运行时错误。",
+      "userQuery": "你怎么又没索引上git，前端被你搞坏了",
+      "solution": "1. 将 .gitignore 从白名单模式改为黑名单模式，追踪所有文件只忽略特定目录；2. 明确区分 extensions/novel-manager(插件，路径/novel/api/) 和 apps/novel-manager(独立服务，路径/api/novel/)；3. 统一数据库配置，修正密码为 Lgp15237257500；4. 修改 TypeScript 后必须执行 pnpm build 重新编译；5. 使用 grep_file 快速定位代码位置，使用 exec_shell 验证服务状态",
+      "experienceApplied": [
+        "Git 配置管理",
+        "OpenClaw 插件架构",
+        "Node.js 服务调试",
+        "数据库连接配置"
+      ],
+      "experienceGained": [
+        ".gitignore 白名单vs黑名单模式",
+        "OpenClaw 插件路由机制(/novel/api/)",
+        "TypeScript 编译同步",
+        "多模块项目架构管理(apps vs extensions)",
+        "MySQL 连接配置",
+        "服务重启最佳实践"
+      ],
+      "tags": [
+        "git",
+        "openclaw",
+        "typescript",
+        "architecture",
+        "debugging",
+        "mysql",
+        "module"
+      ],
+      "difficulty": 5,
+      "xpGained": 250
+    },
+    {
+      "id": "db_52",
+      "timestamp": 1773974601000,
+      "type": "learning",
+      "title": "Git结算时自动积累经验的工作流程",
+      "description": "用户指出应该在git结算(commit)时自动将经验记录到经验积累模块，而不是手动记录。这是一个工作流程优化点：每次代码提交时，应该同步更新经验数据，确保经验积累与代码变更同步。",
+      "userQuery": "你踏马不会自动积累啊git结算的时候你就积累",
+      "solution": "建立规范：1) 每次git commit前，将本次解决问题的经验记录到apps/experience-manager/data/experiences.json；2) 经验记录应包含问题描述、解决方案、获得的经验点；3) commit消息中可简要提及经验积累内容；4) 使用done工具提交时，自动触发经验积累更新；5) 定期 review 经验数据，确保有价值的问题都被记录",
+      "experienceApplied": [
+        "工作流程优化",
+        "Git提交规范",
+        "经验积累自动化"
+      ],
+      "experienceGained": [
+        "Git hooks使用",
+        "自动化经验积累流程",
+        "开发习惯养成",
+        "经验数据管理"
+      ],
+      "tags": [
+        "git",
+        "workflow",
+        "automation",
+        "experience",
+        "best-practice"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "db_53",
+      "timestamp": 1773974601000,
+      "type": "problem_solving",
+      "title": "Node.js 服务端口被占用问题排查",
+      "description": "novel-manager 服务重启时经常出现端口被占用错误。根本原因是旧进程没有完全退出，导致新进程无法绑定端口。重复犯这个错误是因为每次都用 pkill 但没检查是否真的杀死，而且没意识到旧进程还在监听端口。",
+      "userQuery": "为什么总会出现这样的错误，还有之前的错误",
+      "solution": "1. 使用 lsof -i :3001 查找占用进程 PID\n2. 使用 kill -9 <PID> 强制杀死进程\n3. 确认端口释放后再启动服务\n4. 更好的方案是使用 pm2 或 systemctl 管理进程，避免手动启停",
+      "experienceApplied": [
+        "进程管理",
+        "端口排查",
+        "服务管理"
+      ],
+      "experienceGained": [
+        "lsof 命令使用",
+        "kill 信号处理",
+        "Node.js 进程生命周期",
+        "系统性排查方法"
+      ],
+      "tags": [
+        "nodejs",
+        "port",
+        "process",
+        "troubleshooting",
+        "eaddrinuse"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "db_54",
+      "timestamp": 1773974601000,
+      "type": "problem_solving",
+      "title": "OpenClaw 插件架构理解错误",
+      "description": "反复把功能加到 wrong 位置。小说管理模块在 apps/novel-manager 和 extensions/novel-manager 各有一份，但 OpenClaw 实际加载的是 extensions/novel-manager 插件版本。UI 上经验积累是一级模块，但后端 API 却在 novel-manager 插件里实现，导致混淆。",
+      "userQuery": "你怎么又加到小说管理模块里了",
+      "solution": "1. 查看 openclaw.json 确认插件加载路径\n2. 理解 OpenClaw 插件架构：插件注册在 extensions/，但由网关统一路由\n3. 确认经验积累 API 实际在 novel-manager 插件 index.ts 中实现\n4. 区分独立服务和插件的不同部署方式",
+      "experienceApplied": [
+        "架构分析",
+        "配置文件阅读"
+      ],
+      "experienceGained": [
+        "OpenClaw 插件系统",
+        "微前端架构",
+        "网关路由机制"
+      ],
+      "tags": [
+        "openclaw",
+        "plugin",
+        "architecture",
+        "micro-frontend"
+      ],
+      "difficulty": 4,
+      "xpGained": 200
+    },
+    {
+      "id": "db_55",
+      "timestamp": 1773974601000,
+      "type": "problem_solving",
+      "title": "在OpenClaw原生界面添加经验积累入口",
+      "description": "用户要求将经验积累入口放在OpenClaw原生界面的自动化模组旁边。通过修改/usr/lib/node_modules/openclaw/dist/control-ui/index.html，在导航栏添加了经验积累按钮，并创建了独立的experience.html页面。",
+      "userQuery": "你不是有自我学习和经验积累模块...你开一个ui入口在自动化模组旁边",
+      "solution": "1. 找到OpenClaw原生界面文件：/usr/lib/node_modules/openclaw/dist/control-ui/index.html\n2. 在导航栏添加经验积累按钮，位于自动化模组和原生界面之间\n3. 创建experience.html独立页面，包含等级系统、经验列表、添加功能\n4. 更新路由指向新的页面",
+      "experienceApplied": [
+        "文件定位",
+        "HTML/CSS布局",
+        "iframe嵌入"
+      ],
+      "experienceGained": [
+        "OpenClaw界面定制",
+        "多页面应用结构",
+        "独立功能模块设计"
+      ],
+      "tags": [
+        "openclaw",
+        "ui",
+        "dashboard"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "db_56",
+      "timestamp": 1773974601000,
+      "type": "feature_dev",
+      "title": "开发经验积累与学习系统",
+      "description": "用户要求创建自我学习和经验积累模块，记录每次回答如何运用经验以及如何积累经验。系统包括经验类型、难度等级、解决方案等维度。",
+      "userQuery": "你不是有自我学习和经验积累模块吗，开一个ui入口显示积累了多少经验",
+      "solution": "1. 设计经验积累数据模型\n2. 创建ExperienceRepository类使用JSON存储\n3. 添加API路由\n4. 在UI顶部导航添加入口\n5. 创建经验面板页面\n6. 添加详情和添加记录的模态框",
+      "experienceApplied": [
+        "模块化设计",
+        "前后端分离",
+        "JSON存储"
+      ],
+      "experienceGained": [
+        "经验系统设计",
+        "数据可视化",
+        "等级进度计算"
+      ],
+      "tags": [
+        "typescript",
+        "ui",
+        "feature"
+      ],
+      "difficulty": 4,
+      "xpGained": 200
+    },
+    {
+      "id": "db_57",
+      "timestamp": 1773974601000,
+      "type": "bug_fix",
+      "title": "修复小说管理UI语法错误导致页面卡住",
+      "description": "用户反馈UI卡住且作品列表不显示，经过检查发现是HTML文件中JavaScript存在多处语法错误，包括孤立的catch块、重复嵌套的else if代码块、以及散落在函数外的模板字符串。",
+      "userQuery": "ui卡住了也没作品",
+      "solution": "1. 使用node --check检测语法错误定位问题行\n2. 移除renderWorksList中孤立的catch块\n3. 清理renderTabData中重复嵌套的else if代码\n4. 删除renderChapters外散落的模板字符串代码",
+      "experienceApplied": [
+        "JS语法检查",
+        "错误定位技巧",
+        "curl调试"
+      ],
+      "experienceGained": [
+        "HTML文件结构审查",
+        "代码清理最佳实践"
+      ],
+      "tags": [
+        "javascript",
+        "debug",
+        "ui"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "db_32",
+      "timestamp": 1773974601000,
+      "type": "bug_fix",
+      "title": "MySQL 字符集不兼容导致数据插入失败",
+      "description": "番茄扫描结果保存到数据库时报错：`Conversion from collation utf8mb4_unicode_ci into latin1_swedish_ci impossible`。原因是表创建时未显式指定字符集，导致使用默认的 latin1 字符集，无法存储中文。",
+      "userQuery": "扫描到作品但列表为空",
+      "solution": "1. 删除旧表：DROP TABLE IF EXISTS fanqie_works\n2. 创建新表时显式指定字符集：DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci\n3. 每个文本字段也要指定字符集：VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci",
+      "experienceApplied": [
+        "数据库字符集配置",
+        "MySQL 表创建规范"
+      ],
+      "experienceGained": [
+        "MySQL 默认字符集是 latin1，无法存储中文",
+        "创建表时必须显式指定 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+        "字符串字段也需单独指定字符集，避免继承表级默认值",
+        "错误信息 'Conversion from collation' 表示字符集不兼容"
+      ],
+      "tags": [
+        "mysql",
+        "charset",
+        "utf8mb4",
+        "bug",
+        "database"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "db_17",
+      "timestamp": 1773974587000,
+      "type": "learning",
+      "title": "Test",
+      "description": "Test",
+      "userQuery": "Test",
+      "solution": "Test",
+      "experienceApplied": [],
+      "experienceGained": [],
+      "tags": [],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "db_6",
+      "timestamp": 1773974587000,
+      "type": "bug_fix",
+      "title": "MySQL 字符集不兼容导致数据插入失败",
+      "description": "番茄扫描结果保存到数据库时报错：`Conversion from collation utf8mb4_unicode_ci into latin1_swedish_ci impossible`。原因是表创建时未显式指定字符集，导致使用默认的 latin1 字符集，无法存储中文。",
+      "userQuery": "扫描到作品但列表为空",
+      "solution": "1. 删除旧表：DROP TABLE IF EXISTS fanqie_works\n2. 创建新表时显式指定字符集：DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci\n3. 每个文本字段也要指定字符集：VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci",
+      "experienceApplied": [
+        "数据库字符集配置",
+        "MySQL 表创建规范"
+      ],
+      "experienceGained": [
+        "MySQL 默认字符集是 latin1，无法存储中文",
+        "创建表时必须显式指定 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+        "字符串字段也需单独指定字符集，避免继承表级默认值",
+        "错误信息 'Conversion from collation' 表示字符集不兼容"
+      ],
+      "tags": [
+        "mysql",
+        "charset",
+        "utf8mb4",
+        "bug",
+        "database"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "db_7",
+      "timestamp": 1773974587000,
+      "type": "refactoring",
+      "title": "合并 knowledge 到 experience-manager",
+      "description": "将根目录的 knowledge/ 静态知识库合并到 extensions/experience-manager/knowledge/，统一管理知识与经验。",
+      "userQuery": "knowledge 这个干啥的，为啥不集成到 experience-manager 里",
+      "solution": "直接 mv knowledge/ extensions/experience-manager/knowledge/",
+      "experienceApplied": [
+        "目录结构简化"
+      ],
+      "experienceGained": [
+        "knowledge/ 是静态知识库（手写 Markdown 文档），experience-manager/data/ 是动态经验记录（JSON）",
+        "两者职责不同但可以放在同一个插件下统一管理",
+        "experience-manager 现在包含：data/experiences.json（动态经验）+ knowledge/（静态知识）"
+      ],
+      "tags": [
+        "refactoring",
+        "knowledge",
+        "experience"
+      ],
+      "difficulty": 2,
+      "xpGained": 100
+    },
+    {
+      "id": "db_8",
+      "timestamp": 1773974587000,
+      "type": "refactoring",
+      "title": "合并 apps 到 extensions：简化 OpenClaw 项目结构",
+      "description": "将 apps/novel-manager 和 apps/experience-manager 合并到 extensions/，每个模块保持独立分离。删除 apps 目录，所有功能模块统一放在 extensions/ 下。",
+      "userQuery": "apps 和 extensions 这俩是不是要建一个大文件夹容纳，还是合并",
+      "solution": "1. 把 apps/novel-manager/core、services、utils、dist 移动到 extensions/novel-manager/\n2. 把 apps/experience-manager 整体移动到 extensions/experience-manager/\n3. 更新 extensions/novel-manager/index.ts 的引用路径（../../apps/novel-manager/dist → ./dist）\n4. 合并 package.json 依赖\n5. 为 experience-manager 添加 openclaw.plugin.json\n6. 更新 openclaw.json 插件配置，添加 experience-manager 加载路径\n7. 删除 apps/ 目录",
+      "experienceApplied": [
+        "项目结构简化",
+        "OpenClaw 插件架构"
+      ],
+      "experienceGained": [
+        "OpenClaw 插件完全可以包含完整功能，不需要强行分离 apps 和 extensions",
+        "每个插件独立分离：extensions/novel-manager、extensions/experience-manager",
+        "插件结构：core/（核心逻辑）+ services/（服务层）+ public/（UI）+ index.ts（入口）+ openclaw.plugin.json",
+        "减少跨目录引用，路径更清晰",
+        "openclaw.json 的 plugins.load.paths 指定插件加载路径"
+      ],
+      "tags": [
+        "refactoring",
+        "architecture",
+        "openclaw",
+        "plugin",
+        "directory-structure"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "db_9",
+      "timestamp": 1773974587000,
+      "type": "refactoring",
+      "title": "清理 apps/novel-manager 多余文件和独立服务入口",
+      "description": "apps/novel-manager/src/ 是独立服务的入口层，与 extensions/novel-manager 的功能重复。删除后只保留核心模块，由插件层调用编译产物。",
+      "userQuery": "apps/novel-manager/src 这个用来干啥的，删除",
+      "solution": "1. 删除 apps/novel-manager/src/ 目录（独立服务入口层）\n2. 删除 apps/novel-manager/server.ts（独立服务启动脚本）\n3. 重写 index.ts，直接导出 core/services/utils\n4. 更新 tsconfig.json，移除 src 引用\n5. 更新 package.json，简化 scripts\n6. 清理 dist 目录后重新编译",
+      "experienceApplied": [
+        "模块化清理",
+        "消除重复代码"
+      ],
+      "experienceGained": [
+        "apps/novel-manager 现在只保留核心模块（core/services/utils），不再有独立服务入口",
+        "OpenClaw 架构：extensions/ 是插件层（API+UI），apps/ 是核心模块（被插件调用）",
+        "删除重复功能层，保持单一职责",
+        "编译产物位置：apps/novel-manager/dist/，被 extensions/novel-manager 导入"
+      ],
+      "tags": [
+        "refactoring",
+        "cleanup",
+        "architecture",
+        "openclaw"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "db_10",
+      "timestamp": 1773974587000,
+      "type": "refactoring",
+      "title": "番茄扫描功能自包含重构：apps/novel-manager 核心模块化",
+      "description": "将番茄扫描功能从 extensions/ 插件层移入 apps/novel-manager/core/pipeline/，实现核心业务逻辑自包含。extensions/ 只作为薄 API 层调用核心模块。",
+      "userQuery": "apps/novel-manager 这个里面的要做到自包含，core/ContentPipeline.ts 和 core/pipeline 里面要有扫描的功能",
+      "solution": "1. 创建 apps/novel-manager/core/pipeline/FanqieScanner.ts，使用 Playwright 扫描番茄作品列表\n2. ContentPipeline 添加 scanFanqieWorks() 方法，调用 FanqieScanner\n3. 简化 extensions/novel-manager/index.ts 的 FanqieScanService，改为调用 ContentPipeline\n4. 删除多余的 apps/novel-manager/views/ 目录（未被任何代码引用）\n5. 架构：用户浏览器 → extensions/(API层) → apps/novel-manager/dist/(核心逻辑)",
+      "experienceApplied": [
+        "模块化设计",
+        "关注点分离",
+        "自包含原则"
+      ],
+      "experienceGained": [
+        "OpenClaw 架构分层：extensions/ = 插件层(API+静态文件)，apps/ = 核心业务模块(可独立运行)",
+        "扫描功能位置：apps/novel-manager/core/pipeline/FanqieScanner.ts",
+        "UI 文件位置：extensions/novel-manager/public/*.html",
+        "views 目录多余：apps/novel-manager/views/ 未被引用，实际使用 extensions/novel-manager/public/",
+        "调用链：前端 → extensions API → apps/novel-manager/dist 编译产物"
+      ],
+      "tags": [
+        "openclaw",
+        "architecture",
+        "refactoring",
+        "self-contained",
+        "playwright",
+        "fanqie"
+      ],
+      "difficulty": 4,
+      "xpGained": 200
+    },
+    {
+      "id": "db_11",
+      "timestamp": 1773974587000,
+      "type": "feature_dev",
+      "title": "在OpenClaw原生界面添加番茄扫描流水线进度UI",
+      "description": "用户要求在小说管理主界面集成番茄扫描流水线进度UI，显示发布流程进度条和实时状态。关键是需要修改正确的位置：OpenClaw原生界面是通过 extensions/ 插件机制加载的，而不是 web-ui/ 或 apps/novel-manager/views/。",
+      "userQuery": "在小说管理主界面集成番茄扫描流水线进度UI",
+      "solution": "1. 定位正确文件：extensions/novel-manager/public/index.html（OpenClaw原生界面通过插件加载）\n2. 在番茄扫描子页面添加流水线进度面板：进度条、步骤指示器（初始化→扫描→审核→发布）、任务详情、时间统计\n3. 添加流水线相关JavaScript函数：scanFanqieWorks、startPipeline、stopPipeline、subscribePipelineProgress、updatePipelineUI\n4. 修改 extensions/novel-manager/index.ts 添加 API：/fanqie/works/:accountId、/fanqie/publish、/fanqie/publish/progress/:id（SSE）\n5. 使用 EventSource 实现 SSE 实时进度推送\n6. 步骤指示器用不同背景色区分状态：active（当前）、completed（完成）、默认（未开始）",
+      "experienceApplied": [
+        "OpenClaw插件架构",
+        "HTML页面结构",
+        "SSE实时通信",
+        "进度UI设计"
+      ],
+      "experienceGained": [
+        "OpenClaw原生界面定位：extensions/{plugin}/public/index.html，不是web-ui/或views/",
+        "OpenClaw插件加载机制：通过registerHttpRoute注册路由，public目录提供静态文件",
+        "SSE进度推送：使用EventSource客户端，服务端返回text/event-stream",
+        "流水线UI设计：进度条+步骤指示器+任务详情+结果列表",
+        "子页面切换：showSubPage函数控制.display，使用.sub-page和.active类"
+      ],
+      "tags": [
+        "openclaw",
+        "plugin",
+        "ui",
+        "sse",
+        "pipeline",
+        "progress",
+        "extensions"
+      ],
+      "difficulty": 4,
+      "xpGained": 200
+    },
+    {
+      "id": "db_12",
+      "timestamp": 1773974587000,
+      "type": "feature_dev",
+      "title": "统一导航栏架构：插件化页面路由",
+      "description": "所有页面（原生界面、小说管理、自动化、经验、缓存）通过插件注册路由，统一导航栏样式和跳转逻辑。导航栏使用固定定位，当前页面高亮显示。",
+      "userQuery": "导航栏入口不统一，无法互相跳转",
+      "solution": "1. 在插件入口 index.ts 注册所有页面路由：/、/novel/、/auto.html、/experience.html、/cache.html\n2. 所有路由使用 auth: 'plugin' 模式（无需登录）\n3. 每个页面 HTML 添加统一导航栏：<div class=\"nav-bar\">...\n4. 当前页面链接添加 class=\"on\" 实现高亮\n5. 导航项使用 href 跳转，不使用 JavaScript",
+      "experienceApplied": [
+        "OpenClaw 插件架构",
+        "前端组件化",
+        "路由统一管理"
+      ],
+      "experienceGained": [
+        "OpenClaw 页面路由通过插件注册，不是静态文件服务",
+        "auth: 'plugin' 表示无需认证，auth: 'token' 需要 Bearer Token",
+        "导航栏固定定位：position:fixed; top:0; z-index:9999",
+        "页面内容需要 margin-top:40px 避开导航栏",
+        "当前页面高亮使用特定 class（如 .on），CSS 定义样式"
+      ],
+      "tags": [
+        "openclaw",
+        "plugin",
+        "navigation",
+        "ui",
+        "architecture"
+      ],
+      "difficulty": 4,
+      "xpGained": 200
+    },
+    {
+      "id": "db_13",
+      "timestamp": 1773974587000,
+      "type": "feature_dev",
+      "title": "API 认证统一：Bearer Token 封装",
+      "description": "所有 API 请求使用统一的认证方式：Authorization: Bearer <token>。前端封装 api() 函数自动携带 token，避免每次请求重复写 header。",
+      "userQuery": "API返回401 Unauthorized",
+      "solution": "1. 前端定义 GATEWAY_TOKEN 常量\n2. 封装 api(endpoint, options) 函数，自动添加 Authorization header\n3. 所有 API 调用使用 api() 函数，不直接用 fetch",
+      "experienceApplied": [
+        "API 封装",
+        "认证机制"
+      ],
+      "experienceGained": [
+        "OpenClaw Gateway 使用 Token 认证模式",
+        "Token 在 openclaw.json 的 gateway.auth.token 配置",
+        "前端请求必须携带 Authorization: Bearer <token>",
+        "封装 api() 函数可以统一处理认证、错误、超时等逻辑"
+      ],
+      "tags": [
+        "api",
+        "authentication",
+        "token",
+        "frontend"
+      ],
+      "difficulty": 2,
+      "xpGained": 100
+    },
+    {
+      "id": "db_14",
+      "timestamp": 1773974587000,
+      "type": "learning",
+      "title": "JavaScript Experience",
+      "description": "Test",
+      "userQuery": "Test",
+      "solution": "Test",
+      "experienceApplied": [],
+      "experienceGained": [],
+      "tags": [
+        "javascript"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "db_15",
+      "timestamp": 1773974587000,
+      "type": "learning",
+      "title": "Test",
+      "description": "Test",
+      "userQuery": "Test",
+      "solution": "Test",
+      "experienceApplied": [],
+      "experienceGained": [],
+      "tags": [],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "db_16",
+      "timestamp": 1773974587000,
+      "type": "learning",
+      "title": "Test",
+      "description": "Test",
+      "userQuery": "Test",
+      "solution": "Test",
+      "experienceApplied": [],
+      "experienceGained": [],
+      "tags": [
+        "test"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "db_18",
+      "timestamp": 1773974587000,
+      "type": "learning",
+      "title": "Test Experience",
+      "description": "Test Description",
+      "userQuery": "Test Query",
+      "solution": "Test Solution",
+      "experienceApplied": [
+        "test"
+      ],
+      "experienceGained": [
+        "test"
+      ],
+      "tags": [
+        "test"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "db_20",
+      "timestamp": 1773974587000,
+      "type": "problem_solving",
+      "title": "test: 验证Git hook更新原生UI数据",
+      "description": "Git自动记录的提交。提交者: coze_user, 文件变更: 1个",
+      "userQuery": "Git自动积累",
+      "solution": "test: 验证Git hook更新原生UI数据",
+      "experienceApplied": [
+        "Git工作流程",
+        "代码提交"
+      ],
+      "experienceGained": [
+        "版本控制",
+        "自动化记录",
+        "maintenance"
+      ],
+      "tags": [
+        "git",
+        "auto",
+        "maintenance"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "db_31",
+      "timestamp": 1773974587000,
+      "type": "bug_fix",
+      "title": "修复小说管理UI语法错误导致页面卡住",
+      "description": "用户反馈UI卡住且作品列表不显示，经过检查发现是HTML文件中JavaScript存在多处语法错误，包括孤立的catch块、重复嵌套的else if代码块、以及散落在函数外的模板字符串。",
+      "userQuery": "ui卡住了也没作品",
+      "solution": "1. 使用node --check检测语法错误定位问题行\n2. 移除renderWorksList中孤立的catch块\n3. 清理renderTabData中重复嵌套的else if代码\n4. 删除renderChapters外散落的模板字符串代码",
+      "experienceApplied": [
+        "JS语法检查",
+        "错误定位技巧",
+        "curl调试"
+      ],
+      "experienceGained": [
+        "HTML文件结构审查",
+        "代码清理最佳实践"
+      ],
+      "tags": [
+        "javascript",
+        "debug",
+        "ui"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "db_30",
+      "timestamp": 1773974587000,
+      "type": "feature_dev",
+      "title": "开发经验积累与学习系统",
+      "description": "用户要求创建自我学习和经验积累模块，记录每次回答如何运用经验以及如何积累经验。系统包括经验类型、难度等级、解决方案等维度。",
+      "userQuery": "你不是有自我学习和经验积累模块吗，开一个ui入口显示积累了多少经验",
+      "solution": "1. 设计经验积累数据模型\n2. 创建ExperienceRepository类使用JSON存储\n3. 添加API路由\n4. 在UI顶部导航添加入口\n5. 创建经验面板页面\n6. 添加详情和添加记录的模态框",
+      "experienceApplied": [
+        "模块化设计",
+        "前后端分离",
+        "JSON存储"
+      ],
+      "experienceGained": [
+        "经验系统设计",
+        "数据可视化",
+        "等级进度计算"
+      ],
+      "tags": [
+        "typescript",
+        "ui",
+        "feature"
+      ],
+      "difficulty": 4,
+      "xpGained": 200
+    },
+    {
+      "id": "db_29",
+      "timestamp": 1773974587000,
+      "type": "problem_solving",
+      "title": "在OpenClaw原生界面添加经验积累入口",
+      "description": "用户要求将经验积累入口放在OpenClaw原生界面的自动化模组旁边。通过修改/usr/lib/node_modules/openclaw/dist/control-ui/index.html，在导航栏添加了经验积累按钮，并创建了独立的experience.html页面。",
+      "userQuery": "你不是有自我学习和经验积累模块...你开一个ui入口在自动化模组旁边",
+      "solution": "1. 找到OpenClaw原生界面文件：/usr/lib/node_modules/openclaw/dist/control-ui/index.html\n2. 在导航栏添加经验积累按钮，位于自动化模组和原生界面之间\n3. 创建experience.html独立页面，包含等级系统、经验列表、添加功能\n4. 更新路由指向新的页面",
+      "experienceApplied": [
+        "文件定位",
+        "HTML/CSS布局",
+        "iframe嵌入"
+      ],
+      "experienceGained": [
+        "OpenClaw界面定制",
+        "多页面应用结构",
+        "独立功能模块设计"
+      ],
+      "tags": [
+        "openclaw",
+        "ui",
+        "dashboard"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "db_28",
+      "timestamp": 1773974587000,
+      "type": "problem_solving",
+      "title": "OpenClaw 插件架构理解错误",
+      "description": "反复把功能加到 wrong 位置。小说管理模块在 apps/novel-manager 和 extensions/novel-manager 各有一份，但 OpenClaw 实际加载的是 extensions/novel-manager 插件版本。UI 上经验积累是一级模块，但后端 API 却在 novel-manager 插件里实现，导致混淆。",
+      "userQuery": "你怎么又加到小说管理模块里了",
+      "solution": "1. 查看 openclaw.json 确认插件加载路径\n2. 理解 OpenClaw 插件架构：插件注册在 extensions/，但由网关统一路由\n3. 确认经验积累 API 实际在 novel-manager 插件 index.ts 中实现\n4. 区分独立服务和插件的不同部署方式",
+      "experienceApplied": [
+        "架构分析",
+        "配置文件阅读"
+      ],
+      "experienceGained": [
+        "OpenClaw 插件系统",
+        "微前端架构",
+        "网关路由机制"
+      ],
+      "tags": [
+        "openclaw",
+        "plugin",
+        "architecture",
+        "micro-frontend"
+      ],
+      "difficulty": 4,
+      "xpGained": 200
+    },
+    {
+      "id": "db_27",
+      "timestamp": 1773974587000,
+      "type": "problem_solving",
+      "title": "Node.js 服务端口被占用问题排查",
+      "description": "novel-manager 服务重启时经常出现端口被占用错误。根本原因是旧进程没有完全退出，导致新进程无法绑定端口。重复犯这个错误是因为每次都用 pkill 但没检查是否真的杀死，而且没意识到旧进程还在监听端口。",
+      "userQuery": "为什么总会出现这样的错误，还有之前的错误",
+      "solution": "1. 使用 lsof -i :3001 查找占用进程 PID\n2. 使用 kill -9 <PID> 强制杀死进程\n3. 确认端口释放后再启动服务\n4. 更好的方案是使用 pm2 或 systemctl 管理进程，避免手动启停",
+      "experienceApplied": [
+        "进程管理",
+        "端口排查",
+        "服务管理"
+      ],
+      "experienceGained": [
+        "lsof 命令使用",
+        "kill 信号处理",
+        "Node.js 进程生命周期",
+        "系统性排查方法"
+      ],
+      "tags": [
+        "nodejs",
+        "port",
+        "process",
+        "troubleshooting",
+        "eaddrinuse"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "db_26",
+      "timestamp": 1773974587000,
+      "type": "problem_solving",
+      "title": "Git 索引与多模块架构问题排查",
+      "description": "在重构经验积累模块过程中，遇到了多个架构和配置问题：1) .gitignore 白名单模式导致新文件未被 Git 跟踪；2) OpenClaw 插件 API 路径与独立服务路径混淆；3) 数据库配置不一致导致连接失败；4) TypeScript 源码修改后未重新编译导致运行时错误。",
+      "userQuery": "你怎么又没索引上git，前端被你搞坏了",
+      "solution": "1. 将 .gitignore 从白名单模式改为黑名单模式，追踪所有文件只忽略特定目录；2. 明确区分 extensions/novel-manager(插件，路径/novel/api/) 和 apps/novel-manager(独立服务，路径/api/novel/)；3. 统一数据库配置，修正密码为 Lgp15237257500；4. 修改 TypeScript 后必须执行 pnpm build 重新编译；5. 使用 grep_file 快速定位代码位置，使用 exec_shell 验证服务状态",
+      "experienceApplied": [
+        "Git 配置管理",
+        "OpenClaw 插件架构",
+        "Node.js 服务调试",
+        "数据库连接配置"
+      ],
+      "experienceGained": [
+        ".gitignore 白名单vs黑名单模式",
+        "OpenClaw 插件路由机制(/novel/api/)",
+        "TypeScript 编译同步",
+        "多模块项目架构管理(apps vs extensions)",
+        "MySQL 连接配置",
+        "服务重启最佳实践"
+      ],
+      "tags": [
+        "git",
+        "openclaw",
+        "typescript",
+        "architecture",
+        "debugging",
+        "mysql",
+        "module"
+      ],
+      "difficulty": 5,
+      "xpGained": 250
+    },
+    {
+      "id": "db_25",
+      "timestamp": 1773974587000,
+      "type": "feature_dev",
+      "title": "经验数据源迁移：从数据库到 JSON 文件",
+      "description": "经验记录原本存储在 MySQL 数据库，现在迁移到 experience-manager 插件的 JSON 文件。NovelService.getExperienceRecords() 先尝试读数据库，失败后读取 JSON 文件。",
+      "userQuery": "经验模块未调用 experience-manager 数据",
+      "solution": "1. 经验数据存储在 extensions/experience-manager/data/experiences.json\n2. NovelService.getExperienceRecords() 先尝试从数据库读取\n3. 数据库无数据或出错时，读取 JSON 文件\n4. 使用 fs.existsSync() 检查文件是否存在",
+      "experienceApplied": [
+        "数据源切换",
+        "JSON 文件存储",
+        "降级策略"
+      ],
+      "experienceGained": [
+        "JSON 文件适合小规模数据存储，无需数据库连接",
+        "降级策略：先尝试主数据源，失败后使用备用数据源",
+        "文件路径使用绝对路径避免相对路径问题",
+        "JSON.parse() 后直接访问 .records 字段"
+      ],
+      "tags": [
+        "data-migration",
+        "json",
+        "experience",
+        "fallback"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "db_24",
+      "timestamp": 1773974587000,
+      "type": "bug_fix",
+      "title": "番茄扫描功能集成：调用正确的扫描器",
+      "description": "NovelService.scanFanqieWorks() 原本返回模拟数据，未调用真实的 FanqieScanner。需要动态导入 FanqieScanner 并调用 scan() 方法。",
+      "userQuery": "扫描不到作品，脚本是能用的",
+      "solution": "1. 动态导入 FanqieScanner：const { getFanqieScanner } = require('../core/pipeline/FanqieScanner')\n2. 调用 scanner.scan({ accountId, headed: false })\n3. 扫描结果保存到数据库时，将 account_1 转换为数字 1\n4. 扫描失败时尝试读取缓存文件",
+      "experienceApplied": [
+        "动态导入",
+        "Playwright 扫描",
+        "缓存机制"
+      ],
+      "experienceGained": [
+        "FanqieScanner 使用 Playwright 扫描番茄作者后台",
+        "扫描结果自动缓存到 cache/fanqie-{accountId}-works.json",
+        "数据库 account_id 是 INT 类型，需要将 account_1 转换为 1",
+        "动态导入 require() 比 import 更灵活，避免编译时依赖"
+      ],
+      "tags": [
+        "fanqie",
+        "scanner",
+        "playwright",
+        "integration"
+      ],
+      "difficulty": 4,
+      "xpGained": 200
+    },
+    {
+      "id": "db_23",
+      "timestamp": 1773974587000,
+      "type": "learning",
+      "title": "Git结算时自动积累经验的工作流程",
+      "description": "用户指出应该在git结算(commit)时自动将经验记录到经验积累模块，而不是手动记录。这是一个工作流程优化点：每次代码提交时，应该同步更新经验数据，确保经验积累与代码变更同步。",
+      "userQuery": "你踏马不会自动积累啊git结算的时候你就积累",
+      "solution": "建立规范：1) 每次git commit前，将本次解决问题的经验记录到apps/experience-manager/data/experiences.json；2) 经验记录应包含问题描述、解决方案、获得的经验点；3) commit消息中可简要提及经验积累内容；4) 使用done工具提交时，自动触发经验积累更新；5) 定期 review 经验数据，确保有价值的问题都被记录",
+      "experienceApplied": [
+        "工作流程优化",
+        "Git提交规范",
+        "经验积累自动化"
+      ],
+      "experienceGained": [
+        "Git hooks使用",
+        "自动化经验积累流程",
+        "开发习惯养成",
+        "经验数据管理"
+      ],
+      "tags": [
+        "git",
+        "workflow",
+        "automation",
+        "experience",
+        "best-practice"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "db_22",
+      "timestamp": 1773974587000,
+      "type": "problem_solving",
+      "title": "test: 验证Git自动积累经验hook",
+      "description": "Git自动记录的提交。提交者: coze_user, 文件变更: 1个",
+      "userQuery": "Git自动积累",
+      "solution": "test: 验证Git自动积累经验hook",
+      "experienceApplied": [
+        "Git工作流程",
+        "代码提交"
+      ],
+      "experienceGained": [
+        "版本控制",
+        "自动化记录",
+        "maintenance"
+      ],
+      "tags": [
+        "git",
+        "auto",
+        "maintenance"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "db_21",
+      "timestamp": 1773974587000,
+      "type": "problem_solving",
+      "title": "test: 验证Git自动积累经验完整流程",
+      "description": "Git自动记录的提交。提交者: coze_user, 文件变更: 5个",
+      "userQuery": "Git自动积累",
+      "solution": "test: 验证Git自动积累经验完整流程",
+      "experienceApplied": [
+        "Git工作流程",
+        "代码提交"
+      ],
+      "experienceGained": [
+        "版本控制",
+        "自动化记录",
+        "maintenance"
+      ],
+      "tags": [
+        "git",
+        "auto",
+        "maintenance"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "db_19",
+      "timestamp": 1773974587000,
+      "type": "problem_solving",
+      "title": "test: 验证Git hook更新原生UI数据",
+      "description": "Git自动记录的提交。提交者: coze_user, 文件变更: 1个",
+      "userQuery": "Git自动积累",
+      "solution": "test: 验证Git hook更新原生UI数据",
+      "experienceApplied": [
+        "Git工作流程",
+        "代码提交"
+      ],
+      "experienceGained": [
+        "版本控制",
+        "自动化记录",
+        "maintenance"
+      ],
+      "tags": [
+        "git",
+        "auto",
+        "maintenance"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "db_5",
+      "timestamp": 1773974529000,
+      "type": "feature_dev",
+      "title": "前端 API_BASE 路径配置策略",
+      "description": "前端 API_BASE 需要根据部署环境选择正确的路径。本地开发时直接连接后端服务端口，通过 Gateway 时代理到插件路由。",
+      "userQuery": "前端 API 调用失败，返回 404",
+      "solution": "1. 本地开发：API_BASE = \"http://localhost:3001/novel/api\"\n2. 通过 Gateway 代理：API_BASE = \"/api/novel\"，Gateway 会路由到插件\n3. 检查 Gateway 是否注册了对应路由：api.registerHttpRoute({ path: \"/api/novel\", match: \"prefix\", ... })\n4. SSE 等长连接建议直接连接后端服务，避免代理超时",
+      "experienceApplied": [
+        "API 路由设计",
+        "Gateway 代理",
+        "环境配置"
+      ],
+      "experienceGained": [
+        "Gateway 代理 API 请求到插件，路径前缀必须匹配注册的路由",
+        "短请求（CRUD）可以通过 Gateway 代理，长连接（SSE）建议直连后端",
+        "开发环境使用 localhost:port 直连，生产环境可能需要通过 Gateway",
+        "curl 测试 API 时注意检查认证 Token"
+      ],
+      "tags": [
+        "api",
+        "gateway",
+        "routing",
+        "frontend",
+        "deployment"
+      ],
+      "difficulty": 2,
+      "xpGained": 100
+    },
+    {
+      "id": "db_4",
+      "timestamp": 1773974516000,
+      "type": "bug_fix",
+      "title": "Express 服务添加 SSE 路由支持",
+      "description": "server.ts 是独立的 Express 服务，缺少 SSE 路由定义导致 SSE 请求返回 404。需要添加 SSE 端点处理，包括连接注册、心跳保活、客户端断开清理。",
+      "userQuery": "SSE 请求返回 Cannot GET /novel/sse/progress/xxx",
+      "solution": "1. 添加 app.get(\"/novel/sse/progress/:progressId\", ...) 路由\n2. 设置 SSE 响应头：Content-Type: text/event-stream, Cache-Control: no-cache, Connection: keep-alive\n3. 立即发送连接确认消息：res.write(\"data: {JSON}\\n\\n\")\n4. 导入 ProgressManager.registerClient() 注册客户端\n5. 设置心跳定时器每 15 秒发送 : heartbeat\\n\\n\n6. req.on(\"close\") 时清理心跳和注销客户端",
+      "experienceApplied": [
+        "Express 路由",
+        "SSE 协议",
+        "连接管理"
+      ],
+      "experienceGained": [
+        "SSE 响应头必须包含 Content-Type: text/event-stream",
+        "SSE 消息格式：data: {content}\\n\\n，注释格式：: {comment}\\n\\n",
+        "心跳保活防止连接被代理或防火墙关闭",
+        "req.on(\"close\") 是客户端断开的可靠检测方式",
+        "Express 和 OpenClaw Gateway 可以共享相同的 ProgressManager"
+      ],
+      "tags": [
+        "express",
+        "sse",
+        "server",
+        "websocket-alternative"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "db_3",
+      "timestamp": 1773974501000,
+      "type": "feature_dev",
+      "title": "前端流水线执行日志实时显示",
+      "description": "前端添加执行日志输出区域，实时显示流水线每一步的日志。通过 SSE 接收进度事件，解析后写入日志区域并自动滚动到底部。",
+      "userQuery": "前端点击启动流水线后，没有控制台或进度日志提醒",
+      "solution": "1. 添加 #pipelineLog 日志区域：textarea 或 div，设置 pre-wrap 样式\n2. SSE onmessage 回调中解析 JSON 数据\n3. 使用 textContent += 追加日志，避免 innerHTML 导致的闪烁\n4. 自动滚动：logEl.scrollTop = logEl.scrollHeight\n5. 时间戳格式化：new Date().toLocaleTimeString()",
+      "experienceApplied": [
+        "SSE 客户端",
+        "DOM 操作",
+        "实时更新"
+      ],
+      "experienceGained": [
+        "SSE 消息格式：data: {JSON}\\n\\n",
+        "textContent 比 innerHTML 性能更好，不会重新解析整个 HTML",
+        "自动滚动到底部让用户看到最新日志",
+        "日志区域使用 pre-wrap 样式保留换行和空格",
+        "清空日志直接设置 textContent = \"\" "
+      ],
+      "tags": [
+        "frontend",
+        "sse",
+        "log",
+        "realtime",
+        "ui"
+      ],
+      "difficulty": 2,
+      "xpGained": 100
+    },
+    {
+      "id": "db_2",
+      "timestamp": 1773974487000,
+      "type": "feature_dev",
+      "title": "ContentPipeline 自动检测番茄最新章节发布下一章",
+      "description": "发布流水线原本需要手动指定起始章节号，现在改为自动检测番茄最新章节，然后发布下一章。核心逻辑：1. 从番茄获取最新章节号 2. 从数据库获取 latestChapter + 1 的章节 3. 发布到番茄",
+      "userQuery": "修复发布流程，先查番茄最新章节再发布下一章",
+      "solution": "1. ContentPipeline.publishToFanqie 先调用 FanqiePublisher.getLatestChapter() 获取番茄最新章节\n2. 从数据库查询 chapterNumber = latestChapter + 1 的章节\n3. 如果没有下一章，返回没有待发布章节\n4. 发布成功后更新本地章节状态",
+      "experienceApplied": [
+        "Playwright 自动化",
+        "数据库查询",
+        "流水线编排"
+      ],
+      "experienceGained": [
+        "番茄发布器可以通过 FanqiePublisher.getLatestChapter() 获取已发布最新章节",
+        "发布流程应该是幂等的：先查询远程状态，再决定发布内容",
+        "流水线进度通过 ProgressManager.broadcastProgress() 推送到 SSE",
+        "发布日志保存在 /app/work/logs/bypass/dev.log"
+      ],
+      "tags": [
+        "fanqie",
+        "pipeline",
+        "publish",
+        "automation",
+        "playwright"
+      ],
+      "difficulty": 4,
+      "xpGained": 200
+    },
+    {
+      "id": "db_1",
+      "timestamp": 1773974474000,
+      "type": "bug_fix",
+      "title": "SSE 通过 Gateway 代理频繁重连问题",
+      "description": "前端 SSE 连接通过 Gateway 代理时频繁断开重连，日志显示 [SSE] 正在重连... 每隔约 3 秒触发一次。原因是 Gateway 代理 SSE 请求时有超时限制，导致长连接被中断。",
+      "userQuery": "SSE 连接一直显示正在重连",
+      "solution": "1. 分析问题：SSE 通过 Gateway 代理时有超时限制\n2. 测试验证：直接连接 Novel API 端口 3001，SSE 稳定\n3. 修改前端 SSE URL：从 /novel/sse/progress/ 改为 http://localhost:3001/novel/sse/progress/\n4. 绕过 Gateway 代理的超时限制",
+      "experienceApplied": [
+        "SSE 长连接机制",
+        "Gateway 代理超时",
+        "问题定位方法"
+      ],
+      "experienceGained": [
+        "SSE 是长连接，不适合通过有超时限制的代理",
+        "Gateway 代理默认有 3 秒左右的超时限制",
+        "可以通过直接连接后端服务绕过代理超时",
+        "curl -sN 可以测试 SSE 连接稳定性",
+        "EventSource onerror 时 readyState=0 表示正在重连，不是真正错误"
+      ],
+      "tags": [
+        "sse",
+        "gateway",
+        "timeout",
+        "proxy",
+        "eventsource"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    },
+    {
+      "id": "exp_test_1773963860770",
+      "timestamp": 1773963860770,
+      "type": "bug_fix",
+      "title": "MySQL 连接超时问题解决",
+      "description": "MySQL 连接在长时间空闲后出现超时错误",
+      "userQuery": "数据库连接超时怎么办？",
+      "solution": "增加 wait_timeout 参数，配置连接池保活",
+      "experienceApplied": [
+        "数据库配置"
+      ],
+      "experienceGained": [
+        "MySQL调优",
+        "连接池管理"
+      ],
+      "tags": [
+        "mysql",
+        "timeout",
+        "connection"
+      ],
+      "difficulty": 3,
+      "xpGained": 100
+    },
+    {
+      "type": "refactoring",
+      "title": "合并 knowledge 到 experience-manager",
+      "description": "将根目录的 knowledge/ 静态知识库合并到 extensions/experience-manager/knowledge/，统一管理知识与经验。",
+      "userQuery": "knowledge 这个干啥的，为啥不集成到 experience-manager 里",
+      "solution": "直接 mv knowledge/ extensions/experience-manager/knowledge/",
+      "experienceApplied": [
+        "目录结构简化"
+      ],
+      "experienceGained": [
+        "knowledge/ 是静态知识库（手写 Markdown 文档），experience-manager/data/ 是动态经验记录（JSON）",
+        "两者职责不同但可以放在同一个插件下统一管理",
+        "experience-manager 现在包含：data/experiences.json（动态经验）+ knowledge/（静态知识）"
+      ],
+      "tags": [
+        "refactoring",
+        "knowledge",
+        "experience"
+      ],
+      "difficulty": 2,
+      "xpGained": 50,
+      "id": "exp_1773942000000_merge_knowledge",
+      "timestamp": 1773942000000
+    },
+    {
+      "type": "refactoring",
+      "title": "合并 apps 到 extensions：简化 OpenClaw 项目结构",
+      "description": "将 apps/novel-manager 和 apps/experience-manager 合并到 extensions/，每个模块保持独立分离。删除 apps 目录，所有功能模块统一放在 extensions/ 下。",
+      "userQuery": "apps 和 extensions 这俩是不是要建一个大文件夹容纳，还是合并",
+      "solution": "1. 把 apps/novel-manager/core、services、utils、dist 移动到 extensions/novel-manager/\n2. 把 apps/experience-manager 整体移动到 extensions/experience-manager/\n3. 更新 extensions/novel-manager/index.ts 的引用路径（../../apps/novel-manager/dist → ./dist）\n4. 合并 package.json 依赖\n5. 为 experience-manager 添加 openclaw.plugin.json\n6. 更新 openclaw.json 插件配置，添加 experience-manager 加载路径\n7. 删除 apps/ 目录",
+      "experienceApplied": [
+        "项目结构简化",
+        "OpenClaw 插件架构"
+      ],
+      "experienceGained": [
+        "OpenClaw 插件完全可以包含完整功能，不需要强行分离 apps 和 extensions",
+        "每个插件独立分离：extensions/novel-manager、extensions/experience-manager",
+        "插件结构：core/（核心逻辑）+ services/（服务层）+ public/（UI）+ index.ts（入口）+ openclaw.plugin.json",
+        "减少跨目录引用，路径更清晰",
+        "openclaw.json 的 plugins.load.paths 指定插件加载路径"
+      ],
+      "tags": [
+        "refactoring",
+        "architecture",
+        "openclaw",
+        "plugin",
+        "directory-structure"
+      ],
+      "difficulty": 3,
+      "xpGained": 200,
+      "id": "exp_1773940000000_merge_apps",
+      "timestamp": 1773940000000
+    },
+    {
+      "type": "refactoring",
+      "title": "清理 apps/novel-manager 多余文件和独立服务入口",
+      "description": "apps/novel-manager/src/ 是独立服务的入口层，与 extensions/novel-manager 的功能重复。删除后只保留核心模块，由插件层调用编译产物。",
+      "userQuery": "apps/novel-manager/src 这个用来干啥的，删除",
+      "solution": "1. 删除 apps/novel-manager/src/ 目录（独立服务入口层）\n2. 删除 apps/novel-manager/server.ts（独立服务启动脚本）\n3. 重写 index.ts，直接导出 core/services/utils\n4. 更新 tsconfig.json，移除 src 引用\n5. 更新 package.json，简化 scripts\n6. 清理 dist 目录后重新编译",
+      "experienceApplied": [
+        "模块化清理",
+        "消除重复代码"
+      ],
+      "experienceGained": [
+        "apps/novel-manager 现在只保留核心模块（core/services/utils），不再有独立服务入口",
+        "OpenClaw 架构：extensions/ 是插件层（API+UI），apps/ 是核心模块（被插件调用）",
+        "删除重复功能层，保持单一职责",
+        "编译产物位置：apps/novel-manager/dist/，被 extensions/novel-manager 导入"
+      ],
+      "tags": [
+        "refactoring",
+        "cleanup",
+        "architecture",
+        "openclaw"
+      ],
+      "difficulty": 3,
+      "xpGained": 150,
+      "id": "exp_1773938000000_cleanup_src",
+      "timestamp": 1773938000000
+    },
+    {
+      "type": "refactoring",
+      "title": "番茄扫描功能自包含重构：apps/novel-manager 核心模块化",
+      "description": "将番茄扫描功能从 extensions/ 插件层移入 apps/novel-manager/core/pipeline/，实现核心业务逻辑自包含。extensions/ 只作为薄 API 层调用核心模块。",
+      "userQuery": "apps/novel-manager 这个里面的要做到自包含，core/ContentPipeline.ts 和 core/pipeline 里面要有扫描的功能",
+      "solution": "1. 创建 apps/novel-manager/core/pipeline/FanqieScanner.ts，使用 Playwright 扫描番茄作品列表\n2. ContentPipeline 添加 scanFanqieWorks() 方法，调用 FanqieScanner\n3. 简化 extensions/novel-manager/index.ts 的 FanqieScanService，改为调用 ContentPipeline\n4. 删除多余的 apps/novel-manager/views/ 目录（未被任何代码引用）\n5. 架构：用户浏览器 → extensions/(API层) → apps/novel-manager/dist/(核心逻辑)",
+      "experienceApplied": [
+        "模块化设计",
+        "关注点分离",
+        "自包含原则"
+      ],
+      "experienceGained": [
+        "OpenClaw 架构分层：extensions/ = 插件层(API+静态文件)，apps/ = 核心业务模块(可独立运行)",
+        "扫描功能位置：apps/novel-manager/core/pipeline/FanqieScanner.ts",
+        "UI 文件位置：extensions/novel-manager/public/*.html",
+        "views 目录多余：apps/novel-manager/views/ 未被引用，实际使用 extensions/novel-manager/public/",
+        "调用链：前端 → extensions API → apps/novel-manager/dist 编译产物"
+      ],
+      "tags": [
+        "openclaw",
+        "architecture",
+        "refactoring",
+        "self-contained",
+        "playwright",
+        "fanqie"
+      ],
+      "difficulty": 4,
+      "xpGained": 200,
+      "id": "exp_1773936000000_scanner_refactor",
+      "timestamp": 1773936000000
+    },
+    {
+      "type": "feature_dev",
+      "title": "在OpenClaw原生界面添加番茄扫描流水线进度UI",
+      "description": "用户要求在小说管理主界面集成番茄扫描流水线进度UI，显示发布流程进度条和实时状态。关键是需要修改正确的位置：OpenClaw原生界面是通过 extensions/ 插件机制加载的，而不是 web-ui/ 或 apps/novel-manager/views/。",
+      "userQuery": "在小说管理主界面集成番茄扫描流水线进度UI",
+      "solution": "1. 定位正确文件：extensions/novel-manager/public/index.html（OpenClaw原生界面通过插件加载）\n2. 在番茄扫描子页面添加流水线进度面板：进度条、步骤指示器（初始化→扫描→审核→发布）、任务详情、时间统计\n3. 添加流水线相关JavaScript函数：scanFanqieWorks、startPipeline、stopPipeline、subscribePipelineProgress、updatePipelineUI\n4. 修改 extensions/novel-manager/index.ts 添加 API：/fanqie/works/:accountId、/fanqie/publish、/fanqie/publish/progress/:id（SSE）\n5. 使用 EventSource 实现 SSE 实时进度推送\n6. 步骤指示器用不同背景色区分状态：active（当前）、completed（完成）、默认（未开始）",
+      "experienceApplied": [
+        "OpenClaw插件架构",
+        "HTML页面结构",
+        "SSE实时通信",
+        "进度UI设计"
+      ],
+      "experienceGained": [
+        "OpenClaw原生界面定位：extensions/{plugin}/public/index.html，不是web-ui/或views/",
+        "OpenClaw插件加载机制：通过registerHttpRoute注册路由，public目录提供静态文件",
+        "SSE进度推送：使用EventSource客户端，服务端返回text/event-stream",
+        "流水线UI设计：进度条+步骤指示器+任务详情+结果列表",
+        "子页面切换：showSubPage函数控制.display，使用.sub-page和.active类"
+      ],
+      "tags": [
+        "openclaw",
+        "plugin",
+        "ui",
+        "sse",
+        "pipeline",
+        "progress",
+        "extensions"
+      ],
+      "difficulty": 4,
+      "xpGained": 300,
+      "id": "exp_1773930000000_pipeline_ui",
+      "timestamp": 1773930000000
+    },
+    {
+      "type": "learning",
+      "title": "JavaScript Experience",
+      "description": "Test",
+      "userQuery": "Test",
+      "solution": "Test",
+      "experienceApplied": [],
+      "experienceGained": [],
+      "tags": [
+        "javascript"
+      ],
+      "difficulty": 3,
+      "xpGained": 100,
+      "id": "exp_1773896282897_6fwed5n2k",
+      "timestamp": 1773896282897
+    },
+    {
+      "type": "learning",
+      "title": "Test",
+      "description": "Test",
+      "userQuery": "Test",
+      "solution": "Test",
+      "experienceApplied": [],
+      "experienceGained": [],
+      "tags": [],
+      "difficulty": 3,
+      "xpGained": 100,
+      "id": "exp_1773896282889_m2d6qf2a9",
+      "timestamp": 1773896282889
+    },
+    {
+      "type": "learning",
+      "title": "Test",
+      "description": "Test",
+      "userQuery": "Test",
+      "solution": "Test",
+      "experienceApplied": [],
+      "experienceGained": [],
+      "tags": [
+        "test"
+      ],
+      "difficulty": 3,
+      "xpGained": 100,
+      "id": "exp_1773896282883_9qbnnyrqk",
+      "timestamp": 1773896282883
+    },
+    {
+      "type": "learning",
+      "title": "Test",
+      "description": "Test",
+      "userQuery": "Test",
+      "solution": "Test",
+      "experienceApplied": [],
+      "experienceGained": [],
+      "tags": [],
+      "difficulty": 3,
+      "xpGained": 100,
+      "id": "exp_1773896282873_7vgi8ayr6",
+      "timestamp": 1773896282873
+    },
+    {
+      "type": "learning",
+      "id": "exp_1773896282857_tq2tvpgh7",
+      "timestamp": 1773896282858
+    },
+    {
+      "type": "learning",
+      "title": "Test Experience",
+      "description": "Test Description",
+      "userQuery": "Test Query",
+      "solution": "Test Solution",
+      "experienceApplied": [
+        "test"
+      ],
+      "experienceGained": [
+        "test"
+      ],
+      "tags": [
+        "test"
+      ],
+      "difficulty": 3,
+      "xpGained": 100,
+      "id": "exp_1773896282847_w224f9bn4",
+      "timestamp": 1773896282847
+    },
+    {
+      "type": "problem_solving",
+      "title": "test: 验证Git hook更新原生UI数据",
+      "description": "Git自动记录的提交。提交者: coze_user, 文件变更: 1个",
+      "userQuery": "Git自动积累",
+      "solution": "test: 验证Git hook更新原生UI数据",
+      "experienceApplied": [
+        "Git工作流程",
+        "代码提交"
+      ],
+      "experienceGained": [
+        "版本控制",
+        "自动化记录",
+        "maintenance"
+      ],
+      "tags": [
+        "git",
+        "auto",
+        "maintenance"
+      ],
+      "difficulty": 3,
+      "xpGained": 80,
+      "id": "exp_1773896000000_8187860",
+      "timestamp": 1773896000000
+    },
+    {
+      "type": "problem_solving",
+      "title": "test: 验证Git hook更新原生UI数据",
+      "description": "Git自动记录的提交。提交者: coze_user, 文件变更: 1个",
+      "userQuery": "Git自动积累",
+      "solution": "test: 验证Git hook更新原生UI数据",
+      "experienceApplied": [
+        "Git工作流程",
+        "代码提交"
+      ],
+      "experienceGained": [
+        "版本控制",
+        "自动化记录",
+        "maintenance"
+      ],
+      "tags": [
+        "git",
+        "auto",
+        "maintenance"
+      ],
+      "difficulty": 3,
+      "xpGained": 80,
+      "id": "exp_1773896000000_8187860",
+      "timestamp": 1773896000000
+    },
+    {
+      "type": "problem_solving",
+      "title": "test: 验证Git自动积累经验完整流程",
+      "description": "Git自动记录的提交。提交者: coze_user, 文件变更: 5个",
+      "userQuery": "Git自动积累",
+      "solution": "test: 验证Git自动积累经验完整流程",
+      "experienceApplied": [
+        "Git工作流程",
+        "代码提交"
+      ],
+      "experienceGained": [
+        "版本控制",
+        "自动化记录",
+        "maintenance"
+      ],
+      "tags": [
+        "git",
+        "auto",
+        "maintenance"
+      ],
+      "difficulty": 3,
+      "xpGained": 80,
+      "id": "exp_1773895430000_dd60330",
+      "timestamp": 1773895430000
+    },
+    {
+      "type": "problem_solving",
+      "title": "test: 验证Git自动积累经验hook",
+      "description": "Git自动记录的提交。提交者: coze_user, 文件变更: 1个",
+      "userQuery": "Git自动积累",
+      "solution": "test: 验证Git自动积累经验hook",
+      "experienceApplied": [
+        "Git工作流程",
+        "代码提交"
+      ],
+      "experienceGained": [
+        "版本控制",
+        "自动化记录",
+        "maintenance"
+      ],
+      "tags": [
+        "git",
+        "auto",
+        "maintenance"
+      ],
+      "difficulty": 3,
+      "xpGained": 80,
+      "id": "exp_1773895296000_952f550",
+      "timestamp": 1773895296000
+    },
+    {
+      "type": "learning",
+      "title": "Git结算时自动积累经验的工作流程",
+      "description": "用户指出应该在git结算(commit)时自动将经验记录到经验积累模块，而不是手动记录。这是一个工作流程优化点：每次代码提交时，应该同步更新经验数据，确保经验积累与代码变更同步。",
+      "userQuery": "你踏马不会自动积累啊git结算的时候你就积累",
+      "solution": "建立规范：1) 每次git commit前，将本次解决问题的经验记录到apps/experience-manager/data/experiences.json；2) 经验记录应包含问题描述、解决方案、获得的经验点；3) commit消息中可简要提及经验积累内容；4) 使用done工具提交时，自动触发经验积累更新；5) 定期 review 经验数据，确保有价值的问题都被记录",
+      "experienceApplied": [
+        "工作流程优化",
+        "Git提交规范",
+        "经验积累自动化"
+      ],
+      "experienceGained": [
+        "Git hooks使用",
+        "自动化经验积累流程",
+        "开发习惯养成",
+        "经验数据管理"
+      ],
+      "tags": [
+        "git",
+        "workflow",
+        "automation",
+        "experience",
+        "best-practice"
+      ],
+      "difficulty": 3,
+      "xpGained": 100,
+      "id": "exp_1773894700000_git_auto_experience",
+      "timestamp": 1773894700000
+    },
+    {
+      "type": "problem_solving",
+      "title": "Git 索引与多模块架构问题排查",
+      "description": "在重构经验积累模块过程中，遇到了多个架构和配置问题：1) .gitignore 白名单模式导致新文件未被 Git 跟踪；2) OpenClaw 插件 API 路径与独立服务路径混淆；3) 数据库配置不一致导致连接失败；4) TypeScript 源码修改后未重新编译导致运行时错误。",
+      "userQuery": "你怎么又没索引上git，前端被你搞坏了",
+      "solution": "1. 将 .gitignore 从白名单模式改为黑名单模式，追踪所有文件只忽略特定目录；2. 明确区分 extensions/novel-manager(插件，路径/novel/api/) 和 apps/novel-manager(独立服务，路径/api/novel/)；3. 统一数据库配置，修正密码为 Lgp15237257500；4. 修改 TypeScript 后必须执行 pnpm build 重新编译；5. 使用 grep_file 快速定位代码位置，使用 exec_shell 验证服务状态",
+      "experienceApplied": [
+        "Git 配置管理",
+        "OpenClaw 插件架构",
+        "Node.js 服务调试",
+        "数据库连接配置"
+      ],
+      "experienceGained": [
+        ".gitignore 白名单vs黑名单模式",
+        "OpenClaw 插件路由机制(/novel/api/)",
+        "TypeScript 编译同步",
+        "多模块项目架构管理(apps vs extensions)",
+        "MySQL 连接配置",
+        "服务重启最佳实践"
+      ],
+      "tags": [
+        "git",
+        "openclaw",
+        "typescript",
+        "architecture",
+        "debugging",
+        "mysql",
+        "module"
+      ],
+      "difficulty": 5,
+      "xpGained": 250,
+      "id": "exp_1773894600000_git_architecture",
+      "timestamp": 1773894600000
+    },
+    {
+      "type": "problem_solving",
+      "title": "OpenClaw 插件架构理解错误",
+      "description": "反复把功能加到 wrong 位置。小说管理模块在 apps/novel-manager 和 extensions/novel-manager 各有一份，但 OpenClaw 实际加载的是 extensions/novel-manager 插件版本。UI 上经验积累是一级模块，但后端 API 却在 novel-manager 插件里实现，导致混淆。",
+      "userQuery": "你怎么又加到小说管理模块里了",
+      "solution": "1. 查看 openclaw.json 确认插件加载路径\n2. 理解 OpenClaw 插件架构：插件注册在 extensions/，但由网关统一路由\n3. 确认经验积累 API 实际在 novel-manager 插件 index.ts 中实现\n4. 区分独立服务和插件的不同部署方式",
+      "experienceApplied": [
+        "架构分析",
+        "配置文件阅读"
+      ],
+      "experienceGained": [
+        "OpenClaw 插件系统",
+        "微前端架构",
+        "网关路由机制"
+      ],
+      "tags": [
+        "openclaw",
+        "plugin",
+        "architecture",
+        "micro-frontend"
+      ],
+      "difficulty": 4,
+      "xpGained": 200,
+      "id": "exp_1773891400000_plugin_arch",
+      "timestamp": 1773891400000
+    },
+    {
+      "type": "problem_solving",
+      "title": "Node.js 服务端口被占用问题排查",
+      "description": "novel-manager 服务重启时经常出现端口被占用错误。根本原因是旧进程没有完全退出，导致新进程无法绑定端口。重复犯这个错误是因为每次都用 pkill 但没检查是否真的杀死，而且没意识到旧进程还在监听端口。",
+      "userQuery": "为什么总会出现这样的错误，还有之前的错误",
+      "solution": "1. 使用 lsof -i :3001 查找占用进程 PID\n2. 使用 kill -9 <PID> 强制杀死进程\n3. 确认端口释放后再启动服务\n4. 更好的方案是使用 pm2 或 systemctl 管理进程，避免手动启停",
+      "experienceApplied": [
+        "进程管理",
+        "端口排查",
+        "服务管理"
+      ],
+      "experienceGained": [
+        "lsof 命令使用",
+        "kill 信号处理",
+        "Node.js 进程生命周期",
+        "系统性排查方法"
+      ],
+      "tags": [
+        "nodejs",
+        "port",
+        "process",
+        "troubleshooting",
+        "eaddrinuse"
+      ],
+      "difficulty": 3,
+      "xpGained": 150,
+      "id": "exp_1773891300000_port_occupied",
+      "timestamp": 1773891300000
+    },
+    {
+      "type": "problem_solving",
+      "title": "在OpenClaw原生界面添加经验积累入口",
+      "description": "用户要求将经验积累入口放在OpenClaw原生界面的自动化模组旁边。通过修改/usr/lib/node_modules/openclaw/dist/control-ui/index.html，在导航栏添加了经验积累按钮，并创建了独立的experience.html页面。",
+      "userQuery": "你不是有自我学习和经验积累模块...你开一个ui入口在自动化模组旁边",
+      "solution": "1. 找到OpenClaw原生界面文件：/usr/lib/node_modules/openclaw/dist/control-ui/index.html\n2. 在导航栏添加经验积累按钮，位于自动化模组和原生界面之间\n3. 创建experience.html独立页面，包含等级系统、经验列表、添加功能\n4. 更新路由指向新的页面",
+      "experienceApplied": [
+        "文件定位",
+        "HTML/CSS布局",
+        "iframe嵌入"
+      ],
+      "experienceGained": [
+        "OpenClaw界面定制",
+        "多页面应用结构",
+        "独立功能模块设计"
+      ],
+      "tags": [
+        "openclaw",
+        "ui",
+        "dashboard"
+      ],
+      "difficulty": 3,
+      "xpGained": 150,
+      "id": "exp_1773842557215_qjhwxnzo7",
+      "timestamp": 1773842557215
+    },
+    {
+      "type": "feature_dev",
+      "title": "开发经验积累与学习系统",
+      "description": "用户要求创建自我学习和经验积累模块，记录每次回答如何运用经验以及如何积累经验。系统包括经验类型、难度等级、解决方案等维度。",
+      "userQuery": "你不是有自我学习和经验积累模块吗，开一个ui入口显示积累了多少经验",
+      "solution": "1. 设计经验积累数据模型\n2. 创建ExperienceRepository类使用JSON存储\n3. 添加API路由\n4. 在UI顶部导航添加入口\n5. 创建经验面板页面\n6. 添加详情和添加记录的模态框",
+      "experienceApplied": [
+        "模块化设计",
+        "前后端分离",
+        "JSON存储"
+      ],
+      "experienceGained": [
+        "经验系统设计",
+        "数据可视化",
+        "等级进度计算"
+      ],
+      "tags": [
+        "typescript",
+        "ui",
+        "feature"
+      ],
+      "difficulty": 4,
+      "xpGained": 200,
+      "id": "exp_1773841595829_j24ef6vlx",
+      "timestamp": 1773841595829
+    },
+    {
+      "type": "bug_fix",
+      "title": "修复小说管理UI语法错误导致页面卡住",
+      "description": "用户反馈UI卡住且作品列表不显示，经过检查发现是HTML文件中JavaScript存在多处语法错误，包括孤立的catch块、重复嵌套的else if代码块、以及散落在函数外的模板字符串。",
+      "userQuery": "ui卡住了也没作品",
+      "solution": "1. 使用node --check检测语法错误定位问题行\n2. 移除renderWorksList中孤立的catch块\n3. 清理renderTabData中重复嵌套的else if代码\n4. 删除renderChapters外散落的模板字符串代码",
+      "experienceApplied": [
+        "JS语法检查",
+        "错误定位技巧",
+        "curl调试"
+      ],
+      "experienceGained": [
+        "HTML文件结构审查",
+        "代码清理最佳实践"
+      ],
+      "tags": [
+        "javascript",
+        "debug",
+        "ui"
+      ],
+      "difficulty": 3,
+      "xpGained": 150,
+      "id": "exp_1773841580349_wo395dz7n",
+      "timestamp": 1773841580349
+    },
+    {
+      "id": "exp_showSubPage_1742474000000",
+      "timestamp": 1742474000000,
+      "type": "bug_fix",
+      "title": "页面切换函数被重写问题",
+      "description": "添加控制面板页面时，只修改了原始 showSubPage 函数，但代码库中有另一个地方重写了该函数，导致修改无效",
+      "userQuery": "点击控制面板按钮后页面不跳转，按钮状态也不对",
+      "solution": "1. 用 grep 搜索整个代码库，发现有两个 showSubPage 函数；2. 在两个函数里都添加了 control-panel 的配置；3. 确保 pageIdMap、btnTextMap、isSubPageBtn、navPageMap 都更新了",
+      "experienceApplied": [
+        "代码搜索技巧",
+        "多位置修改检查"
+      ],
+      "experienceGained": [
+        "添加功能前先搜索代码库",
+        "检查函数是否被重写",
+        "完全照着现有功能抄"
+      ],
+      "tags": [
+        "javascript",
+        "function-override",
+        "debug",
+        "showSubPage"
+      ],
+      "difficulty": 2,
+      "xpGained": 150
+    },
+    {
+      "id": "exp_1774150000000_js_debugging",
+      "timestamp": 1774150000000,
+      "type": "problem_solving",
+      "title": "经验积累中心页面 JavaScript 错误完整修复实战",
+      "description": "用户反馈经验积累中心页面卡住，所有按钮无法点击。通过完整的排查，发现并修复了三大问题：重复的函数定义、使用 event.target 但没有传 event 参数、JavaScript 模板字符串中的反引号没有转义。",
+      "userQuery": "经验积累中心页面还是卡着的，没法点击笔记和专栏按钮和页面的其他按钮",
+      "solution": "## 问题现象：经验积累中心页面完全卡住，所有按钮无法点击，控制台报出多个 JavaScript 错误。\n\n## 排查过程：\n1. 发现有重复的 showDetail 函数定义；2. 发现多个函数使用了 event.target 但没有传 event 参数；3. 发现专栏内容的 JavaScript 模板字符串中的反引号没有转义，导致 SyntaxError: Unexpected identifier 'mermaid'。\n\n## 修复步骤：\n1. 删除重复的 showDetail 函数；2. 修复所有使用 event.target 但没有传 event 参数的函数（switchTab、filterExp、filterNotes、filterColumns）；3. 手动逐个替换所有专栏内容中的 ``` 为 \\`\\`\\`。",
+      "experienceApplied": [
+        "JavaScript 调试",
+        "错误排查",
+        "代码审查",
+        "问题定位方法论"
+      ],
+      "experienceGained": [
+        "JavaScript 模板字符串中的反引号必须转义",
+        "语法错误会导致后续代码无法执行",
+        "重复的函数定义会导致冲突",
+        "事件处理函数要避免依赖未传入的 event 参数",
+        "先看第一个错误，后面的错误往往是第一个错误的连锁反应",
+        "数据与代码分离可以避免很多问题",
+        "手动逐个替换反引号要非常小心"
+      ],
+      "tags": [
+        "JavaScript",
+        "调试",
+        "错误修复",
+        "语法错误",
+        "OpenClaw",
+        "经验积累中心"
+      ],
+      "difficulty": 3,
+      "xpGained": 150
+    }
+  ],
+  "version": "1.0"
+}
