@@ -40,33 +40,11 @@ if not defined OPENCLAW_GATEWAY_TOKEN (
 
 echo Starting OpenClaw gateway...
 set "GATEWAY_LOG=%ROOT%\gateway-start.log"
-start "OpenClaw Gateway" /D "%ROOT%" powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "$env:OPENCLAW_CONFIG_PATH='%OPENCLAW_CONFIG_PATH%'; $env:OPENCLAW_GATEWAY_TOKEN='%OPENCLAW_GATEWAY_TOKEN%'; Set-Location -LiteralPath '%ROOT%'; openclaw gateway --port 5000 --force --token '%OPENCLAW_GATEWAY_TOKEN%' *> '%GATEWAY_LOG%'"
-
-echo Waiting for port 5000...
-powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -Command "for ($i = 0; $i -lt 90; $i++) { if (Test-NetConnection -ComputerName 127.0.0.1 -Port 5000 -InformationLevel Quiet) { exit 0 }; Start-Sleep -Seconds 1 }; exit 1"
+powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0openclaw-gateway-run.ps1" -ConfigPath "%OPENCLAW_CONFIG_PATH%" -Token "%OPENCLAW_GATEWAY_TOKEN%" -Root "%ROOT%" -LogPath "%GATEWAY_LOG%"
 if errorlevel 1 (
   echo Gateway did not start on 127.0.0.1:5000.
   pause
   exit /b 1
-)
-
-echo Opening browser UI...
-set "BOOTSTRAP_PATH=%~dp0openclaw-bootstrap.html"
-set "BOOTSTRAP_URI=%BOOTSTRAP_PATH:\=/%"
-set "BROWSER_URL=file:///%BOOTSTRAP_URI%?token=%OPENCLAW_GATEWAY_TOKEN%&gatewayUrl=ws://127.0.0.1:5000"
-set "EDGE_EXE="
-for %%P in (
-  "%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe"
-  "%ProgramFiles%\Microsoft\Edge\Application\msedge.exe"
-) do (
-  if not defined EDGE_EXE if exist "%%~P" set "EDGE_EXE=%%~P"
-)
-if defined EDGE_EXE (
-  set "EDGE_PROFILE=%~dp0.local\edge-openclaw-fresh"
-  if not exist "%EDGE_PROFILE%" mkdir "%EDGE_PROFILE%" >nul 2>&1
-  start "" "%EDGE_EXE%" --new-window --no-first-run --no-default-browser-check --user-data-dir="%EDGE_PROFILE%" "%BROWSER_URL%"
-) else (
-  start "" "%BROWSER_URL%"
 )
 
 echo.

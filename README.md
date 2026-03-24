@@ -6,9 +6,12 @@ What is here:
 
 - `start-openclaw.bat` for local startup
 - `restore-from-github.ps1` for restoring the shell files from GitHub
+- `openclaw-gateway-run.ps1` and `openclaw-gateway-child.ps1` for the gateway startup flow
+- `openclaw-bootstrap.html` for seeding the browser token before the UI loads
 - `workspace/`, `skills/`, `usr/` and the instruction files used by the local agent
 - local runtime data now lives under `.local/openclaw` and `.local/ollama`
 - `start-openclaw.bat` now boots from `.local/openclaw` by default
+- the launcher reuses a healthy gateway, otherwise it stops a stale scheduled task before starting a fresh one
 - the original `C:\Users\ASUS-KL\.openclaw` and `C:\Users\ASUS-KL\.ollama` paths are junctions to that local store
 
 How to start:
