@@ -1,27 +1,27 @@
 @echo off
 setlocal EnableExtensions
 
-set "ROOT=%~dp0projects\.local\openclaw"
+set "ROOT=%~dp0projects"
 set "CONFIG=%ROOT%\openclaw.json"
-if not exist "%CONFIG%" (
-  set "ROOT=%~dp0.local\openclaw"
-  set "CONFIG=%ROOT%\openclaw.json"
-)
-if not exist "%CONFIG%" (
-  set "ROOT=%~dp0projects"
-  set "CONFIG=%ROOT%\openclaw.json"
-)
 set "LOCAL_CONFIG=%~dp0start-openclaw.local.bat"
 set "LOCAL_CONFIG_EXAMPLE=%~dp0start-openclaw.local.example.bat"
 
 if exist "%LOCAL_CONFIG%" call "%LOCAL_CONFIG%"
+
+if defined OPENCLAW_CONFIG_PATH (
+  if exist "%OPENCLAW_CONFIG_PATH%" (
+    set "CONFIG=%OPENCLAW_CONFIG_PATH%"
+  ) else (
+    set "OPENCLAW_CONFIG_PATH="
+  )
+)
 
 if not defined OPENCLAW_CONFIG_PATH set "OPENCLAW_CONFIG_PATH=%CONFIG%"
 
 if not exist "%CONFIG%" (
   echo Missing config file: "%CONFIG%"
   echo.
-  echo Restore the runtime files under "%~dp0.local\openclaw" or copy the full UI into "%~dp0projects".
+  echo Restore the runtime files under "%~dp0.local\openclaw" or keep the full UI in "%~dp0projects".
   pause
   exit /b 1
 )
