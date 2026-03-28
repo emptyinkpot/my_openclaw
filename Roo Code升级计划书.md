@@ -33,10 +33,9 @@
 
 ### 2.3 配置落位分层（已更新）
 
-- Roo 运行时根目录（真实生效）：
+- Roo 运行时根目录（真实生效，且仅本机维护）：
   - `C:/Users/ASUS-KL/.cursor/projects/e-Auto/mcps/`
-- 仓库映射根目录（可版本化提交）：
-  - `E:/Auto/.cursor/projects/e-Auto/mcps/`
+- Git 仓库（`E:/Auto`）不再保存 `.cursor/projects/e-Auto/mcps/` 目录内容。
 
 说明：本计划优先在 Roo 目录注册能力；业务仓库仅作为部分 MCP 的实现来源，不改变你“能力增强在 Roo 目录”的主诉求。
 
@@ -486,19 +485,8 @@ C:/Users/ASUS-KL/.cursor/
         ├── agent-transcripts/
         └── terminals/
 
-[仓库映射根（用于版本管理与审计）]
+[Git 仓库（仅文档与业务代码）]
 E:/Auto/
-├── .cursor/
-│   └── projects/
-│       └── e-Auto/
-│           └── mcps/
-│               ├── README.md
-│               ├── playwright-browser/
-│               │   └── start.cmd
-│               ├── repo-inspector/
-│               │   └── start.cmd
-│               └── log-diagnose/
-│                   └── start.cmd
 ├── Roo Code升级计划书.md
 └── projects/
     └── extensions/
@@ -682,10 +670,9 @@ E:/Auto/
 
 ### 10.9 路径治理修正（2026-03-28）
 
-- 已完成“根目录误放文件”纠偏：
-  - 从仓库根下临时路径迁移到映射根 `.cursor/projects/e-Auto/mcps/`
-- 版本库中的可审计配置以映射根为准；Roo 运行时目录继续作为实际生效目录。
-- 本文档树状图与实施描述已同步到最新分层策略，避免后续路径漂移。
+- 已确认：`.cursor/projects/e-Auto/mcps/` 仅作为 Roo 本机运行时目录，不进入 GitHub。
+- 已将仓库提交口径调整为“排除 Roo 运行时目录”，避免混入本地环境配置。
+- 本文档树状图与实施描述已同步到最新提交口径，避免后续路径漂移。
 
 ---
 
@@ -721,16 +708,12 @@ set "ROO_PLAYWRIGHT_MCP="
 - `ROO_TARGET_REPO`：所有 env-first 启动器的统一目标仓库
 - `ROO_PLAYWRIGHT_MCP`：可选，手工指定 Playwright MCP 入口；留空时自动探测
 
-### 11.3 部署映射根配置到 Roo 运行时根
+### 11.3 在 Roo 运行时根直接部署（不经 Git 仓库）
 
-> 推荐做法：以仓库映射根为“版本源”，复制到 Roo 运行时根。
+> 推荐做法：直接在 Roo 运行时根维护 `start.cmd`，不在 `E:/Auto` 仓库存放镜像副本。
 
 ```cmd
-copy /y E:\Auto\.cursor\projects\e-Auto\mcps\playwright-browser\start.cmd C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\playwright-browser\start.cmd
-copy /y E:\Auto\.cursor\projects\e-Auto\mcps\repo-inspector\start.cmd C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\repo-inspector\start.cmd
-copy /y E:\Auto\.cursor\projects\e-Auto\mcps\log-diagnose\start.cmd C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\log-diagnose\start.cmd
-copy /y E:\Auto\.cursor\projects\e-Auto\mcps\experience-manager\start.cmd C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\experience-manager\start.cmd
-copy /y E:\Auto\.cursor\projects\e-Auto\mcps\db-readonly\start.cmd C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\db-readonly\start.cmd
+if exist C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps (echo MCP_ROOT_OK) else (echo MCP_ROOT_MISSING)
 ```
 
 ### 11.4 执行 smoke 验证（必做）
@@ -769,16 +752,16 @@ set "ROO_TARGET_REPO=E:\Auto"
 
 ### 11.7 Git 提交范围白名单（本计划强制）
 
-> 仅提交 Roo/Cursor 配置映射文件；禁止夹带业务仓库代码改动。
+> `.cursor/projects/e-Auto/mcps/` 禁止进入 GitHub；仅保留本机 Roo 运行时。
 
 允许提交（白名单）：
 
-- `E:/Auto/.cursor/projects/e-Auto/mcps/**`
 - `E:/Auto/Roo Code升级计划书.md`
-- `E:/Auto/.gitignore`（仅用于放行上述 `.cursor/projects/...` 映射路径）
+- `E:/Auto/.gitignore`（用于明确忽略 `.cursor/projects/e-Auto/mcps/`）
 
 禁止提交（黑名单示例）：
 
+- `E:/Auto/.cursor/projects/e-Auto/mcps/**`
 - `E:/Auto/openclaw-gateway-run.ps1`
 - `E:/Auto/openclaw-gateway-child.ps1`
 - `E:/Auto/start-openclaw*.ps1|*.bat`
@@ -788,11 +771,12 @@ set "ROO_TARGET_REPO=E:\Auto"
 
 ```cmd
 git reset
-git add .gitignore "Roo Code升级计划书.md" .cursor/projects/e-Auto/mcps
+git rm -r --cached .cursor/projects/e-Auto/mcps
+git add .gitignore "Roo Code升级计划书.md"
 git status --short
 ```
 
-验收标准：`git status --short` 的暂存区仅出现上述白名单路径。
+验收标准：`git status --short` 的暂存区不出现 `.cursor/projects/e-Auto/mcps/` 路径。
 
 ---
 
@@ -891,9 +875,7 @@ set "ROO_TARGET_REPO=E:\Auto"
 - Roo 运行时根：
   - `C:/Users/ASUS-KL/.cursor/projects/e-Auto/mcps/experience-manager/start.cmd`
   - `C:/Users/ASUS-KL/.cursor/projects/e-Auto/mcps/db-readonly/start.cmd`
-- 仓库映射根：
-  - `E:/Auto/.cursor/projects/e-Auto/mcps/experience-manager/start.cmd`
-  - `E:/Auto/.cursor/projects/e-Auto/mcps/db-readonly/start.cmd`
+- Git 仓库：不再跟踪 `.cursor/projects/e-Auto/mcps/`（仅本机运行时保留）
 
 ### 14.3 运行与验证证据
 
