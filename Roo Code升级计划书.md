@@ -31,6 +31,13 @@
 - `E:/Auto/projects/extensions/experience-manager/mcp/experience-manager-mcp.mjs`
 - `E:/Auto/projects/extensions/experience-manager/package.json`（已有 `mcp` 启动脚本）
 
+### 2.3 配置落位分层（已更新）
+
+- Roo 运行时根目录（真实生效）：
+  - `C:/Users/ASUS-KL/.cursor/projects/e-Auto/mcps/`
+- 仓库映射根目录（可版本化提交）：
+  - `E:/Auto/.cursor/projects/e-Auto/mcps/`
+
 说明：本计划优先在 Roo 目录注册能力；业务仓库仅作为部分 MCP 的实现来源，不改变你“能力增强在 Roo 目录”的主诉求。
 
 运行参数解耦约定（新增）：
@@ -311,6 +318,43 @@
 
 ---
 
+## 3.5 对标 Cursor 原生能力的开源参考（新增，2026-03 更新）
+
+> 目标：补齐“原生工程助手”常见能力带宽（检索、记忆、结构化输出、自动化浏览器、代码索引、观察性）。
+
+### PARITY-1: 代码检索与索引
+
+- `sourcegraph/zoekt`：超快代码检索后端，适合大仓库本地索引
+- `tree-sitter/tree-sitter`：语法级代码结构解析，可用于 Skill 的精确片段提取
+
+### PARITY-2: 浏览器自动化与 E2E
+
+- `microsoft/playwright`：已接入，建议持续使用其 MCP 能力作为页面验收主链路
+- `browser-use/browser-use`（可选）：适合复杂多步网页代理任务
+
+### PARITY-3: 检索增强与长上下文降本
+
+- `microsoft/LLMLingua`：输入压缩
+- `BAAI/bge-reranker-base` 或 `jinaai/jina-reranker-v2-base-multilingual`：重排
+- `lancedb/lancedb` 或 `qdrant/qdrant`：语义检索存储
+
+### PARITY-4: 结构化输出与治理
+
+- `guardrails-ai/guardrails`：输出校验与重试约束
+- `json-schema-org/json-schema-spec`：标准结构约束基础
+
+### PARITY-5: 长期记忆与经验沉淀
+
+- `mem0ai/mem0`：会话记忆抽取与召回
+- `langchain-ai/langgraph`（可选）：多步骤 Agent 工作流编排
+
+### PARITY-6: 观测与故障诊断
+
+- `open-telemetry/opentelemetry-collector`：链路与日志统一采集
+- `grafana/loki` + `grafana/grafana`：日志检索与可视化
+
+---
+
 ## 4. 实施步骤（详细）
 
 ## 阶段 A：目录与骨架初始化（Day 1）
@@ -394,45 +438,25 @@
 
 ---
 
-## 5. 完整树状图（目标形态）
+## 5. 完整树状图（当前 + 目标，已更新）
 
 ```text
+[运行时生效根]
 C:/Users/ASUS-KL/.cursor/
 ├── permissions.json
 ├── sandbox.json
 ├── skills-cursor/
 │   ├── .cursor-managed-skills-manifest.json
 │   ├── module-acceptance/
-│   │   ├── SKILL.md
-│   │   ├── examples.md
-│   │   └── checklist.md
 │   ├── gateway-restart-safe/
-│   │   ├── SKILL.md
-│   │   ├── examples.md
-│   │   └── checklist.md
 │   ├── regression-snapshot/
-│   │   ├── SKILL.md
-│   │   ├── examples.md
-│   │   └── checklist.md
 │   ├── migration-boundary-check/
-│   │   ├── SKILL.md
-│   │   ├── examples.md
-│   │   └── checklist.md
 │   ├── incident-triage/
-│   │   ├── SKILL.md
-│   │   ├── examples.md
-│   │   └── checklist.md
 │   └── release-preflight/
-│       ├── SKILL.md
-│       ├── examples.md
-│       └── checklist.md
 └── projects/
     └── e-Auto/
         ├── mcps/
         │   ├── _templates/
-        │   │   ├── mcp-server-template.json
-        │   │   ├── env-template.json
-        │   │   └── skill-output-template.md
         │   ├── _artifacts/
         │   │   ├── acceptance/
         │   │   ├── regression/
@@ -454,33 +478,28 @@ C:/Users/ASUS-KL/.cursor/
         │   │   ├── start.cmd
         │   │   └── README.md
         │   ├── db-readonly/
-        │   │   ├── server.json
-        │   │   ├── start.cmd
-        │   │   └── README.md
         │   ├── prompt-compressor/
-        │   │   ├── server.json
-        │   │   ├── start.cmd
-        │   │   └── README.md
         │   ├── context-reranker/
-        │   │   ├── server.json
-        │   │   ├── start.cmd
-        │   │   └── README.md
         │   ├── context-store/
-        │   │   ├── server.json
-        │   │   ├── start.cmd
-        │   │   └── README.md
         │   ├── output-guard/
-        │   │   ├── server.json
-        │   │   ├── start.cmd
-        │   │   └── README.md
         │   └── memory-distill/
-        │       ├── server.json
-        │       ├── start.cmd
-        │       └── README.md
         ├── agent-transcripts/
         └── terminals/
 
+[仓库映射根（用于版本管理与审计）]
 E:/Auto/
+├── .cursor/
+│   └── projects/
+│       └── e-Auto/
+│           └── mcps/
+│               ├── README.md
+│               ├── playwright-browser/
+│               │   └── start.cmd
+│               ├── repo-inspector/
+│               │   └── start.cmd
+│               └── log-diagnose/
+│                   └── start.cmd
+├── Roo Code升级计划书.md
 └── projects/
     └── extensions/
         └── experience-manager/
@@ -563,9 +582,10 @@ E:/Auto/
   - `context-store`
   - `output-guard`
   - `memory-distill`
-- 已完成 `experience-manager` 启动器接线：
-  - `start.cmd` 直接调用 `E:/Auto/projects/extensions/experience-manager/mcp/experience-manager-mcp.mjs`
-  - （注）后续建议同样切换为 env-first 路径解析，避免绑定单一仓库
+- 已完成 `experience-manager` 启动器接线（已升级为 env-first）：
+  - 优先读取 `ROO_EXPERIENCE_MANAGER_MCP`
+  - 未设置时按 `ROO_TARGET_REPO` 自动探测入口
+  - 已消除单一仓库硬绑定
 - 已创建模板与归档目录：
   - `_templates/`、`_artifacts/acceptance/`、`_artifacts/regression/`、`_artifacts/triage/`
 
@@ -583,7 +603,9 @@ E:/Auto/
 ### 10.3 运行态测试说明
 
 - 本轮已完成“结构与配置”测试，确认可用于下一步接入真实 MCP 进程。
-- `experience-manager/start.cmd` 已接入真实服务入口；其余 MCP 当前为骨架启动器（占位），将在后续逐个实现真实服务。
+- `experience-manager/start.cmd` 已接入真实服务入口。
+- `playwright-browser`、`repo-inspector`、`log-diagnose` 已从骨架升级为 env-first 最小可用启动器。
+- 其余 MCP 仍为骨架启动器（占位），将在后续逐个实现真实服务。
 
 ### 10.4 Phase-2 实施进展（2026-03-28）
 
@@ -657,3 +679,215 @@ E:/Auto/
   - `log-diagnose`
 - 在目录与配置层面已实现隔离、低耦合、高内聚、可扩展。
 - 完整生产可用性仍取决于其余 MCP 的真实实现与联调。
+
+### 10.9 路径治理修正（2026-03-28）
+
+- 已完成“根目录误放文件”纠偏：
+  - 从仓库根下临时路径迁移到映射根 `.cursor/projects/e-Auto/mcps/`
+- 版本库中的可审计配置以映射根为准；Roo 运行时目录继续作为实际生效目录。
+- 本文档树状图与实施描述已同步到最新分层策略，避免后续路径漂移。
+
+---
+
+## 11. 详细部署指南（可复现、可运行）
+
+> 本章节提供从零到可运行的命令级步骤。默认环境：Windows + `cmd.exe` + Node.js + Git。
+
+### 11.1 前置条件
+
+1. 已安装 Node.js（建议 18+）
+2. 已安装 Git 并可在命令行执行
+3. Roo 运行时目录可写：`C:/Users/ASUS-KL/.cursor/projects/e-Auto/mcps/`
+4. 目标仓库可访问（示例：`E:/Auto`）
+
+验证命令：
+
+```cmd
+node -v
+git --version
+if exist C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps (echo MCP_ROOT_OK) else (echo MCP_ROOT_MISSING)
+if exist E:\Auto (echo TARGET_REPO_OK) else (echo TARGET_REPO_MISSING)
+```
+
+### 11.2 建立环境变量（当前会话）
+
+```cmd
+set "ROO_TARGET_REPO=E:\Auto"
+set "ROO_PLAYWRIGHT_MCP="
+```
+
+说明：
+
+- `ROO_TARGET_REPO`：所有 env-first 启动器的统一目标仓库
+- `ROO_PLAYWRIGHT_MCP`：可选，手工指定 Playwright MCP 入口；留空时自动探测
+
+### 11.3 部署映射根配置到 Roo 运行时根
+
+> 推荐做法：以仓库映射根为“版本源”，复制到 Roo 运行时根。
+
+```cmd
+copy /y E:\Auto\.cursor\projects\e-Auto\mcps\playwright-browser\start.cmd C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\playwright-browser\start.cmd
+copy /y E:\Auto\.cursor\projects\e-Auto\mcps\repo-inspector\start.cmd C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\repo-inspector\start.cmd
+copy /y E:\Auto\.cursor\projects\e-Auto\mcps\log-diagnose\start.cmd C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\log-diagnose\start.cmd
+```
+
+### 11.4 执行 smoke 验证（必做）
+
+```cmd
+set "ROO_TARGET_REPO=E:\Auto"
+"C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\playwright-browser\start.cmd" --smoke
+"C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\repo-inspector\start.cmd" --smoke
+"C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\log-diagnose\start.cmd" --smoke
+```
+
+通过判定：
+
+- `playwright-browser` 输出 `smoke ok`
+- `repo-inspector` 输出 `mode=smoke` 且无 Git 致命错误
+- `log-diagnose` 输出 `mode=smoke` 且关键脚本存在性结果合理
+
+### 11.5 运行态验证（建议）
+
+```cmd
+set "ROO_TARGET_REPO=E:\Auto"
+"C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\repo-inspector\start.cmd"
+"C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\log-diagnose\start.cmd"
+```
+
+通过判定：
+
+- `repo-inspector` 能输出 `git status --short` 与 `git diff --shortstat`
+- `log-diagnose` 能扫描目标文件并正常结束 `done`
+
+### 11.6 Roo 调用侧最小接入建议
+
+- 在 Roo MCP 注册处保持 `command` 指向对应 `start.cmd`
+- 不在 `start.cmd` 内硬编码仓库路径
+- 会话前统一设定 `ROO_TARGET_REPO`，确保多 MCP 一致目标
+
+---
+
+## 12. 验证清单与验收门槛
+
+### 12.1 文件级检查
+
+```cmd
+if exist C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\playwright-browser\start.cmd (echo OK_PLAYWRIGHT) else (echo MISS_PLAYWRIGHT)
+if exist C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\repo-inspector\start.cmd (echo OK_REPO_INSPECTOR) else (echo MISS_REPO_INSPECTOR)
+if exist C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\log-diagnose\start.cmd (echo OK_LOG_DIAGNOSE) else (echo MISS_LOG_DIAGNOSE)
+```
+
+### 12.2 行为级检查
+
+- `playwright-browser --smoke` 成功
+- `repo-inspector --smoke` 成功
+- `log-diagnose --smoke` 成功
+- `repo-inspector` 默认模式成功
+- `log-diagnose` 默认模式成功
+
+### 12.3 一致性检查
+
+- 文档路径与实际路径一致
+- 运行时根与映射根分层明确
+- 启动器参数遵循 env-first 规则
+
+---
+
+## 13. 回滚与故障排查（确定性）
+
+### 13.1 快速回滚（单 MCP）
+
+1. 备份当前启动器
+2. 还原上一版本启动器
+3. 运行 `--smoke` 确认恢复
+
+示例：
+
+```cmd
+copy /y C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\playwright-browser\start.cmd C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\playwright-browser\start.cmd.bak
+copy /y E:\Auto\.cursor\projects\e-Auto\mcps\playwright-browser\start.cmd C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\playwright-browser\start.cmd
+set "ROO_TARGET_REPO=E:\Auto"
+"C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\playwright-browser\start.cmd" --smoke
+```
+
+### 13.2 常见故障矩阵
+
+1. 现象：`playwright-browser` 提示 missing entry
+   - 原因：目标仓库下无 Playwright MCP 文件
+   - 处理：设置 `ROO_TARGET_REPO` 指向正确仓库，或设置 `ROO_PLAYWRIGHT_MCP` 绝对路径
+
+2. 现象：`repo-inspector` 提示 not a git worktree
+   - 原因：`ROO_TARGET_REPO` 未指向 Git 仓库
+   - 处理：修正 `ROO_TARGET_REPO`，执行 `git -C <repo> rev-parse --is-inside-work-tree`
+
+3. 现象：`log-diagnose` 全部 missing
+   - 原因：目标仓库路径错误或脚本不存在
+   - 处理：确认 `ROO_TARGET_REPO` 与目标脚本清单是否匹配
+
+4. 现象：命令输出路径尾部有空格导致判断异常
+   - 原因：`set` 语法错误（写成 `set VAR=... `）
+   - 处理：统一使用 `set "ROO_TARGET_REPO=E:\Auto"`
+
+### 13.3 发布前最终检查（建议固定流程）
+
+```cmd
+set "ROO_TARGET_REPO=E:\Auto"
+"C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\playwright-browser\start.cmd" --smoke && "C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\repo-inspector\start.cmd" --smoke && "C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\log-diagnose\start.cmd" --smoke
+```
+
+全部返回成功后再进入下一步联调或自动化编排。
+
+---
+
+## 14. Phase-8 执行回填（2026-03-28）
+
+### 14.1 已完成改造
+
+- `experience-manager/start.cmd` 已改为 env-first：
+  - `ROO_EXPERIENCE_MANAGER_MCP` 优先
+  - 未设置时按 `ROO_TARGET_REPO` 自动探测：
+    - `%ROO_TARGET_REPO%\projects\extensions\experience-manager\mcp\experience-manager-mcp.mjs`
+    - `%ROO_TARGET_REPO%\extensions\experience-manager\mcp\experience-manager-mcp.mjs`
+- `db-readonly/start.cmd` 已从 TODO 占位改为最小只读探测实现：
+  - `--smoke`：验证目标仓库为 Git worktree
+  - 默认模式：只读列举 DB 相关候选文件关键字（不执行任何写操作）
+
+### 14.2 部署落位
+
+- Roo 运行时根：
+  - `C:/Users/ASUS-KL/.cursor/projects/e-Auto/mcps/experience-manager/start.cmd`
+  - `C:/Users/ASUS-KL/.cursor/projects/e-Auto/mcps/db-readonly/start.cmd`
+- 仓库映射根：
+  - `E:/Auto/.cursor/projects/e-Auto/mcps/experience-manager/start.cmd`
+  - `E:/Auto/.cursor/projects/e-Auto/mcps/db-readonly/start.cmd`
+
+### 14.3 运行与验证证据
+
+执行命令：
+
+- `set "ROO_TARGET_REPO=E:\Auto"`
+- `"C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\playwright-browser\start.cmd" --smoke && "C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\repo-inspector\start.cmd" --smoke && "C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\log-diagnose\start.cmd" --smoke && "C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\experience-manager\start.cmd" --smoke && "C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\db-readonly\start.cmd" --smoke`
+- `"C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\db-readonly\start.cmd"`
+
+关键输出：
+
+- `[playwright-browser] smoke ok`
+- `[repo-inspector] mode=smoke`（随后输出 `git status --short` 与 `git diff --shortstat`）
+- `[log-diagnose] mode=smoke`（4 个目标脚本均 found）
+- `[experience-manager] smoke ok`
+- `[experience-manager] entry=E:\Auto\projects\extensions\experience-manager\mcp\experience-manager-mcp.mjs`
+- `[db-readonly] smoke ok`
+- `db-readonly` 默认模式输出候选文件列表（示例）：
+  - `.vs/Auto/CopilotIndices/.../CodeChunks.db`
+  - `.vs/Auto/CopilotIndices/.../SemanticSymbols.db`
+  - `.vs/slnx.sqlite`
+
+### 14.4 当前状态更新
+
+- 已通过运行态验证的最小可用 MCP 启动器：
+  - `playwright-browser`
+  - `repo-inspector`
+  - `log-diagnose`
+  - `experience-manager`（smoke 通过）
+  - `db-readonly`（smoke + default 通过）
+- 仍待后续实现：其余占位 MCP 的真实服务链路与联调。
