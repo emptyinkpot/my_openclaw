@@ -806,7 +806,7 @@ if exist C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\db-readonly\start.cmd (ec
 ### 12.3 一致性检查
 
 - 文档路径与实际路径一致
-- 运行时根与映射根分层明确
+- 运行时根与 Git 提交范围规则一致（`.cursor/projects/e-Auto/mcps/` 不入库）
 - 启动器参数遵循 env-first 规则
 
 ---
@@ -823,7 +823,6 @@ if exist C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\db-readonly\start.cmd (ec
 
 ```cmd
 copy /y C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\playwright-browser\start.cmd C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\playwright-browser\start.cmd.bak
-copy /y E:\Auto\.cursor\projects\e-Auto\mcps\playwright-browser\start.cmd C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\playwright-browser\start.cmd
 set "ROO_TARGET_REPO=E:\Auto"
 "C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\playwright-browser\start.cmd" --smoke
 ```
