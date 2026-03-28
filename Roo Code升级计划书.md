@@ -729,6 +729,8 @@ set "ROO_PLAYWRIGHT_MCP="
 copy /y E:\Auto\.cursor\projects\e-Auto\mcps\playwright-browser\start.cmd C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\playwright-browser\start.cmd
 copy /y E:\Auto\.cursor\projects\e-Auto\mcps\repo-inspector\start.cmd C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\repo-inspector\start.cmd
 copy /y E:\Auto\.cursor\projects\e-Auto\mcps\log-diagnose\start.cmd C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\log-diagnose\start.cmd
+copy /y E:\Auto\.cursor\projects\e-Auto\mcps\experience-manager\start.cmd C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\experience-manager\start.cmd
+copy /y E:\Auto\.cursor\projects\e-Auto\mcps\db-readonly\start.cmd C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\db-readonly\start.cmd
 ```
 
 ### 11.4 执行 smoke 验证（必做）
@@ -765,6 +767,33 @@ set "ROO_TARGET_REPO=E:\Auto"
 - 不在 `start.cmd` 内硬编码仓库路径
 - 会话前统一设定 `ROO_TARGET_REPO`，确保多 MCP 一致目标
 
+### 11.7 Git 提交范围白名单（本计划强制）
+
+> 仅提交 Roo/Cursor 配置映射文件；禁止夹带业务仓库代码改动。
+
+允许提交（白名单）：
+
+- `E:/Auto/.cursor/projects/e-Auto/mcps/**`
+- `E:/Auto/Roo Code升级计划书.md`
+- `E:/Auto/.gitignore`（仅用于放行上述 `.cursor/projects/...` 映射路径）
+
+禁止提交（黑名单示例）：
+
+- `E:/Auto/openclaw-gateway-run.ps1`
+- `E:/Auto/openclaw-gateway-child.ps1`
+- `E:/Auto/start-openclaw*.ps1|*.bat`
+- `E:/Auto/package.json`、`E:/Auto/README.md`、业务代码目录
+
+推荐提交流程（避免误提）：
+
+```cmd
+git reset
+git add .gitignore "Roo Code升级计划书.md" .cursor/projects/e-Auto/mcps
+git status --short
+```
+
+验收标准：`git status --short` 的暂存区仅出现上述白名单路径。
+
 ---
 
 ## 12. 验证清单与验收门槛
@@ -775,6 +804,8 @@ set "ROO_TARGET_REPO=E:\Auto"
 if exist C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\playwright-browser\start.cmd (echo OK_PLAYWRIGHT) else (echo MISS_PLAYWRIGHT)
 if exist C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\repo-inspector\start.cmd (echo OK_REPO_INSPECTOR) else (echo MISS_REPO_INSPECTOR)
 if exist C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\log-diagnose\start.cmd (echo OK_LOG_DIAGNOSE) else (echo MISS_LOG_DIAGNOSE)
+if exist C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\experience-manager\start.cmd (echo OK_EXPERIENCE_MANAGER) else (echo MISS_EXPERIENCE_MANAGER)
+if exist C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\db-readonly\start.cmd (echo OK_DB_READONLY) else (echo MISS_DB_READONLY)
 ```
 
 ### 12.2 行为级检查
@@ -782,8 +813,11 @@ if exist C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\log-diagnose\start.cmd (e
 - `playwright-browser --smoke` 成功
 - `repo-inspector --smoke` 成功
 - `log-diagnose --smoke` 成功
+- `experience-manager --smoke` 成功
+- `db-readonly --smoke` 成功
 - `repo-inspector` 默认模式成功
 - `log-diagnose` 默认模式成功
+- `db-readonly` 默认模式成功
 
 ### 12.3 一致性检查
 
@@ -832,7 +866,7 @@ set "ROO_TARGET_REPO=E:\Auto"
 
 ```cmd
 set "ROO_TARGET_REPO=E:\Auto"
-"C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\playwright-browser\start.cmd" --smoke && "C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\repo-inspector\start.cmd" --smoke && "C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\log-diagnose\start.cmd" --smoke
+"C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\playwright-browser\start.cmd" --smoke && "C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\repo-inspector\start.cmd" --smoke && "C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\log-diagnose\start.cmd" --smoke && "C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\experience-manager\start.cmd" --smoke && "C:\Users\ASUS-KL\.cursor\projects\e-Auto\mcps\db-readonly\start.cmd" --smoke
 ```
 
 全部返回成功后再进入下一步联调或自动化编排。

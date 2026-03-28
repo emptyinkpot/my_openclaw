@@ -11,3 +11,9 @@ browser/
 node_modules/
 *.log
 *.tmp
+
+# Allow versioning only Roo/Cursor MCP mapping configs under .cursor/projects
+!.cursor/projects/
+!.cursor/projects/e-Auto/
+!.cursor/projects/e-Auto/mcps/
+!.cursor/projects/e-Auto/mcps/**
