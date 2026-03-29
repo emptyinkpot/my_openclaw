@@ -1,0 +1,41 @@
+{
+  "id": "vscode-key-guard",
+  "displayName": "密钥守护",
+  "version": "1.0.0",
+  "owner": "auto",
+  "routePrefix": "/key-guard",
+  "apiPrefix": "/api/key-guard",
+  "nav": [
+    {
+      "path": "/key-guard",
+      "label": "密钥守护"
+    }
+  ],
+  "pages": [
+    {
+      "id": "key-guard-home",
+      "path": "/key-guard",
+      "source": "frontend/pages/vscode-key-guard/index.html"
+    }
+  ],
+  "capabilities": [
+    "codex-config-watch",
+    "roo-config-watch",
+    "drift-detection",
+    "auto-repair",
+    "audit-log"
+  ],
+  "mcp": [
+    "vscode-key-guard"
+  ],
+  "dependencies": [],
+  "runtimeDirs": [
+    "cache",
+    "logs",
+    "temp",
+    "state"
+  ],
+  "featureFlags": [
+    "dangerous-repair-guard"
+  ]
+}
