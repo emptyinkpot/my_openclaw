@@ -1,0 +1,2384 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>馃 缁忛獙绉疮涓績</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    :root {
+      --bg: #f6f8fa;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #f3f4f6;
+      --border: #d0d7de;
+      --text: #24292f;
+      --text-secondary: #57606a;
+      --text-muted: #6e7781;
+      --accent: #0969da;
+      --accent-hover: #0550ae;
+      --success: #1a7f37;
+      --warning: #9a6700;
+      --danger: #cf222e;
+      --purple: #8250df;
+      --pink: #bf3989;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 12px;
+      height: 100vh;
+      overflow: hidden;
+    }
+    
+    /* 澶撮儴 */
+    .header {
+      height: 52px;
+      background: linear-gradient(135deg, #8250df 0%, #bf3989 100%);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      padding: 0 12px;
+    }
+    
+    .header-top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      height: 32px;
+    }
+    
+    .header-title {
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .header-subtitle {
+      font-size: 11px;
+      opacity: 0.9;
+    }
+    
+    .header-stats {
+      margin-left: auto;
+      display: flex;
+      gap: 16px;
+      font-size: 11px;
+    }
+    
+    .header-stat {
+      text-align: center;
+    }
+    
+    .header-stat-value {
+      font-size: 14px;
+      font-weight: 700;
+    }
+    
+    .header-stat-label {
+      font-size: 9px;
+      opacity: 0.8;
+    }
+    
+    /* 鏍囩椤?*/
+    .tabs {
+      display: flex;
+      gap: 4px;
+      height: 20px;
+    }
+    
+    .tab {
+      padding: 2px 12px;
+      font-size: 11px;
+      cursor: pointer;
+      border-radius: 4px 4px 0 0;
+      color: rgba(255,255,255,0.7);
+      transition: all 0.15s;
+    }
+    
+    .tab:hover {
+      background: rgba(255,255,255,0.1);
+      color: white;
+    }
+    
+    .tab.active {
+      background: white;
+      color: var(--text);
+      font-weight: 600;
+    }
+    
+    /* 涓诲竷灞€ */
+    .main {
+      display: flex;
+      height: calc(100vh - 52px - 32px - 40px); /* 鍑忓幓瀵艰埅鏍忛珮搴?40px */
+    }
+    
+    /* 宸︿晶绛夌骇闈㈡澘 */
+    .sidebar {
+      width: 200px;
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    
+    .level-card {
+      padding: 12px;
+      background: linear-gradient(135deg, #8250df 0%, #bf3989 100%);
+      color: white;
+      text-align: center;
+    }
+    
+    .level-badge {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      margin: 0 auto 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      border: 2px solid rgba(255,255,255,0.3);
+    }
+    
+    .level-title {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+    
+    .level-num {
+      font-size: 11px;
+      opacity: 0.9;
+      margin-bottom: 8px;
+    }
+    
+    .xp-bar {
+      background: rgba(255,255,255,0.2);
+      border-radius: 6px;
+      height: 6px;
+      overflow: hidden;
+      margin-bottom: 4px;
+    }
+    
+    .xp-fill {
+      background: white;
+      height: 100%;
+      border-radius: 6px;
+      transition: width 0.5s;
+    }
+    
+    .xp-text {
+      font-size: 10px;
+      opacity: 0.9;
+    }
+    
+    /* 缁熻鍖哄煙 */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .stat-box {
+      background: var(--bg-tertiary);
+      padding: 8px;
+      border-radius: 6px;
+      text-align: center;
+    }
+    
+    .stat-box-value {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+    
+    .stat-box-label {
+      font-size: 9px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    
+    /* 绫诲瀷鍒嗗竷 */
+    .type-distribution {
+      padding: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .type-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+    
+    .type-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+      font-size: 11px;
+    }
+    
+    .type-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+    
+    .type-name {
+      flex: 1;
+    }
+    
+    .type-count {
+      color: var(--text-muted);
+    }
+    
+    .type-bar {
+      width: 40px;
+      height: 3px;
+      background: var(--bg-tertiary);
+      border-radius: 2px;
+    }
+    
+    .type-fill {
+      height: 100%;
+      border-radius: 2px;
+    }
+    
+    /* 鎼滅储 */
+    .search-area {
+      padding: 8px;
+      border-top: 1px solid var(--border);
+      margin-top: auto;
+    }
+    
+    .search-input {
+      width: 100%;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 11px;
+      outline: none;
+    }
+    
+    .search-input:focus {
+      border-color: var(--accent);
+    }
+    
+    /* 鍙充晶鍐呭鍖?*/
+    .content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    
+    /* 宸ュ叿鏍?*/
+    .toolbar {
+      padding: 8px 12px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    
+    .btn {
+      padding: 4px 10px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s;
+    }
+    
+    .btn:hover {
+      border-color: var(--accent);
+      background: var(--bg-tertiary);
+    }
+    
+    .btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: var(--accent-hover);
+    }
+    
+    .filter-tabs {
+      display: flex;
+      gap: 2px;
+    }
+    
+    .filter-tab {
+      padding: 3px 8px;
+      border-radius: 8px;
+      font-size: 10px;
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+    
+    .filter-tab:hover {
+      background: var(--bg-tertiary);
+    }
+    
+    .filter-tab.active {
+      background: var(--accent);
+      color: white;
+    }
+    
+    .toolbar-spacer {
+      flex: 1;
+    }
+    
+    /* 缁忛獙鍒楄〃 */
+    .exp-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      display: none;
+    }
+    
+    .exp-list.active {
+      display: block;
+    }
+    
+    .exp-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    
+    .exp-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    
+    .exp-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+    
+    .exp-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    
+    .exp-meta {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .exp-title {
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .exp-tags {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    
+    .exp-tag {
+      padding: 1px 6px;
+      background: var(--bg-tertiary);
+      border-radius: 8px;
+      font-size: 9px;
+      color: var(--text-secondary);
+    }
+    
+    .exp-type-tag {
+      padding: 1px 6px;
+      border-radius: 8px;
+      font-size: 9px;
+    }
+    
+    .exp-desc {
+      font-size: 11px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+      margin-bottom: 6px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+    }
+    
+    .exp-footer {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+    
+    .exp-xp {
+      margin-left: auto;
+      padding: 1px 8px;
+      background: linear-gradient(135deg, #8250df20, #bf398920);
+      border-radius: 8px;
+      color: #8250df;
+      font-weight: 600;
+      font-size: 10px;
+    }
+    
+    /* 绗旇鍒楄〃 */
+    .note-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      display: none;
+    }
+    
+    .note-list.active {
+      display: block;
+    }
+    
+    .note-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    
+    .note-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    
+    .note-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+    
+    .note-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, #0969da20, #0550ae20);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    
+    .note-meta {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .note-title {
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .note-category {
+      display: inline-block;
+      padding: 1px 6px;
+      background: var(--bg-tertiary);
+      border-radius: 8px;
+      font-size: 9px;
+      color: var(--text-secondary);
+    }
+    
+    .note-content {
+      font-size: 11px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+      margin-bottom: 6px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+    
+    .note-footer {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+    
+    /* 涓撴爮鍒楄〃 */
+    .column-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      display: none;
+    }
+    
+    .column-list.active {
+      display: block;
+    }
+    
+    .column-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    
+    .column-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    
+    .column-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    
+    .column-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #8250df20, #bf398920);
+      color: #8250df;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    
+    .column-meta {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .column-title {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    
+    .column-category {
+      display: inline-block;
+      padding: 2px 8px;
+      background: var(--bg-tertiary);
+      border-radius: 10px;
+      font-size: 10px;
+      color: var(--text-secondary);
+      margin-right: 6px;
+    }
+    
+    .column-description {
+      font-size: 11px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-bottom: 8px;
+    }
+    
+    .column-footer {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+    
+    .column-stats {
+      display: flex;
+      gap: 12px;
+    }
+    
+    /* 绌虹姸鎬?*/
+    .empty-state {
+      text-align: center;
+      padding: 40px 16px;
+      color: var(--text-muted);
+    }
+    
+    .empty-icon {
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+    
+    .empty-text {
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+    
+    .empty-hint {
+      font-size: 11px;
+    }
+    
+    /* 妯℃€佹 */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal.show {
+      display: flex;
+    }
+    
+    .modal-content {
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      width: 90%;
+      max-width: 520px;
+      max-height: 90vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .modal-header {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .modal-title {
+      font-size: 13px;
+      font-weight: 600;
+    }
+    
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      color: var(--text-muted);
+    }
+    
+    .modal-body {
+      padding: 14px;
+      overflow-y: auto;
+      flex: 1;
+    }
+    
+    .form-group {
+      margin-bottom: 10px;
+    }
+    
+    .form-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 500;
+      margin-bottom: 4px;
+      color: var(--text-secondary);
+    }
+    
+    .form-input,
+    .form-textarea,
+    .form-select {
+      width: 100%;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 11px;
+      outline: none;
+      font-family: inherit;
+    }
+    
+    .form-input:focus,
+    .form-textarea:focus,
+    .form-select:focus {
+      border-color: var(--accent);
+    }
+    
+    .form-textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+    
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    
+    .modal-footer {
+      padding: 10px 14px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+  </style>
+    <script src="/control-ui-custom/assets/nav-bar-behavior.js?v=20260324-5" defer></script>
+  </head>
+<body>
+  <!-- 澶撮儴 -->
+  <div class="header">
+    <div class="header-top">
+      <div class="header-title">
+        馃 缁忛獙绉疮涓績
+        <span class="header-subtitle">璁板綍鎴愰暱锛岀Н绱櫤鎱?/span>
+      </div>
+      <div class="header-stats">
+        <div class="header-stat">
+          <div class="header-stat-value" id="headerLevel">1</div>
+          <div class="header-stat-label">绛夌骇</div>
+        </div>
+        <div class="header-stat">
+          <div class="header-stat-value" id="headerXP">0</div>
+          <div class="header-stat-label">鎬荤粡楠?/div>
+        </div>
+        <div class="header-stat">
+          <div class="header-stat-value" id="headerRecords">0</div>
+          <div class="header-stat-label">璁板綍鏁?/div>
+        </div>
+      </div>
+    </div>
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('experience')">馃摑 缁忛獙</div>
+      <div class="tab" onclick="switchTab('notes')">馃搾 绗旇</div>
+      <div class="tab" onclick="switchTab('columns')">馃摎 涓撴爮</div>
+      <div class="tab" onclick="switchTab('guide')">馃摉 寮€鍙戞寚鍗?/div>
+    </div>
+  </div>
+  
+  <!-- 涓诲竷灞€ -->
+  <div class="main">
+    <!-- 宸︿晶杈规爮 -->
+    <div class="sidebar" id="experienceSidebar">
+      <div class="level-card">
+        <div class="level-badge" id="levelBadge">馃尡</div>
+        <div class="level-title" id="levelTitle">鏂版墜</div>
+        <div class="level-num">Level <span id="levelNum">1</span></div>
+        <div class="xp-bar">
+          <div class="xp-fill" id="xpFill" style="width: 0%"></div>
+        </div>
+        <div class="xp-text"><span id="currentXP">0</span> / <span id="nextXP">1000</span> XP</div>
+      </div>
+      
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-box-value" id="statTotalXP" style="color: var(--purple)">0</div>
+          <div class="stat-box-label">鎬荤粡楠?/div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-value" id="statRecords" style="color: var(--success)">0</div>
+          <div class="stat-box-label">璁板綍鏁?/div>
+        </div>
+      </div>
+      
+      <div class="type-distribution">
+        <div class="type-title">馃搳 绫诲瀷鍒嗗竷</div>
+        <div id="typeList">
+          <div class="type-item">
+            <span style="color: var(--text-muted); font-size: 11px;">鏆傛棤鏁版嵁</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="search-area">
+        <input type="text" class="search-input" id="searchInput" placeholder="馃攳 鎼滅储缁忛獙...">
+      </div>
+    </div>
+    
+    <!-- 鍙充晶鍐呭 -->
+    <div class="content">
+      <!-- 缁忛獙宸ュ叿鏍?-->
+      <div class="toolbar" id="experienceToolbar">
+        <button class="btn btn-primary" onclick="showAddModal()">
+          鉃?璁板綍鏂扮粡楠?
+        </button>
+        <div class="filter-tabs">
+          <div class="filter-tab active" onclick="filterExp('all')">鍏ㄩ儴</div>
+          <div class="filter-tab" onclick="filterExp('problem_solving')">馃幆 闂瑙ｅ喅</div>
+          <div class="filter-tab" onclick="filterExp('bug_fix')">馃悰 Bug淇</div>
+          <div class="filter-tab" onclick="filterExp('feature_dev')">鉁?鍔熻兘寮€鍙?/div>
+        </div>
+        <div class="toolbar-spacer"></div>
+        <button class="btn" onclick="refreshData()">馃攧 鍒锋柊</button>
+      </div>
+      
+      <!-- 绗旇宸ュ叿鏍?-->
+      <div class="toolbar" id="notesToolbar" style="display: none;">
+        <button class="btn btn-primary" onclick="showAddNoteModal()">
+          鉃?鏂板缓绗旇
+        </button>
+        <div class="filter-tabs" id="noteCategoryTabs">
+          <div class="filter-tab active" onclick="filterNotes('all')">鍏ㄩ儴</div>
+        </div>
+        <div class="toolbar-spacer"></div>
+        <button class="btn" onclick="refreshNotes()">馃攧 鍒锋柊</button>
+      </div>
+      
+      <!-- 涓撴爮宸ュ叿鏍?-->
+      <div class="toolbar" id="columnsToolbar" style="display: none;">
+        <div class="filter-tabs" id="columnCategoryTabs">
+          <div class="filter-tab active" onclick="filterColumns('all')">鍏ㄩ儴</div>
+          <div class="filter-tab" onclick="filterColumns('dev_flow')">馃敡 寮€鍙戞祦绋?/div>
+          <div class="filter-tab" onclick="filterColumns('tech_stack')">馃捇 鎶€鏈爤</div>
+          <div class="filter-tab" onclick="filterColumns('best_practices')">鉁?鏈€浣冲疄璺?/div>
+        </div>
+        <div class="toolbar-spacer"></div>
+        <button class="btn" onclick="refreshColumns()">馃攧 鍒锋柊</button>
+      </div>
+      
+      <!-- 寮€鍙戞寚鍗楀伐鍏锋爮 -->
+      <div class="toolbar" id="guideToolbar" style="display: none;">
+        <div style="font-size: 12px; color: var(--text-secondary);">
+          馃摉 寮€鍙戞寚鍗?- 閬垮厤閿欒鐨勬渶浣冲疄璺?
+        </div>
+        <div class="toolbar-spacer"></div>
+        <button class="btn btn-primary" onclick="openDevelopmentGuide()">馃摉 鎵撳紑瀹屾暣鎸囧崡</button>
+      </div>
+      
+      <!-- 缁忛獙鍒楄〃 -->
+      <div class="exp-list active" id="expList">
+        <div class="empty-state">
+          <div class="empty-icon">馃摑</div>
+          <div class="empty-text">鏆傛棤缁忛獙璁板綍</div>
+          <div class="empty-hint">鐐瑰嚮"璁板綍鏂扮粡楠?娣诲姞绗竴鏉¤褰?/div>
+        </div>
+      </div>
+      
+      <!-- 绗旇鍒楄〃 -->
+      <div class="note-list" id="noteList">
+        <div class="empty-state">
+          <div class="empty-icon">馃搾</div>
+          <div class="empty-text">鏆傛棤绗旇</div>
+          <div class="empty-hint">鐐瑰嚮"鏂板缓绗旇"娣诲姞绗竴鏉＄瑪璁?/div>
+        </div>
+      </div>
+      
+      <!-- 涓撴爮鍒楄〃 -->
+      <div class="column-list" id="columnList">
+        <div class="empty-state">
+          <div class="empty-icon">馃摎</div>
+          <div class="empty-text">鏆傛棤涓撴爮</div>
+          <div class="empty-hint">涓撴爮姝ｅ湪鏁寸悊涓?..</div>
+        </div>
+      </div>
+      
+      <!-- 寮€鍙戞寚鍗楀唴瀹?-->
+      <div class="guide-content" id="guideContent" style="display: none; flex: 1; overflow-y: auto; padding: 16px;">
+        <div style="max-width: 900px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #0969da20, #8250df20); border-radius: 12px; padding: 24px; margin-bottom: 20px;">
+            <h2 style="font-size: 20px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px;">
+              馃摉 寮€鍙戞寚鍗?
+            </h2>
+            <p style="color: var(--text-secondary); margin-bottom: 0;">浠庡疄鎴樹腑鎻愮偧鐨勬渶浣冲疄璺碉紝甯姪浣犲湪寮€鍙戞椂灏遍伩鍏嶅父瑙侀敊璇?/p>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px;">
+            <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 16px; cursor: pointer; transition: all 0.15s;" onclick="openGuideSection('api')">
+              <div style="font-size: 24px; margin-bottom: 8px;">馃敆</div>
+              <h3 style="font-size: 14px; margin-bottom: 6px;">API 璁捐瑙勮寖</h3>
+              <p style="font-size: 11px; color: var(--text-secondary); line-height: 1.5;">濡備綍璁捐涓€鑷寸殑 API 璺緞锛岄伩鍏嶉噸澶嶅墠缂€閿欒</p>
+            </div>
+            <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 16px; cursor: pointer; transition: all 0.15s;" onclick="openGuideSection('paths')">
+              <div style="font-size: 24px; margin-bottom: 8px;">馃搨</div>
+              <h3 style="font-size: 14px; margin-bottom: 6px;">璺緞绠＄悊瑙勮寖</h3>
+              <p style="font-size: 11px; color: var(--text-secondary); line-height: 1.5;">鐩稿璺緞璁＄畻鏂规硶锛岄伩鍏嶆ā鍧楁壘涓嶅埌閿欒</p>
+            </div>
+            <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 16px; cursor: pointer; transition: all 0.15s;" onclick="openGuideSection('frontend')">
+              <div style="font-size: 24px; margin-bottom: 8px;">馃帹</div>
+              <h3 style="font-size: 14px; margin-bottom: 6px;">鍓嶇寮€鍙戣鑼?/h3>
+              <p style="font-size: 11px; color: var(--text-secondary); line-height: 1.5;">console.log 璋冭瘯鎶€宸у拰閿欒棰勯槻</p>
+            </div>
+            <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 16px; cursor: pointer; transition: all 0.15s;" onclick="openGuideSection('backend')">
+              <div style="font-size: 24px; margin-bottom: 8px;">鈿欙笍</div>
+              <h3 style="font-size: 14px; margin-bottom: 6px;">鍚庣寮€鍙戣鑼?/h3>
+              <p style="font-size: 11px; color: var(--text-secondary); line-height: 1.5;">璺敱娉ㄥ唽鍜屾枃浠惰矾寰勬煡鎵剧瓥鐣?/p>
+            </div>
+          </div>
+          
+          <div style="text-align: center;">
+            <button class="btn btn-primary" style="padding: 10px 24px; font-size: 13px;" onclick="openDevelopmentGuide()">
+              馃摉 鎵撳紑瀹屾暣寮€鍙戞寚鍗?
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 娣诲姞缁忛獙妯℃€佹 -->
+  <div class="modal" id="addModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">鉃?璁板綍鏂扮粡楠?/div>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="expForm">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">缁忛獙绫诲瀷</label>
+              <select class="form-select" id="expType">
+                <option value="problem_solving">馃幆 闂瑙ｅ喅</option>
+                <option value="bug_fix">馃悰 Bug淇</option>
+                <option value="feature_dev">鉁?鍔熻兘寮€鍙?/option>
+                <option value="optimization">鈿?鎬ц兘浼樺寲</option>
+                <option value="refactoring">馃敡 浠ｇ爜閲嶆瀯</option>
+                <option value="learning">馃摎 瀛︿範鎴愰暱</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">闅惧害绛夌骇</label>
+              <select class="form-select" id="expDifficulty">
+                <option value="1">猸?绠€鍗?/option>
+                <option value="2" selected>猸愨瓙 涓瓑</option>
+                <option value="3">猸愨瓙猸?鍥伴毦</option>
+                <option value="4">猸愨瓙猸愨瓙 涓撳</option>
+                <option value="5">猸愨瓙猸愨瓙猸?鍙茶瘲</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">鏍囬 *</label>
+            <input type="text" class="form-input" id="expTitle" placeholder="绠€鐭弿杩拌繖娆＄粡楠?.." required>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">璇︾粏鎻忚堪</label>
+            <textarea class="form-textarea" id="expDesc" placeholder="璇︾粏鎻忚堪杩欐缁忛獙鐨勮儗鏅€佽繃绋?.."></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">鐢ㄦ埛闂 / 闇€姹?/label>
+            <textarea class="form-textarea" id="expQuery" placeholder="鐢ㄦ埛鎻愬嚭浜嗕粈涔堥棶棰樻垨闇€姹傦紵"></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">瑙ｅ喅鏂规</label>
+            <textarea class="form-textarea" id="expSolution" placeholder="浣犳槸濡備綍瑙ｅ喅杩欎釜闂鐨勶紵"></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">杩愮敤鐨勭粡楠岋紙閫楀彿鍒嗛殧锛?/label>
+            <input type="text" class="form-input" id="expApplied" placeholder="渚嬪锛欽S璇硶妫€鏌? 閿欒瀹氫綅鎶€宸?>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">鏂扮Н绱殑缁忛獙锛堥€楀彿鍒嗛殧锛?/label>
+            <input type="text" class="form-input" id="expGained" placeholder="渚嬪锛氭ā鍧楀寲璁捐, 姝ｅ垯琛ㄨ揪寮忎紭鍖?>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">鏍囩锛堥€楀彿鍒嗛殧锛?/label>
+            <input type="text" class="form-input" id="expTags" placeholder="渚嬪锛歫avascript, debug, ui">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal()">鍙栨秷</button>
+        <button class="btn btn-primary" onclick="saveExp()">馃捑 淇濆瓨缁忛獙</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 娣诲姞绗旇妯℃€佹 -->
+  <div class="modal" id="addNoteModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">馃搾 鏂板缓绗旇</div>
+        <button class="modal-close" onclick="closeNoteModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="noteForm">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">鍒嗙被</label>
+              <select class="form-select" id="noteCategory">
+                <option value="general">馃挕 涓€鑸?/option>
+                <option value="dev">馃捇 寮€鍙?/option>
+                <option value="debug">馃悰 璋冭瘯</option>
+                <option value="design">馃帹 璁捐</option>
+                <option value="deployment">馃殌 閮ㄧ讲</option>
+                <option value="other">馃摝 鍏朵粬</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">鏍囬 *</label>
+              <input type="text" class="form-input" id="noteTitle" placeholder="绗旇鏍囬..." required>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">鍐呭</label>
+            <textarea class="form-textarea" id="noteContent" placeholder="绗旇鍐呭..." style="min-height: 150px;"></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">鏍囩锛堥€楀彿鍒嗛殧锛?/label>
+            <input type="text" class="form-input" id="noteTags" placeholder="渚嬪锛歫avascript, mysql, api">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeNoteModal()">鍙栨秷</button>
+        <button class="btn btn-primary" onclick="saveNote()">馃捑 淇濆瓨绗旇</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Gateway璁よ瘉token
+    const GATEWAY_TOKEN = 'CHANGE_ME_GATEWAY_TOKEN';
+    
+    // 閰嶇疆
+    const API_BASE = '/api/experience';
+    
+    // API璇锋眰灏佽
+    async function api(endpoint, options = {}) {
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${GATEWAY_TOKEN}`,
+        ...(options.headers || {})
+      };
+      const res = await fetch(API_BASE + endpoint, { ...options, headers });
+      return res.json();
+    }
+    
+    // 缁忛獙绫诲瀷鏄犲皠
+    const expTypeMap = {
+      problem_solving: { label: '闂瑙ｅ喅', icon: '馃幆', color: '#0969da', bg: '#ddf4ff' },
+      bug_fix: { label: 'Bug淇', icon: '馃悰', color: '#cf222e', bg: '#ffebe9' },
+      feature_dev: { label: '鍔熻兘寮€鍙?, icon: '鉁?, color: '#1a7f37', bg: '#dafbe1' },
+      optimization: { label: '鎬ц兘浼樺寲', icon: '鈿?, color: '#9a6700', bg: '#fff8c5' },
+      refactoring: { label: '浠ｇ爜閲嶆瀯', icon: '馃敡', color: '#8250df', bg: '#fbefff' },
+      learning: { label: '瀛︿範鎴愰暱', icon: '馃摎', color: '#bf3989', bg: '#ffeff7' }
+    };
+    
+    // 绗旇鍒嗙被鏄犲皠
+    const noteCategoryMap = {
+      general: { label: '涓€鑸?, icon: '馃挕' },
+      dev: { label: '寮€鍙?, icon: '馃捇' },
+      debug: { label: '璋冭瘯', icon: '馃悰' },
+      design: { label: '璁捐', icon: '馃帹' },
+      deployment: { label: '閮ㄧ讲', icon: '馃殌' },
+      other: { label: '鍏朵粬', icon: '馃摝' }
+    };
+    
+    // 绛夌骇閰嶇疆
+    const levelTitles = ['馃尡 鏂版墜', '馃敯 瀛﹀緬', '馃幆 鍔╂墜', '馃拵 涓撳', '馃憫 澶у笀', '馃敭 瀹楀笀', '猸?浼犲'];
+    const levelEmojis = ['馃尡', '馃敯', '馃幆', '馃拵', '馃憫', '馃敭', '猸?];
+    
+    // 鐘舵€?
+    let expData = [];
+    let noteData = [];
+    let currentFilter = 'all';
+    let currentNoteFilter = 'all';
+    let currentTab = 'experience';
+    
+    // 鍒濆鍖?
+    async function init() {
+      // 鍏堝姞杞界粡楠屾暟鎹紙蹇呴』锛?
+      try {
+        await loadData();
+      } catch (err) {
+        console.error('鍔犺浇缁忛獙鏁版嵁澶辫触:', err);
+      }
+      
+      // 鍐嶅皾璇曞姞杞界瑪璁版暟鎹紙鍙€夛紝澶辫触涓嶅奖鍝嶏級
+      try {
+        await loadNotes();
+      } catch (err) {
+        console.error('鍔犺浇绗旇鏁版嵁澶辫触锛堝彲閫夊姛鑳斤級:', err);
+        // 绗旇鍔熻兘涓嶅彲鐢紝涓嶅奖鍝嶇粡楠屽姛鑳?
+      }
+      
+      // 鏈€鍚庡皾璇曞姞杞戒笓鏍忔暟鎹紙鍙€夛紝澶辫触涓嶅奖鍝嶏級
+      try {
+        await loadColumns();
+      } catch (err) {
+        console.error('鍔犺浇涓撴爮鏁版嵁澶辫触锛堝彲閫夊姛鑳斤級:', err);
+        // 涓撴爮鍔熻兘涓嶅彲鐢紝涓嶅奖鍝嶅叾浠栧姛鑳?
+      }
+    }
+    
+    // 鍒囨崲鏍囩
+    function switchTab(tab) {
+      currentTab = tab;
+      
+      // 鏇存柊鏍囩鏍峰紡
+      const tabs = document.querySelectorAll('.tab');
+      tabs.forEach(t => t.classList.remove('active'));
+      
+      // 鏍规嵁 tab 鍊兼壘鍒板搴旂殑鍏冪礌骞舵坊鍔?active 绫?
+      const tabLabels = {
+        'experience': '缁忛獙',
+        'notes': '绗旇',
+        'columns': '涓撴爮',
+        'guide': '寮€鍙戞寚鍗?
+      };
+      tabs.forEach(t => {
+        if (t.textContent.includes(tabLabels[tab] || tab)) {
+          t.classList.add('active');
+        }
+      });
+      
+      // 鏇存柊宸︿晶杈规爮
+      document.getElementById('experienceSidebar').style.display = tab === 'experience' ? 'flex' : 'none';
+      
+      // 鏇存柊宸ュ叿鏍?
+      document.getElementById('experienceToolbar').style.display = tab === 'experience' ? 'flex' : 'none';
+      document.getElementById('notesToolbar').style.display = tab === 'notes' ? 'flex' : 'none';
+      document.getElementById('columnsToolbar').style.display = tab === 'columns' ? 'flex' : 'none';
+      document.getElementById('guideToolbar').style.display = tab === 'guide' ? 'flex' : 'none';
+      
+      // 鏇存柊鍐呭鍖哄煙
+      document.getElementById('expList').classList.toggle('active', tab === 'experience');
+      document.getElementById('noteList').classList.toggle('active', tab === 'notes');
+      document.getElementById('columnList').classList.toggle('active', tab === 'columns');
+      document.getElementById('guideContent').style.display = tab === 'guide' ? 'block' : 'none';
+      
+      // 濡傛灉鏄笓鏍忔爣绛撅紝鍔犺浇涓撴爮鏁版嵁
+      if (tab === 'columns') {
+        renderColumnList();
+      }
+    }
+    
+    // ========== 缁忛獙鐩稿叧 ==========
+    
+    // 鍔犺浇鏁版嵁
+    async function loadData() {
+      console.log('[Experience] loadData 寮€濮嬫墽琛?);
+      try {
+        console.log('[Experience] 寮€濮嬭姹?API');
+        const [statsRes, recordsRes] = await Promise.all([
+          api('/stats'),
+          api('/records')
+        ]);
+        
+        console.log('[Experience] statsRes:', statsRes);
+        console.log('[Experience] recordsRes:', recordsRes);
+        
+        if (statsRes.success) {
+          updateStats(statsRes.data);
+        }
+        if (recordsRes.success) {
+          expData = recordsRes.data;
+          console.log('[Experience] expData 宸茶缃紝闀垮害:', expData.length);
+          renderList();
+        }
+      } catch (err) {
+        console.error('[Experience] 鍔犺浇澶辫触:', err);
+      }
+    }
+    
+    // 鏇存柊缁熻
+    function updateStats(stats) {
+      document.getElementById('headerLevel').textContent = stats.level;
+      document.getElementById('headerXP').textContent = stats.totalXP;
+      document.getElementById('headerRecords').textContent = stats.totalRecords;
+      document.getElementById('levelBadge').textContent = levelEmojis[Math.min(stats.level - 1, 6)];
+      document.getElementById('levelTitle').textContent = levelTitles[Math.min(stats.level - 1, 6)].split(' ')[1];
+      document.getElementById('levelNum').textContent = stats.level;
+      document.getElementById('currentXP').textContent = stats.totalXP % 1000;
+      document.getElementById('nextXP').textContent = 1000;
+      document.getElementById('xpFill').style.width = ((stats.totalXP % 1000) / 1000 * 100) + '%';
+      document.getElementById('statTotalXP').textContent = stats.totalXP;
+      document.getElementById('statRecords').textContent = stats.totalRecords;
+      
+      // 绫诲瀷鍒嗗竷
+      const typeList = document.getElementById('typeList');
+      const types = Object.entries(stats.typeDistribution || {}).sort((a, b) => b[1] - a[1]);
+      if (types.length === 0) {
+        typeList.innerHTML = '<div class="type-item"><span style="color: var(--text-muted); font-size: 11px;">鏆傛棤鏁版嵁</span></div>';
+      } else {
+        typeList.innerHTML = types.map(([type, count]) => {
+          // 馃憞 淇锛氬鏋滅被鍨嬩笉鍦?map 閲岋紝浣跨敤榛樿鍊?
+          const info = expTypeMap[type] || { 
+            label: type || '鏈煡', 
+            icon: '馃搶', 
+            color: '#666', 
+            bg: '#f0f0f0' 
+          };
+          const percent = stats.totalRecords ? (count / stats.totalRecords * 100) : 0;
+          return `
+            <div class="type-item">
+              <div class="type-dot" style="background: ${info.color}"></div>
+              <span class="type-name">${info.icon} ${info.label}</span>
+              <span class="type-count">${count}</span>
+              <div class="type-bar"><div class="type-fill" style="width: ${percent}%; background: ${info.color}"></div></div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+    
+    // 娓叉煋鍒楄〃
+    function renderList() {
+      console.log('[Experience] renderList 寮€濮嬫墽琛?);
+      console.log('[Experience] expData:', expData);
+      const list = document.getElementById('expList');
+      console.log('[Experience] expList 鍏冪礌:', list);
+      let filtered = expData;
+      if (currentFilter !== 'all') {
+        filtered = expData.filter(e => e.type === currentFilter);
+      }
+      console.log('[Experience] filtered 闀垮害:', filtered.length);
+      
+      if (filtered.length === 0) {
+        list.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">馃摑</div>
+            <div class="empty-text">鏆傛棤缁忛獙璁板綍</div>
+            <div class="empty-hint">鐐瑰嚮"璁板綍鏂扮粡楠?娣诲姞绗竴鏉¤褰?/div>
+          </div>
+        `;
+        return;
+      }
+      
+      const htmlContent = filtered.map(exp => {
+        const typeInfo = expTypeMap[exp.type] || { label: exp.type || '鏈煡', icon: '馃搶', color: '#666', bg: '#f0f0f0' };
+        const stars = '猸?.repeat(exp.difficulty || 1);
+        const date = exp.timestamp ? new Date(exp.timestamp).toLocaleDateString() : '鏈煡鏃ユ湡';
+        const tags = exp.tags || [];
+        // 鏀寔 problem 瀛楁锛堟柊鏍煎紡锛夊拰 description/userQuery锛堟棫鏍煎紡锛?
+        const desc = exp.problem || exp.description || exp.userQuery || '鏃犳弿杩?;
+        return `
+          <div class="exp-card" onclick="showDetail('${exp.id}')">
+            <div class="exp-header">
+              <div class="exp-icon" style="background: ${typeInfo.bg}; color: ${typeInfo.color}">${typeInfo.icon}</div>
+              <div class="exp-meta">
+                <div class="exp-title">${exp.title || '鏃犳爣棰?}</div>
+                <div class="exp-tags">
+                  <span class="exp-type-tag" style="background: ${typeInfo.bg}; color: ${typeInfo.color}">${typeInfo.label}</span>
+                  <span class="exp-tag">${stars}</span>
+                  ${tags.slice(0, 3).map(t => `<span class="exp-tag">${t}</span>`).join('')}
+                </div>
+              </div>
+            </div>
+            <div class="exp-desc">${desc}</div>
+            <div class="exp-footer">
+              <span>馃搮 ${date}</span>
+              ${exp.experienceGained?.length ? `<span>馃挕 ${exp.experienceGained.length}椤规柊缁忛獙</span>` : ''}
+              <span class="exp-xp">+${exp.xpGained || (exp.difficulty * 50) || 50} XP</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      console.log('[Experience] 鐢熸垚鐨?HTML 闀垮害:', htmlContent.length);
+      console.log('[Experience] 鐢熸垚鐨?HTML 棰勮:', htmlContent.substring(0, 300));
+      
+      list.innerHTML = htmlContent;
+      console.log('[Experience] list.innerHTML 宸茶缃?);
+      
+      // 纭繚 expList 鏈?active 绫伙紝纭繚鏄剧ず
+      list.classList.add('active');
+      console.log('[Experience] 宸茬粰 expList 娣诲姞 active 绫?);
+    }
+    
+    // 杩囨护
+    function filterExp(type) {
+      currentFilter = type;
+      const tabs = document.querySelectorAll('#experienceToolbar .filter-tab');
+      tabs.forEach(t => t.classList.remove('active'));
+      
+      // 鏍规嵁 type 鍊兼壘鍒板搴旂殑鍏冪礌骞舵坊鍔?active 绫?
+      const typeLabels = {
+        'all': '鍏ㄩ儴',
+        'problem_solving': '闂瑙ｅ喅',
+        'bug_fix': 'Bug淇',
+        'feature_dev': '鍔熻兘寮€鍙?
+      };
+      tabs.forEach(t => {
+        if (t.textContent.includes(typeLabels[type] || type)) {
+          t.classList.add('active');
+        }
+      });
+      
+      renderList();
+    }
+    
+    // 鏄剧ず娣诲姞妯℃€佹
+    function showAddModal() {
+      document.getElementById('addModal').classList.add('show');
+    }
+    
+    // 鍏抽棴妯℃€佹
+    function closeModal() {
+      document.getElementById('addModal').classList.remove('show');
+      document.getElementById('expForm').reset();
+    }
+    
+    // 淇濆瓨缁忛獙
+    async function saveExp() {
+      const difficulty = parseInt(document.getElementById('expDifficulty').value);
+      const xp = difficulty * 50 + Math.floor(Math.random() * 20);
+      
+      const data = {
+        type: document.getElementById('expType').value,
+        title: document.getElementById('expTitle').value,
+        description: document.getElementById('expDesc').value,
+        userQuery: document.getElementById('expQuery').value,
+        solution: document.getElementById('expSolution').value,
+        experienceApplied: document.getElementById('expApplied').value.split(',').map(s => s.trim()).filter(Boolean),
+        experienceGained: document.getElementById('expGained').value.split(',').map(s => s.trim()).filter(Boolean),
+        tags: document.getElementById('expTags').value.split(',').map(s => s.trim()).filter(Boolean),
+        difficulty: difficulty,
+        xpGained: xp
+      };
+      
+      try {
+        const result = await api('/records', {
+          method: 'POST',
+          body: JSON.stringify(data)
+        });
+        if (result.success) {
+          closeModal();
+          await loadData();
+          alert(`鉁?缁忛獙宸茶褰曪紒鑾峰緱 ${xp} XP`);
+        } else {
+          alert('鉂?淇濆瓨澶辫触: ' + (result.error || '鏈煡閿欒'));
+        }
+      } catch (err) {
+        alert('鉂?淇濆瓨澶辫触: ' + err.message);
+      }
+    }
+    
+    // 鍒锋柊
+    function refreshData() {
+      loadData();
+    }
+    
+
+    
+    // 鎼滅储
+    document.getElementById('searchInput')?.addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase();
+      if (!q) {
+        loadData();
+        return;
+      }
+      const filtered = expData.filter(exp => 
+        exp.title.toLowerCase().includes(q) ||
+        (exp.problem && exp.problem.toLowerCase().includes(q)) ||
+        (exp.description && exp.description.toLowerCase().includes(q)) ||
+        (exp.solution && exp.solution.toLowerCase().includes(q)) ||
+        exp.tags.some(t => t.toLowerCase().includes(q))
+      );
+      const list = document.getElementById('expList');
+      list.innerHTML = filtered.length === 0 ? `
+        <div class="empty-state">
+          <div class="empty-icon">馃摑</div>
+          <div class="empty-text">鏈壘鍒板尮閰嶇殑璁板綍</div>
+        </div>
+      ` : filtered.map(exp => {
+        const typeInfo = expTypeMap[exp.type] || { label: exp.type || '鏈煡', icon: '馃搶', color: '#666', bg: '#f0f0f0' };
+        const stars = '猸?.repeat(exp.difficulty || 1);
+        const date = exp.timestamp ? new Date(exp.timestamp).toLocaleDateString() : '鏈煡鏃ユ湡';
+        const tags = exp.tags || [];
+        // 鏀寔 problem 瀛楁锛堟柊鏍煎紡锛夊拰 description/userQuery锛堟棫鏍煎紡锛?
+        const desc = exp.problem || exp.description || exp.userQuery || '鏃犳弿杩?;
+        return `
+          <div class="exp-card" onclick="showDetail('${exp.id}')">
+            <div class="exp-header">
+              <div class="exp-icon" style="background: ${typeInfo.bg}; color: ${typeInfo.color}">${typeInfo.icon}</div>
+              <div class="exp-meta">
+                <div class="exp-title">${exp.title || '鏃犳爣棰?}</div>
+                <div class="exp-tags">
+                  <span class="exp-type-tag" style="background: ${typeInfo.bg}; color: ${typeInfo.color}">${typeInfo.label}</span>
+                  <span class="exp-tag">${stars}</span>
+                  ${tags.slice(0, 3).map(t => `<span class="exp-tag">${t}</span>`).join('')}
+                </div>
+              </div>
+            </div>
+            <div class="exp-desc">${desc}</div>
+            <div class="exp-footer">
+              <span>馃搮 ${date}</span>
+              ${exp.experienceGained?.length ? `<span>馃挕 ${exp.experienceGained.length}椤规柊缁忛獙</span>` : ''}
+              <span class="exp-xp">+${exp.xpGained || (exp.difficulty * 50) || 50} XP</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    });
+    
+    // ========== 绗旇鐩稿叧 ==========
+    
+    // 鍔犺浇绗旇
+    async function loadNotes() {
+      try {
+        const [notesRes, categoriesRes] = await Promise.all([
+          api('/notes'),
+          api('/notes/categories')
+        ]);
+        
+        if (notesRes.success) {
+          noteData = notesRes.data;
+          renderNoteList();
+        }
+        
+        if (categoriesRes.success) {
+          renderNoteCategories(categoriesRes.data);
+        }
+      } catch (err) {
+        console.error('鍔犺浇绗旇澶辫触:', err);
+        // 绗旇鍔熻兘涓嶅彲鐢紝璁剧疆涓虹┖鏁扮粍
+        noteData = [];
+        renderNoteList();
+      }
+    }
+    
+    // ========== 涓撴爮鐩稿叧 ==========
+    
+    // 鍔犺浇涓撴爮鏁版嵁
+    async function loadColumns() {
+      try {
+        const columnsRes = await api('/columns');
+        
+        if (columnsRes.success) {
+          columnData = columnsRes.data;
+          renderColumnList();
+        }
+      } catch (err) {
+        console.error('鍔犺浇涓撴爮澶辫触:', err);
+        // 涓撴爮鍔熻兘涓嶅彲鐢紝璁剧疆涓虹┖鏁扮粍
+        columnData = [];
+        renderColumnList();
+      }
+    }
+    
+    // 娓叉煋绗旇鍒嗙被鏍囩
+    function renderNoteCategories(categories) {
+      const tabsContainer = document.getElementById('noteCategoryTabs');
+      if (!tabsContainer) return;
+      
+      tabsContainer.innerHTML = '<div class="filter-tab active" onclick="filterNotes(\'all\')">鍏ㄩ儴</div>';
+      
+      // 绗旇鍔熻兘褰撳墠涓嶅彲鐢紝涓嶆覆鏌撳垎绫?
+      if (!categories || categories.length === 0) return;
+      
+      categories.forEach(cat => {
+        const info = noteCategoryMap[cat] || { label: cat, icon: '馃摝' };
+        const tab = document.createElement('div');
+        tab.className = 'filter-tab';
+        tab.textContent = `${info.icon} ${info.label}`;
+        tab.onclick = () => filterNotes(cat);
+        tabsContainer.appendChild(tab);
+      });
+    }
+    
+    // 娓叉煋绗旇鍒楄〃
+    function renderNoteList() {
+      const list = document.getElementById('noteList');
+      let filtered = noteData;
+      if (currentNoteFilter !== 'all') {
+        filtered = noteData.filter(n => n.category === currentNoteFilter);
+      }
+      
+      if (filtered.length === 0) {
+        list.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">馃搾</div>
+            <div class="empty-text">鏆傛棤绗旇</div>
+            <div class="empty-hint">鐐瑰嚮"鏂板缓绗旇"娣诲姞绗竴鏉＄瑪璁?/div>
+          </div>
+        `;
+        return;
+      }
+      
+      list.innerHTML = filtered.map(note => {
+        const categoryInfo = noteCategoryMap[note.category] || { label: note.category || '鍏朵粬', icon: '馃摝' };
+        const date = note.updated_at ? new Date(note.updated_at).toLocaleDateString() : '鏈煡鏃ユ湡';
+        const tags = note.tags ? (Array.isArray(note.tags) ? note.tags : JSON.parse(note.tags)) : [];
+        return `
+          <div class="note-card" onclick="showNoteDetail('${note.id}')">
+            <div class="note-header">
+              <div class="note-icon">${categoryInfo.icon}</div>
+              <div class="note-meta">
+                <div class="note-title">${note.title || '鏃犳爣棰?}</div>
+                <span class="note-category">${categoryInfo.label}</span>
+                ${tags.slice(0, 2).map(t => `<span class="note-category">${t}</span>`).join('')}
+              </div>
+            </div>
+            <div class="note-content">${note.content || '鏃犲唴瀹?}</div>
+            <div class="note-footer">
+              <span>馃搮 ${date}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+    
+    // 杩囨护绗旇
+    function filterNotes(category) {
+      currentNoteFilter = category;
+      const tabs = document.querySelectorAll('#noteCategoryTabs .filter-tab');
+      tabs.forEach(t => t.classList.remove('active'));
+      
+      // 鏍规嵁 category 鍊兼壘鍒板搴旂殑鍏冪礌骞舵坊鍔?active 绫?
+      tabs.forEach(t => {
+        if (category === 'all' && t.textContent === '鍏ㄩ儴') {
+          t.classList.add('active');
+        } else if (t.textContent.includes(category)) {
+          t.classList.add('active');
+        }
+      });
+      
+      renderNoteList();
+    }
+    
+    // 鏄剧ず娣诲姞绗旇妯℃€佹
+    function showAddNoteModal() {
+      document.getElementById('addNoteModal').classList.add('show');
+    }
+    
+    // 鍏抽棴绗旇妯℃€佹
+    function closeNoteModal() {
+      document.getElementById('addNoteModal').classList.remove('show');
+      document.getElementById('noteForm').reset();
+    }
+    
+    // 淇濆瓨绗旇
+    async function saveNote() {
+      const data = {
+        title: document.getElementById('noteTitle').value,
+        content: document.getElementById('noteContent').value,
+        category: document.getElementById('noteCategory').value,
+        tags: document.getElementById('noteTags').value.split(',').map(s => s.trim()).filter(Boolean)
+      };
+      
+      try {
+        const result = await api('/notes', {
+          method: 'POST',
+          body: JSON.stringify(data)
+        });
+        if (result.success) {
+          closeNoteModal();
+          await loadNotes();
+          alert('鉁?绗旇宸蹭繚瀛橈紒');
+        } else {
+          alert('鉂?淇濆瓨澶辫触: ' + (result.error || '鏈煡閿欒'));
+        }
+      } catch (err) {
+        alert('鉂?淇濆瓨澶辫触: ' + err.message);
+      }
+    }
+    
+    // 鍒锋柊绗旇
+    function refreshNotes() {
+      loadNotes();
+    }
+    
+    // 鍏抽棴璇︽儏妯℃€佹
+    function closeDetailModal() {
+      document.getElementById('detailModal').classList.remove('show');
+    }
+    
+    // 绠€鍗曠殑 Markdown 杞?HTML 鍑芥暟
+    function simpleMarkdownToHtml(md) {
+      if (!md) return '';
+      
+      let html = md;
+      
+      // 浠ｇ爜鍧?
+      html = html.replace(/```([\s\S]*?)```/g, function(match, code) {
+        return '<pre><code>' + code.trim() + '</code></pre>';
+      });
+      
+      // 琛屽唴浠ｇ爜
+      html = html.replace(/`([^`]+)`/g, function(match, code) {
+        return '<code>' + code + '</code>';
+      });
+      
+      // 鏍囬
+      html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+      html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+      html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+      html = html.replace(/^#### (.*$)/gim, '<h4>$1</h4>');
+      
+      // 寮曠敤
+      html = html.replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>');
+      
+      // 鏃犲簭鍒楄〃
+      html = html.replace(/^- (.*$)/gim, '<li>$1</li>');
+      html = html.replace(/(<li>.*<\/li>\n?)+/g, function(match) {
+        return '<ul>' + match + '</ul>';
+      });
+      
+      // 鏈夊簭鍒楄〃
+      html = html.replace(/^\d+\. (.*$)/gim, '<li>$1</li>');
+      
+      // 鍒嗛殧绾?
+      html = html.replace(/^\*\*\*$/gim, '<hr>');
+      html = html.replace(/^---$/gim, '<hr>');
+      
+      // 娈佃惤锛堝鐞嗘崲琛岋級
+      html = html.replace(/\n\n/g, '</p><p>');
+      html = '<p>' + html + '</p>';
+      html = html.replace(/<p><\/p>/g, '');
+      
+      return html;
+    }
+    
+    // 鏄剧ず缁忛獙璇︽儏
+    function showDetail(id) {
+      const exp = expData.find(e => e.id === id);
+      if (!exp) return;
+      
+      const typeInfo = expTypeMap[exp.type] || { label: exp.type || '鏈煡', icon: '馃搶', color: '#666', bg: '#f0f0f0' };
+      const stars = '猸?.repeat(exp.difficulty || 1);
+      const date = exp.timestamp ? new Date(exp.timestamp).toLocaleDateString() : '鏈煡鏃ユ湡';
+      const tags = exp.tags || [];
+      
+      let content = '';
+      
+      // 闂/鎻忚堪
+      const problem = exp.problem || exp.description || exp.userQuery || '';
+      if (problem) {
+        content += '<h3>馃搵 闂鎻忚堪</h3>';
+        content += '<div class="markdown-content">' + simpleMarkdownToHtml(problem) + '</div>';
+      }
+      
+      // 瑙ｅ喅鏂规
+      const solution = exp.solution || '';
+      if (solution) {
+        content += '<h3>馃敡 瑙ｅ喅鏂规</h3>';
+        content += '<div class="markdown-content">' + simpleMarkdownToHtml(solution) + '</div>';
+      }
+      
+      // 搴旂敤鐨勭粡楠?
+      const applied = exp.experienceApplied || [];
+      if (applied.length > 0) {
+        content += '<h3>馃摎 搴旂敤鐨勭粡楠?/h3>';
+        content += '<ul>';
+        applied.forEach(a => {
+          content += '<li>' + a + '</li>';
+        });
+        content += '</ul>';
+      }
+      
+      // 鑾峰緱鐨勭粡楠?
+      const gained = exp.experienceGained || [];
+      if (gained.length > 0) {
+        content += '<h3>馃挕 鑾峰緱鐨勭粡楠?/h3>';
+        content += '<ul>';
+        gained.forEach(g => {
+          content += '<li>' + g + '</li>';
+        });
+        content += '</ul>';
+      }
+      
+      // 鏇存柊妯℃€佹
+      document.getElementById('detailModalTitle').textContent = exp.title || '鏃犳爣棰?;
+      document.getElementById('detailModalMeta').innerHTML = `
+        <span class="detail-tag" style="background: ${typeInfo.bg}; color: ${typeInfo.color}">${typeInfo.icon} ${typeInfo.label}</span>
+        <span class="detail-tag difficulty">${stars}</span>
+        <span class="detail-tag">馃搮 ${date}</span>
+        <span class="detail-tag xp">+${exp.xpGained || (exp.difficulty * 50) || 50} XP</span>
+        ${tags.map(t => `<span class="detail-tag">${t}</span>`).join('')}
+      `;
+      document.getElementById('detailModalBody').innerHTML = content;
+      document.getElementById('detailModal').classList.add('show');
+    }
+    
+    // 鏄剧ず绗旇璇︽儏
+    function showNoteDetail(id) {
+      const note = noteData.find(n => n.id === id);
+      if (!note) return;
+      
+      const categoryInfo = noteCategoryMap[note.category] || { label: note.category || '鍏朵粬', icon: '馃摝' };
+      const date = note.updated_at ? new Date(note.updated_at).toLocaleDateString() : '鏈煡鏃ユ湡';
+      const tags = note.tags ? (Array.isArray(note.tags) ? note.tags : JSON.parse(note.tags)) : [];
+      
+      let content = '';
+      
+      // 绗旇鍐呭
+      const noteContent = note.content || '';
+      if (noteContent) {
+        content += '<div class="markdown-content">' + simpleMarkdownToHtml(noteContent) + '</div>';
+      }
+      
+      // 鏇存柊妯℃€佹
+      document.getElementById('detailModalTitle').textContent = note.title || '鏃犳爣棰?;
+      document.getElementById('detailModalMeta').innerHTML = `
+        <span class="detail-tag">${categoryInfo.icon} ${categoryInfo.label}</span>
+        <span class="detail-tag">馃搮 ${date}</span>
+        ${tags.map(t => `<span class="detail-tag">${t}</span>`).join('')}
+      `;
+      document.getElementById('detailModalBody').innerHTML = content;
+      document.getElementById('detailModal').classList.add('show');
+    }
+    
+    // ========== 涓撴爮鐩稿叧 ==========
+    
+    // 涓撴爮鏁版嵁锛堜粠 API 鍔犺浇锛?
+    let columnData = [];
+    
+    // 涓撴爮鍒嗙被鏄犲皠
+    const columnCategoryMap = {
+      dev_flow: { label: '寮€鍙戞祦绋?, icon: '馃敡' },
+      tech_stack: { label: '鎶€鏈爤', icon: '馃捇' },
+      best_practices: { label: '鏈€浣冲疄璺?, icon: '鉁? }
+    };
+    
+    // 褰撳墠涓撴爮杩囨护
+    let currentColumnFilter = 'all';
+    
+    // 娓叉煋涓撴爮鍒楄〃
+    function renderColumnList() {
+      const list = document.getElementById('columnList');
+      let filtered = columnData;
+      if (currentColumnFilter !== 'all') {
+        filtered = columnData.filter(c => c.category === currentColumnFilter);
+      }
+      
+      if (filtered.length === 0) {
+        list.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">馃摎</div>
+            <div class="empty-text">鏆傛棤涓撴爮</div>
+            <div class="empty-hint">涓撴爮姝ｅ湪鏁寸悊涓?..</div>
+          </div>
+        `;
+        return;
+      }
+      
+      list.innerHTML = filtered.map(column => {
+        const categoryInfo = columnCategoryMap[column.category] || { label: column.categoryLabel || '鍏朵粬', icon: '馃摝' };
+        return `
+          <div class="column-card" onclick="showColumnDetail('${column.id}')">
+            <div class="column-header">
+              <div class="column-icon">${column.icon}</div>
+              <div class="column-meta">
+                <div class="column-title">${column.title}</div>
+                <div>
+                  <span class="column-category">${categoryInfo.icon} ${categoryInfo.label}</span>
+                  ${column.tags.slice(0, 3).map(t => `<span class="column-category">${t}</span>`).join('')}
+                </div>
+              </div>
+            </div>
+            <div class="column-description">${column.description}</div>
+            <div class="column-footer">
+              <span>馃搮 ${column.createdAt}</span>
+              <div class="column-stats">
+                <span>馃摉 ${column.readTime} 鍒嗛挓闃呰</span>
+                <span>馃搫 ${column.articles} 绡囨枃绔?/span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+    
+    // 杩囨护涓撴爮
+    function filterColumns(category) {
+      currentColumnFilter = category;
+      const tabs = document.querySelectorAll('#columnsToolbar .filter-tab');
+      tabs.forEach(t => t.classList.remove('active'));
+      
+      // 鏍规嵁 category 鍊兼壘鍒板搴旂殑鍏冪礌骞舵坊鍔?active 绫?
+      const categoryLabels = {
+        'all': '鍏ㄩ儴',
+        'dev_flow': '寮€鍙戞祦绋?,
+        'tech_stack': '鎶€鏈爤',
+        'best_practices': '鏈€浣冲疄璺?
+      };
+      tabs.forEach(t => {
+        if (t.textContent.includes(categoryLabels[category] || category)) {
+          t.classList.add('active');
+        }
+      });
+      
+      renderColumnList();
+    }
+    
+    // 鍒锋柊涓撴爮
+    function refreshColumns() {
+      renderColumnList();
+    }
+    
+    // 鏄剧ず涓撴爮璇︽儏
+    function showColumnDetail(id) {
+      const column = columnData.find(c => c.id === id);
+      if (!column) return;
+      
+      const categoryInfo = columnCategoryMap[column.category] || { label: column.categoryLabel || '鍏朵粬', icon: '馃摝' };
+      
+      let content = '';
+      
+      // 涓撴爮鍐呭
+      const columnContent = column.content || '';
+      if (columnContent) {
+        content += '<div class="markdown-content">' + simpleMarkdownToHtml(columnContent) + '</div>';
+      }
+      
+      // 鏇存柊妯℃€佹
+      document.getElementById('detailModalTitle').textContent = column.title;
+      document.getElementById('detailModalMeta').innerHTML = `
+        <span class="detail-tag">${column.icon} ${column.categoryLabel}</span>
+        <span class="detail-tag">馃摉 ${column.readTime} 鍒嗛挓闃呰</span>
+        <span class="detail-tag">馃搫 ${column.articles} 绡囨枃绔?/span>
+        <span class="detail-tag">馃搮 ${column.createdAt}</span>
+        ${(column.tags || []).map(t => `<span class="detail-tag">${t}</span>`).join('')}
+      `;
+      document.getElementById('detailModalBody').innerHTML = content;
+      document.getElementById('detailModal').classList.add('show');
+    }
+    
+    // 鎵撳紑寮€鍙戞寚鍗楃殑鏌愪釜绔犺妭
+    function openGuideSection(section) {
+      openDevelopmentGuide();
+    }
+    
+    // 鎵撳紑瀹屾暣寮€鍙戞寚鍗?
+    function openDevelopmentGuide() {
+      // 纭繚 columnData 宸插姞杞?
+      if (columnData.length === 0) {
+        alert('璇峰厛鍒锋柊椤甸潰鍔犺浇涓撴爮鏁版嵁');
+        return;
+      }
+      
+      // 鎵惧埌寮€鍙戞寚鍗椾笓鏍?
+      const devGuideColumn = columnData.find(c => c.id === 'development_guide_complete');
+      if (devGuideColumn) {
+        showColumnDetail('development_guide_complete');
+      } else {
+        // 濡傛灉鎵句笉鍒帮紝鏄剧ず绗竴鏉℃渶浣冲疄璺典笓鏍?
+        const bestPracticeColumn = columnData.find(c => c.category === 'best_practices');
+        if (bestPracticeColumn) {
+          showColumnDetail(bestPracticeColumn.id);
+        } else {
+          alert('鏈壘鍒板紑鍙戞寚鍗椾笓鏍?);
+        }
+      }
+    }
+    
+    // 鐐瑰嚮璇︽儏妯℃€佹澶栭儴鍏抽棴
+    document.addEventListener('click', function(e) {
+      const modal = document.getElementById('detailModal');
+      if (modal && e.target === modal) {
+        closeDetailModal();
+      }
+    });
+    
+    // ESC 閿叧闂鎯呮ā鎬佹
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeDetailModal();
+      }
+    });
+    
+    // 鍒濆鍖?
+    init();
+  </script>
+  
+  <!-- 鍏ㄥ眬璁剧疆寮圭獥鏍峰紡 -->
+  <style>
+  /* 鐙珛璁剧疆寮圭獥鏍峰紡 - 浼樺寲鐗?*/
+  #globalSettingsModal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 2147483647;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  #globalSettingsModal.show {
+    display: flex;
+  }
+  #globalSettingsModal * {
+    box-sizing: border-box;
+  }
+  #globalSettingsModal .modal-content {
+    background: #ffffff;
+    border: 1px solid #d0d7de;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 700px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    position: relative;
+    z-index: 2147483647;
+  }
+  #globalSettingsModal .modal-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid #d0d7de;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #ffffff;
+    flex-shrink: 0;
+  }
+  #globalSettingsModal .modal-header h3 {
+    margin: 0;
+    font-size: 16px;
+    color: #24292f;
+    font-weight: 600;
+  }
+  #globalSettingsModal .modal-body {
+    padding: 16px;
+    overflow-y: auto;
+    flex: 1;
+    background: #f6f8fa;
+  }
+  #globalSettingsModal .modal-footer {
+    padding: 12px 16px;
+    border-top: 1px solid #d0d7de;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    background: #ffffff;
+    flex-shrink: 0;
+  }
+  #globalSettingsModal .btn {
+    padding: 6px 12px;
+    border: 1px solid #d0d7de;
+    background: #f6f8fa;
+    color: #24292f;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  #globalSettingsModal .btn:hover {
+    border-color: #0969da;
+    background: #f3f4f6;
+  }
+  #globalSettingsModal .btn.primary {
+    background: #0969da;
+    border-color: #0969da;
+    color: #fff;
+  }
+  #globalSettingsModal .btn.primary:hover {
+    background: #0550ae;
+  }
+  #globalSettingsModal .settings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  #globalSettingsModal .settings-section {
+    background: #ffffff;
+    border: 1px solid #d0d7de;
+    border-radius: 6px;
+    padding: 12px;
+  }
+  #globalSettingsModal .settings-section h4 {
+    font-size: 12px;
+    margin-bottom: 10px;
+    color: #57606a;
+    text-transform: uppercase;
+    margin-top: 0;
+    font-weight: 600;
+  }
+  #globalSettingsModal .form-group {
+    margin-bottom: 10px;
+  }
+  #globalSettingsModal .form-label {
+    display: block;
+    font-size: 11px;
+    color: #6e7781;
+    margin-bottom: 4px;
+  }
+  #globalSettingsModal .form-input {
+    width: 100%;
+    padding: 6px 8px;
+    background: #ffffff;
+    border: 1px solid #d0d7de;
+    border-radius: 4px;
+    color: #24292f;
+    font-size: 11px;
+    box-sizing: border-box;
+    font-family: inherit;
+  }
+  #globalSettingsModal .form-input:focus {
+    outline: none;
+    border-color: #0969da;
+    box-shadow: 0 0 0 3px rgba(9,105,218,0.1);
+  }
+  #globalSettingsModal .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 4px;
+  }
+  #globalSettingsModal .status-dot.online {
+    background: #1a7f37;
+    box-shadow: 0 0 0 2px rgba(26, 127, 55, 0.2);
+  }
+  </style>
+  
+  <!-- 鍏ㄥ眬璁剧疆妯℃€佹 -->
+  <div id="globalSettingsModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>鈿欙笍 绯荤粺璁剧疆</h3>
+        <button class="btn" onclick="closeGlobalSettingsModal()">鉁?/button>
+      </div>
+      <div class="modal-body">
+        <div class="settings-grid">
+          <div class="settings-section">
+            <h4>馃梽锔?鏁版嵁搴撻厤缃?/h4>
+            <div style="margin-bottom: 16px; padding: 12px; background: #f3f4f6; border-radius: 6px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="status-dot online" id="globalSettingsDbStatusDot"></span>
+                <span id="globalSettingsDbStatusText">鏁版嵁搴撳凡杩炴帴</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">涓绘満鍦板潃</label>
+              <input type="text" class="form-input" id="globalDbHost" value="127.0.0.1">
+            </div>
+            <div class="form-group">
+              <label class="form-label">绔彛</label>
+              <input type="text" class="form-input" id="globalDbPort" value="22295">
+            </div>
+            <div class="form-group">
+              <label class="form-label">鏁版嵁搴撳悕</label>
+              <input type="text" class="form-input" id="globalDbName" value="app_db">
+            </div>
+            <div class="form-group">
+              <label class="form-label">鐢ㄦ埛鍚?/label>
+              <input type="text" class="form-input" id="globalDbUser" value="openclaw">
+            </div>
+            <div class="form-group">
+              <label class="form-label">瀵嗙爜</label>
+              <input type="password" class="form-input" id="globalDbPass" value="********">
+            </div>
+            <button class="btn primary" style="width: 100%;" onclick="testGlobalDBConnection()">馃敆 娴嬭瘯杩炴帴</button>
+          </div>
+          
+          <div class="settings-section">
+            <h4>馃 AI閰嶇疆</h4>
+            <div class="form-group">
+              <label class="form-label">AI鎻愪緵鍟?/label>
+              <select class="form-input" id="globalAiProvider">
+                <option value="openai">OpenAI</option>
+                <option value="claude">Claude</option>
+                <option value="gemini">Gemini</option>
+                <option value="local">鏈湴妯″瀷</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">API Key</label>
+              <input type="password" class="form-input" id="globalAiApiKey" placeholder="sk-...">
+            </div>
+            <div class="form-group">
+              <label class="form-label">妯″瀷</label>
+              <select class="form-input" id="globalAiModel">
+                <option value="gpt-4">GPT-4</option>
+                <option value="gpt-3.5">GPT-3.5</option>
+                <option value="claude-3">Claude 3</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">鐢熸垚娓╁害 (0-1)</label>
+              <input type="range" class="form-input" min="0" max="1" step="0.1" value="0.7" id="globalAiTemp">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeGlobalSettingsModal()">鍙栨秷</button>
+        <button class="btn" onclick="resetGlobalSettings()">馃攧 閲嶇疆</button>
+        <button class="btn primary" onclick="saveGlobalSettings()">馃捑 淇濆瓨璁剧疆</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 璇︽儏妯℃€佹鏍峰紡 -->
+  <style>
+  /* 璇︽儏妯℃€佹鏍峰紡 */
+  #detailModal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 2147483647;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  #detailModal.show {
+    display: flex;
+  }
+  #detailModal * {
+    box-sizing: border-box;
+  }
+  #detailModal .modal-content {
+    background: #ffffff;
+    border: 1px solid #d0d7de;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 900px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    position: relative;
+    z-index: 2147483647;
+  }
+  #detailModal .modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #d0d7de;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    background: #ffffff;
+    flex-shrink: 0;
+  }
+  #detailModal .modal-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #24292f;
+    margin: 0;
+    line-height: 1.4;
+  }
+  #detailModal .modal-meta {
+    font-size: 12px;
+    color: #57606a;
+    margin-top: 6px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  #detailModal .modal-body {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+    background: #f6f8fa;
+  }
+  #detailModal .modal-footer {
+    padding: 12px 20px;
+    border-top: 1px solid #d0d7de;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    background: #ffffff;
+    flex-shrink: 0;
+  }
+  #detailModal .btn {
+    padding: 6px 14px;
+    border: 1px solid #d0d7de;
+    background: #f6f8fa;
+    color: #24292f;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  #detailModal .btn:hover {
+    border-color: #0969da;
+    background: #f3f4f6;
+  }
+  #detailModal .btn.primary {
+    background: #0969da;
+    border-color: #0969da;
+    color: #fff;
+  }
+  #detailModal .btn.primary:hover {
+    background: #0550ae;
+  }
+  
+  /* Markdown 鍐呭鏍峰紡 */
+  .markdown-content {
+    font-size: 14px;
+    line-height: 1.7;
+    color: #24292f;
+  }
+  .markdown-content h1 {
+    font-size: 22px;
+    font-weight: 600;
+    margin: 24px 0 12px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #d0d7de;
+    color: #24292f;
+  }
+  .markdown-content h2 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 20px 0 10px 0;
+    color: #24292f;
+  }
+  .markdown-content h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 16px 0 8px 0;
+    color: #24292f;
+  }
+  .markdown-content h4 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 14px 0 6px 0;
+    color: #24292f;
+  }
+  .markdown-content p {
+    margin: 10px 0;
+  }
+  .markdown-content ul, .markdown-content ol {
+    margin: 10px 0;
+    padding-left: 24px;
+  }
+  .markdown-content li {
+    margin: 4px 0;
+  }
+  .markdown-content code {
+    background: #f3f4f6;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 13px;
+    color: #cf222e;
+  }
+  .markdown-content pre {
+    background: #24292f;
+    color: #e6edf3;
+    padding: 16px;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin: 12px 0;
+  }
+  .markdown-content pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+  }
+  .markdown-content blockquote {
+    border-left: 4px solid #0969da;
+    padding-left: 16px;
+    margin: 12px 0;
+    color: #57606a;
+    background: #ddf4ff;
+    padding: 12px 16px;
+    border-radius: 0 6px 6px 0;
+  }
+  .markdown-content table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 12px 0;
+  }
+  .markdown-content th, .markdown-content td {
+    border: 1px solid #d0d7de;
+    padding: 8px 12px;
+    text-align: left;
+  }
+  .markdown-content th {
+    background: #f6f8fa;
+    font-weight: 600;
+  }
+  .markdown-content a {
+    color: #0969da;
+    text-decoration: none;
+  }
+  .markdown-content a:hover {
+    text-decoration: underline;
+  }
+  .markdown-content hr {
+    border: none;
+    border-top: 1px solid #d0d7de;
+    margin: 20px 0;
+  }
+  
+  /* 璇︽儏椤垫爣绛炬牱寮?*/
+  .detail-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    background: #f3f4f6;
+    color: #57606a;
+  }
+  .detail-tag.xp {
+    background: #fff3cd;
+    color: #9a6700;
+  }
+  .detail-tag.difficulty {
+    background: #e8f5e9;
+    color: #1a7f37;
+  }
+  </style>
+  
+  <!-- 璇︽儏妯℃€佹 -->
+  <div id="detailModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title" id="detailModalTitle"></h3>
+          <div class="modal-meta" id="detailModalMeta"></div>
+        </div>
+        <button class="btn" onclick="closeDetailModal()">鉁?/button>
+      </div>
+      <div class="modal-body" id="detailModalBody">
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeDetailModal()">鍏抽棴</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 鍏ㄥ眬璁剧疆寮圭獥鑴氭湰锛堢敱 nav-bar.html 鎻愪緵锛?-->
+</body>
+</html>

@@ -1,0 +1,39 @@
+{
+  "id": "experience-manager",
+  "displayName": "经验中心",
+  "version": "1.0.0",
+  "owner": "auto",
+  "routePrefix": "/experience",
+  "apiPrefix": "/api/experience",
+  "nav": [
+    {
+      "path": "/experience",
+      "label": "经验中心"
+    }
+  ],
+  "pages": [
+    {
+      "id": "experience-home",
+      "path": "/experience",
+      "source": "frontend/pages/experience/index.html"
+    }
+  ],
+  "capabilities": [
+    "experience-records",
+    "notes",
+    "columns",
+    "cloud-sync",
+    "memory-sync"
+  ],
+  "mcp": [
+    "experience-manager"
+  ],
+  "dependencies": [],
+  "runtimeDirs": [
+    "cache",
+    "logs",
+    "temp",
+    "state"
+  ],
+  "featureFlags": []
+}

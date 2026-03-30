@@ -1,0 +1,45 @@
+{
+  "id": "vscode-key-guard",
+  "displayName": "VS Code Key Guard",
+  "version": "1.0.0",
+  "owner": "auto",
+  "routePrefix": "/key-guard",
+  "apiPrefix": "/api/key-guard",
+  "nav": [
+    {
+      "path": "/key-guard",
+      "label": "Key Guard"
+    }
+  ],
+  "pages": [
+    {
+      "id": "key-guard-home",
+      "path": "/key-guard",
+      "source": "frontend/pages/vscode-key-guard/index.html"
+    }
+  ],
+  "capabilities": [
+    "codex-config-watch",
+    "roo-config-watch",
+    "drift-detection",
+    "usage-stats",
+    "key-registry",
+    "controlled-switch"
+  ],
+  "mcp": [
+    "vscode-key-guard"
+  ],
+  "dependencies": [],
+  "runtimeDirs": [
+    "cache",
+    "logs",
+    "temp",
+    "state",
+    "state/backups",
+    "state/registry"
+  ],
+  "featureFlags": [
+    "dangerous-repair-guard",
+    "manual-key-switch"
+  ]
+}

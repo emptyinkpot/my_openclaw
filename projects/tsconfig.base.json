@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "lib": ["ES2022", "DOM"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@openclaw/common-utils": ["packages/common-utils/src"],
+      "@openclaw/common-utils/*": ["packages/common-utils/src/*"],
+      "@openclaw/novel-manager": ["apps/novel-manager/src"],
+      "@openclaw/novel-manager/*": ["apps/novel-manager/src/*"]
+    }
+  },
+  "exclude": ["node_modules", "dist", "data"]
+}

@@ -1,0 +1,123 @@
+{
+  "status": "invalid_config",
+  "summary": "One or more required configuration sources are missing or invalid.",
+  "observedAt": "2026-03-30T12:03:18.477Z",
+  "suggestedAction": "Inspect unreadable sources before attempting any repair.",
+  "canAutoFix": false,
+  "evidence": [
+    {
+      "snapshotId": "vscode-roo-state-db",
+      "source": "vscode-roo-state-db",
+      "detail": "Snapshot health is invalid."
+    }
+  ],
+  "snapshots": [
+    {
+      "id": "codex-config-toml",
+      "provider": "codex",
+      "source": "codex-config",
+      "filePath": "C:/Users/ASUS-KL/.codex/config.toml",
+      "health": "present",
+      "baseUrl": "https://apikey.soxio.me/openai",
+      "model": "gpt-5.4",
+      "configName": "crs",
+      "lastModifiedAt": "2026-03-30T05:34:07.705Z",
+      "observedAt": "2026-03-30T12:03:18.477Z",
+      "metadata": {
+        "preferredAuthMethod": "apikey",
+        "wireApi": "responses"
+      }
+    },
+    {
+      "id": "codex-auth-json",
+      "provider": "codex",
+      "source": "codex-auth",
+      "filePath": "C:/Users/ASUS-KL/.codex/auth.json",
+      "health": "present",
+      "keyFingerprint": "cr_7...a656",
+      "lastModifiedAt": "2026-03-30T01:12:36.130Z",
+      "observedAt": "2026-03-30T12:03:18.477Z",
+      "metadata": {
+        "authMode": "apikey"
+      }
+    },
+    {
+      "id": "roo-env-local",
+      "provider": "roo",
+      "source": "roo-env-local",
+      "filePath": "C:/Users/ASUS-KL/.roo/.env.local",
+      "health": "present",
+      "keyFingerprint": "cr_1...26b8",
+      "baseUrl": "https://apikey.soxio.me/openai",
+      "model": "gpt-5.4",
+      "configName": "env_global",
+      "lastModifiedAt": "2026-03-29T14:00:16.555Z",
+      "observedAt": "2026-03-30T12:03:18.477Z",
+      "metadata": {
+        "reader": "env-file"
+      }
+    },
+    {
+      "id": "vscode-global-storage-db",
+      "provider": "vscode",
+      "source": "vscode-global-storage-db",
+      "filePath": "C:/Users/ASUS-KL/AppData/Roaming/Code/User/globalStorage/state.vscdb",
+      "health": "present",
+      "lastModifiedAt": "2026-03-30T11:49:52.416Z",
+      "observedAt": "2026-03-30T12:03:18.477Z",
+      "metadata": {
+        "reader": "stat-only",
+        "note": "SQLite probing is deferred; current stage confirms presence and recency only.",
+        "sizeBytes": 548864
+      }
+    },
+    {
+      "id": "vscode-roo-storage-dir",
+      "provider": "vscode",
+      "source": "vscode-roo-storage-dir",
+      "filePath": "C:/Users/ASUS-KL/AppData/Roaming/Code/User/globalStorage/rooveterinaryinc.roo-cline",
+      "health": "present",
+      "lastModifiedAt": "2026-03-29T13:54:52.794Z",
+      "observedAt": "2026-03-30T12:03:18.477Z",
+      "metadata": {
+        "reader": "stat-only",
+        "note": "Directory-level evidence for Roo extension state.",
+        "isDirectory": true
+      }
+    },
+    {
+      "id": "vscode-roo-task-index",
+      "provider": "roo",
+      "source": "vscode-roo-task-index",
+      "filePath": "C:/Users/ASUS-KL/AppData/Roaming/Code/User/globalStorage/rooveterinaryinc.roo-cline/tasks/_index.json",
+      "health": "present",
+      "configName": "env_global",
+      "lastModifiedAt": "2026-03-30T01:13:02.817Z",
+      "observedAt": "2026-03-30T12:03:18.477Z",
+      "metadata": {
+        "reader": "task-index",
+        "matchedWorkspace": false,
+        "entryCount": 13,
+        "configNameCount": 2,
+        "selectedTaskId": "019d3c1b-d050-71ca-85f8-7f6f3f1aaf4b",
+        "selectedWorkspace": "e:\\Auto",
+        "selectedMode": "code",
+        "selectedTaskTs": 1774833180768,
+        "storageUpdatedAt": 1774833182813
+      }
+    },
+    {
+      "id": "vscode-roo-state-db",
+      "provider": "roo",
+      "source": "vscode-roo-state-db",
+      "filePath": "C:/Users/ASUS-KL/AppData/Roaming/Code/User/globalStorage/state.vscdb",
+      "health": "invalid",
+      "lastModifiedAt": "2026-03-30T11:49:52.416Z",
+      "observedAt": "2026-03-30T12:03:18.477Z",
+      "metadata": {
+        "reader": "utf8-probe",
+        "reason": "currentApiConfigName was not found in the VS Code global state database text view."
+      }
+    }
+  ]
+}

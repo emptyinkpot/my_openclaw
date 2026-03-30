@@ -1,0 +1,314 @@
+{
+  "polishConfig": {
+    "settings": {
+      "steps": {
+        "detect": {
+          "enabled": true,
+          "order": 0
+        },
+        "quoteProtect": {
+          "enabled": true,
+          "order": 1
+        },
+        "titleExtract": {
+          "enabled": true,
+          "order": 2
+        },
+        "properNounCheck": {
+          "enabled": false,
+          "order": 3
+        },
+        "narrativePerspective": {
+          "enabled": false,
+          "order": 4
+        },
+        "classicalApply": {
+          "enabled": false,
+          "order": 5
+        },
+        "citationApply": {
+          "enabled": false,
+          "order": 6
+        },
+        "particleApply": {
+          "enabled": false,
+          "order": 7
+        },
+        "punctuationApply": {
+          "enabled": true,
+          "order": 8
+        },
+        "polish": {
+          "enabled": false,
+          "order": 9
+        },
+        "bannedWords": {
+          "enabled": true,
+          "order": 10
+        },
+        "preferredWords": {
+          "enabled": true,
+          "order": 11
+        },
+        "sentencePatterns": {
+          "enabled": false,
+          "order": 12
+        },
+        "memeFuse": {
+          "enabled": false,
+          "order": 13
+        },
+        "styleForge": {
+          "enabled": false,
+          "order": 14
+        },
+        "markdownClean": {
+          "enabled": true,
+          "order": 15
+        },
+        "semanticCheck": {
+          "enabled": true,
+          "order": 16
+        },
+        "wordUsageCheck": {
+          "enabled": false,
+          "order": 17
+        },
+        "smartFix": {
+          "enabled": false,
+          "order": 18
+        },
+        "finalReview": {
+          "enabled": true,
+          "order": 19
+        },
+        "breathSegment": {
+          "enabled": false,
+          "order": 20
+        }
+      },
+      "global": {
+        "style": "narrative",
+        "temperature": 0.7
+      }
+    },
+    "stepConfigs": [
+      {
+        "id": "detect",
+        "settings": {
+          "enabled": true,
+          "order": 0
+        }
+      },
+      {
+        "id": "quoteProtect",
+        "settings": {
+          "enabled": true,
+          "order": 1
+        }
+      },
+      {
+        "id": "titleExtract",
+        "settings": {
+          "enabled": true,
+          "order": 2
+        }
+      },
+      {
+        "id": "properNounCheck",
+        "settings": {
+          "enabled": false,
+          "order": 3
+        }
+      },
+      {
+        "id": "narrativePerspective",
+        "settings": {
+          "enabled": false,
+          "order": 4
+        }
+      },
+      {
+        "id": "classicalApply",
+        "settings": {
+          "enabled": false,
+          "order": 5
+        }
+      },
+      {
+        "id": "citationApply",
+        "settings": {
+          "enabled": false,
+          "order": 6
+        }
+      },
+      {
+        "id": "particleApply",
+        "settings": {
+          "enabled": false,
+          "order": 7
+        }
+      },
+      {
+        "id": "punctuationApply",
+        "settings": {
+          "enabled": true,
+          "order": 8
+        }
+      },
+      {
+        "id": "polish",
+        "settings": {
+          "enabled": false,
+          "order": 9
+        }
+      },
+      {
+        "id": "bannedWords",
+        "settings": {
+          "enabled": true,
+          "order": 10
+        }
+      },
+      {
+        "id": "preferredWords",
+        "settings": {
+          "enabled": true,
+          "order": 11
+        }
+      },
+      {
+        "id": "sentencePatterns",
+        "settings": {
+          "enabled": false,
+          "order": 12
+        }
+      },
+      {
+        "id": "memeFuse",
+        "settings": {
+          "enabled": false,
+          "order": 13
+        }
+      },
+      {
+        "id": "styleForge",
+        "settings": {
+          "enabled": false,
+          "order": 14
+        }
+      },
+      {
+        "id": "markdownClean",
+        "settings": {
+          "enabled": true,
+          "order": 15
+        }
+      },
+      {
+        "id": "semanticCheck",
+        "settings": {
+          "enabled": true,
+          "order": 16
+        }
+      },
+      {
+        "id": "wordUsageCheck",
+        "settings": {
+          "enabled": false,
+          "order": 17
+        }
+      },
+      {
+        "id": "smartFix",
+        "settings": {
+          "enabled": false,
+          "order": 18
+        }
+      },
+      {
+        "id": "finalReview",
+        "settings": {
+          "enabled": true,
+          "order": 19
+        }
+      },
+      {
+        "id": "breathSegment",
+        "settings": {
+          "enabled": false,
+          "order": 20
+        }
+      }
+    ]
+  },
+  "dailyPlans": {
+    "dailyChaptersPerWork": 1,
+    "completedChapters": {},
+    "plannedChapters": {
+      "7600575059215780926": [
+        76
+      ],
+      "7605503463933365310": [
+        40
+      ],
+      "7600933271899212862": [
+        70
+      ],
+      "7597700170565815358": [
+        40
+      ],
+      "7603587415583755326": [
+        88
+      ],
+      "7604852827646610494": [
+        30
+      ],
+      "7610788958707928089": [
+        109
+      ],
+      "7611904462289914905": [
+        1
+      ]
+    },
+    "lastPlanDate": "Fri Mar 27 2026"
+  },
+  "contentCraftAutoConfig": {
+    "enabled": false,
+    "processInterval": 60,
+    "maxChaptersPerRun": 3,
+    "relatedChapterCount": 3,
+    "autoPolish": true,
+    "intervalMinutes": 30,
+    "autoRun": false
+  },
+  "auditAutoConfig": {
+    "enabled": false,
+    "processInterval": 60,
+    "maxChaptersPerRun": 3,
+    "autoFix": true,
+    "intervalMinutes": 30,
+    "autoRun": false
+  },
+  "publishAutoConfig": {
+    "enabled": false,
+    "processInterval": 300,
+    "maxChaptersPerRun": 1,
+    "headless": true,
+    "dryRun": false,
+    "intervalMinutes": 30,
+    "accountId": ""
+  },
+  "smartSchedulerConfig": {
+    "enabled": false,
+    "processInterval": 60,
+    "maxChaptersPerRun": 3,
+    "contentCraft": {
+      "relatedChapterCount": 3,
+      "autoPolish": true
+    },
+    "audit": {
+      "autoFix": true
+    }
+  }
+}

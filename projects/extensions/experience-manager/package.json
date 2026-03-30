@@ -1,0 +1,27 @@
+{
+  "name": "experience-manager",
+  "version": "1.0.0",
+  "description": "经验中心模块",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "mcp": "node ./mcp/experience-manager-mcp.mjs",
+    "sync:qmd": "node ./scripts/sync-to-qmd.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "openclaw": {
+    "extensions": [
+      "./plugin/index.ts"
+    ]
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.1",
+    "express": "^4.21.2",
+    "mysql2": "^3.14.5",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^6.0.2"
+  }
+}
