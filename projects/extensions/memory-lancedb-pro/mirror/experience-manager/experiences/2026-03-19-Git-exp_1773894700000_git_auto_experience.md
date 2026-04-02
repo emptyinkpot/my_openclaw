@@ -1,0 +1,42 @@
+---
+id: "exp_1773894700000_git_auto_experience"
+title: "Git结算时自动积累经验的工作流程"
+type: "learning"
+date: "2026-03-19T04:31:40.000Z"
+updated_at: "2026-03-25T05:42:29.000Z"
+difficulty: 3
+xp_gained: 100
+tags: ["git", "workflow", "automation", "experience", "best-practice"]
+source_project: ""
+source_file: ""
+---
+# Git结算时自动积累经验的工作流程
+
+## Summary
+用户指出应该在git结算(commit)时自动将经验记录到经验积累模块，而不是手动记录。这是一个工作流程优化点：每次代码提交时，应该同步更新经验数据，确保经验积累与代码变更同步。
+
+## Problem
+你踏马不会自动积累啊git结算的时候你就积累
+
+## Solution
+建立规范：1) 每次git commit前，将本次解决问题的经验记录到apps/experience-manager/data/experiences.json；2) 经验记录应包含问题描述、解决方案、获得的经验点；3) commit消息中可简要提及经验积累内容；4) 使用done工具提交时，自动触发经验积累更新；5) 定期 review 经验数据，确保有价值的问题都被记录
+
+## Applied
+- 工作流程优化
+- Git提交规范
+- 经验积累自动化
+
+## Gained
+- Git hooks使用
+- 自动化经验积累流程
+- 开发习惯养成
+- 经验数据管理
+
+## Verification
+-
+
+## Source
+- project: 
+- branch: 
+- file: 
+- url: 

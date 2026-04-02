@@ -1,0 +1,37 @@
+{
+  "id": "novel-manager",
+  "displayName": "小说管理",
+  "version": "1.0.0",
+  "owner": "auto",
+  "routePrefix": "/novel",
+  "apiPrefix": "/api/novel",
+  "nav": [
+    {
+      "path": "/novel",
+      "label": "小说管理"
+    }
+  ],
+  "pages": [
+    {
+      "id": "novel-home",
+      "path": "/novel",
+      "source": "frontend/pages/novel/index.html"
+    }
+  ],
+  "capabilities": [
+    "content-craft",
+    "audit-auto",
+    "publish-auto",
+    "smart-scheduler",
+    "resource-library"
+  ],
+  "mcp": [],
+  "dependencies": [],
+  "runtimeDirs": [
+    "cache",
+    "logs",
+    "temp",
+    "state"
+  ],
+  "featureFlags": []
+}

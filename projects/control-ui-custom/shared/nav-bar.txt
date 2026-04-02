@@ -1,0 +1,413 @@
+<style>
+/* 缁熶竴瀵艰埅鏍忔牱寮?- 涓庡師鐢熺晫闈繚鎸佷竴鑷?*/
+.nav-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 48px;
+  background: linear-gradient(135deg, #1a1f2e 0%, #0d1117 100%);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 8px;
+  z-index: 9999;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* 瀵艰埅鏍忛《閮ㄨ楗扮嚎 */
+.nav-bar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, 
+    #ff6b6b 0%, 
+    #4ecdc4 25%, 
+    #45b7d1 50%, 
+    #96ceb4 75%, 
+    #feca57 100%
+  );
+}
+
+/* 鍝佺墝鏍囪瘑 */
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: 24px;
+}
+
+.nav-logo {
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-size: 14px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.nav-title {
+  color: #fff;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.5px;
+  background: linear-gradient(135deg, #fff 0%, #a8b1ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* 瀵艰埅椤规牱寮?*/
+.nav-bar a {
+  color: #8b949e;
+  font-size: 13px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+
+/* 搴曢儴鎸囩ず绾?*/
+.nav-bar a::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateX(-50%);
+  border-radius: 3px 3px 0 0;
+}
+
+/* 鎮仠鏁堟灉 */
+.nav-bar a:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.nav-bar a:hover::before {
+  width: 70%;
+}
+
+/* 褰撳墠椤甸潰楂樹寒 */
+.nav-bar a.on {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+}
+
+.nav-bar a.on::before {
+  width: 100%;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+}
+
+/* 鍝嶅簲寮忚皟鏁?*/
+@media (max-width: 1200px) {
+  .nav-bar {
+    padding: 0 16px;
+    gap: 6px;
+  }
+  
+  .nav-bar a {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  
+  .nav-brand {
+    margin-right: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .nav-bar {
+    height: 56px;
+    flex-wrap: wrap;
+    padding: 8px 12px;
+  }
+  
+  .nav-brand {
+    width: 100%;
+    justify-content: center;
+    margin: 0 0 8px 0;
+  }
+  
+  .nav-items {
+    display: flex;
+    width: 100%;
+    justify-content: center;
+    gap: 4px;
+  }
+  
+  .nav-bar a {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+}
+</style>
+
+<div class="nav-bar">
+  <!-- 鍝佺墝鏍囪瘑 -->
+  <div class="nav-brand">
+    <div class="nav-logo">OC</div>
+    <div class="nav-title">OpenClaw</div>
+  </div>
+  
+  <!-- 瀵艰埅椤?-->
+  <a href="javascript:void(0)" onclick="openGlobalSettingsModal();">鈿欙笍 璁剧疆</a>
+  <a href="/novel/">馃摎 灏忚绠＄悊</a>
+  <a href="/automation">馃 鑷姩鍖?/a>
+  <a href="/project-structure.html">馃彈锔?椤圭洰缁撴瀯</a>
+  <a href="/experience">馃 缁忛獙</a>
+  <a href="/cache.html">馃捑 缂撳瓨</a>
+  <a href="/logs.html">馃搵 鏃ュ織</a>
+  <a href="/cache-manage.html">馃梽锔?缂撳瓨绠＄悊</a>
+  <a href="/file-manager">馃搧 鏂囦欢绠＄悊</a>
+<a href="/control-ui-custom/launch.html">馃幆 鍘熺敓鐣岄潰</a>
+</div>
+
+<!-- 鍏ㄥ眬璁剧疆寮圭獥锛堜繚鎸佷笉鍙橈級 -->
+<style>
+/* 鐙珛璁剧疆寮圭獥鏍峰紡 - 浼樺寲鐗?*/
+#globalSettingsModal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 2147483647;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+#globalSettingsModal.show {
+  display: flex;
+}
+#globalSettingsModal * {
+  box-sizing: border-box;
+}
+#globalSettingsModal .modal-content {
+  background: #ffffff;
+  border: 1px solid #d0d7de;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 700px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+  position: relative;
+  z-index: 2147483647;
+}
+#globalSettingsModal .modal-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid #d0d7de;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #ffffff;
+  flex-shrink: 0;
+}
+#globalSettingsModal .modal-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #24292f;
+  font-weight: 600;
+}
+#globalSettingsModal .modal-body {
+  padding: 16px;
+  overflow-y: auto;
+  flex: 1;
+  background: #f6f8fa;
+}
+#globalSettingsModal .modal-footer {
+  padding: 12px 16px;
+  border-top: 1px solid #d0d7de;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  background: #ffffff;
+  flex-shrink: 0;
+}
+#globalSettingsModal .btn {
+  padding: 6px 12px;
+  border: 1px solid #d0d7de;
+  background: #f6f8fa;
+  color: #24292f;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+#globalSettingsModal .btn:hover {
+  border-color: #0969da;
+  background: #f3f4f6;
+}
+#globalSettingsModal .btn.primary {
+  background: #0969da;
+  border-color: #0969da;
+  color: #fff;
+}
+#globalSettingsModal .btn.primary:hover {
+  background: #0550ae;
+}
+#globalSettingsModal .settings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+#globalSettingsModal .settings-section {
+  background: #ffffff;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  padding: 12px;
+}
+#globalSettingsModal .settings-section h4 {
+  font-size: 12px;
+  margin-bottom: 10px;
+  color: #57606a;
+  text-transform: uppercase;
+  margin-top: 0;
+  font-weight: 600;
+}
+#globalSettingsModal .form-group {
+  margin-bottom: 10px;
+}
+#globalSettingsModal .form-label {
+  display: block;
+  font-size: 11px;
+  color: #6e7781;
+  margin-bottom: 4px;
+}
+#globalSettingsModal .form-input {
+  width: 100%;
+  padding: 6px 8px;
+  background: #ffffff;
+  border: 1px solid #d0d7de;
+  border-radius: 4px;
+  color: #24292f;
+  font-size: 11px;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+#globalSettingsModal .form-input:focus {
+  outline: none;
+  border-color: #0969da;
+  box-shadow: 0 0 0 3px rgba(9,105,218,0.1);
+}
+#globalSettingsModal .status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 4px;
+}
+#globalSettingsModal .status-dot.online {
+  background: #1a7f37;
+  box-shadow: 0 0 0 2px rgba(26, 127, 55, 0.2);
+}
+</style>
+
+<!-- 鍏ㄥ眬璁剧疆妯℃€佹 -->
+<div id="globalSettingsModal" style="display:none;">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>鈿欙笍 绯荤粺璁剧疆</h3>
+      <button class="btn" onclick="closeGlobalSettingsModal()">鉁?/button>
+    </div>
+    <div class="modal-body">
+      <div class="settings-grid">
+        <div class="settings-section">
+          <h4>馃梽锔?鏁版嵁搴撻厤缃?/h4>
+          <div style="margin-bottom: 16px; padding: 12px; background: #f3f4f6; border-radius: 6px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="status-dot online" id="globalSettingsDbStatusDot"></span>
+              <span id="globalSettingsDbStatusText">鏁版嵁搴撳凡杩炴帴</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">涓绘満鍦板潃</label>
+            <input type="text" class="form-input" id="globalDbHost" value="sh-cynosdbmysql-grp-1kbg1xh0.sql.tencentcdb.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">绔彛</label>
+            <input type="text" class="form-input" id="globalDbPort" value="22295">
+          </div>
+          <div class="form-group">
+            <label class="form-label">鏁版嵁搴撳悕</label>
+            <input type="text" class="form-input" id="globalDbName" value="cloudbase-4glvyyq9f61b19cd">
+          </div>
+          <div class="form-group">
+            <label class="form-label">鐢ㄦ埛鍚?/label>
+            <input type="text" class="form-input" id="globalDbUser" value="openclaw">
+          </div>
+          <div class="form-group">
+            <label class="form-label">瀵嗙爜</label>
+            <input type="password" class="form-input" id="globalDbPass" value="********">
+          </div>
+          <button class="btn primary" style="width: 100%;" onclick="testGlobalDBConnection()">馃敆 娴嬭瘯杩炴帴</button>
+        </div>
+        
+        <div class="settings-section">
+          <h4>馃 AI閰嶇疆</h4>
+          <div class="form-group">
+            <label class="form-label">AI鎻愪緵鍟?/label>
+            <select class="form-input" id="globalAiProvider">
+              <option value="openai">OpenAI</option>
+              <option value="claude">Claude</option>
+              <option value="gemini">Gemini</option>
+              <option value="local">鏈湴妯″瀷</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">API Key</label>
+            <input type="password" class="form-input" id="globalAiApiKey" placeholder="sk-...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">妯″瀷</label>
+            <select class="form-input" id="globalAiModel">
+              <option value="gpt-4">GPT-4</option>
+              <option value="gpt-3.5">GPT-3.5</option>
+              <option value="claude-3">Claude 3</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">鐢熸垚娓╁害 (0-1)</label>
+            <input type="range" class="form-input" min="0" max="1" step="0.1" value="0.7" id="globalAiTemp">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeGlobalSettingsModal()">鍙栨秷</button>
+      <button class="btn" onclick="resetGlobalSettings()">馃攧 閲嶇疆</button>
+      <button class="btn primary" onclick="saveGlobalSettings()">馃捑 淇濆瓨璁剧疆</button>
+    </div>
+  </div>
+</div>
+
+

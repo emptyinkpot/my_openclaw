@@ -1,0 +1,34 @@
+{
+  "id": "automation-hub",
+  "displayName": "自动化中心",
+  "version": "1.0.0",
+  "owner": "auto",
+  "routePrefix": "/automation",
+  "apiPrefix": "/api/automation",
+  "nav": [
+    {
+      "path": "/automation",
+      "label": "自动化"
+    }
+  ],
+  "pages": [
+    {
+      "id": "automation-home",
+      "path": "/automation",
+      "source": "frontend/pages/automation/index.html"
+    }
+  ],
+  "capabilities": [
+    "schedules",
+    "feishu-ops"
+  ],
+  "mcp": [],
+  "dependencies": [],
+  "runtimeDirs": [
+    "cache",
+    "logs",
+    "temp",
+    "state"
+  ],
+  "featureFlags": []
+}

@@ -1,0 +1,92 @@
+{
+  "steps": {
+    "detect": {
+      "enabled": true,
+      "order": 0
+    },
+    "properNounCheck": {
+      "enabled": false,
+      "order": 3
+    },
+    "narrativePerspective": {
+      "enabled": false,
+      "order": 4
+    },
+    "classicalApply": {
+      "enabled": false,
+      "order": 5
+    },
+    "citationApply": {
+      "enabled": false,
+      "order": 6
+    },
+    "particleApply": {
+      "enabled": true,
+      "order": 7
+    },
+    "punctuationApply": {
+      "enabled": true,
+      "order": 8
+    },
+    "quoteProtect": {
+      "enabled": true,
+      "order": 1
+    },
+    "titleExtract": {
+      "enabled": true,
+      "order": 2
+    },
+    "polish": {
+      "enabled": true,
+      "order": 9
+    },
+    "bannedWords": {
+      "enabled": true,
+      "order": 10
+    },
+    "preferredWords": {
+      "enabled": true,
+      "order": 11
+    },
+    "sentencePatterns": {
+      "enabled": true,
+      "order": 12
+    },
+    "memeFuse": {
+      "enabled": false,
+      "order": 13
+    },
+    "styleForge": {
+      "enabled": true,
+      "order": 14
+    },
+    "markdownClean": {
+      "enabled": true,
+      "order": 15
+    },
+    "semanticCheck": {
+      "enabled": true,
+      "order": 16
+    },
+    "wordUsageCheck": {
+      "enabled": true,
+      "order": 17
+    },
+    "smartFix": {
+      "enabled": true,
+      "order": 18
+    },
+    "finalReview": {
+      "enabled": true,
+      "order": 19
+    },
+    "breathSegment": {
+      "enabled": true,
+      "order": 20
+    }
+  },
+  "global": {
+    "style": "narrative",
+    "temperature": 0.7
+  }
+}

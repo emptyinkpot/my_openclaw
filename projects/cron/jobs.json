@@ -1,0 +1,104 @@
+{
+  "version": 1,
+  "jobs": [
+    {
+      "id": "9e1ff01d-a707-42ce-b5dd-730dce5c8e30",
+      "name": "daily-maintenance",
+      "description": "每日自动维护任务日志系统",
+      "enabled": true,
+      "createdAtMs": 1773627549638,
+      "updatedAtMs": 1774206035270,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 3 * * *",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "/维护"
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "last"
+      },
+      "state": {
+        "nextRunAtMs": 1774292400000,
+        "lastRunAtMs": 1774206000005,
+        "lastRunStatus": "error",
+        "lastStatus": "error",
+        "lastDurationMs": 35265,
+        "lastDeliveryStatus": "unknown",
+        "consecutiveErrors": 1,
+        "lastError": "Channel is required (no configured channels detected). Set delivery.channel explicitly or use a main session with a previous channel."
+      }
+    },
+    {
+      "id": "batch-publish-morning",
+      "name": "番茄批量发布-早班",
+      "description": "每天早上自动发布番茄小说章节",
+      "enabled": true,
+      "createdAtMs": 1773805800000,
+      "updatedAtMs": 1774228155587,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 9 * * *",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "执行 auto-scripts/task-planner/scripts/auto-publish-all.js"
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "last"
+      },
+      "state": {
+        "nextRunAtMs": 1774314000000,
+        "lastRunAtMs": 1774227987707,
+        "lastRunStatus": "error",
+        "lastStatus": "error",
+        "lastDurationMs": 167880,
+        "lastDeliveryStatus": "unknown",
+        "consecutiveErrors": 5,
+        "lastError": "Channel is required (no configured channels detected). Set delivery.channel explicitly or use a main session with a previous channel."
+      }
+    },
+    {
+      "id": "batch-publish-evening",
+      "name": "番茄批量发布-晚班",
+      "description": "每天晚上自动发布番茄小说章节",
+      "enabled": true,
+      "createdAtMs": 1773805800001,
+      "updatedAtMs": 1774182337008,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 20 * * *",
+        "tz": "Asia/Shanghai"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "执行 auto-scripts/task-planner/scripts/auto-publish-all.js"
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "last"
+      },
+      "state": {
+        "nextRunAtMs": 1774267200000,
+        "lastRunAtMs": 1774182145545,
+        "lastRunStatus": "error",
+        "lastStatus": "error",
+        "lastDurationMs": 191463,
+        "lastDeliveryStatus": "unknown",
+        "consecutiveErrors": 3,
+        "lastError": "Channel is required (no configured channels detected). Set delivery.channel explicitly or use a main session with a previous channel."
+      }
+    }
+  ]
+}

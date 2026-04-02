@@ -1,0 +1,168 @@
+{
+  "experience-manager": {
+    "displayName": "经验中心",
+    "tsconfig": "extensions/experience-manager/tsconfig.json",
+    "pageChecks": [
+      {
+        "path": "/experience",
+        "containsAll": [
+          "经验积累中心",
+          "nav-bar"
+        ]
+      }
+    ],
+    "apiChecks": [
+      {
+        "path": "/api/experience/health",
+        "containsAll": [
+          "experience-manager"
+        ]
+      },
+      {
+        "path": "/api/experience/stats",
+        "containsAll": [
+          "totalRecords"
+        ]
+      },
+      {
+        "path": "/api/experience/records",
+        "containsAll": [
+          "\"success\":true"
+        ]
+      },
+      {
+        "path": "/api/experience/notes",
+        "containsAll": [
+          "\"success\":true"
+        ]
+      },
+      {
+        "path": "/api/experience/columns",
+        "containsAll": [
+          "\"success\":true"
+        ]
+      }
+    ],
+    "scanPaths": [
+      "openclaw.json",
+      "extensions/experience-manager",
+      "extensions/novel-manager",
+      "shared/nav-bar.html",
+      "control-ui-custom/shared/nav-bar.html",
+      "control-ui-custom/assets/nav-bar.html"
+    ],
+    "legacySearches": [
+      {
+        "label": "旧插件目录引用",
+        "value": "extensions/plugins/experience-manager",
+        "allowPaths": [
+          "extensions/experience-manager/data/columns.json"
+        ]
+      },
+      {
+        "label": "小说模块代管经验接口",
+        "value": "/api/novel/experience/"
+      },
+      {
+        "label": "旧页面别名",
+        "value": "/experience.html",
+        "allowPaths": [
+          "extensions/experience-manager/data/columns.json"
+        ]
+      }
+    ]
+  },
+  "automation-hub": {
+    "displayName": "自动化中心",
+    "tsconfig": "extensions/automation-hub/tsconfig.json",
+    "pageChecks": [
+      {
+        "path": "/automation",
+        "containsAll": [
+          "Automation Center"
+        ]
+      }
+    ],
+    "apiChecks": [
+      {
+        "path": "/api/automation/health",
+        "containsAll": [
+          "automation-hub"
+        ]
+      },
+      {
+        "path": "/api/automation/schedules",
+        "containsAll": [
+          "\"success\":true"
+        ]
+      }
+    ],
+    "scanPaths": [
+      "openclaw.json",
+      "extensions/automation-hub",
+      "shared/nav-bar.html",
+      "control-ui-custom/shared/nav-bar.html",
+      "control-ui-custom/assets/nav-bar.html"
+    ],
+    "legacySearches": [
+      {
+        "label": "旧插件目录引用",
+        "value": "extensions/plugins/automation-hub"
+      },
+      {
+        "label": "旧 auto.html 入口",
+        "value": "/auto.html"
+      }
+    ]
+  },
+  "file-manager": {
+    "displayName": "文件管理",
+    "tsconfig": "extensions/file-manager/tsconfig.json",
+    "pageChecks": [
+      {
+        "path": "/file-manager",
+        "containsAll": [
+          "工作区文件管理",
+          "nav-bar"
+        ]
+      }
+    ],
+    "apiChecks": [
+      {
+        "path": "/api/file-manager/health",
+        "containsAll": [
+          "file-manager"
+        ]
+      },
+      {
+        "path": "/api/file-manager/config",
+        "containsAll": [
+          "workspaceRoot"
+        ]
+      },
+      {
+        "path": "/api/file-manager/tree",
+        "containsAll": [
+          "\"success\":true"
+        ]
+      }
+    ],
+    "scanPaths": [
+      "openclaw.json",
+      "extensions/file-manager",
+      "shared/nav-bar.html",
+      "control-ui-custom/shared/nav-bar.html",
+      "control-ui-custom/assets/nav-bar.html"
+    ],
+    "legacySearches": [
+      {
+        "label": "旧插件目录引用",
+        "value": "extensions/plugins/file-manager"
+      },
+      {
+        "label": "旧 API 前缀引用",
+        "value": "/file-manager/api"
+      }
+    ]
+  }
+}

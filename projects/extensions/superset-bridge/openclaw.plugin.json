@@ -1,0 +1,20 @@
+{
+  "id": "superset-bridge",
+  "name": "Superset BI",
+  "description": "在 OpenClaw 中桥接 Superset Web",
+  "version": "1.0.0",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "targetBaseUrl": {
+        "type": "string",
+        "description": "Superset Web 基础地址，例如 http://127.0.0.1:3000"
+      },
+      "requestTimeoutMs": {
+        "type": "integer",
+        "description": "桥接代理请求超时时间（毫秒）"
+      }
+    }
+  }
+}

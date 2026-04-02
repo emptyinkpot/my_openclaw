@@ -1,0 +1,27 @@
+{
+  "name": "@openclaw/common-utils",
+  "version": "1.0.0",
+  "description": "OpenClaw 公共工具库",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "dev": "tsc --watch"
+  },
+  "keywords": ["openclaw", "utils"],
+  "author": "OpenClaw",
+  "license": "MIT",
+  "dependencies": {
+    "mysql2": "^3.6.5",
+    "playwright": "^1.40.0",
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.3",
+    "@types/jest": "^29.0.0",
+    "jest": "^29.0.0",
+    "ts-jest": "^29.0.0"
+  }
+}

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VS Code Key Guard</title>
+    <style>
+      :root{--bg:#f6efe6;--panel:#fffaf5;--ink:#201a17;--muted:#72665f;--line:rgba(60,42,30,.12);--accent:#b6583a;--ok:#2f7d4d;--warn:#b97a1f;--danger:#b24034}
+      *{box-sizing:border-box}body{margin:0;font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;color:var(--ink);background:linear-gradient(180deg,#fbf7f1 0%,var(--bg) 100%)}
+      main{width:min(1220px,calc(100% - 32px));margin:0 auto;padding:32px 0 56px}
+      h1,h2,h3,p{margin:0}.hero{display:grid;gap:12px;margin-bottom:18px}.eyebrow{display:inline-flex;width:fit-content;padding:6px 10px;border-radius:999px;background:rgba(182,88,58,.12);color:var(--accent);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+      .toolbar,.actions,.pill-row,.check-row{display:flex;flex-wrap:wrap;gap:10px}.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px}
+      .card{grid-column:span 12;background:rgba(255,250,245,.92);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:0 18px 46px rgba(61,39,23,.10)}
+      .span-3{grid-column:span 3}.span-4{grid-column:span 4}.span-6{grid-column:span 6}.span-8{grid-column:span 8}.metric-label{display:block;margin-bottom:10px;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em}.metric-value{display:block;font-size:24px;font-weight:700}
+      .subtle{color:var(--muted);font-size:13px;line-height:1.55}.status{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}.status:before{content:"";width:9px;height:9px;border-radius:50%;background:currentColor}.ok{background:rgba(47,125,77,.12);color:var(--ok)}.warn{background:rgba(185,122,31,.12);color:var(--warn)}.danger{background:rgba(178,64,52,.12);color:var(--danger)}
+      .row{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid rgba(60,42,30,.08)}.row:last-child{border-bottom:none}.key{color:var(--muted);font-size:13px}.value{max-width:68%;text-align:right;word-break:break-all;font-weight:600}
+      .pill{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:#fff;border:1px solid rgba(60,42,30,.08);font-size:12px;color:var(--muted)}
+      .usage-grid,.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.box{padding:14px;border-radius:16px;background:rgba(255,255,255,.72);border:1px solid rgba(60,42,30,.08)}.box strong{font-size:19px}
+      .bar{display:grid;gap:6px}.track{height:9px;border-radius:999px;background:rgba(60,42,30,.08);overflow:hidden}.fill{height:100%;border-radius:inherit;background:linear-gradient(90deg,#c56c4c,#84c195)}
+      table{width:100%;border-collapse:collapse}th,td{padding:12px 10px;border-bottom:1px solid rgba(60,42,30,.08);text-align:left;vertical-align:top;font-size:13px}th{color:var(--muted)}tr:last-child td{border-bottom:none}
+      input,select,textarea,button{font:inherit}input,select,textarea{width:100%;padding:11px 12px;border-radius:12px;border:1px solid rgba(60,42,30,.14);background:rgba(255,255,255,.84)}textarea{min-height:84px;resize:vertical}
+      label{display:grid;gap:6px;color:var(--muted);font-size:13px}.btn,.small-btn{appearance:none;border:1px solid rgba(182,88,58,.24);background:#fff;padding:10px 14px;border-radius:12px;cursor:pointer}.btn.primary{background:linear-gradient(135deg,#c06140,#a4472c);border-color:transparent;color:#fff}.small-btn{padding:7px 10px;border-radius:10px}.small-btn.danger{color:var(--danger)}
+      .message{padding:12px 14px;border-radius:12px;font-size:13px;line-height:1.5}.message.info{background:rgba(182,88,58,.08);color:var(--accent)}.message.error{background:rgba(178,64,52,.10);color:var(--danger)}.empty{color:var(--muted);font-style:italic}pre{margin:0;padding:16px;border-radius:16px;background:#1f1a17;color:#f6eee5;overflow:auto;font-size:12px;line-height:1.55}
+      @media (max-width:1080px){.span-3,.span-4,.span-6,.span-8{grid-column:span 12}.usage-grid,.form-grid{grid-template-columns:1fr}}
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="hero">
+        <span class="eyebrow">VS Code Key Guard</span>
+        <h1>Codex / Roo Key Console</h1>
+        <p class="subtle">查看当前生效 key、额度统计、已存储 key 列表，并通过受控流程切换到其他本地存储 key。页面只展示 label、fingerprint、apiId，不回显 raw key。</p>
+        <div class="toolbar">
+          <button id="refresh-state" class="btn primary">Refresh State</button>
+          <button id="refresh-usage" class="btn">Refresh Usage</button>
+        </div>
+      </section>
+
+      <section class="grid">
+        <article class="card span-3"><span class="metric-label">Codex Active Key</span><strong id="metric-codex" class="metric-value">Loading...</strong><p id="metric-codex-sub" class="subtle">Waiting for provider status.</p></article>
+        <article class="card span-3"><span class="metric-label">Roo Active Key</span><strong id="metric-roo" class="metric-value">Loading...</strong><p id="metric-roo-sub" class="subtle">Waiting for provider status.</p></article>
+        <article class="card span-3"><span class="metric-label">Total Cost</span><strong id="metric-cost" class="metric-value">-</strong><p id="metric-cost-sub" class="subtle">Usage summary not loaded yet.</p></article>
+        <article class="card span-3"><span class="metric-label">Needs Action</span><strong id="metric-attention" class="metric-value">-</strong><p id="metric-attention-sub" class="subtle">Diagnosis summary.</p></article>
+
+        <article class="card span-6"><h2>Codex Provider</h2><div id="provider-codex" class="subtle">Loading...</div></article>
+        <article class="card span-6"><h2>Roo Provider</h2><div id="provider-roo" class="subtle">Loading...</div></article>
+
+        <article class="card span-6"><h2>Usage Summary</h2><div id="usage-list" class="subtle">Loading...</div></article>
+        <article class="card span-6">
+          <h2>Manual Switch</h2>
+          <div id="switch-message" class="message info">Select a stored key for Codex or Roo, then run a controlled switch.</div>
+          <div style="height:12px"></div>
+          <label>Codex Target Key<select id="switch-codex-select"></select></label>
+          <div style="height:10px"></div>
+          <button id="switch-codex-btn" class="btn primary">Switch Codex</button>
+          <div style="height:16px"></div>
+          <label>Roo Target Key<select id="switch-roo-select"></select></label>
+          <div style="height:10px"></div>
+          <button id="switch-roo-btn" class="btn primary">Switch Roo</button>
+        </article>
+
+        <article class="card span-8"><h2>Stored Key Registry</h2><div id="registry-table" class="subtle">Loading...</div></article>
+        <article class="card span-4">
+          <h2>Add Stored Key</h2>
+          <form id="add-key-form" style="display:grid;gap:12px">
+            <div class="form-grid">
+              <label>Label<input name="label" placeholder="codex-main" /></label>
+              <label>Optional ID<input name="id" placeholder="codex-main" /></label>
+              <label>apiId<input name="apiId" placeholder="Optional apiId" /></label>
+              <label>Base URL<input name="baseUrl" placeholder="https://apikey.soxio.me/openai" /></label>
+              <label>Model<input name="model" placeholder="gpt-5.4" /></label>
+              <label>Config Name<input name="configName" placeholder="crs" /></label>
+            </div>
+            <label>Secret<input name="secret" type="password" autocomplete="off" placeholder="Paste raw API key once" required /></label>
+            <label>Note<textarea name="note" placeholder="Optional note"></textarea></label>
+            <div class="check-row">
+              <label><input type="checkbox" name="providerHints" value="codex" checked /> Codex</label>
+              <label><input type="checkbox" name="providerHints" value="roo" checked /> Roo</label>
+              <label><input type="checkbox" name="providerHints" value="shared" /> Shared</label>
+            </div>
+            <button type="submit" class="btn primary">Store Key</button>
+          </form>
+        </article>
+
+        <article class="card"><h2>Diagnosis / Raw JSON</h2><pre id="raw-json">Loading...</pre></article>
+      </section>
+    </main>
+
+    <script>
+      const API_PREFIX="/api/key-guard";const state={providers:[],keys:[],usage:[],diagnosis:null};
+      const $=id=>document.getElementById(id);
+      const money=v=>typeof v==="number"&&!Number.isNaN(v)?`$${v.toFixed(2)}`:"-";
+      const num=v=>typeof v==="number"&&!Number.isNaN(v)?v.toLocaleString():"-";
+      const esc=v=>String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\"/g,"&quot;").replace(/'/g,"&#39;");
+      const chip=(kind,text)=>`<span class="status ${kind}">${esc(text)}</span>`;
+      async function api(path,options={}){const r=await fetch(`${API_PREFIX}${path}`,{method:options.method||"GET",headers:{"Content-Type":"application/json",...(options.headers||{})},body:options.body?JSON.stringify(options.body):undefined,cache:"no-store"});const p=await r.json();if(!r.ok||p.success===false)throw new Error(p.message||"Request failed.");return p.data}
+      const provider=name=>state.providers.find(i=>i.provider===name);const usage=name=>state.usage.find(i=>i.provider===name);
+      function statusKind(ok,tracked){if(ok&&tracked==="matched")return"ok";if(tracked==="untracked")return"warn";return"danger"}
+      function renderOverview(){const codex=provider("codex"),roo=provider("roo"),codexUsage=usage("codex"),rooUsage=usage("roo"),cost=state.usage.reduce((s,i)=>s+(typeof i.totalCost==="number"?i.totalCost:0),0),attention=state.providers.filter(i=>!i.runtimeAligned||i.registryMatch!=="matched").length;$("metric-codex").textContent=codex?.activeLabel||codex?.activeKeyFingerprint||codexUsage?.label||"Untracked";$("metric-codex-sub").textContent=codex?.apiId?`apiId: ${codex.apiId}`:codexUsage?.apiId?`apiId: ${codexUsage.apiId} / ${money(codexUsage.totalCost)}`:"No registry match yet."; $("metric-roo").textContent=roo?.activeLabel||roo?.activeKeyFingerprint||rooUsage?.label||"Untracked";$("metric-roo-sub").textContent=roo?.apiId?`apiId: ${roo.apiId}`:rooUsage?.apiId?`apiId: ${rooUsage.apiId} / ${money(rooUsage.totalCost)}`:"No registry match yet."; $("metric-cost").textContent=money(cost);$("metric-cost-sub").textContent=state.usage.length?`${state.usage.length} usage summary item(s)`:"Usage data unavailable."; $("metric-attention").textContent=String(attention);$("metric-attention-sub").textContent=state.diagnosis?.summary||"No diagnosis summary."}
+      function renderProvider(name){const item=provider(name),liveUsage=usage(name),el=$(`provider-${name}`);if(!item){el.innerHTML='<p class="empty">Provider status not available.</p>';return}const evidence=(item.evidence||[]).length?`<div class="pill-row">${item.evidence.map(e=>`<span class="pill">${esc(e.detail)}</span>`).join("")}</div>`:'<p class="empty">No drift evidence.</p>';const runtime=(item.runtimeSources||[]).length?item.runtimeSources.map(s=>`<span class="pill">${esc(s)}</span>`).join(""):'<span class="pill">No runtime sources</span>';el.innerHTML=`<div style="display:grid;gap:12px">${chip(statusKind(item.runtimeAligned,item.registryMatch),item.runtimeAligned&&item.registryMatch==="matched"?"Aligned":item.registryMatch==="untracked"?"Untracked":"Attention")}<div class="row"><span class="key">Active label</span><span class="value">${esc(item.activeLabel||liveUsage?.label||"-")}</span></div><div class="row"><span class="key">Fingerprint</span><span class="value">${esc(item.activeKeyFingerprint||"-")}</span></div><div class="row"><span class="key">apiId</span><span class="value">${esc(item.apiId||liveUsage?.apiId||"-")}</span></div><div class="row"><span class="key">Base URL</span><span class="value">${esc(item.baseUrl||"-")}</span></div><div class="row"><span class="key">Model</span><span class="value">${esc(item.model||liveUsage?.models?.[0]?.model||"-")}</span></div><div class="row"><span class="key">Config Name</span><span class="value">${esc(item.configName||"-")}</span></div><div class="row"><span class="key">Total Cost</span><span class="value">${money(liveUsage?.totalCost)}</span></div><div class="row"><span class="key">Quota</span><span class="value">${money(liveUsage?.quota)}</span></div><div class="row"><span class="key">Remaining</span><span class="value">${money(liveUsage?.remainingQuota)}</span></div><div class="row"><span class="key">Source</span><span class="value">${esc(item.sourcePath||"-")}</span></div><div class="row"><span class="key">Last Switch</span><span class="value">${esc(item.lastSwitchAt||"-")}</span></div><div><span class="metric-label">Runtime Sources</span><div class="pill-row">${runtime}</div></div><div><span class="metric-label">Evidence</span>${evidence}</div></div>`}
+      function renderUsage(){const el=$("usage-list");if(!state.usage.length){el.innerHTML='<p class="empty">No usage summary yet.</p>';return}el.innerHTML=state.usage.map(item=>{const max=Math.max(...item.models.map(m=>typeof m.usage==="number"?m.usage:0),1);const bars=item.models.length?item.models.slice(0,6).map(m=>{const ratio=Math.max(6,Math.round(((m.usage||0)/max)*100));return `<div class="bar"><div style="display:flex;justify-content:space-between;gap:12px;font-size:13px"><span>${esc(m.model)}</span><span>${num(m.usage)} tokens${typeof m.cost==="number"?` / ${money(m.cost)}`:""}</span></div><div class="track"><div class="fill" style="width:${ratio}%"></div></div></div>`}).join(""):'<p class="empty">No model breakdown available.</p>';const trend=item.series&&item.series.length?item.series.slice(-6).map(p=>`<span class="pill">${esc(p.date)} · ${money(p.cost)} / ${num(p.usage)}</span>`).join(""):'<span class="pill">No local trend history yet</span>';return `<section style="display:grid;gap:14px;padding-bottom:16px;border-bottom:1px solid rgba(60,42,30,.08);margin-bottom:16px"><div class="row"><div><strong>${esc(item.provider||item.keyId||"usage")}</strong><div class="subtle">${esc(item.label||item.keyId||"-")} / ${esc(item.apiId||"-")}</div></div>${chip(item.source!=="unavailable"?"ok":"danger",item.source||"unknown")}</div><div class="usage-grid"><div class="box"><span class="metric-label">Total Usage</span><strong>${num(item.totalUsage)}</strong></div><div class="box"><span class="metric-label">Total Cost</span><strong>${money(item.totalCost)}</strong></div><div class="box"><span class="metric-label">Quota</span><strong>${money(item.quota)}</strong></div><div class="box"><span class="metric-label">Remaining</span><strong>${money(item.remainingQuota)}</strong></div></div><div style="display:grid;gap:10px">${bars}</div><div><span class="metric-label">Local Refresh Trend</span><div class="pill-row">${trend}</div></div>${item.error?`<div class="message error">${esc(item.error)}</div>`:""}</section>`}).join("")}
+      function renderRegistry(){const el=$("registry-table");if(!state.keys.length){el.innerHTML='<p class="empty">No stored keys. Add one from the form on the right.</p>';return}const activeMap={codex:provider("codex"),roo:provider("roo")};el.innerHTML=`<table><thead><tr><th>Label</th><th>Fingerprint</th><th>apiId</th><th>Hints</th><th>Usage Sync</th><th>Active</th><th>Actions</th></tr></thead><tbody>${state.keys.map(item=>{const activeFor=Object.entries(activeMap).filter(([,p])=>p?.activeKeyId===item.id).map(([name])=>name).join(", ");return `<tr><td><strong>${esc(item.label)}</strong><div class="subtle">${esc(item.id)}</div></td><td>${esc(item.fingerprint||"-")}</td><td>${esc(item.apiId||"-")}</td><td>${esc((item.providerHints||[]).join(", "))}</td><td>${esc(item.lastUsageSyncAt||"-")}</td><td>${esc(activeFor||"-")}</td><td><div class="actions"><button class="small-btn" data-action="refresh-key" data-key-id="${esc(item.id)}">Refresh usage</button><button class="small-btn danger" data-action="delete-key" data-key-id="${esc(item.id)}">Delete</button></div></td></tr>`}).join("")}</tbody></table>`}
+      function renderSwitches(){const build=(kind)=>state.keys.filter(i=>i.providerHints.includes("shared")||i.providerHints.includes(kind)).map(i=>`<option value="${esc(i.id)}">${esc(i.label)} · ${esc(i.fingerprint||"-")}</option>`).join("")||'<option value="">No stored key</option>';$("switch-codex-select").innerHTML=build("codex");$("switch-roo-select").innerHTML=build("roo")}
+      function renderRaw(){$("raw-json").textContent=JSON.stringify({providers:state.providers,usage:state.usage,diagnosis:state.diagnosis,keys:state.keys},null,2)}
+      function renderAll(){renderOverview();renderProvider("codex");renderProvider("roo");renderUsage();renderRegistry();renderSwitches();renderRaw()}
+      function showStaleBackendHint(error){const message=error instanceof Error?error.message:String(error);if(message.includes("Unknown route: /api/key-guard/providers")){setMessage("当前页面已经是新版，但后端路由还是旧版。请先执行 Developer: Reload Window，或重启当前宿主进程后再打开 Key Guard。","error");$("metric-attention").textContent="Stale";$("metric-attention-sub").textContent="Backend route table not reloaded.";$("raw-json").textContent=message;return true}return false}
+      async function loadDashboard(refreshUsage=false){try{const [providersPayload,keysPayload,usagePayload,diagnosisPayload]=await Promise.all([api("/providers"),api("/keys"),refreshUsage?api("/usage/refresh",{method:"POST",body:{}}):api("/usage"),api("/diagnosis")]);state.providers=providersPayload.providers||[];state.keys=keysPayload.keys||[];state.usage=usagePayload.items||[];state.diagnosis=diagnosisPayload;renderAll()}catch(error){if(showStaleBackendHint(error))return;throw error}}
+      function setMessage(text,kind="info"){const n=$("switch-message");n.className=`message ${kind}`;n.textContent=text}
+      async function addKey(ev){ev.preventDefault();const form=ev.currentTarget,data=new FormData(form);try{await api("/keys",{method:"POST",body:{id:data.get("id")||undefined,label:data.get("label")||undefined,secret:data.get("secret")||undefined,apiId:data.get("apiId")||undefined,baseUrl:data.get("baseUrl")||undefined,model:data.get("model")||undefined,configName:data.get("configName")||undefined,note:data.get("note")||undefined,providerHints:data.getAll("providerHints")}});form.reset();setMessage("Stored key added successfully.");await loadDashboard(false)}catch(error){setMessage(error instanceof Error?error.message:"Failed to add key.","error")}}
+      async function switchProvider(kind){const select=$(`switch-${kind}-select`),targetKeyId=select.value;if(!targetKeyId){setMessage(`No stored key selected for ${kind}.`,"error");return}try{const result=await api("/switch",{method:"POST",body:{provider:kind,targetKeyId}});setMessage(`${kind} switched to ${result.toKeyId||targetKeyId}. Reload required: ${result.reloadRequired?"yes":"no"}.`);await loadDashboard(false)}catch(error){setMessage(error instanceof Error?error.message:"Switch failed.","error")}}
+      async function handleRegistryClick(ev){const button=ev.target.closest("button[data-action]");if(!button)return;const keyId=button.dataset.keyId;if(!keyId)return;try{if(button.dataset.action==="delete-key"){await api(`/keys/${encodeURIComponent(keyId)}`,{method:"DELETE"});setMessage(`Deleted stored key ${keyId}.`);await loadDashboard(false);return}if(button.dataset.action==="refresh-key"){await api("/usage/refresh",{method:"POST",body:{keyId}});setMessage(`Usage refreshed for ${keyId}.`);await loadDashboard(false)}}catch(error){setMessage(error instanceof Error?error.message:"Action failed.","error")}}
+      $("refresh-state").addEventListener("click",()=>loadDashboard(false).catch(error=>setMessage(error instanceof Error?error.message:"Refresh failed.","error")));
+      $("refresh-usage").addEventListener("click",()=>loadDashboard(true).catch(error=>setMessage(error instanceof Error?error.message:"Usage refresh failed.","error")));
+      $("add-key-form").addEventListener("submit",addKey);$("switch-codex-btn").addEventListener("click",()=>switchProvider("codex"));$("switch-roo-btn").addEventListener("click",()=>switchProvider("roo"));$("registry-table").addEventListener("click",handleRegistryClick);
+      loadDashboard(false).catch(error=>{if(showStaleBackendHint(error))return;setMessage(error instanceof Error?error.message:"Initial load failed.","error");$("raw-json").textContent=String(error)});
+    </script>
+  </body>
+</html>

@@ -1,0 +1,21 @@
+{
+  "name": "vscode-key-guard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "VS Code Codex and Roo Code API key monitoring and controlled repair module.",
+  "type": "module",
+  "main": "index.ts",
+  "openclaw": {
+    "extensions": [
+      "./plugin/index.ts"
+    ]
+  },
+  "scripts": {
+    "dev": "node -e \"console.log('vscode-key-guard scaffold only')\"",
+    "check": "node -e \"console.log('no checks wired yet')\"",
+    "scan": "node --experimental-strip-types ./scripts/run-scan.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0"
+  }
+}
