@@ -2,6 +2,9 @@ projects/
 projects-gh/
 projects-note-publish/
 .local/
+.runtime/
+.trash/
+tmp/
 gateway-start.log
 start-openclaw.local.bat
 memory/
@@ -9,6 +12,7 @@ logs/
 data/
 browser/
 node_modules/
+.vscode/settings.json
 *.log
 *.tmp
 
