@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>密钥守护</title>
+    <script src="/control-ui-custom/assets/nav-bar-behavior.js" defer></script>
+    <style>
+      :root {
+        --bg: #f6efe5;
+        --panel: rgba(255, 250, 244, 0.9);
+        --ink: #1f1a17;
+        --muted: #6e625a;
+        --line: rgba(68, 45, 28, 0.14);
+        --accent: #bf5b3d;
+        --accent-soft: rgba(191, 91, 61, 0.12);
+        --ok: #2f7d4d;
+        --warn: #b7791f;
+        --danger: #b24034;
+        --shadow: 0 20px 60px rgba(72, 43, 21, 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, rgba(191, 91, 61, 0.2), transparent 26%),
+          radial-gradient(circle at bottom right, rgba(47, 125, 77, 0.15), transparent 24%),
+          linear-gradient(180deg, #fbf6f0 0%, var(--bg) 100%);
+      }
+
+      #navbar-container {
+        min-height: 48px;
+      }
+
+      main {
+        width: min(1120px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 72px 0 56px;
+      }
+
+      .hero {
+        display: grid;
+        gap: 14px;
+        margin-bottom: 24px;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        width: fit-content;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(30px, 4vw, 54px);
+        line-height: 1;
+      }
+
+      .hero p {
+        margin: 0;
+        max-width: 760px;
+        color: var(--muted);
+        font-size: 16px;
+        line-height: 1.6;
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(12px);
+      }
+
+      .summary {
+        grid-column: span 5;
+        padding: 24px;
+      }
+
+      .sources {
+        grid-column: span 7;
+        padding: 24px;
+      }
+
+      .raw {
+        grid-column: span 12;
+        padding: 24px;
+      }
+
+      .summary h2,
+      .sources h2,
+      .raw h2 {
+        margin: 0 0 16px;
+        font-size: 16px;
+      }
+
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+
+      .status-pill::before {
+        content: "";
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: currentColor;
+      }
+
+      .status-healthy {
+        background: rgba(47, 125, 77, 0.14);
+        color: var(--ok);
+      }
+
+      .status-drift_detected,
+      .status-auto_fixable {
+        background: rgba(183, 121, 31, 0.14);
+        color: var(--warn);
+      }
+
+      .status-stale_runtime,
+      .status-invalid_config,
+      .status-manual_action_required,
+      .status-error {
+        background: rgba(178, 64, 52, 0.14);
+        color: var(--danger);
+      }
+
+      .summary-grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin-top: 18px;
+      }
+
+      .metric,
+      .source-item {
+        padding: 14px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.54);
+        border: 1px solid rgba(68, 45, 28, 0.08);
+      }
+
+      .metric span {
+        display: block;
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+
+      .metric strong {
+        font-size: 18px;
+      }
+
+      .source-list {
+        display: grid;
+        gap: 12px;
+      }
+
+      .source-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .source-title {
+        font-weight: 700;
+      }
+
+      .source-meta,
+      .source-path,
+      .raw p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.5;
+        word-break: break-word;
+      }
+
+      .hint {
+        margin-top: 16px;
+        padding: 12px 14px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.54);
+        border: 1px solid rgba(68, 45, 28, 0.08);
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      pre {
+        margin: 0;
+        padding: 18px;
+        border-radius: 18px;
+        overflow: auto;
+        background: #1d1a17;
+        color: #f8efe4;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .empty {
+        color: var(--muted);
+        font-style: italic;
+      }
+
+      @media (max-width: 900px) {
+        .summary,
+        .sources,
+        .raw {
+          grid-column: span 12;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="navbar-container"></div>
+    <main>
+      <section class="hero">
+        <span class="eyebrow">VS Code Key Guard</span>
+        <h1>密钥守护状态面板</h1>
+        <p>
+          这个页面使用共享目录下的诊断镜像文件展示当前状态，避开当前还没有挂成功的插件路由。
+        </p>
+      </section>
+
+      <section class="grid">
+        <article class="card summary">
+          <h2>诊断总览</h2>
+          <div id="status-pill" class="status-pill status-invalid_config">Loading</div>
+          <div class="summary-grid">
+            <div class="metric">
+              <span>Summary</span>
+              <strong id="summary-text">正在读取状态...</strong>
+            </div>
+            <div class="metric">
+              <span>Observed At</span>
+              <strong id="observed-at">-</strong>
+            </div>
+            <div class="metric">
+              <span>Suggested Action</span>
+              <strong id="suggested-action">-</strong>
+            </div>
+            <div class="metric">
+              <span>Auto Fix</span>
+              <strong id="auto-fix">-</strong>
+            </div>
+          </div>
+          <div class="hint">
+            当前页面地址固定为 <code>/shared/key-guard.html</code>，不会再被 Control UI 的 <code>/chat</code>
+            路由吞掉。
+          </div>
+        </article>
+
+        <article class="card sources">
+          <h2>来源快照</h2>
+          <div id="source-list" class="source-list">
+            <p class="empty">正在加载来源信息...</p>
+          </div>
+        </article>
+
+        <article class="card raw">
+          <h2>原始 JSON</h2>
+          <p>用于快速确认当前页面读取到的镜像状态。</p>
+          <pre id="raw-json">Loading...</pre>
+        </article>
+      </section>
+    </main>
+
+    <script>
+      const navUrl = "/shared/nav-bar.html";
+      const stateUrl = "./key-guard.latest.json";
+
+      function renderStatus(status) {
+        const node = document.getElementById("status-pill");
+        node.className = `status-pill status-${status || "invalid_config"}`;
+        node.textContent = status || "unknown";
+      }
+
+      function renderSources(snapshots) {
+        const container = document.getElementById("source-list");
+
+        if (!Array.isArray(snapshots) || snapshots.length === 0) {
+          container.innerHTML = '<p class="empty">当前没有可显示的来源快照。</p>';
+          return;
+        }
+
+        container.innerHTML = snapshots
+          .map((snapshot) => {
+            const healthClass = snapshot.health === "present" ? "healthy" : "invalid_config";
+            return `
+              <div class="source-item">
+                <div class="source-top">
+                  <div class="source-title">${snapshot.source || snapshot.id || "unknown"}</div>
+                  <div class="status-pill status-${healthClass}">${snapshot.health || "unknown"}</div>
+                </div>
+                <p class="source-meta">provider: ${snapshot.provider || "-"} | config: ${snapshot.configName || "-"} | model: ${snapshot.model || "-"}</p>
+                <p class="source-meta">baseUrl: ${snapshot.baseUrl || "-"} | keyFingerprint: ${snapshot.keyFingerprint || "-"}</p>
+                <p class="source-path">path: ${snapshot.filePath || "-"}</p>
+              </div>
+            `;
+          })
+          .join("");
+      }
+
+      async function loadNavBar() {
+        const container = document.getElementById("navbar-container");
+        if (!container) return;
+        try {
+          const response = await fetch(navUrl, { cache: "no-store" });
+          const html = await response.text();
+          container.innerHTML = html;
+          window.OpenClawNavBarApplyActiveState?.();
+        } catch (error) {
+          console.error("[key-guard] failed to load nav bar:", error);
+        }
+      }
+
+      async function loadState() {
+        try {
+          const response = await fetch(`${stateUrl}?ts=${Date.now()}`, { cache: "no-store" });
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          const payload = await response.json();
+
+          renderStatus(payload.status);
+          document.getElementById("summary-text").textContent = payload.summary || "-";
+          document.getElementById("observed-at").textContent = payload.observedAt || "-";
+          document.getElementById("suggested-action").textContent = payload.suggestedAction || "-";
+          document.getElementById("auto-fix").textContent = payload.canAutoFix ? "Yes" : "No";
+          renderSources(payload.snapshots || []);
+          document.getElementById("raw-json").textContent = JSON.stringify(payload, null, 2);
+        } catch (error) {
+          console.error("[key-guard] failed to load state:", error);
+          renderStatus("error");
+          document.getElementById("summary-text").textContent = "无法读取诊断镜像";
+          document.getElementById("suggested-action").textContent = "运行 vscode-key-guard 的扫描脚本以刷新镜像。";
+          document.getElementById("source-list").innerHTML = '<p class="empty">无法读取状态文件。</p>';
+          document.getElementById("raw-json").textContent = String(error);
+        }
+      }
+
+      loadNavBar();
+      loadState();
+    </script>
+  </body>
+</html>

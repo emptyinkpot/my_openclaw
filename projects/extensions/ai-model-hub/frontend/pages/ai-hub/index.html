@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>模型中心</title>
+  <script src="/control-ui-custom/assets/nav-bar-behavior.js?v=20260327-1" defer></script>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --surface: #ffffff;
+      --surface-muted: #eef3f9;
+      --border: #d7e0ec;
+      --text: #142033;
+      --muted: #5c6b80;
+      --primary: #175cd3;
+      --primary-strong: #0f46a8;
+      --success: #0f9d58;
+      --warning: #c47f00;
+      --danger: #d92d20;
+      --shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(23, 92, 211, 0.08), transparent 32%),
+        linear-gradient(180deg, #f8fbff 0%, var(--bg) 100%);
+      color: var(--text);
+    }
+
+    #navbar-container { min-height: 48px; }
+
+    .page-shell {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 72px 20px 32px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr;
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+
+    .hero-card, .card {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-card { padding: 28px; }
+
+    .hero h1 {
+      margin: 0 0 10px;
+      font-size: 34px;
+      line-height: 1.15;
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+
+    .hero-summary {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .summary-tile {
+      padding: 14px 16px;
+      background: var(--surface-muted);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+    }
+
+    .summary-tile strong {
+      display: block;
+      font-size: 22px;
+      margin-bottom: 6px;
+    }
+
+    .summary-tile span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .status-stack {
+      display: grid;
+      gap: 12px;
+      padding: 22px;
+    }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: var(--surface-muted);
+      border: 1px solid var(--border);
+    }
+
+    .status-meta strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+
+    .status-meta span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 0 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .pill.success { background: rgba(15, 157, 88, 0.12); color: var(--success); }
+    .pill.warning { background: rgba(196, 127, 0, 0.12); color: var(--warning); }
+    .pill.danger { background: rgba(217, 45, 32, 0.12); color: var(--danger); }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .tab {
+      min-height: 40px;
+      padding: 0 16px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .tab.active {
+      border-color: transparent;
+      background: linear-gradient(135deg, var(--primary), #3b82f6);
+      color: #fff;
+    }
+
+    .tab-panel { display: none; gap: 18px; }
+    .tab-panel.active { display: grid; }
+
+    .panel-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .card { padding: 20px; }
+
+    .card h2 {
+      margin: 0 0 8px;
+      font-size: 20px;
+    }
+
+    .card p.section-note {
+      margin: 0 0 18px;
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 13px;
+    }
+
+    .field { margin-bottom: 14px; }
+
+    .field label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      min-height: 42px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font: inherit;
+      color: var(--text);
+    }
+
+    .field textarea {
+      min-height: 140px;
+      resize: vertical;
+    }
+
+    .inline-row {
+      display: flex;
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .inline-row > * { flex: 1; }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .btn {
+      min-height: 42px;
+      padding: 0 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .btn.primary {
+      border-color: transparent;
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .btn.primary:hover { background: var(--primary-strong); }
+    .btn.ghost { background: var(--surface-muted); }
+
+    .table-wrap {
+      overflow: auto;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: #fff;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th, td {
+      padding: 12px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    th {
+      background: #f8fbff;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    .mono {
+      font-family: "Consolas", "Courier New", monospace;
+      font-size: 12px;
+    }
+
+    .output {
+      min-height: 160px;
+      padding: 16px;
+      border-radius: 16px;
+      background: #111827;
+      color: #e5eefc;
+      font-family: "Consolas", "Courier New", monospace;
+      font-size: 12px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      overflow: auto;
+    }
+
+    .empty {
+      padding: 26px 12px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    @media (max-width: 980px) {
+      .hero, .panel-grid { grid-template-columns: 1fr; }
+      .hero h1 { font-size: 28px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="navbar-container"></div>
+
+  <div class="page-shell">
+    <section class="hero">
+      <div class="hero-card">
+        <h1>模型中心</h1>
+        <p>把本地模型、微调任务和安全沙盒收口到一个独立模块里，不再依赖旧代理服务，也不再把路由和页面散在插件旧目录里。</p>
+        <div class="hero-summary">
+          <div class="summary-tile"><strong id="summary-ollama">-</strong><span>Ollama 状态</span></div>
+          <div class="summary-tile"><strong id="summary-vllm">-</strong><span>vLLM 状态</span></div>
+          <div class="summary-tile"><strong id="summary-jobs">0</strong><span>训练任务数量</span></div>
+          <div class="summary-tile"><strong id="summary-sandbox">-</strong><span>沙盒状态</span></div>
+        </div>
+      </div>
+
+      <div class="hero-card status-stack">
+        <div class="status-row">
+          <div class="status-meta"><strong>页面路由</strong><span class="mono">/ai-hub</span></div>
+          <span class="pill success">模块闭环</span>
+        </div>
+        <div class="status-row">
+          <div class="status-meta"><strong>API 前缀</strong><span class="mono">/api/ai-hub/*</span></div>
+          <span class="pill success">已统一</span>
+        </div>
+        <div class="status-row">
+          <div class="status-meta"><strong>主能力</strong><span>本地模型 / 微调 / 沙盒</span></div>
+          <span class="pill warning" id="runtime-pill">检查中</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="models">本地模型</button>
+      <button class="tab" data-tab="finetune">模型微调</button>
+      <button class="tab" data-tab="sandbox">安全沙盒</button>
+    </div>
+
+    <section class="tab-panel active" id="panel-models">
+      <div class="panel-grid">
+        <div class="card">
+          <h2>Ollama 与 vLLM</h2>
+          <p class="section-note">先看服务状态，再做拉取、测试和启动动作。这里直接走模块自己的 `/api/ai-hub/*`，不再混用旧 `/ai-model/api`。</p>
+          <div class="field">
+            <label for="ollama-model-input">拉取 Ollama 模型</label>
+            <div class="inline-row">
+              <input id="ollama-model-input" type="text" placeholder="例如：qwen2.5:7b">
+              <button class="btn primary" id="pull-model-btn">拉取模型</button>
+            </div>
+          </div>
+          <div class="field">
+            <label for="vllm-model-path">启动 vLLM 模型路径</label>
+            <input id="vllm-model-path" type="text" placeholder="输入模型目录或模型文件路径">
+          </div>
+          <div class="field">
+            <label for="vllm-gpu-count">GPU 数量</label>
+            <input id="vllm-gpu-count" type="number" min="1" value="1">
+          </div>
+          <div class="actions">
+            <button class="btn primary" id="start-vllm-btn">启动 vLLM</button>
+            <button class="btn ghost" id="refresh-models-btn">刷新状态</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>模型测试</h2>
+          <p class="section-note">用已经连接的 Ollama 模型做快速文本回显，便于确认模型是否真能工作。</p>
+          <div class="field">
+            <label for="test-model-select">选择模型</label>
+            <select id="test-model-select"><option value="">请选择模型</option></select>
+          </div>
+          <div class="field">
+            <label for="test-prompt">提示词</label>
+            <textarea id="test-prompt" placeholder="输入测试提示词"></textarea>
+          </div>
+          <div class="actions">
+            <button class="btn primary" id="test-model-btn">运行测试</button>
+          </div>
+          <div class="output" id="test-output">等待运行…</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>在线模型列表</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>模型</th><th>来源</th><th>大小</th><th>量化</th></tr></thead>
+            <tbody id="ollama-models-body"><tr><td colspan="4" class="empty">正在加载模型列表…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>本地模型扫描</h2>
+        <p class="section-note">扫描模块默认模型目录，快速确认 `.gguf` 或 HuggingFace 模型目录是否就绪。</p>
+        <div class="actions"><button class="btn ghost" id="scan-models-btn">重新扫描</button></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>模型</th><th>格式</th><th>大小</th><th>状态</th></tr></thead>
+            <tbody id="local-models-body"><tr><td colspan="4" class="empty">暂无扫描结果</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab-panel" id="panel-finetune">
+      <div class="panel-grid">
+        <div class="card">
+          <h2>创建训练任务</h2>
+          <p class="section-note">这里先收口任务配置和状态管理。真正训练是否能跑，取决于 Python 与 Unsloth 环境是否完备。</p>
+          <div class="field"><label for="ft-name">任务名称</label><input id="ft-name" type="text" placeholder="例如：qwen2.5-小说润色"></div>
+          <div class="field"><label for="ft-base-model">基础模型</label><select id="ft-base-model"><option value="">请选择基础模型</option></select></div>
+          <div class="field"><label for="ft-dataset">数据集</label><input id="ft-dataset" type="text" placeholder="例如：username/dataset-name"></div>
+          <div class="panel-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
+            <div class="field"><label for="ft-r">LoRA Rank</label><input id="ft-r" type="number" min="1" value="16"></div>
+            <div class="field"><label for="ft-alpha">LoRA Alpha</label><input id="ft-alpha" type="number" min="1" value="16"></div>
+            <div class="field"><label for="ft-epochs">Epochs</label><input id="ft-epochs" type="number" min="1" value="3"></div>
+          </div>
+          <div class="actions"><button class="btn primary" id="create-job-btn">创建任务</button></div>
+        </div>
+
+        <div class="card">
+          <h2>训练环境提醒</h2>
+          <p class="section-note">微调服务默认按“先模块化、再环境增强”的顺序落地。环境不齐时会明确告诉你未就绪，而不是悄悄走旧脚本代理。</p>
+          <div class="output" id="finetune-notes">等待载入训练状态…</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>训练任务列表</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>名称</th><th>基础模型</th><th>状态</th><th>进度</th><th>操作</th></tr></thead>
+            <tbody id="training-jobs-body"><tr><td colspan="5" class="empty">暂无训练任务</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab-panel" id="panel-sandbox">
+      <div class="panel-grid">
+        <div class="card">
+          <h2>代码安全分析</h2>
+          <div class="field">
+            <label for="sandbox-language">语言</label>
+            <select id="sandbox-language">
+              <option value="python">Python</option>
+              <option value="javascript">JavaScript</option>
+            </select>
+          </div>
+          <div class="field"><label for="sandbox-code">待分析代码</label><textarea id="sandbox-code" class="mono" placeholder="粘贴需要分析的代码"></textarea></div>
+          <div class="actions"><button class="btn primary" id="analyze-code-btn">开始分析</button></div>
+        </div>
+
+        <div class="card">
+          <h2>分析结果</h2>
+          <div class="output" id="sandbox-result">等待分析…</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>沙盒配置</h2>
+        <div class="panel-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
+          <div class="field">
+            <label for="sandbox-provider">执行提供方</label>
+            <select id="sandbox-provider">
+              <option value="local">本地</option>
+              <option value="docker">Docker</option>
+              <option value="e2b">E2B</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="sandbox-ast-check">AST 检查</label>
+            <select id="sandbox-ast-check">
+              <option value="true">启用</option>
+              <option value="false">禁用</option>
+            </select>
+          </div>
+          <div class="field"><label for="sandbox-blocked">危险模块</label><input id="sandbox-blocked" type="text" placeholder="逗号分隔"></div>
+        </div>
+        <div class="actions"><button class="btn primary" id="save-sandbox-btn">保存配置</button></div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const API_BASE = '/api/ai-hub';
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    async function request(path, options = {}) {
+      const config = { ...options };
+      const headers = { ...(options.headers || {}) };
+      if (config.body && !headers['Content-Type']) headers['Content-Type'] = 'application/json';
+      config.headers = headers;
+      if (config.body && typeof config.body !== 'string') config.body = JSON.stringify(config.body);
+      const response = await fetch(`${API_BASE}${path}`, config);
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || payload.success === false) throw new Error(payload.error || `请求失败: ${response.status}`);
+      return payload;
+    }
+
+    function setText(id, text) {
+      const element = document.getElementById(id);
+      if (element) element.textContent = text;
+    }
+
+    function renderPill(ok, okText, badText) {
+      return ok
+        ? `<span class="pill success">${escapeHtml(okText)}</span>`
+        : `<span class="pill warning">${escapeHtml(badText)}</span>`;
+    }
+
+    function bindTabs() {
+      document.querySelectorAll('.tab').forEach((button) => {
+        button.addEventListener('click', () => {
+          const target = button.dataset.tab;
+          document.querySelectorAll('.tab').forEach((item) => item.classList.remove('active'));
+          document.querySelectorAll('.tab-panel').forEach((panel) => panel.classList.remove('active'));
+          button.classList.add('active');
+          document.getElementById(`panel-${target}`).classList.add('active');
+        });
+      });
+    }
+
+    async function loadHealth() {
+      const payload = await request('/health');
+      const services = payload.services || {};
+      setText('summary-ollama', services.ollamaReady ? '在线' : '离线');
+      setText('summary-vllm', services.vllmReady ? '在线' : '离线');
+      setText('summary-sandbox', services.sandboxReady ? '可用' : '不可用');
+      const runtimePill = document.getElementById('runtime-pill');
+      if (runtimePill) {
+        runtimePill.className = `pill ${services.sandboxReady ? 'success' : 'warning'}`;
+        runtimePill.textContent = services.sandboxReady ? '运行正常' : '待补环境';
+      }
+      setText(
+        'finetune-notes',
+        services.fineTuningReady
+          ? '微调环境已就绪，可以直接启动训练任务。'
+          : '微调环境尚未就绪。通常是 Python / Unsloth 还没装齐，但模块边界已经收口完毕。'
+      );
+    }
+
+    async function loadModels() {
+      const statusPayload = await request('/models/status');
+      const status = statusPayload.data || {};
+      setText('summary-ollama', status.ollamaReady ? '在线' : '离线');
+      setText('summary-vllm', status.vllmReady ? '在线' : '离线');
+
+      const ollamaBody = document.getElementById('ollama-models-body');
+      const testModelSelect = document.getElementById('test-model-select');
+
+      if (status.ollamaReady) {
+        const modelsPayload = await request('/models/ollama');
+        const models = modelsPayload.data || [];
+        if (models.length) {
+          ollamaBody.innerHTML = models.map((model) => `
+            <tr>
+              <td>${escapeHtml(model.name)}</td>
+              <td>${escapeHtml(model.source)}</td>
+              <td>${escapeHtml(model.size)}</td>
+              <td>${escapeHtml(model.quantization || '-')}</td>
+            </tr>
+          `).join('');
+          testModelSelect.innerHTML = '<option value="">请选择模型</option>' +
+            models.map((model) => `<option value="${escapeHtml(model.name)}">${escapeHtml(model.name)}</option>`).join('');
+        } else {
+          ollamaBody.innerHTML = '<tr><td colspan="4" class="empty">Ollama 已连接，但暂无模型</td></tr>';
+          testModelSelect.innerHTML = '<option value="">请选择模型</option>';
+        }
+      } else {
+        ollamaBody.innerHTML = '<tr><td colspan="4" class="empty">Ollama 未连接</td></tr>';
+        testModelSelect.innerHTML = '<option value="">请选择模型</option>';
+      }
+
+      const localModelsPayload = await request('/models/local');
+      const localModels = localModelsPayload.data || [];
+      const localModelsBody = document.getElementById('local-models-body');
+      localModelsBody.innerHTML = !localModels.length
+        ? '<tr><td colspan="4" class="empty">默认模型目录下暂无可识别模型</td></tr>'
+        : localModels.map((model) => `
+            <tr>
+              <td>${escapeHtml(model.name)}</td>
+              <td>${escapeHtml(model.format)}</td>
+              <td>${escapeHtml(model.size)}</td>
+              <td>${renderPill(model.status === 'ready', '就绪', '待处理')}</td>
+            </tr>
+          `).join('');
+    }
+
+    async function loadFineTuneData() {
+      const baseModelsPayload = await request('/finetune/base-models');
+      const baseModels = baseModelsPayload.data || [];
+      const baseModelSelect = document.getElementById('ft-base-model');
+      baseModelSelect.innerHTML = '<option value="">请选择基础模型</option>' +
+        baseModels.map((model) => `<option value="${escapeHtml(model.name)}">${escapeHtml(model.description)} · ${escapeHtml(model.size)}</option>`).join('');
+
+      const jobsPayload = await request('/finetune/jobs');
+      const jobs = jobsPayload.data || [];
+      setText('summary-jobs', String(jobs.length));
+      const jobsBody = document.getElementById('training-jobs-body');
+
+      if (!jobs.length) {
+        jobsBody.innerHTML = '<tr><td colspan="5" class="empty">暂无训练任务</td></tr>';
+        return;
+      }
+
+      jobsBody.innerHTML = jobs.map((job) => `
+        <tr>
+          <td>${escapeHtml(job.name)}</td>
+          <td>${escapeHtml(job.baseModel)}</td>
+          <td>${renderPill(job.status === 'completed', '完成', job.status === 'running' ? '运行中' : job.status)}</td>
+          <td>${escapeHtml(job.progress.currentEpoch)}/${escapeHtml(job.progress.totalEpochs)} · loss ${escapeHtml(job.progress.loss || 0)}</td>
+          <td>
+            ${job.status === 'pending' ? `<button class="btn ghost" data-start-job="${escapeHtml(job.id)}">启动</button>` : ''}
+            ${job.status === 'completed' ? `<button class="btn ghost" data-export-job="${escapeHtml(job.id)}">导出</button>` : ''}
+          </td>
+        </tr>
+      `).join('');
+
+      jobsBody.querySelectorAll('[data-start-job]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          try {
+            await request(`/finetune/jobs/${button.dataset.startJob}/start`, { method: 'POST' });
+            alert('训练任务已启动');
+            await Promise.all([loadHealth(), loadFineTuneData()]);
+          } catch (error) {
+            alert(error.message);
+          }
+        });
+      });
+
+      jobsBody.querySelectorAll('[data-export-job]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          try {
+            const payload = await request(`/finetune/jobs/${button.dataset.exportJob}/export`, {
+              method: 'POST',
+              body: { format: 'huggingface' }
+            });
+            alert(`导出目录：${payload.data.path}`);
+          } catch (error) {
+            alert(error.message);
+          }
+        });
+      });
+    }
+
+    async function loadSandboxConfig() {
+      const payload = await request('/sandbox/config');
+      const config = payload.data || {};
+      document.getElementById('sandbox-provider').value = config.provider || 'local';
+      document.getElementById('sandbox-ast-check').value = String(config.astCheck !== false);
+      document.getElementById('sandbox-blocked').value = (config.blockedModules || []).join(', ');
+    }
+
+    async function pullModel() {
+      const model = document.getElementById('ollama-model-input').value.trim();
+      if (!model) return alert('请输入模型名称');
+      await request('/models/ollama/pull', { method: 'POST', body: { model } });
+      alert('模型拉取请求已提交');
+      await loadModels();
+    }
+
+    async function startVLLM() {
+      const modelPath = document.getElementById('vllm-model-path').value.trim();
+      const gpuCount = Number(document.getElementById('vllm-gpu-count').value) || 1;
+      if (!modelPath) return alert('请输入模型路径');
+      await request('/models/vllm/start', { method: 'POST', body: { modelPath, gpuCount } });
+      alert('vLLM 启动命令已发出');
+      await Promise.all([loadHealth(), loadModels()]);
+    }
+
+    async function testModel() {
+      const model = document.getElementById('test-model-select').value;
+      const prompt = document.getElementById('test-prompt').value.trim();
+      if (!model || !prompt) return alert('请选择模型并输入提示词');
+      setText('test-output', '运行中…');
+      try {
+        const payload = await request('/models/ollama/generate', { method: 'POST', body: { model, prompt } });
+        setText('test-output', payload.data || '模型未返回内容');
+      } catch (error) {
+        setText('test-output', `错误：${error.message}`);
+      }
+    }
+
+    async function createTrainingJob() {
+      const body = {
+        name: document.getElementById('ft-name').value.trim(),
+        baseModel: document.getElementById('ft-base-model').value,
+        dataset: document.getElementById('ft-dataset').value.trim(),
+        config: {
+          r: Number(document.getElementById('ft-r').value) || 16,
+          loraAlpha: Number(document.getElementById('ft-alpha').value) || 16,
+          epochs: Number(document.getElementById('ft-epochs').value) || 3
+        }
+      };
+      if (!body.name || !body.baseModel || !body.dataset) return alert('请填写完整训练信息');
+      await request('/finetune/jobs', { method: 'POST', body });
+      alert('训练任务已创建');
+      await loadFineTuneData();
+    }
+
+    async function analyzeCode() {
+      const language = document.getElementById('sandbox-language').value;
+      const code = document.getElementById('sandbox-code').value;
+      if (!code.trim()) return alert('请输入待分析代码');
+      setText('sandbox-result', '分析中…');
+      try {
+        const payload = await request('/sandbox/analyze', { method: 'POST', body: { language, code } });
+        const result = payload.data || {};
+        if (!result.threats || result.threats.length === 0) {
+          setText('sandbox-result', '未检测到明显风险。');
+          return;
+        }
+        setText(
+          'sandbox-result',
+          result.threats.map((item) => `[${item.type}] 第 ${item.line || 0} 行：${item.message}`).join('\n')
+        );
+      } catch (error) {
+        setText('sandbox-result', `错误：${error.message}`);
+      }
+    }
+
+    async function saveSandboxConfig() {
+      const provider = document.getElementById('sandbox-provider').value;
+      const astCheck = document.getElementById('sandbox-ast-check').value === 'true';
+      const blockedModules = document.getElementById('sandbox-blocked').value
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean);
+      await request('/sandbox/config', { method: 'POST', body: { provider, astCheck, blockedModules } });
+      alert('沙盒配置已保存');
+      await Promise.all([loadHealth(), loadSandboxConfig()]);
+    }
+
+    function bindActions() {
+      document.getElementById('pull-model-btn').addEventListener('click', () => pullModel().catch((error) => alert(error.message)));
+      document.getElementById('start-vllm-btn').addEventListener('click', () => startVLLM().catch((error) => alert(error.message)));
+      document.getElementById('refresh-models-btn').addEventListener('click', () => Promise.all([loadHealth(), loadModels()]).catch((error) => alert(error.message)));
+      document.getElementById('scan-models-btn').addEventListener('click', () => loadModels().catch((error) => alert(error.message)));
+      document.getElementById('test-model-btn').addEventListener('click', () => testModel());
+      document.getElementById('create-job-btn').addEventListener('click', () => createTrainingJob().catch((error) => alert(error.message)));
+      document.getElementById('analyze-code-btn').addEventListener('click', () => analyzeCode());
+      document.getElementById('save-sandbox-btn').addEventListener('click', () => saveSandboxConfig().catch((error) => alert(error.message)));
+    }
+
+    async function boot() {
+      bindTabs();
+      bindActions();
+      try {
+        await Promise.all([loadHealth(), loadModels(), loadFineTuneData(), loadSandboxConfig()]);
+      } catch (error) {
+        alert(`模型中心初始化失败：${error.message}`);
+      }
+    }
+
+    boot();
+  </script>
+</body>
+</html>

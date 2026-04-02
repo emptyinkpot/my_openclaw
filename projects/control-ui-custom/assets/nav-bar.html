@@ -1,0 +1,344 @@
+<style>
+  :root {
+    --nav-height: 48px;
+    --nav-bg: #101828;
+    --nav-border: rgba(255, 255, 255, 0.12);
+    --nav-text: rgba(255, 255, 255, 0.82);
+    --nav-text-strong: #ffffff;
+    --nav-hover: rgba(255, 255, 255, 0.1);
+    --nav-active: #2563eb;
+  }
+
+  .nav-bar,
+  .nav-bar * {
+    box-sizing: border-box;
+  }
+
+  .nav-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    min-height: var(--nav-height);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 0 16px;
+    background: var(--nav-bg);
+    border-bottom: 1px solid var(--nav-border);
+    z-index: 2147483000;
+    font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+  }
+
+  .nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    color: var(--nav-text-strong);
+  }
+
+  .nav-logo {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #60a5fa, #2563eb);
+    color: #fff;
+    flex-shrink: 0;
+  }
+
+  .nav-title {
+    font-size: 15px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .nav-items {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .nav-items a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 32px;
+    padding: 0 12px;
+    border-radius: 8px;
+    color: var(--nav-text);
+    text-decoration: none;
+    font-size: 13px;
+    transition: background-color 0.15s ease, color 0.15s ease;
+    white-space: nowrap;
+  }
+
+  .nav-items a:hover {
+    background: var(--nav-hover);
+    color: var(--nav-text-strong);
+  }
+
+  .nav-items a.on,
+  .nav-items a[aria-current="page"] {
+    background: var(--nav-active);
+    color: var(--nav-text-strong);
+  }
+
+  #globalSettingsModal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 2147483647;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 23, 42, 0.56);
+    padding: 24px;
+    font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+  }
+
+  #globalSettingsModal.show {
+    display: flex;
+  }
+
+  #globalSettingsModal .modal-content {
+    width: min(760px, 100%);
+    max-height: min(720px, calc(100vh - 48px));
+    overflow: auto;
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+  }
+
+  #globalSettingsModal .modal-header,
+  #globalSettingsModal .modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 20px;
+  }
+
+  #globalSettingsModal .modal-header {
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  #globalSettingsModal .modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #111827;
+  }
+
+  #globalSettingsModal .modal-body {
+    padding: 20px;
+  }
+
+  #globalSettingsModal .modal-footer {
+    justify-content: flex-end;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  #globalSettingsModal .settings-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  #globalSettingsModal .settings-section {
+    padding: 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #f8fafc;
+  }
+
+  #globalSettingsModal .settings-section h4 {
+    margin: 0 0 12px;
+    font-size: 15px;
+    color: #0f172a;
+  }
+
+  #globalSettingsModal .form-group {
+    margin-bottom: 12px;
+  }
+
+  #globalSettingsModal .form-label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 12px;
+    color: #334155;
+  }
+
+  #globalSettingsModal .form-input {
+    width: 100%;
+    min-height: 38px;
+    padding: 8px 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #0f172a;
+    background: #fff;
+  }
+
+  #globalSettingsModal .status-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #0f172a;
+  }
+
+  #globalSettingsModal .status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #94a3b8;
+  }
+
+  #globalSettingsModal .status-dot.online {
+    background: #16a34a;
+  }
+
+  #globalSettingsModal .hint {
+    font-size: 12px;
+    line-height: 1.6;
+    color: #475569;
+  }
+
+  #globalSettingsModal .btn {
+    min-height: 38px;
+    padding: 0 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #0f172a;
+    cursor: pointer;
+  }
+
+  #globalSettingsModal .btn.primary {
+    border-color: #2563eb;
+    background: #2563eb;
+    color: #ffffff;
+  }
+
+  @media (max-width: 960px) {
+    .nav-bar {
+      height: auto;
+      align-items: flex-start;
+      flex-direction: column;
+      padding: 10px 12px;
+    }
+
+    .nav-items {
+      width: 100%;
+      justify-content: flex-start;
+    }
+
+    #globalSettingsModal .settings-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<div class="nav-bar">
+  <div class="nav-brand">
+    <div class="nav-logo">OC</div>
+    <div class="nav-title">OpenClaw</div>
+  </div>
+  <div class="nav-items">
+    <a href="javascript:void(0)" onclick="openGlobalSettingsModal();">设置</a>
+    <a href="/novel/">小说管理</a>
+    <a href="/automation">自动化</a>
+    <a href="/ai-hub">模型中心</a>
+    <a href="/key-guard">密钥守护</a>
+    <a href="/experience">经验中心</a>
+    <a href="/novel/?page=cache-manage">缓存</a>
+    <a href="/novel/?page=logs-view">日志</a>
+    <a href="/file-manager">文件管理</a>
+    <a href="/control-ui-custom/launch.html">控制台</a>
+  </div>
+</div>
+
+<div id="globalSettingsModal" aria-hidden="true">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>全局设置</h3>
+      <button class="btn" type="button" onclick="closeGlobalSettingsModal()">关闭</button>
+    </div>
+    <div class="modal-body">
+      <div class="settings-grid">
+        <div class="settings-section">
+          <h4>数据库设置</h4>
+          <div style="margin-bottom: 16px; padding: 12px; background: #eef2ff; border-radius: 10px;">
+            <div class="status-line">
+              <span class="status-dot online" id="globalSettingsDbStatusDot"></span>
+              <span id="globalSettingsDbStatusText">数据库连接正常</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="globalDbHost">数据库地址</label>
+            <input type="text" class="form-input" id="globalDbHost" value="124.220.245.121">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="globalDbPort">端口</label>
+            <input type="text" class="form-input" id="globalDbPort" value="22295">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="globalDbName">数据库名</label>
+            <input type="text" class="form-input" id="globalDbName" value="cloudbase-4glvyyq9f61b19cd">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="globalDbUser">用户名</label>
+            <input type="text" class="form-input" id="globalDbUser" value="openclaw">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="globalDbPass">密码</label>
+            <input type="password" class="form-input" id="globalDbPass" value="********">
+          </div>
+          <button class="btn primary" type="button" style="width: 100%;" onclick="testGlobalDBConnection()">测试数据库连接</button>
+        </div>
+
+        <div class="settings-section">
+          <h4>AI 设置</h4>
+          <div class="form-group">
+            <label class="form-label" for="globalAiProvider">AI 提供方</label>
+            <select class="form-input" id="globalAiProvider">
+              <option value="openai">OpenAI</option>
+              <option value="claude">Claude</option>
+              <option value="gemini">Gemini</option>
+              <option value="local">本地模型</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="globalAiApiKey">API Key</label>
+            <input type="password" class="form-input" id="globalAiApiKey" placeholder="sk-...">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="globalAiModel">模型</label>
+            <select class="form-input" id="globalAiModel">
+              <option value="gpt-4">GPT-4</option>
+              <option value="gpt-3.5">GPT-3.5</option>
+              <option value="claude-3">Claude 3</option>
+              <option value="qwen2.5:7b">Qwen2.5 7B</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="globalAiTemp">温度 (0-1)</label>
+            <input type="range" class="form-input" min="0" max="1" step="0.1" value="0.7" id="globalAiTemp">
+          </div>
+          <div class="hint">这里的设置只影响控制台自己的默认值，不会覆盖你本地的 Ollama 与运行态配置。</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" type="button" onclick="resetGlobalSettings()">重置</button>
+      <button class="btn primary" type="button" onclick="saveGlobalSettings()">保存设置</button>
+    </div>
+  </div>
+</div>

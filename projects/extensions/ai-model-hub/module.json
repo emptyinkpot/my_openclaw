@@ -1,0 +1,35 @@
+{
+  "id": "ai-model-hub",
+  "displayName": "模型中心",
+  "version": "1.0.0",
+  "owner": "auto",
+  "routePrefix": "/ai-hub",
+  "apiPrefix": "/api/ai-hub",
+  "nav": [
+    {
+      "path": "/ai-hub",
+      "label": "模型中心"
+    }
+  ],
+  "pages": [
+    {
+      "id": "ai-model-hub-home",
+      "path": "/ai-hub",
+      "source": "frontend/pages/ai-hub/index.html"
+    }
+  ],
+  "capabilities": [
+    "local-models",
+    "fine-tuning",
+    "sandbox-analysis"
+  ],
+  "mcp": [],
+  "dependencies": [],
+  "runtimeDirs": [
+    "cache",
+    "logs",
+    "temp",
+    "state"
+  ],
+  "featureFlags": []
+}

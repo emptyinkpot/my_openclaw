@@ -1,0 +1,10 @@
+{
+  "name": "extensions-workspace",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Extensions workspace utility entry.",
+  "scripts": {
+    "accept:module": "node ./kernel/testing/module-acceptance.mjs",
+    "check:boundaries": "node ./kernel/testing/boundary-check.mjs"
+  }
+}

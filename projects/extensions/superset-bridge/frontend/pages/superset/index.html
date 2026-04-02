@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OpenClaw · Superset BI</title>
+    <script src="/control-ui-custom/assets/nav-bar-behavior.js" defer></script>
+    <style>
+      :root {
+        --top-offset: 56px;
+        --panel-bg: #f8fafc;
+        --panel-border: #dbe4f0;
+        --text-main: #0f172a;
+        --text-sub: #475569;
+        --btn-bg: #2563eb;
+        --btn-bg-hover: #1d4ed8;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background: #ffffff;
+        color: var(--text-main);
+        font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+      }
+
+      #navbar-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 2147483000;
+      }
+
+      .superset-shell {
+        position: fixed;
+        top: var(--top-offset);
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+
+      .superset-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--panel-border);
+        background: var(--panel-bg);
+      }
+
+      .superset-status {
+        font-size: 13px;
+        color: var(--text-sub);
+      }
+
+      .superset-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .btn {
+        min-height: 32px;
+        padding: 0 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        background: #ffffff;
+        color: var(--text-main);
+        cursor: pointer;
+      }
+
+      .btn.primary {
+        border-color: var(--btn-bg);
+        background: var(--btn-bg);
+        color: #ffffff;
+      }
+
+      .btn.primary:hover {
+        background: var(--btn-bg-hover);
+      }
+
+      .superset-frame {
+        flex: 1;
+        min-height: 0;
+        width: 100%;
+        border: 0;
+        background: #ffffff;
+      }
+
+      .superset-empty {
+        padding: 28px;
+        line-height: 1.7;
+      }
+
+      .superset-empty h1 {
+        margin: 0 0 10px;
+        font-size: 22px;
+      }
+
+      .superset-empty p {
+        margin: 8px 0;
+        color: var(--text-sub);
+      }
+
+      code {
+        background: #eef2ff;
+        color: #1d4ed8;
+        border-radius: 6px;
+        padding: 2px 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="navbar-container"></div>
+    <div class="superset-shell">
+      <div class="superset-toolbar">
+        <div class="superset-status" id="statusText">正在检测 Superset 服务状态...</div>
+        <div class="superset-actions">
+          <button class="btn" type="button" id="checkBtn">重新检测</button>
+          <button class="btn" type="button" id="openHereBtn">当前页打开 Superset</button>
+          <button class="btn primary" type="button" id="openBtn">新窗口打开 Superset</button>
+        </div>
+      </div>
+      <iframe class="superset-frame" id="supersetFrame" title="Superset BI" hidden></iframe>
+      <div class="superset-empty" id="emptyPanel">
+        <h1>Superset 暂未就绪</h1>
+        <p>当前桥接目标：<code id="targetUrl">http://127.0.0.1:3000</code></p>
+        <p>请先启动 Superset Web，再点击“重新检测”。</p>
+        <p>推荐命令（在 <code>projects/apps/superset</code> 目录）：<code>pnpm -C projects/apps/superset/apps/web dev</code></p>
+        <p id="errorText">如果页面白屏，请先确认 Superset Web 无 500 报错，再重新检测。</p>
+      </div>
+    </div>
+
+    <script>
+      const HEALTH_URL = '/api/superset-bridge/health';
+      const FRAME_SRC = '/superset/_app/';
+
+      const statusText = document.getElementById('statusText');
+      const frame = document.getElementById('supersetFrame');
+      const emptyPanel = document.getElementById('emptyPanel');
+      const targetUrl = document.getElementById('targetUrl');
+      const errorText = document.getElementById('errorText');
+      const checkBtn = document.getElementById('checkBtn');
+      const openHereBtn = document.getElementById('openHereBtn');
+      const openBtn = document.getElementById('openBtn');
+      let loadTimer = null;
+      let currentTargetBaseUrl = 'http://127.0.0.1:3000';
+
+      function toAbsoluteUrl(path) {
+        const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+        return `${currentTargetBaseUrl.replace(/\/+$/, '')}${normalizedPath}`;
+      }
+
+      function shouldBypassEmbed(response) {
+        const xFrameOptions = (response.headers.get('x-frame-options') || '').toLowerCase();
+        const csp = (response.headers.get('content-security-policy') || '').toLowerCase();
+
+        if (xFrameOptions.includes('deny') || xFrameOptions.includes('sameorigin')) {
+          return true;
+        }
+
+        return csp.includes("frame-ancestors 'none'");
+      }
+
+      function openSupersetInCurrentPage() {
+        window.location.href = toAbsoluteUrl('/');
+      }
+
+      function showFallback(message) {
+        if (loadTimer) {
+          clearTimeout(loadTimer);
+          loadTimer = null;
+        }
+        statusText.textContent = message || 'Superset 未启动或不可达，请先启动。';
+        if (message) {
+          errorText.textContent = message;
+        }
+        frame.hidden = true;
+        frame.removeAttribute('src');
+        emptyPanel.hidden = false;
+      }
+
+      async function loadFrame() {
+        try {
+          const probe = await fetch(FRAME_SRC, { cache: 'no-store' });
+          if (shouldBypassEmbed(probe)) {
+            showFallback('Superset 当前禁止 iframe 内嵌，正在切换为直连模式。');
+            setTimeout(openSupersetInCurrentPage, 400);
+            return;
+          }
+
+          if (probe.status >= 500) {
+            showFallback('Superset Web 返回 500，请先修复 Superset 服务再重试。');
+            return;
+          }
+        } catch (error) {
+          showFallback('无法访问 Superset 页面入口，请确认 Superset Web 已启动。');
+          return;
+        }
+
+        frame.hidden = false;
+        emptyPanel.hidden = true;
+        frame.onload = () => {
+          if (loadTimer) {
+            clearTimeout(loadTimer);
+            loadTimer = null;
+          }
+          statusText.textContent = 'Superset 已加载。';
+        };
+        frame.onerror = () => {
+          showFallback('Superset 页面加载失败，请检查 Web 服务日志。');
+        };
+
+        loadTimer = setTimeout(() => {
+          // Some deployments fail after initial load due to CSP, auth redirects, or asset root mismatches.
+          showFallback('Superset 内嵌加载超时，正在切换到直连模式。');
+          setTimeout(openSupersetInCurrentPage, 600);
+        }, 12000);
+
+        frame.src = FRAME_SRC;
+      }
+
+      async function checkHealth() {
+        statusText.textContent = '正在检测 Superset 服务状态...';
+        try {
+          const response = await fetch(HEALTH_URL, { cache: 'no-store' });
+          const payload = await response.json();
+          const ok = response.ok && payload && payload.success;
+          const target = payload && payload.targetBaseUrl ? payload.targetBaseUrl : 'http://127.0.0.1:3000';
+          currentTargetBaseUrl = target;
+          targetUrl.textContent = target;
+
+          if (ok) {
+            statusText.textContent = 'Superset 已连接，正在加载页面。';
+            void loadFrame();
+            return;
+          }
+
+          showFallback('Superset 未启动或不可达，请先启动。');
+        } catch (error) {
+          showFallback('检测失败，请稍后重试。');
+        }
+      }
+
+      checkBtn.addEventListener('click', () => {
+        void checkHealth();
+      });
+
+      openHereBtn.addEventListener('click', () => {
+        openSupersetInCurrentPage();
+      });
+
+      openBtn.addEventListener('click', () => {
+        window.open(toAbsoluteUrl('/'), '_blank', 'noopener');
+      });
+
+      void checkHealth();
+    </script>
+  </body>
+</html>
