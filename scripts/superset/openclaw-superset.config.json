@@ -1,0 +1,46 @@
+{
+  "openclaw": {
+    "startPath": "/superset/",
+    "skipEnvValidation": "1",
+    "supersetAutoStop": "1",
+    "configPath": "projects/openclaw.json"
+  },
+  "superset": {
+    "root": "projects/apps/superset.current",
+    "apiPort": 3001,
+    "webPort": 3000
+  },
+  "env": {
+    "shared": {
+      "SKIP_ENV_VALIDATION": "1",
+      "DATABASE_URL": "postgres://dev:dev@127.0.0.1:5432/superset",
+      "DATABASE_URL_UNPOOLED": "postgres://dev:dev@127.0.0.1:5432/superset",
+      "NEXT_PUBLIC_API_URL": "http://127.0.0.1:3001",
+      "NEXT_PUBLIC_WEB_URL": "http://127.0.0.1:3000",
+      "NEXT_PUBLIC_POSTHOG_KEY": "dev-local",
+      "NEXT_PUBLIC_POSTHOG_HOST": "http://127.0.0.1:3000",
+      "NEXT_PUBLIC_SENTRY_ENVIRONMENT": "development",
+      "BETTER_AUTH_SECRET": "dev-better-auth-secret-2026-03-31-long",
+      "RESEND_API_KEY": "re_dev_local",
+      "KV_REST_API_URL": "https://example.com",
+      "KV_REST_API_TOKEN": "dev-token",
+      "STRIPE_SECRET_KEY": "sk_test_dev",
+      "STRIPE_WEBHOOK_SECRET": "whsec_dev",
+      "STRIPE_PRO_MONTHLY_PRICE_ID": "price_dev_monthly",
+      "STRIPE_PRO_YEARLY_PRICE_ID": "price_dev_yearly",
+      "SLACK_BILLING_WEBHOOK_URL": "https://example.com/slack",
+      "ANTHROPIC_API_KEY": "dev-anthropic-key"
+    },
+    "api": {
+      "NEXT_PUBLIC_ADMIN_URL": "http://127.0.0.1:3000",
+      "KV_URL": "https://example.com",
+      "QSTASH_TOKEN": "dev-qstash-token",
+      "QSTASH_CURRENT_SIGNING_KEY": "dev-signing-key-current",
+      "QSTASH_NEXT_SIGNING_KEY": "dev-signing-key-next"
+    },
+    "web": {
+      "NEXT_PUBLIC_MARKETING_URL": "http://127.0.0.1:3000",
+      "NEXT_PUBLIC_DOCS_URL": "http://127.0.0.1:3000"
+    }
+  }
+}

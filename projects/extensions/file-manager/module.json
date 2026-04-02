@@ -1,0 +1,36 @@
+{
+  "id": "file-manager",
+  "displayName": "文件管理",
+  "version": "1.0.0",
+  "owner": "auto",
+  "routePrefix": "/file-manager",
+  "apiPrefix": "/api/file-manager",
+  "nav": [
+    {
+      "path": "/file-manager",
+      "label": "文件管理"
+    }
+  ],
+  "pages": [
+    {
+      "id": "file-manager-home",
+      "path": "/file-manager",
+      "source": "frontend/pages/file-manager/index.html"
+    }
+  ],
+  "capabilities": [
+    "workspace-browser",
+    "file-preview",
+    "file-watch-rules"
+  ],
+  "mcp": [],
+  "dependencies": [],
+  "runtimeDirs": [
+    "cache",
+    "logs",
+    "temp",
+    "state"
+  ],
+  "featureFlags": []
+}
+

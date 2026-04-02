@@ -1,0 +1,642 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>工作区文件管理</title>
+  <script src="/control-ui-custom/assets/nav-bar-behavior.js?v=20260327-1" defer></script>
+  <style>
+    :root {
+      --bg: #f3f6fb;
+      --panel: #ffffff;
+      --panel-soft: #f7f9fc;
+      --border: #d9e2ec;
+      --text: #18212f;
+      --muted: #5f6c7b;
+      --accent: #155eef;
+      --accent-soft: #e9efff;
+      --danger: #d92d20;
+      --success: #067647;
+      --shadow: 0 18px 48px rgba(21, 94, 239, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(21, 94, 239, 0.08), transparent 32%),
+        linear-gradient(180deg, #f8fbff 0%, #eef3f9 100%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .page {
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr);
+      gap: 18px;
+      min-height: 100vh;
+      padding: 72px 18px 18px;
+    }
+
+    .panel {
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid rgba(217, 226, 236, 0.95);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      backdrop-filter: blur(10px);
+    }
+
+    .panel-header {
+      padding: 18px 18px 14px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 249, 252, 0.95));
+    }
+
+    .panel-title {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .panel-subtitle {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+      word-break: break-all;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .btn {
+      border: 1px solid var(--border);
+      background: #ffffff;
+      color: var(--text);
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .btn:hover {
+      border-color: #b5c6dd;
+      transform: translateY(-1px);
+    }
+
+    .btn.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #ffffff;
+    }
+
+    .panel-body {
+      padding: 14px;
+      overflow: auto;
+      flex: 1;
+    }
+
+    .tree {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-height: 160px;
+    }
+
+    .tree-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid transparent;
+      border-radius: 12px;
+      background: transparent;
+      cursor: pointer;
+      color: inherit;
+      text-align: left;
+    }
+
+    .tree-item:hover {
+      background: var(--panel-soft);
+      border-color: #e5edf6;
+    }
+
+    .tree-item.active {
+      background: var(--accent-soft);
+      border-color: rgba(21, 94, 239, 0.22);
+    }
+
+    .tree-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .tree-caret {
+      width: 14px;
+      color: var(--muted);
+      text-align: center;
+      flex: none;
+    }
+
+    .tree-label {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: 13px;
+    }
+
+    .tree-meta {
+      color: var(--muted);
+      font-size: 11px;
+      flex: none;
+    }
+
+    .tree-children {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .empty,
+    .hint {
+      padding: 16px 12px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.7;
+      border-radius: 12px;
+      background: var(--panel-soft);
+    }
+
+    .main {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .summary-card {
+      background: rgba(255, 255, 255, 0.86);
+      border: 1px solid rgba(217, 226, 236, 0.95);
+      border-radius: 18px;
+      padding: 14px 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .summary-label {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .summary-value {
+      margin-top: 6px;
+      font-size: 15px;
+      font-weight: 700;
+      word-break: break-all;
+    }
+
+    .viewer {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .viewer-toolbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    .editor {
+      width: 100%;
+      flex: 1;
+      min-height: 360px;
+      border: none;
+      border-top: 1px solid var(--border);
+      resize: none;
+      outline: none;
+      padding: 18px;
+      font-size: 13px;
+      line-height: 1.7;
+      background: #ffffff;
+      color: var(--text);
+      font-family: "Cascadia Mono", "Consolas", monospace;
+    }
+
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 18px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 12px;
+      background: var(--panel-soft);
+    }
+
+    .status-bar.error {
+      color: var(--danger);
+    }
+
+    .status-bar.success {
+      color: var(--success);
+    }
+
+    @media (max-width: 960px) {
+      .page {
+        grid-template-columns: 1fr;
+      }
+
+      .summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        padding: 66px 12px 12px;
+      }
+
+      .summary {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="navbar-container"></div>
+
+  <div class="page">
+    <section class="panel">
+      <div class="panel-header">
+        <div class="panel-title">工作区文件管理</div>
+        <div class="panel-subtitle" id="rootPath">正在读取工作区...</div>
+        <div class="toolbar">
+          <button class="btn primary" id="refreshBtn">刷新根目录</button>
+          <button class="btn" id="openLaunchBtn">原生界面</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="tree" id="treeView">
+          <div class="empty">正在加载文件树...</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="main">
+      <div class="summary">
+        <div class="summary-card">
+          <div class="summary-label">工作区根目录</div>
+          <div class="summary-value" id="summaryRoot">-</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-label">允许访问根</div>
+          <div class="summary-value" id="summaryAllowed">-</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-label">监听状态</div>
+          <div class="summary-value" id="summaryWatcher">-</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-label">预览上限</div>
+          <div class="summary-value" id="summaryPreview">-</div>
+        </div>
+      </div>
+
+      <section class="panel viewer">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">文件预览</div>
+            <div class="panel-subtitle" id="fileMeta">未选择文件</div>
+          </div>
+          <div class="viewer-toolbar">
+            <button class="btn" id="reloadFileBtn">重新读取</button>
+            <button class="btn" id="copyPathBtn">复制路径</button>
+          </div>
+        </div>
+        <textarea class="editor" id="editor" readonly spellcheck="false" placeholder="在左侧选择文件后，这里会显示预览内容。"></textarea>
+        <div class="status-bar" id="statusBar">
+          <span id="statusText">准备就绪</span>
+          <span id="tokenState">token: 检查中</span>
+        </div>
+      </section>
+    </section>
+  </div>
+
+  <script>
+    const API_BASE = '/api/file-manager';
+    const state = {
+      rootPath: '',
+      selectedPath: '',
+      selectedType: '',
+      nodes: new Map(),
+      expanded: new Set(),
+      runtime: null,
+    };
+
+    function getToken() {
+      const candidates = [
+        localStorage.getItem('openclaw.control.bootstrap.token.v1'),
+        localStorage.getItem('openclaw.control.token.v1'),
+        sessionStorage.getItem('openclaw.control.bootstrap.token.v1'),
+        sessionStorage.getItem('openclaw.control.token.v1'),
+      ].filter(Boolean);
+
+      for (const candidate of candidates) {
+        if (candidate) {
+          return candidate;
+        }
+      }
+
+      return '';
+    }
+
+    function authHeaders(extra = {}) {
+      const headers = { ...extra };
+      const token = getToken();
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+      return headers;
+    }
+
+    async function api(endpoint, options = {}) {
+      const response = await fetch(`${API_BASE}${endpoint}`, {
+        ...options,
+        headers: authHeaders(options.headers || {}),
+      });
+      const text = await response.text();
+      try {
+        return JSON.parse(text);
+      } catch {
+        return {
+          success: false,
+          error: text || `HTTP ${response.status}`,
+        };
+      }
+    }
+
+    function setStatus(message, tone = '') {
+      const statusBar = document.getElementById('statusBar');
+      statusBar.className = `status-bar${tone ? ` ${tone}` : ''}`;
+      document.getElementById('statusText').textContent = message;
+    }
+
+    function formatBytes(size) {
+      if (!Number.isFinite(size) || size < 1024) {
+        return `${size || 0} B`;
+      }
+
+      if (size < 1024 * 1024) {
+        return `${(size / 1024).toFixed(1)} KB`;
+      }
+
+      return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    function rememberTree(node) {
+      state.nodes.set(node.path, node);
+      if (Array.isArray(node.children)) {
+        node.children.forEach(rememberTree);
+      }
+    }
+
+    function getNode(pathValue) {
+      return state.nodes.get(pathValue) || null;
+    }
+
+    function updateRuntimeSummary(runtime) {
+      state.runtime = runtime;
+      document.getElementById('rootPath').textContent = runtime.workspaceRoot;
+      document.getElementById('summaryRoot').textContent = runtime.workspaceRoot;
+      document.getElementById('summaryAllowed').textContent = `${runtime.allowedRoots.length} 个`;
+      document.getElementById('summaryWatcher').textContent = runtime.watcherActive
+        ? `运行中 · ${runtime.watchPaths.length} 条`
+        : '未启动';
+      document.getElementById('summaryPreview').textContent = formatBytes(runtime.maxFileReadBytes);
+    }
+
+    function renderTree() {
+      const treeView = document.getElementById('treeView');
+      treeView.innerHTML = '';
+
+      const rootNode = getNode(state.rootPath);
+      if (!rootNode) {
+        treeView.innerHTML = '<div class="empty">未找到根目录数据。</div>';
+        return;
+      }
+
+      treeView.appendChild(renderNode(rootNode, 0));
+    }
+
+    function renderNode(node, depth) {
+      const wrapper = document.createElement('div');
+      const item = document.createElement('button');
+      const left = document.createElement('span');
+      const caret = document.createElement('span');
+      const label = document.createElement('span');
+      const meta = document.createElement('span');
+      const isDirectory = node.type === 'directory';
+      const isExpanded = state.expanded.has(node.path);
+      const canExpand = isDirectory && (node.hasChildren || (Array.isArray(node.children) && node.children.length > 0));
+
+      item.type = 'button';
+      item.className = 'tree-item';
+      item.style.marginLeft = `${depth * 14}px`;
+      if (state.selectedPath === node.path) {
+        item.classList.add('active');
+      }
+
+      left.className = 'tree-left';
+      caret.className = 'tree-caret';
+      caret.textContent = canExpand ? (isExpanded ? '▾' : '▸') : '·';
+      label.className = 'tree-label';
+      label.textContent = node.name;
+      meta.className = 'tree-meta';
+      meta.textContent = isDirectory ? '目录' : formatBytes(node.size);
+
+      left.appendChild(caret);
+      left.appendChild(label);
+      item.appendChild(left);
+      item.appendChild(meta);
+
+      item.addEventListener('click', async () => {
+        state.selectedPath = node.path;
+        state.selectedType = node.type;
+
+        if (node.type === 'directory') {
+          document.getElementById('fileMeta').textContent = node.path;
+          document.getElementById('editor').value = '';
+          await toggleDirectory(node);
+        } else {
+          await loadFile(node.path);
+        }
+
+        renderTree();
+      });
+
+      wrapper.appendChild(item);
+
+      if (isDirectory && isExpanded) {
+        const childrenContainer = document.createElement('div');
+        childrenContainer.className = 'tree-children';
+
+        if (Array.isArray(node.children) && node.children.length > 0) {
+          node.children.forEach((child) => {
+            childrenContainer.appendChild(renderNode(child, depth + 1));
+          });
+        } else {
+          const empty = document.createElement('div');
+          empty.className = 'hint';
+          empty.style.marginLeft = `${(depth + 1) * 14}px`;
+          empty.textContent = node.truncated
+            ? '该目录内容较多，当前只展示部分结果。'
+            : '该目录下没有可展示的文件。';
+          childrenContainer.appendChild(empty);
+        }
+
+        wrapper.appendChild(childrenContainer);
+      }
+
+      return wrapper;
+    }
+
+    async function toggleDirectory(node) {
+      if (state.expanded.has(node.path)) {
+        state.expanded.delete(node.path);
+        setStatus('目录已收起');
+        return;
+      }
+
+      if (!node.loaded && node.hasChildren) {
+        setStatus('正在加载目录...');
+        const result = await api(`/tree?path=${encodeURIComponent(node.path)}`);
+        if (!result.success) {
+          setStatus(`目录加载失败：${result.error || '未知错误'}`, 'error');
+          return;
+        }
+
+        rememberTree(result.data);
+        node = result.data;
+      }
+
+      state.expanded.add(node.path);
+      setStatus(node.truncated ? '目录已展开，结果已按上限截断。' : '目录已展开', 'success');
+    }
+
+    async function loadRuntimeConfig() {
+      const result = await api('/config');
+      if (!result.success) {
+        setStatus(`读取配置失败：${result.error || '未知错误'}`, 'error');
+        return false;
+      }
+
+      updateRuntimeSummary(result.data);
+      state.rootPath = result.data.workspaceRoot;
+      return true;
+    }
+
+    async function loadRootTree() {
+      setStatus('正在加载根目录...');
+      const result = await api('/tree');
+      if (!result.success) {
+        document.getElementById('treeView').innerHTML = `<div class="empty">加载失败：${result.error || '未知错误'}</div>`;
+        setStatus(`文件树加载失败：${result.error || '未知错误'}`, 'error');
+        return;
+      }
+
+      rememberTree(result.data);
+      state.rootPath = result.data.path;
+      state.expanded.clear();
+      state.expanded.add(state.rootPath);
+      renderTree();
+      setStatus(result.data.truncated ? '根目录加载完成，结果已按上限截断。' : '根目录加载完成', 'success');
+    }
+
+    async function loadFile(filePath) {
+      setStatus('正在读取文件...');
+      const result = await api(`/file?path=${encodeURIComponent(filePath)}`);
+      if (!result.success) {
+        document.getElementById('editor').value = '';
+        document.getElementById('fileMeta').textContent = filePath;
+        setStatus(`读取失败：${result.error || '未知错误'}`, 'error');
+        return;
+      }
+
+      const data = result.data || {};
+      document.getElementById('editor').value = data.content || '';
+      document.getElementById('fileMeta').textContent = `${data.path || filePath} · ${formatBytes(data.size || 0)}`;
+      setStatus(data.truncated ? '文件已读取，内容已截断。' : '文件已读取', 'success');
+    }
+
+    document.getElementById('refreshBtn').addEventListener('click', async () => {
+      await loadRootTree();
+    });
+
+    document.getElementById('openLaunchBtn').addEventListener('click', () => {
+      window.location.href = '/control-ui-custom/launch.html';
+    });
+
+    document.getElementById('reloadFileBtn').addEventListener('click', async () => {
+      if (!state.selectedPath || state.selectedType !== 'file') {
+        setStatus('请先选择文件。', 'error');
+        return;
+      }
+
+      await loadFile(state.selectedPath);
+    });
+
+    document.getElementById('copyPathBtn').addEventListener('click', async () => {
+      if (!state.selectedPath) {
+        setStatus('当前没有可复制的路径。', 'error');
+        return;
+      }
+
+      await navigator.clipboard.writeText(state.selectedPath);
+      setStatus('路径已复制。', 'success');
+    });
+
+    document.getElementById('tokenState').textContent = getToken() ? 'token: ready' : 'token: missing';
+
+    async function bootstrap() {
+      const configReady = await loadRuntimeConfig();
+      if (!configReady) {
+        return;
+      }
+
+      await loadRootTree();
+    }
+
+    bootstrap().catch((error) => {
+      console.error('[file-manager] 页面初始化失败:', error);
+      setStatus(`初始化失败：${error.message || error}`, 'error');
+    });
+  </script>
+</body>
+</html>

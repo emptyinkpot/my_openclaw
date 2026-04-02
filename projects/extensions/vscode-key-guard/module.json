@@ -3,18 +3,18 @@
   "displayName": "密钥守护",
   "version": "1.0.0",
   "owner": "auto",
-  "routePrefix": "/key-guard",
+  "routePrefix": "/vscode-key-guard",
   "apiPrefix": "/api/key-guard",
   "nav": [
     {
-      "path": "/key-guard",
+      "path": "/vscode-key-guard/",
       "label": "密钥守护"
     }
   ],
   "pages": [
     {
       "id": "key-guard-home",
-      "path": "/key-guard",
+      "path": "/vscode-key-guard/",
       "source": "frontend/pages/vscode-key-guard/index.html"
     }
   ],

@@ -1,0 +1,51 @@
+{
+  "id": "file-manager",
+  "name": "文件管理",
+  "description": "工作区文件浏览、预览与监听模块",
+  "version": "1.0.0",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "workspaceRoot": {
+        "type": "string",
+        "description": "页面默认打开的工作区根目录"
+      },
+      "allowedRoots": {
+        "type": "array",
+        "description": "允许读取的绝对路径根目录",
+        "items": {
+          "type": "string"
+        }
+      },
+      "watchPaths": {
+        "type": "array",
+        "description": "需要监听的目录列表",
+        "items": {
+          "type": "string"
+        }
+      },
+      "allowShellCommands": {
+        "type": "boolean",
+        "description": "是否允许规则直接执行 shell 命令，默认关闭"
+      },
+      "maxTreeDepth": {
+        "type": "integer",
+        "description": "目录树单次返回的最大深度"
+      },
+      "maxEntriesPerDirectory": {
+        "type": "integer",
+        "description": "单个目录最多返回多少个可见条目"
+      },
+      "maxFileReadBytes": {
+        "type": "integer",
+        "description": "单次文件预览最多读取多少字节"
+      },
+      "rules": {
+        "type": "array",
+        "description": "文件变化规则列表"
+      }
+    }
+  }
+}
+

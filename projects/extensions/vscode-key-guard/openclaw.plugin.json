@@ -1,0 +1,11 @@
+{
+  "id": "vscode-key-guard",
+  "name": "VS Code Key Guard",
+  "description": "Inspect active Codex and Roo keys, usage, and controlled key switching inside local VS Code.",
+  "version": "1.0.0",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {}
+  }
+}

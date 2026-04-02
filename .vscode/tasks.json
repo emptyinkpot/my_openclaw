@@ -1,0 +1,45 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "AI: Check Health",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/tools/ai/project-health.ps1"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "AI: Check Port 5000",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "C:/Users/ASUS-KL/Documents/AI-Tools/scripts/check-port.ps1",
+        "-Port",
+        "5000"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "AI: Find Node",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "C:/Users/ASUS-KL/Documents/AI-Tools/scripts/find-process.ps1",
+        "-Name",
+        "node"
+      ],
+      "problemMatcher": []
+    }
+  ]
+}
