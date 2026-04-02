@@ -39,3 +39,11 @@ projects/apps/aghub/.git_disabled*/
 projects/apps/superset/.git_disabled*/
 projects/extensions/qmd/.git_disabled*/
 projects/workspace/.git_disabled*/
+
+.vscode/settings.json
+projects/memory/*.sqlite
+projects/identity/device*.json
+projects/delivery-queue/
+projects/control-ui-custom/key-guard.latest.json
+projects/shared/key-guard.latest.json
+projects/cookies-accounts/
