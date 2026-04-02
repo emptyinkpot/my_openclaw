@@ -2,6 +2,7 @@ import {
   AUTOMATION_API_PREFIX,
   AUTOMATION_PAGE_ROUTES,
   handleAutomationApi,
+  handleLegacyAutomationAlias,
   handleAutomationPage,
 } from '../backend/routes/http';
 

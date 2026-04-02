@@ -5,6 +5,12 @@
   "description": "Lightweight OpenClaw startup shell",
   "scripts": {
     "start": "start-openclaw.bat",
-    "restore": "powershell -ExecutionPolicy Bypass -File restore-from-github.ps1"
+    "restore": "powershell -ExecutionPolicy Bypass -File restore-from-github.ps1",
+    "check:gateway:health": "node projects/extensions/kernel/testing/gateway-health.mjs",
+    "check:plugin:health": "node projects/extensions/kernel/testing/plugin-health.mjs",
+    "check:route:verify": "node projects/extensions/kernel/testing/route-verify.mjs",
+    "check:plugin:load": "node projects/extensions/kernel/testing/plugin-load-check.mjs",
+    "check:nav:sync": "node projects/extensions/kernel/testing/nav-sync-check.mjs",
+    "check:extensions:all": "npm run check:gateway:health && npm run check:plugin:health && npm run check:route:verify && npm run check:plugin:load && npm run check:nav:sync"
   }
 }

@@ -4,6 +4,7 @@ import {
   configureFileManagerRuntime,
   disposeFileManagerRuntime,
   handleFileManagerApi,
+  handleLegacyFileManagerApiAlias,
   handleFileManagerPage,
 } from '../backend/routes/http';
 

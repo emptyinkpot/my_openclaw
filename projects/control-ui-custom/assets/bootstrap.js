@@ -110,7 +110,7 @@
   const readNavBarHtml = () => {
     try {
       const xhr = new XMLHttpRequest();
-      xhr.open('GET', '/shared/nav-bar.html', false);
+      xhr.open('GET', '/extensions/shared/nav-bar.html', false);
       xhr.send(null);
       if (xhr.status >= 200 && xhr.status < 300 && xhr.responseText.trim()) {
         return xhr.responseText;

@@ -18,3 +18,9 @@ node_modules/
 
 # Keep Roo runtime MCP configs out of this repo (runtime-only on local machine)
 .cursor/projects/e-Auto/mcps/
+# Extension runtime directories
+projects/extensions/*/cache/
+projects/extensions/*/logs/
+projects/extensions/*/temp/
+projects/extensions/*/state/
+

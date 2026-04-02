@@ -24,6 +24,10 @@
       --pink: #bf3989;
     }
     
+    #navbar-container {
+      min-height: var(--nav-height, 48px);
+    }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       background: var(--bg);
@@ -114,7 +118,7 @@
     /* 主布局 */
     .main {
       display: flex;
-      height: calc(100vh - 52px - 32px - 40px); /* 减去导航栏高度 40px */
+      height: calc(100vh - 52px - 32px - var(--nav-height, 48px));
     }
     
     /* 左侧等级面板 */
@@ -762,6 +766,7 @@
     <script src="/control-ui-custom/assets/nav-bar-behavior.js?v=20260324-5" defer></script>
   </head>
 <body>
+  <div id="navbar-container"></div>
   <!-- 头部 -->
   <div class="header">
     <div class="header-top">

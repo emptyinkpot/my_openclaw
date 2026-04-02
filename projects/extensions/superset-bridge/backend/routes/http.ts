@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as http from 'http';
 import * as https from 'https';
 import * as path from 'path';
-import { buildSharedNavBarHtml, injectSharedNavBar } from '../../../../shared/nav-bar-server';
+const { buildSharedNavBarHtml, injectSharedNavBar } = require('../../../shared/nav-bar-server.js');
 
 export const SUPERSET_BRIDGE_PAGE_ROUTES = ['/superset', '/superset/'] as const;
 export const SUPERSET_BRIDGE_PROXY_PREFIX = '/superset/_app';
@@ -51,7 +51,7 @@ function jsonRes(res: ServerResponse, data: unknown, status = 200): void {
 
 function injectNavBar(html: string): string {
   const navBarHtml = buildSharedNavBarHtml({
-    sharedRoot: path.join(__dirname, '..', '..', '..', '..', 'shared'),
+    sharedRoot: path.join(__dirname, '..', '..', '..', 'shared'),
     activeHrefs: ['/superset/'],
     fallbackHtml: '<div class="nav-bar"><a href="/superset/" class="on">Superset BI</a></div>',
   });
@@ -355,3 +355,4 @@ export async function handleSupersetBridgeApi(
   jsonRes(res, { success: false, error: 'Superset Bridge API route not found' }, 404);
   return true;
 }
+

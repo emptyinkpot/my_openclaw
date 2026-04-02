@@ -47,9 +47,7 @@
       "openclaw.json",
       "extensions/experience-manager",
       "extensions/novel-manager",
-      "shared/nav-bar.html",
-      "control-ui-custom/shared/nav-bar.html",
-      "control-ui-custom/assets/nav-bar.html"
+      "extensions/shared/nav-bar.html"
     ],
     "legacySearches": [
       {
@@ -79,7 +77,7 @@
       {
         "path": "/automation",
         "containsAll": [
-          "Automation Center"
+          "自动化中心"
         ]
       }
     ],
@@ -100,9 +98,7 @@
     "scanPaths": [
       "openclaw.json",
       "extensions/automation-hub",
-      "shared/nav-bar.html",
-      "control-ui-custom/shared/nav-bar.html",
-      "control-ui-custom/assets/nav-bar.html"
+      "extensions/shared/nav-bar.html"
     ],
     "legacySearches": [
       {
@@ -150,9 +146,7 @@
     "scanPaths": [
       "openclaw.json",
       "extensions/file-manager",
-      "shared/nav-bar.html",
-      "control-ui-custom/shared/nav-bar.html",
-      "control-ui-custom/assets/nav-bar.html"
+      "extensions/shared/nav-bar.html"
     ],
     "legacySearches": [
       {
@@ -162,6 +156,43 @@
       {
         "label": "旧 API 前缀引用",
         "value": "/file-manager/api"
+      }
+    ]
+  },
+  "ops-observer": {
+    "displayName": "运维观测中心",
+    "tsconfig": "extensions/ops-observer/tsconfig.json",
+    "pageChecks": [
+      {
+        "path": "/ops-observer",
+        "containsAll": [
+          "运维观测中心",
+          "nav-bar"
+        ]
+      }
+    ],
+    "apiChecks": [
+      {
+        "path": "/api/ops-observer/summary",
+        "containsAll": [
+          "services",
+          "generatedAt"
+        ]
+      }
+    ],
+    "scanPaths": [
+      "openclaw.json",
+      "extensions/ops-observer",
+      "extensions/shared/nav-bar.html"
+    ],
+    "legacySearches": [
+      {
+        "label": "旧共享导航路径",
+        "value": "/shared/nav-bar.html"
+      },
+      {
+        "label": "模块内自带独立导航栏",
+        "value": "buildModuleNavHtml"
       }
     ]
   }

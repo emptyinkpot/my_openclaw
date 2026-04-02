@@ -6,7 +6,7 @@ import { AI_MODEL_HUB_API_PREFIX, AI_MODEL_HUB_PAGE_ROUTES, mergeAIModelHubConfi
 import { LocalModelService } from '../services/local-model-service';
 import { FineTuningService } from '../services/fine-tuning-service';
 import { SandboxService } from '../services/sandbox-service';
-import { buildSharedNavBarHtml, injectSharedNavBar } from '../../../../shared/nav-bar-server';
+const { buildSharedNavBarHtml, injectSharedNavBar } = require('../../../shared/nav-bar-server.js');
 
 export { AI_MODEL_HUB_API_PREFIX, AI_MODEL_HUB_PAGE_ROUTES };
 
@@ -80,7 +80,7 @@ function readUtf8File(filePath: string, fallback: string): string {
 
 function injectNavBar(html: string): string {
   const navBarHtml = buildSharedNavBarHtml({
-    sharedRoot: path.join(__dirname, '..', '..', '..', '..', 'shared'),
+    sharedRoot: path.join(__dirname, '..', '..', '..', 'shared'),
     activeHrefs: ['/ai-hub'],
     fallbackHtml: '<div class="nav-bar"><a href="/ai-hub" class="on">模型中心</a></div>',
   });
@@ -349,3 +349,4 @@ export async function handleAIModelHubApi(
   jsonRes(res, { success: false, error: 'AI Model Hub API route not found' }, 404);
   return true;
 }
+

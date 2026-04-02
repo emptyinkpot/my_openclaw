@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as http from 'http';
 import * as https from 'https';
 import * as path from 'path';
-import { buildSharedNavBarHtml, injectSharedNavBar } from '../../../../shared/nav-bar-server';
+const { buildSharedNavBarHtml, injectSharedNavBar } = require('../../../shared/nav-bar-server.js');
 
 export const AGHUB_BRIDGE_PAGE_ROUTES = ['/aghub', '/aghub/'] as const;
 export const AGHUB_BRIDGE_PROXY_PREFIX = '/aghub/_app';
@@ -51,7 +51,7 @@ function jsonRes(res: ServerResponse, data: unknown, status = 200): void {
 
 function injectNavBar(html: string): string {
   const navBarHtml = buildSharedNavBarHtml({
-    sharedRoot: path.join(__dirname, '..', '..', '..', '..', 'shared'),
+    sharedRoot: path.join(__dirname, '..', '..', '..', 'shared'),
     activeHrefs: ['/aghub/'],
     fallbackHtml: '<div class="nav-bar"><a href="/aghub/" class="on">AGHub</a></div>',
   });
@@ -352,3 +352,4 @@ export async function handleAghubBridgeApi(
   jsonRes(res, { success: false, error: 'AGHub Bridge API route not found' }, 404);
   return true;
 }
+

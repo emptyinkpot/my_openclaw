@@ -7,7 +7,7 @@ import * as path from 'path';
 import { NovelService } from '../backend/services/novel-service';
 import { getConfig } from '../../core/config';
 import { getDatabaseManager, getDailyPlanRepository } from '../../core/database';
-import { buildSharedNavBarHtml, injectSharedNavBar } from '../../../shared/nav-bar-server';
+const { buildSharedNavBarHtml, injectSharedNavBar } = require('../../shared/nav-bar-server.js');
 
 // 导入禁用词处理步骤
 import { BannedWordsStep } from '../core/content-craft/src/steps/process/banned-words';
@@ -343,15 +343,10 @@ function applyLiteralReplacements(
 }
 
 // 注入导航栏到页面HTML中
-function injectNavBar(html: string, currentPage: string): string {
-  // 根据当前页面给对应的链接添加 "on" 类
-  const pageToLinkMap: Record<string, string> = {
-    'index.html': '/novel/'
-  };
-  const currentLink = pageToLinkMap[currentPage];
+function injectNavBar(html: string): string {
   const navBarHtml = buildSharedNavBarHtml({
-    sharedRoot: path.join(__dirname, '..', '..', '..', 'shared'),
-    activeHrefs: currentLink ? [currentLink] : [],
+    sharedRoot: path.join(__dirname, '..', '..', 'shared'),
+    activeHrefs: ['/novel/'],
     fallbackHtml: '<div class="nav-bar"><a href="/novel/" class="on">小说管理</a></div>',
   });
 
@@ -360,7 +355,7 @@ function injectNavBar(html: string, currentPage: string): string {
 
 // 获取页面HTML
 function getPageHtml(_pageName: string): string {
-  return injectNavBar(getNovelHtml(), 'index.html');
+  return injectNavBar(getNovelHtml());
 }
 
 // 处理项目结构页面
@@ -986,7 +981,7 @@ function getProjectStructureHtml(): string {
 </html>`;
   
   // 注入导航栏
-  html = injectNavBar(html, 'project-structure.html');
+  html = injectNavBar(html);
   return html;
 }
 
@@ -1061,7 +1056,7 @@ async function handleSse(req: IncomingMessage, res: ServerResponse): Promise<boo
     res.write(`data: ${JSON.stringify({ status: 'connected', message: 'SSE连接已建立', progressId })}\n\n`);
     
     // 导入进度管理器
-    const { registerClient } = require('./core/pipeline/ProgressManager');
+    const { registerClient } = require('../core/pipeline/ProgressManager');
     
     // 注册客户端
     const unregister = registerClient(progressId, (data: string) => {
@@ -2557,7 +2552,7 @@ ${vocabulary.slice(0, 50).map((item: any) => `- ${item.word}`).join('\n')}
       try {
         console.log('[FullLongTextTest] 开始完整长文本测试...');
         
-        const { PolishPipeline } = require('./core/content-craft/src/pipeline');
+        const { PolishPipeline } = require('../core/content-craft/src/pipeline');
         const pipeline = new PolishPipeline();
         
         // 生成真实的长文本（10000+字）
@@ -3110,3 +3105,4 @@ export type {
   PolishOutput, 
   PolishSettings 
 } from '../core/content-craft/src/types';
+

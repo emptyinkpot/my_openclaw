@@ -2,7 +2,7 @@ import { IncomingMessage, ServerResponse } from 'http';
 import * as fs from 'fs';
 import * as path from 'path';
 import type { AutomationFeishuMessage, AutomationSchedule } from '../../contracts';
-import { buildSharedNavBarHtml, injectSharedNavBar } from '../../../../shared/nav-bar-server';
+const { buildSharedNavBarHtml, injectSharedNavBar } = require('../../../shared/nav-bar-server.js');
 import {
   addFeishuMessage,
   clearFeishuMessages,
@@ -43,7 +43,7 @@ function stripClientNavLoader(html: string): string {
 
 function injectNavBar(html: string): string {
   const navBarHtml = buildSharedNavBarHtml({
-    sharedRoot: path.join(__dirname, '..', '..', '..', '..', 'shared'),
+    sharedRoot: path.join(__dirname, '..', '..', '..', 'shared'),
     activeHrefs: ['/automation'],
     fallbackHtml: '<div class="nav-bar"><a href="/automation" class="on">自动化</a></div>',
   });
@@ -114,6 +114,24 @@ export async function handleAutomationPage(
     Expires: '0',
   });
   res.end(getAutomationHtml());
+  return true;
+}
+
+export async function handleLegacyAutomationAlias(
+  req: IncomingMessage,
+  res: ServerResponse
+): Promise<boolean> {
+  const urlPath = (req.url || '').split('?')[0];
+  if (urlPath !== '/auto.html') {
+    return false;
+  }
+
+  res.writeHead(308, {
+    Location: '/automation',
+    'Cache-Control': 'no-store',
+    'Access-Control-Allow-Origin': '*',
+  });
+  res.end();
   return true;
 }
 
@@ -209,3 +227,4 @@ export async function handleAutomationApi(
   jsonRes(res, { success: false, error: 'Automation API route not found' }, 404);
   return true;
 }
+

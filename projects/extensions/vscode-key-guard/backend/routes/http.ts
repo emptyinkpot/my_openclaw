@@ -2,7 +2,7 @@ import { IncomingMessage, ServerResponse } from 'http';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
-import { buildSharedNavBarHtml, injectSharedNavBar } from '../../../../shared/nav-bar-server';
+const { buildSharedNavBarHtml, injectSharedNavBar } = require('../../../shared/nav-bar-server.js');
 
 import { getDiagnosisPayload } from './diagnosis.ts';
 import { createKeyPayload, deleteKeyPayload, getKeysPayload, updateKeyPayload } from './keys.ts';
@@ -45,7 +45,7 @@ function readUtf8File(filePath: string, fallback: string): string {
 
 function injectNavBar(html: string): string {
   const navBarHtml = buildSharedNavBarHtml({
-    sharedRoot: path.join(moduleDir, '..', '..', '..', '..', 'shared'),
+    sharedRoot: path.join(moduleDir, '..', '..', '..', 'shared'),
     activeHrefs: ['/vscode-key-guard/'],
     fallbackHtml: '<div class="nav-bar"><a href="/vscode-key-guard/" class="on">Key Guard</a></div>',
   });
@@ -241,3 +241,4 @@ export async function handleVscodeKeyGuardApi(
     return true;
   }
 }
+

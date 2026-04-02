@@ -1,6 +1,6 @@
 (function () {
   const modalId = 'globalSettingsModal';
-  const sharedNavUrl = '/shared/nav-bar.html';
+  const sharedNavUrl = '/extensions/shared/nav-bar.html';
 
   function getModal() {
     return document.getElementById(modalId);

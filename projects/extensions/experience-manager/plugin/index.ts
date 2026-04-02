@@ -4,7 +4,7 @@ import * as path from 'path';
 import { experienceRepo } from '../core/ExperienceRepository';
 import { noteRepo } from '../core/NoteRepository';
 import { getCloudSyncStatus, syncAllToCloud } from '../core/CloudSync';
-import { buildSharedNavBarHtml, injectSharedNavBar } from '../../../shared/nav-bar-server';
+const { buildSharedNavBarHtml, injectSharedNavBar } = require('../../shared/nav-bar-server.js');
 
 const PLUGIN_ID = 'experience-manager';
 const PLUGIN_NAME = '经验中心';
@@ -14,11 +14,27 @@ const MODULE_ROOT = path.resolve(__dirname, '..');
 const PROJECT_ROOT = path.resolve(MODULE_ROOT, '..', '..');
 const PAGE_FILE = path.join(MODULE_ROOT, 'frontend', 'pages', 'experience', 'index.html');
 
+
+const SHARED_STATIC_FILES: Record<string, { filePath: string; contentType: string }> = {
+  '/extensions/shared/nav-bar.html': {
+    filePath: path.join(PROJECT_ROOT, 'extensions', 'shared', 'nav-bar.html'),
+    contentType: 'text/html; charset=utf-8',
+  },
+  '/extensions/shared/key-guard.html': {
+    filePath: path.join(PROJECT_ROOT, 'extensions', 'shared', 'key-guard.html'),
+    contentType: 'text/html; charset=utf-8',
+  },
+  '/extensions/shared/nav-bar-behavior.js': {
+    filePath: path.join(PROJECT_ROOT, 'extensions', 'shared', 'nav-bar-behavior.js'),
+    contentType: 'application/javascript; charset=utf-8',
+  },
+};
+
 function renderExperiencePage(): string {
   try {
     const html = fs.readFileSync(PAGE_FILE, 'utf-8');
     const injectedNavBar = buildSharedNavBarHtml({
-      sharedRoot: path.join(PROJECT_ROOT, 'shared'),
+      sharedRoot: path.join(PROJECT_ROOT, 'extensions', 'shared'),
       activeHrefs: ['/experience'],
       fallbackHtml: '<div class="nav-bar"><a href="/experience" class="on">经验中心</a></div>',
     });
@@ -27,6 +43,37 @@ function renderExperiencePage(): string {
     console.error('[experience-manager] 读取页面失败:', error);
     return '<html><body><h1>经验中心页面加载失败</h1></body></html>';
   }
+}
+
+
+function handleSharedStatic(req: IncomingMessage, res: ServerResponse): boolean {
+  const requestPath = (req.url || '').split('?')[0];
+  const target = SHARED_STATIC_FILES[requestPath];
+  if (!target) {
+    return false;
+  }
+
+  try {
+    const content = fs.readFileSync(target.filePath, 'utf-8');
+    res.writeHead(200, {
+      'Content-Type': target.contentType,
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+      Pragma: 'no-cache',
+      Expires: '0',
+      'Access-Control-Allow-Origin': '*',
+    });
+    res.end(content);
+  } catch (error) {
+    console.error('[experience-manager] shared static file failed:', target.filePath, error);
+    res.writeHead(404, {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Access-Control-Allow-Origin': '*',
+      'Cache-Control': 'no-store',
+    });
+    res.end('Not found');
+  }
+
+  return true;
 }
 
 function handleExperiencePage(req: IncomingMessage, res: ServerResponse): boolean {
@@ -43,6 +90,21 @@ function handleExperiencePage(req: IncomingMessage, res: ServerResponse): boolea
     'Access-Control-Allow-Origin': '*',
   });
   res.end(renderExperiencePage());
+  return true;
+}
+
+function handleLegacyExperienceAlias(req: IncomingMessage, res: ServerResponse): boolean {
+  const requestPath = (req.url || '').split('?')[0];
+  if (requestPath !== '/experience.html') {
+    return false;
+  }
+
+  res.writeHead(308, {
+    Location: '/experience',
+    'Cache-Control': 'no-store',
+    'Access-Control-Allow-Origin': '*',
+  });
+  res.end();
   return true;
 }
 
@@ -323,6 +385,15 @@ const plugin = {
       return;
     }
 
+    Object.keys(SHARED_STATIC_FILES).forEach((staticPath) => {
+      api.registerHttpRoute({
+        path: staticPath,
+        match: 'exact',
+        handler: handleSharedStatic,
+        auth: 'plugin',
+      });
+    });
+
     ['/experience', '/experience/'].forEach((pagePath) => {
       api.registerHttpRoute({
         path: pagePath,
@@ -345,3 +416,4 @@ const plugin = {
 export default plugin;
 export { activate };
 export const register = plugin.register;
+

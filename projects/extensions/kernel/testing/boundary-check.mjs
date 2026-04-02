@@ -27,9 +27,33 @@ const textFileExts = new Set([
   '.cmd',
 ]);
 
-const codeFileExts = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.json', '.yml', '.yaml', '.html']);
+const codeFileExts = new Set([
+  '.ts',
+  '.tsx',
+  '.js',
+  '.jsx',
+  '.mjs',
+  '.cjs',
+  '.json',
+  '.yml',
+  '.yaml',
+  '.html',
+]);
 
-const skipDirs = new Set(['.git', 'node_modules', 'dist', 'build', '.runtime', 'tmp', '.trash', '.local', 'memory', 'docs', 'knowledge', 'mirror']);
+const skipDirs = new Set([
+  '.git',
+  'node_modules',
+  'dist',
+  'build',
+  '.runtime',
+  'tmp',
+  '.trash',
+  '.local',
+  'memory',
+  'docs',
+  'knowledge',
+  'mirror',
+]);
 
 const requiredModuleFields = [
   'id',
@@ -94,18 +118,22 @@ function scanText(rootDirs, regex, options = {}) {
   const matches = [];
   const allowedExts = options.allowedExts || textFileExts;
   const ignorePathIncludes = options.ignorePathIncludes || [];
+
   for (const rootDir of rootDirs) {
     walkFiles(rootDir, (filePath) => {
       const normalizedFile = normalizePath(filePath);
       if (ignorePathIncludes.some((token) => normalizedFile.includes(token))) {
         return;
       }
+
       if (!allowedExts.has(path.extname(filePath).toLowerCase())) {
         return;
       }
+
       const text = fs.readFileSync(filePath, 'utf8');
       const lines = text.split(/\r?\n/);
       for (let i = 0; i < lines.length; i += 1) {
+        regex.lastIndex = 0;
         if (regex.test(lines[i])) {
           matches.push({
             file: relFromWorkspace(filePath),
@@ -116,6 +144,7 @@ function scanText(rootDirs, regex, options = {}) {
       }
     });
   }
+
   return matches;
 }
 
@@ -131,16 +160,17 @@ function filterNoiseMatches(matches, tokens = []) {
   if (!Array.isArray(tokens) || tokens.length === 0) {
     return matches;
   }
+
   return matches.filter((item) => !tokens.some((token) => item.file.includes(token)));
 }
 
 function checkPluginLoadPaths() {
   const configPath = path.join(projectRoot, 'openclaw.json');
   const config = readJson(configPath);
-  const paths = config?.plugins?.load?.paths || [];
+  const pluginPaths = config?.plugins?.load?.paths || [];
   const violations = [];
 
-  for (const pluginPath of paths) {
+  for (const pluginPath of pluginPaths) {
     const normalized = normalizePath(String(pluginPath || ''));
     if (/\/plugin\/?$/i.test(normalized)) {
       violations.push(normalized);
@@ -179,7 +209,10 @@ function checkModuleJsonIntegrity() {
 
     if (typeof data.routePrefix === 'string' && typeof data.apiPrefix === 'string') {
       if (data.routePrefix === data.apiPrefix || data.apiPrefix.startsWith(`${data.routePrefix}/`)) {
-        issues.push({ module: mod.name, issue: `routePrefix (${data.routePrefix}) conflicts with apiPrefix (${data.apiPrefix})` });
+        issues.push({
+          module: mod.name,
+          issue: `routePrefix (${data.routePrefix}) conflicts with apiPrefix (${data.apiPrefix})`,
+        });
       }
     }
   }
@@ -219,8 +252,9 @@ function checkRuntimeResidue() {
 
 function checkSharedNavEntries() {
   const targets = [
-    path.join(projectRoot, 'shared', 'nav-bar.html'),
+    path.join(projectRoot, 'extensions', 'shared', 'nav-bar.html'),
     path.join(projectRoot, 'control-ui-custom', 'shared', 'nav-bar.html'),
+    path.join(projectRoot, 'control-ui-custom', 'assets', 'nav-bar.html'),
   ];
 
   const issues = [];
@@ -245,13 +279,11 @@ function checkSharedNavEntries() {
 
 function checkCrossModuleDeepImports() {
   const regex = /extensions\/(?!kernel|core|plugins)([^/]+)\/(backend|core|frontend|plugin|contracts)\//;
-  const roots = [extensionsRoot];
-  const matches = scanText(roots, regex, {
+  const matches = scanText([extensionsRoot], regex, {
     allowedExts: codeFileExts,
     ignorePathIncludes: ['/docs/', '/knowledge/', '/mirror/'],
   });
-  const filtered = matches.filter((item) => !item.file.startsWith('projects/extensions/plugins/'));
-  return filtered;
+  return matches.filter((item) => !item.file.startsWith('projects/extensions/plugins/'));
 }
 
 function main() {
@@ -320,26 +352,26 @@ function main() {
     });
   }
 
-  const navIssues = checkSharedNavEntries();
-  if (navIssues.length > 0) {
+  const sharedNavIssues = checkSharedNavEntries();
+  if (sharedNavIssues.length > 0) {
     failures.push({
-      title: 'shared nav still contains deprecated routes',
-      items: navIssues,
+      title: 'shared nav still contains legacy entries',
+      items: sharedNavIssues,
     });
   }
 
   if (failures.length > 0) {
-    console.error('Boundary check failed.');
-    for (const group of failures) {
-      console.error(`\n- ${group.title}`);
-      for (const item of group.items) {
-        console.error(`  * ${item}`);
+    for (const failure of failures) {
+      console.error(`\n[FAIL] ${failure.title}`);
+      for (const item of failure.items) {
+        console.error(`  - ${item}`);
       }
     }
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 
-  console.log('Boundary check passed.');
+  console.log('[OK] boundary checks passed');
 }
 
 main();

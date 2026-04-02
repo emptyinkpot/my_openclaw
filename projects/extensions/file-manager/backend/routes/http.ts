@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import type { FileManagerConfig } from '../../contracts';
 import { createFileManagerService, FileManagerService } from '../services/file-manager-service';
-import { buildSharedNavBarHtml, injectSharedNavBar } from '../../../../shared/nav-bar-server';
+const { buildSharedNavBarHtml, injectSharedNavBar } = require('../../../shared/nav-bar-server.js');
 
 export const FILE_MANAGER_PAGE_ROUTES = ['/file-manager', '/file-manager/'] as const;
 export const FILE_MANAGER_API_PREFIX = '/api/file-manager';
@@ -54,7 +54,7 @@ function parseQuery(url: string): Record<string, string> {
 
 function injectNavBar(html: string): string {
   const navBarHtml = buildSharedNavBarHtml({
-    sharedRoot: path.join(__dirname, '..', '..', '..', '..', 'shared'),
+    sharedRoot: path.join(__dirname, '..', '..', '..', 'shared'),
     activeHrefs: ['/file-manager'],
     fallbackHtml: '<div class="nav-bar"><a href="/file-manager" class="on">文件管理</a></div>',
   });
@@ -116,6 +116,27 @@ export async function handleFileManagerPage(
     Expires: '0',
   });
   res.end(getFileManagerHtml());
+  return true;
+}
+
+export async function handleLegacyFileManagerApiAlias(
+  req: IncomingMessage,
+  res: ServerResponse
+): Promise<boolean> {
+  const routePath = (req.url || '').split('?')[0];
+  if (routePath !== '/file-manager/api') {
+    return false;
+  }
+
+  jsonRes(
+    res,
+    {
+      success: false,
+      error: 'Legacy route removed. Use /api/file-manager.',
+      canonical: '/api/file-manager',
+    },
+    404
+  );
   return true;
 }
 
@@ -198,3 +219,4 @@ export async function handleFileManagerApi(
   jsonRes(res, { success: false, error: 'File Manager API route not found' }, 404);
   return true;
 }
+
